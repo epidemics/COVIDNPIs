@@ -65,7 +65,6 @@ def import_csse_covid(rds: RegionDataset, dir="data", prefix="JH", group="JH"):
                     log.debug(f"Non-unique subdivision match for {country}/{prov}: {ps}")
                     skip(r)
                     continue
-                print(ps)
                 codes.append(ps[0])
 
         d["Code"] = codes
