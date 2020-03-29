@@ -2,7 +2,7 @@ import pandas as pd
 import pycountry
 import unidecode
 
-from .region_data import RegionDataset
+from ..region_data import RegionDataset
 
 
 def import_pycountry_coutries(rds: RegionDataset):

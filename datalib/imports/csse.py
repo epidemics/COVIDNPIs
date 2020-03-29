@@ -3,7 +3,7 @@ import logging
 import dateutil
 import pandas as pd
 
-from .region_data import RegionDataset
+from ..region_data import RegionDataset
 
 log = logging.getLogger(__name__)
 
