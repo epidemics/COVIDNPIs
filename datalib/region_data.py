@@ -15,7 +15,6 @@ from .utils import flatten_multiindex, unflatten_multiindex, normalize_name
 log = logging.getLogger(__name__)
 
 
-
 class RegionException(Exception):
     pass
 
@@ -48,7 +47,9 @@ class Region:
         if name.startswith("_"):
             super().__setattr__(name, val)
         else:
-            raise AttributeError()
+            raise AttributeError(
+                f"Setting attribute {name} on {self.__class__.__name__} not allowed (use indexing)."
+            )
 
     def __getitem__(self, name):
         return self._rds().data.at[self._code, name]
@@ -130,6 +131,7 @@ class RegionDataset:
         self.name_index = {}
         self.code_index = {}
         self.data["AllNames"] = pd.Series(dtype=object)
+        conflicts = []
         for ri in self.data.index:
             reg = Region(self, ri)
             for n in reg.AllNames:
@@ -137,21 +139,40 @@ class RegionDataset:
             self.code_index[ri] = reg
         for k in self.name_index:
             self.name_index[k] = list(set(self.name_index[k]))
+            if len(self.name_index[k]) > 1:
+                conflicts.append(k)
+        if conflicts:
+            log.info(f"Name index has {len(conflicts)} potential conflicts: {conflicts!r}")
 
     def __getitem__(self, code):
-        "Returns the data row corresponding to code"
-        return self.data.loc[code]
+        "Returns the Region corresponding to code"
+        return self.code_index[code]
 
     def find_all(self, s, levels=None):
-        "Return all codes with some matching names (filter on levels)"
+        "Return all Regions with some matching names (filter on levels)"
         if isinstance(levels, str):
             levels = [levels]
         rs = self.name_index.get(normalize_name(s), [])
         if levels is not None:
-            rs = [r for r in rs if self[r].Level in levels]
+            rs = [self[r] for r in rs if self[r].Level in levels]
         return rs
 
+    def find_one(self, s, levels=None):
+        "Find one region matching name (filter on levels), raise if !=1 found."
+        r = self.find_all(s, levels=levels)
+        if len(r) == 1:
+            return r[0]
+        lcmt = "" if levels is None else f" [levels={levels!r}]"
+        if len(r) < 1:
+            raise RegionException(f"Found no regions matching {s!r}{lcmt}")
+        raise RegionException(f"Found multiple regions matching {s!r}{lcmt}: {r!r}")
+
     def add_column(self, c, group, date=None, name=None):
+        """
+        Add given series or array as a new column.
+        
+        If date is given, adds to self.series.
+        """
         if name is None:
             name = c.name
         if date is None:
@@ -160,6 +181,17 @@ class RegionDataset:
             assert isinstance(date, datetime.date)
             self.series[(name, date)] = c
         self.col_groups.setdefault(group, []).append(name)
+
+    def add_dataframe(self, df, group):
+        if isinstance(df.columns, pd.MultiIndex):
+            assert all(isinstance(x, str) for x in df.columns.levels[0])
+            assert all(isinstance(x, datetime.date) for x in df.columns.levels[1])
+            self.series = pd.concat((self.series, df), axis=1)
+            self.col_groups.setdefault(group, []).extend(df.columns.levels[0])
+        else:
+            assert all(isinstance(x, str) for x in df.columns)
+            self.data = pd.concat((self.data, df), axis=1)
+            self.col_groups.setdefault(group, []).extend(df.columns)
 
     @classmethod
     def _empty_basic_dataframe(cls, index=()):

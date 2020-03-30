@@ -6,7 +6,7 @@ import unidecode
 
 
 def normalize_name(name):
-    return unidecode.unidecode(name).lower().replace("-", " ").replace("_", " ")
+    return unidecode.unidecode(name).lower().replace("-", " ").replace("_", " ").strip()
 
 
 def flatten_multiindex(df, sep="|"):
