@@ -180,7 +180,7 @@ class RegionDataset:
         else:
             assert isinstance(date, datetime.date)
             self.series[(name, date)] = c
-        self.col_groups.setdefault(group, []).append(name)
+        self.col_groups.setdefault(group, set()).add(name)
 
     def add_dataframe(self, df, group):
         if isinstance(df.columns, pd.MultiIndex):
@@ -226,7 +226,7 @@ class RegionDataset:
                 cs = c.split(self.SEP)
                 assert len(cs) == 2
                 date = dateutil.parser.parse(cs[1]).date()
-                self.add_column(data[c], group, date=date, name=c)
+                self.add_column(data[c], group, date=date, name=cs[0])
             else:
                 self.add_column(data[c], group, name=c)
 
