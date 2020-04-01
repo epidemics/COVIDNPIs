@@ -2,8 +2,9 @@ import logging
 
 import dateutil
 import pandas as pd
+import numpy as np
 
-from ..region_data import RegionDataset
+from ..regions import RegionDataset
 
 log = logging.getLogger(__name__)
 
@@ -15,77 +16,81 @@ SKIP_NAMES = {
     "Recovered",
 }
 
-SUBSTITUTES = {
+SUBSTITUTE_COUNTRY = {
     "Taiwan*": "Taiwan",
     "US": "United States",
 }
 
-SUBDIVIDED_CODES = {"CA", "US", "CN", "AU"}
+SUBSTITUTE_PROVINCE = {}
+
+SUBDIVIDED_COUNTRIES = {"CA", "US", "CN", "AU"}
+
+GITHUB_PREFIX = "https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/"
 
 
-def import_csse_covid(rds: RegionDataset, dir="data", prefix="JH", group="JH"):
+def import_CSSE(rds: RegionDataset, prefix=None):
+    """
+    Read a DataFrame of John Hopkins data from given directory or URL.
+    
+    By default loads data from CSSE github.
+    """
+    if prefix is None:
+        prefix = GITHUB_PREFIX
     skipped = set()
+    not_found = set()
+    conflicts = set()
+    ds = []
     for n in ["Recovered", "Confirmed", "Deaths"]:
         d = pd.read_csv(
-            f"{dir}/time_series_covid19_{n.lower()}_global.csv",
-            dtype={"Country/Region": "string", "Province/State": "string"},
+            f"{prefix}/time_series_covid19_{n.lower()}_global.csv",
+            dtype="U",
         )
-        codes = []
+        codes = np.full(len(d), "", dtype="U64")
 
-        def skip(r):
-            skipped.add(f"{r['Country/Region']}/{r['Province/State']}")
-            codes.append("")
-
-        for k, r in d.iterrows():
+        for i, r in d.iterrows():
             prov = r["Province/State"]
-            prov = SUBSTITUTES.get(prov, prov)
+            prov = SUBSTITUTE_PROVINCE.get(prov, prov)
             country = r["Country/Region"]
-            country = SUBSTITUTES.get(country, country)
+            country = SUBSTITUTE_COUNTRY.get(country, country)
+
             if prov in SKIP_NAMES or country in SKIP_NAMES:
-                skip(r)
+                skipped.add((country, prov))
                 continue
-            cs = rds.find_all(country, levels="country")
-            if len(cs) != 1:
-                log.debug(f"Non-unique country match for {country}: {cs}")
-                skip(r)
+            rs = rds.find_all_by_name(country, levels="country")
+            if len(rs) > 1:
+                conflicts.add((country, prov))
                 continue
-            c = cs[0]
+            if len(rs) < 1:
+                not_found.add((country, prov))
+                continue
+            c = rs[0].Code
 
             if pd.isna(prov):
                 # Add country
-                codes.append(c)
+                codes[i] = c
             else:
                 # Add province
-                if c not in SUBDIVIDED_CODES:
-                    skip(r)
+                rs = rds.find_all_by_name(prov, levels="subdivision")
+                rs = [r for r in rs if r.CountryCode == c]
+                if len(rs) < 1:
+                    not_found.add((country, prov))
                     continue
-                ps = rds.find_all(prov, levels="subdivision")
-                ps = [p for p in ps if rds[p].Country == c]
-                if len(ps) != 1:
-                    log.debug(
-                        f"Non-unique subdivision match for {country}/{prov}: {ps}"
-                    )
-                    skip(r)
+                if len(rs) > 1:
+                    conflicts.add((country, prov))
                     continue
-                codes.append(ps[0])
+                codes[i] = rs[0].Code
 
-        d["Code"] = codes
-        d = d[d.Code != ""]
-        destname = f"{prefix}_{n}"
-        for cname in d.columns:
-            if not cname[0].isdigit():
-                continue
-            col = pd.Series(d[cname].values, index=d.Code)
-            date = dateutil.parser.parse(cname).date()
-            rds.add_column(col, group, date, name=destname)
+        d.index = pd.Index(codes, name="Code")
+        for col in ["Country/Region", "Province/State", "Lat", "Long"]:
+            del d[col]
+        d.columns = pd.DatetimeIndex(pd.to_datetime(d.columns, utc=True), name="Date")
+        ds.append(d.loc[d.index != ""].stack().to_frame(n))
 
-    for date in set(rds.series.columns.get_level_values(1)):
-        if (f"{prefix}_Recovered", date) in rds.series.columns:
-            val = (
-                rds.series[(f"{prefix}_Confirmed", date)]
-                - rds.series[(f"{prefix}_Recovered", date)]
-                - rds.series[(f"{prefix}_Deaths", date)]
-            )
-            rds.add_column(val, group, date=date, name=f"{prefix}_Active")
+    if skipped:
+        log.info(f"Skipped {len(skipped)} records: {skipped!r}")
+    if not_found:
+        log.info(f"No matches for {len(not_found)} records: {not_found!r}")
+    if conflicts:
+        log.info(f"Multiple matches for {len(conflicts)} records: {conflicts!r}")
 
-    log.info(f"Skipped {len(skipped)} records: {skipped!r}")
+    return pd.concat(ds, axis=1)

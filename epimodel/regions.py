@@ -10,7 +10,7 @@ import numpy as np
 import pandas as pd
 import unidecode
 
-from .utils import flatten_multiindex, normalize_name, unflatten_multiindex
+from .utils import normalize_name
 
 log = logging.getLogger(__name__)
 
@@ -19,7 +19,7 @@ class Region:
     def __init__(self, rds, code):
         self._rds = weakref.ref(rds)
         self._code = code
-        r = self.data()
+        r = rds.data.loc[code]
         names = [r.Name, r.OfficialName]
         if not pd.isnull(r.OtherNames):
             names.extend(r.OtherNames.split(RegionDataset.SEP))
@@ -108,9 +108,9 @@ class RegionDataset:
         """
         # Main DataFrame (empty)
         self.data = pd.DataFrame(
-            index=pd.Index(name="Code", dtype=pd.StringDtype())
+            index=pd.Index([], name="Code", dtype=pd.StringDtype())
         )
-        for name, dtype in cls.COLUMN_TYPES.items():
+        for name, dtype in self.COLUMN_TYPES.items():
             self.data[name] = pd.Series(dtype=dtype, name=name)
         # name: [Region, Region, ..]
         self._name_index = {}
@@ -152,10 +152,10 @@ class RegionDataset:
         """
         if isinstance(levels, str):
             levels = [levels]
-        rs = self._name_index.get(normalize_name(s), [])
+        rs = tuple(self._name_index.get(normalize_name(s), []))
         if levels is not None:
-            rs = (r for r in rs if self[r].Level in levels)
-        return [self[r] for r in rs]
+            rs = tuple(r for r in rs if r.Level in levels)
+        return rs
 
     def find_one_by_name(self, s, levels=None):
         """
@@ -163,13 +163,13 @@ class RegionDataset:
         
         Raises KeyError if no or multiple regions found.
         """
-        r = self.find_all_by_name(s, levels=levels)
-        if len(r) == 1:
-            return r[0]
+        rs = self.find_all_by_name(s, levels=levels)
+        if len(rs) == 1:
+            return rs[0]
         lcmt = "" if levels is None else f" [levels={levels!r}]"
-        if len(r) < 1:
+        if len(rs) < 1:
             raise KeyError(f"Found no regions matching {s!r}{lcmt}")
-        raise KeyError(f"Found multiple regions matching {s!r}{lcmt}: {r!r}")
+        raise KeyError(f"Found multiple regions matching {s!r}{lcmt}: {rs!r}")
 
     def write_csv(self, path):
         # Reconstruct the OtherNames column
@@ -191,8 +191,8 @@ class RegionDataset:
         conflicts = []
         for ri in self.data.index:
             reg = Region(self, ri)
-            for n in set(normalize_name(n) for name in reg.AllNames):
-                self._name_index.setdefault(n, list()).append(ri)
+            for n in set(normalize_name(name) for name in reg.AllNames):
+                self._name_index.setdefault(n, list()).append(reg)
             assert ri not in self._code_index
             self._code_index[ri] = reg
         for k in self._name_index:
