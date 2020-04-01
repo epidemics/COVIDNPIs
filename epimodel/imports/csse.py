@@ -42,8 +42,7 @@ def import_CSSE(rds: RegionDataset, prefix=None):
     ds = []
     for n in ["Recovered", "Confirmed", "Deaths"]:
         d = pd.read_csv(
-            f"{prefix}/time_series_covid19_{n.lower()}_global.csv",
-            dtype="U",
+            f"{prefix}/time_series_covid19_{n.lower()}_global.csv", dtype="U",
         )
         codes = np.full(len(d), "", dtype="U64")
 
@@ -84,7 +83,9 @@ def import_CSSE(rds: RegionDataset, prefix=None):
         for col in ["Country/Region", "Province/State", "Lat", "Long"]:
             del d[col]
         d.columns = pd.DatetimeIndex(pd.to_datetime(d.columns, utc=True), name="Date")
-        ds.append(d.loc[d.index != ""].stack().to_frame(n))
+        ds.append(
+            pd.to_numeric(d.loc[d.index != ""].stack(), downcast="float").to_frame(n)
+        )
 
     if skipped:
         log.info(f"Skipped {len(skipped)} records: {skipped!r}")
@@ -93,4 +94,6 @@ def import_CSSE(rds: RegionDataset, prefix=None):
     if conflicts:
         log.info(f"Multiple matches for {len(conflicts)} records: {conflicts!r}")
 
-    return pd.concat(ds, axis=1)
+    df = pd.concat(ds, axis=1).sort_index()
+    df["Active"] = df["Confirmed"] - df["Recovered"] - df["Deaths"]
+    return df
