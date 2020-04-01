@@ -24,9 +24,9 @@ class Region:
         self._rds = weakref.ref(rds)
         self._code = code
         r = self.data()
-        names = [r.Name, r.OfficialName]
-        if not pd.isnull(r.OtherNames):
-            names.extend(r.OtherNames.split(RegionDataset.SEP))
+        names = [r.Name, r.B_OfficialName]
+        if not pd.isnull(r.B_OtherNames):
+            names.extend(r.B_OtherNames.split(RegionDataset.SEP))
         names = [n for n in names if not pd.isnull(n) and n]
         rds.data.at[code, "AllNames"] = list(set(names))
 
@@ -189,8 +189,8 @@ class RegionDataset:
             levels = [levels]
         rs = self.name_index.get(normalize_name(s), [])
         if levels is not None:
-            rs = [self[r] for r in rs if self[r].Level in levels]
-        return rs
+            rs = (r for r in rs if self[r].Level in levels)
+        return [self[r] for r in rs]
 
     def find_one_by_name(self, s, levels=None):
         """
