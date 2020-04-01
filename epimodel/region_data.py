@@ -10,7 +10,7 @@ import numpy as np
 import pandas as pd
 import unidecode
 
-from .utils import flatten_multiindex, unflatten_multiindex, normalize_name
+from .utils import flatten_multiindex, normalize_name, unflatten_multiindex
 
 log = logging.getLogger(__name__)
 
@@ -48,14 +48,17 @@ class Region:
             super().__setattr__(name, val)
         else:
             raise AttributeError(
-                f"Setting attribute {name} on {self.__class__.__name__} not allowed (use indexing)."
+                f"Setting attribute {name} on {self.__class__.__name__} not allowed"
+                " (use indexing)."
             )
 
     def __getitem__(self, name):
         return self._rds().data.at[self._code, name]
 
-    def __setitem__(self, name, value):
-        self._rds().data.at[self._code, name] = value
+    # TODO(gavento): Needs a bit of thought re data/series assignment of new columns
+    #                (or just forbid new columns?)
+    # def __setitem__(self, name, value):
+    #    self._rds().data.at[self._code, name] = value
 
     def __repr__(self):
         return f"<{self.__class__.__name__} {self._code} {self.Name} ({self.Level})>"
@@ -76,13 +79,20 @@ class RegionDataset:
 
     LEVELS = pd.CategoricalDtype(
         pd.Index(
-            ["world", "continent", "subregion", "country", "subdivision", "gleam_basin"],
+            [
+                "world",
+                "continent",
+                "subregion",
+                "country",
+                "subdivision",
+                "gleam_basin",
+            ],
             dtype="U",
         ),
         ordered=True,
     )
 
-    SKIP_SAVING_COLS = {"AllNames", "Name"}
+    SKIP_SAVING_COLS = {"AllNames"}
 
     BASIC_COL_TYPES = OrderedDict(
         #        Parent="string",
@@ -101,7 +111,7 @@ class RegionDataset:
         B_ContinentCode="U",
         B_SubregionCode="U",
         B_CountryCode="U",
-        B_CountryISOa3="U",
+        B_CountryCodeISOa3="U",
         # Other data
         B_Lat="f4",
         B_Lon="f4",
@@ -161,7 +171,9 @@ class RegionDataset:
             if len(self.name_index[k]) > 1:
                 conflicts.append(k)
         if conflicts:
-            log.info(f"Name index has {len(conflicts)} potential conflicts: {conflicts!r}")
+            log.info(
+                f"Name index has {len(conflicts)} potential conflicts: {conflicts!r}"
+            )
 
     def __getitem__(self, code):
         """
@@ -186,7 +198,7 @@ class RegionDataset:
         
         Raises RegionException if no or multiple regions found.
         """
-        r = self.find_all(s, levels=levels)
+        r = self.find_all_by_name(s, levels=levels)
         if len(r) == 1:
             return r[0]
         lcmt = "" if levels is None else f" [levels={levels!r}]"
@@ -219,6 +231,73 @@ class RegionDataset:
             assert all(isinstance(x, str) for x in df.columns)
             self.data = pd.concat((self.data, df), axis=1)
 
+    def read_csv(self, path, dtype=None, na_values=("",), prefix=None):
+        """
+        Read given CSV and add it to the dataframe.
+        
+        Detects columns with dates vs plain columns. Optionally adds
+        the given prefix (with '_').
+        """
+        data = pd.read_csv(
+            path,
+            dtype=dtype,
+            index_col="Code",
+            na_values=na_values,
+            keep_default_na=False,
+        )
+        for c in data.columns:
+            if self.SEP in c:
+                cs = c.split(self.SEP)
+                assert len(cs) == 2
+                date = dateutil.parser.parse(cs[1]).date()
+                self.add_column(data[c], date=date, name=cs[0], prefix=prefix)
+            else:
+                self.add_column(data[c], name=c, prefix=prefix)
+
+    def to_csv(self, path, *, columns=None, match=None, include_name=True):
+        """
+        Save some columns to CSV file.
+        
+        Columns can be given either by regexp `match`, prefix of column list.
+        Both plain columns and series are saved.
+        Any prefix is NOT removed from column names.
+        """
+        if columns is None:
+            columns = []
+        if match is not None:
+            for c in self.columns:
+                if re.match(match, c):
+                    columns.append(c)
+        columns = set(columns).difference(self.SKIP_SAVING_COLS)
+        assert len(columns) > 0
+        if "B_OtherNames" in columns:
+            self._reconstruct_OtherNames()
+        if include_name:
+            columns.add("Name")
+
+        series = []
+        for c in self.data.columns:
+            if c in columns:
+                series.append(self.data[c])
+        for c, date in self.series.columns:
+            if c in columns:
+                s = self.series[(c, date)]
+                s.name = f"{c}{self.SEP}{date.isoformat()}"
+                series.append(s)
+
+        d2 = pd.concat(series, axis=1)
+        d2.to_csv(path, index_label="Code")
+
+    def _reconstruct_OtherNames(self):
+        "Reconstruct the OtherNames column."
+        for r in self.regions:
+            names = set(r.AllNames)
+            if r.Name in names:
+                names.remove(r.Name)
+            if r.OfficialName in names:
+                names.remove(r.OfficialName)
+            r["OtherNames"] = self.SEP.join(names)
+
     @classmethod
     def _empty_basic_dataframe(cls, index=()):
         df = cls._empty_dataframe(index=index)
@@ -236,50 +315,3 @@ class RegionDataset:
             index=pd.Index(index, name="Code", dtype=pd.StringDtype()),
             columns=pd.MultiIndex.from_tuples([], names=["Property", "Date"]),
         )
-
-    def read_csv(self, path, dtype=None, na_values=("",), prefix=None):
-        data = pd.read_csv(
-            path, dtype=dtype, index_col="Code", na_values=na_values, keep_default_na=False,
-        )
-        for c in data.columns:
-            if self.SEP in c:
-                cs = c.split(self.SEP)
-                assert len(cs) == 2
-                date = dateutil.parser.parse(cs[1]).date()
-                self.add_column(data[c], date=date, name=cs[0], prefix=prefix)
-            else:
-                self.add_column(data[c], name=c, prefix=prefix)
-
-    def _reconstruct_OtherNames(self):
-        "Reconstruct the OtherNames column."
-        for r in self.regions:
-            names = set(r.AllNames)
-            if r.Name in names:
-                names.remove(r.Name)
-            if r.OfficialName in names:
-                names.remove(r.OfficialName)
-            r["OtherNames"] = self.SEP.join(names)
-
-    def to_csv(self, path, *, columns=None, match=None, include_name=True):
-        "Save one group or list of columns (both series and plain cols)"
-        if columns is None:
-            columns = []
-        if match is not None:
-            for c in self.columns:
-                if re.match(match, c):
-                    columns.append(c)
-        columns = frozenset(columns)
-        series = []
-        if include_name:
-            series.append(self.data.Name)
-        for c in self.data.columns:
-            if c in columns and c not in self.SKIP_SAVING_COLS:
-                series.append(self.data[c])
-        for c, date in self.series.columns:
-            if c in columns and c not in self.SKIP_SAVING_COLS:
-                s = self.series[(c, date)]
-                s.name = f"{c}{self.SEP}{date.isoformat()}"
-                series.append(s)
-
-        d2 = pd.concat(series, axis=1)
-        d2.to_csv(path, index_label="Code")

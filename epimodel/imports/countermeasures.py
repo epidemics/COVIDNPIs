@@ -33,7 +33,9 @@ def _lookup(s, name):
         return s.find_one(name, levels="country").Code
 
 
-def import_simplified_countermeasures(rds: RegionDataset, path, prefix="SCM", group="SCM"):
+def import_simplified_countermeasures(
+    rds: RegionDataset, path, prefix="SCM", group="SCM"
+):
     df = pd.read_csv(
         path,
         dtype={"Country": "string", "Date": "string"},

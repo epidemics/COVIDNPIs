@@ -37,6 +37,11 @@ def import_pycountry_subdivisions(rds: RegionDataset, countries):
         if sd.parent_code is not None:
             continue
         name = unidecode.unidecode(sd.name)
-        d = dict(Level="subdivision", Name=name, OfficialName=sd.name, Country=sd.country_code,)
+        d = dict(
+            Level="subdivision",
+            Name=name,
+            OfficialName=sd.name,
+            Country=sd.country_code,
+        )
         a = [d.get(k, pd.NA) for k in rds.BASIC_COL_TYPES.keys()]
         rds.data.loc[sd.code] = a

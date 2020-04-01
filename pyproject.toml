@@ -27,7 +27,7 @@ pytest = "^5.4.1"
 black = "^19.10b0"
 
 [tool.black]
-line-length = 98
+line-length = 88
 target-version = ['py37']
 
 [build-system]
