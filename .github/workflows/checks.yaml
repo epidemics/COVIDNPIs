@@ -14,7 +14,7 @@ jobs:
       - name: Black Code Formatter
         uses: lgeiger/black-action@v1.0.1
         with:
-          args: "**.py --check"
+          args: ". **.py --check"
 
   tests:
     name: test
@@ -27,8 +27,10 @@ jobs:
       - uses: abatilo/actions-poetry@v1.5.0
         name: poetry install
         with:
+          python_version: 3.7
           args: install
       - uses: abatilo/actions-poetry@v1.5.0
         name: poetry install
         with:
+          python_version: 3.7
           args: run python -m pytest
