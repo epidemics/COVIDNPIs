@@ -30,6 +30,13 @@ class Region:
     def Code(self):
         return self._code
 
+    def DisplayName(self):
+        if self.Level == "subdivision":
+            return f"{self.Name}, {self.CountryCode}"
+        if self.Level == "gleam_basin" or self.Level == "city":
+            return f"{self.Name}, {self.SubdivisionCode}"
+        return self.Name
+
     def __getattr__(self, name):
         return self.__getitem__(name)
 
@@ -95,6 +102,7 @@ class RegionDataset:
         SubregionCode="U",
         CountryCode="U",
         CountryCodeISOa3="U",
+        SubdivisionCode="U",
         # Other data
         Lat="f4",
         Lon="f4",
