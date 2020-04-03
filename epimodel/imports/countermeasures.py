@@ -25,7 +25,11 @@ def _lookup(s, name):
         if country in SKIP_NAMES or prov in SKIP_NAMES:
             return None
         c = s.find_one_by_name(country, levels="country")
-        ps = [p for p in s.find_all_by_name(prov, levels="subdivision") if p.CountryCode == c.Code]
+        ps = [
+            p
+            for p in s.find_all_by_name(prov, levels="subdivision")
+            if p.CountryCode == c.Code
+        ]
         if len(ps) != 1:
             raise Exception(f"Unique region for {name} not found: {ps}")
         return ps[0].Code
@@ -45,10 +49,10 @@ def import_simplified_countermeasures(rds: RegionDataset, path):
     df["Date"] = [pd.to_datetime(x, utc=True) for x in df["Date"]]
     df["Code"] = [_lookup(rds, x) for x in df["Country"]]
     df = df.loc[pd.notnull(df.Code)]
-    dti = pd.MultiIndex.from_arrays([df.Code, df.Date], names=["Code","Date"])
-    del df['Country']
-    del df['Code']
-    del df['Date']
+    dti = pd.MultiIndex.from_arrays([df.Code, df.Date], names=["Code", "Date"])
+    del df["Country"]
+    del df["Code"]
+    del df["Date"]
     df.index = dti
     df.fillna(0.0, inplace=True)
     return df
