@@ -11,6 +11,8 @@ from ..regions import Region
 
 log = logging.getLogger(__name__)
 
+MAIN_DATA_FILENAME = "data-CHANNEL-v4.json"
+
 
 class WebExport:
     """
@@ -50,8 +52,8 @@ class WebExport:
             er.data_url = f"{name}/{fname}"
             with open(exdir / fname, "wt") as f:
                 json.dump(er.data_ext(), f)
-        with open(exdir / "data-CHANNEL-v4.json", "wt") as f:
-            json.dumps(self.to_json(), f, indent=2)
+        with open(exdir / self.MAIN_DATA_FILENAME, "wt") as f:
+            json.dump(self.to_json(), f, indent=2)
         log.info(f"Exported {len(self.export_regions)} regions to {exdir}")
 
 
@@ -88,3 +90,34 @@ class WebExportRegion:
             d[n] = self.region[n]
             d[n.lower()] = self.region[n]
         return d
+
+
+import subprocess
+
+
+def upload_export(dir_to_export, gs_prefix, gs_url, channel="test"):
+    """The 'upload' subcommand"""
+    CMD = ["gsutil", "-m", "cp", "-a", "public-read"]
+    CMD += ["-h", "Cache-Control:public,max-age=30"]
+    gs_prefix = gs_prefix.rstrip('/')
+    gs_url = gs_url.rstrip('/')
+    exdir = Path(dir_to_export)
+    assert exdir.is_dir()
+
+    log.info(f"Uploading data folder {exdir} to {gs_prefix}/{exdir.parts[-1]} ...")
+    cmd = CMD + ["-Z", "-R", exdir, gs_prefix]
+    log.debug(f"Running {cmd!r}")
+    subprocess.run(cmd, check=True)
+
+    datafile = MAIN_DATA_FILENAME.replace("CHANNEL", channel)
+    gs_tgt = f"{gs_prefix}/{datafile}"
+    log.info(f"Uploading main data file to {gs_tgt} ...")
+    subprocess.run(
+        CMD + ["-Z", out / WebExport.MAIN_DATA_FILENAME, gs_data_tgt], check=True
+    )
+    log.info(f"File URL: {gs_url}/{datafile_channel}")
+
+    if args.channel != "main":
+        log.info(
+            f"Custom web URL: http://epidemicforecasting.org/?channel={args.channel}"
+        )

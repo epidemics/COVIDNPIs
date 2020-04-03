@@ -24,18 +24,16 @@ def _lookup(s, name):
         country, prov = (x.strip() for x in name.split(":"))
         if country in SKIP_NAMES or prov in SKIP_NAMES:
             return None
-        c = s.find_one(country, levels="country")
-        ps = [p for p in s.find_all(prov, levels="subdivision") if p.Country == c.Code]
+        c = s.find_one_by_name(country, levels="country")
+        ps = [p for p in s.find_all_by_name(prov, levels="subdivision") if p.CountryCode == c.Code]
         if len(ps) != 1:
-            raise RegionException(f"Unique region for {name} not found: {ps}")
+            raise Exception(f"Unique region for {name} not found: {ps}")
         return ps[0].Code
     else:
-        return s.find_one(name, levels="country").Code
+        return s.find_one_by_name(name, levels="country").Code
 
 
-def import_simplified_countermeasures(
-    rds: RegionDataset, path, prefix="SCM", group="SCM"
-):
+def import_simplified_countermeasures(rds: RegionDataset, path):
     df = pd.read_csv(
         path,
         dtype={"Country": "string", "Date": "string"},
@@ -44,21 +42,13 @@ def import_simplified_countermeasures(
         keep_default_na=False,
     )
     df = df.loc[pd.notnull(df.Country)]
-    df["Date"] = [dateutil.parser.parse(x).date() for x in df["Date"]]
-    # d=d.pivot(columns=["Date"])
+    df["Date"] = [pd.to_datetime(x, utc=True) for x in df["Date"]]
     df["Code"] = [_lookup(rds, x) for x in df["Country"]]
     df = df.loc[pd.notnull(df.Code)]
-    features = df.columns[:-3]
-    df = df.pivot(index="Code", values=features, columns="Date")
+    dti = pd.MultiIndex.from_arrays([df.Code, df.Date], names=["Code","Date"])
+    del df['Country']
+    del df['Code']
+    del df['Date']
+    df.index = dti
     df.fillna(0.0, inplace=True)
-    rds.add_dataframe(df[features], group)
-    return
-
-    # Propagate updates to per-day state, add tp rds
-    for f in tqdm.tqdm(features):
-        state = pd.Series(np.zeros(len(df)), index=df.index)
-        for date in sorted(df.columns.levels[1]):
-            non_nan = pd.notnull(df[(f, date)])
-            state[non_nan] = df[(f, date)][non_nan]
-            rds.add_column(state, group, date=date, name=f)
-            # state_df[(f, date)] = state
+    return df
