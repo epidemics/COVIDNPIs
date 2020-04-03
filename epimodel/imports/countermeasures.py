@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 import tqdm
 
-from ..region_data import RegionDataset, RegionException
+from ..regions import RegionDataset
 
 log = logging.getLogger(__name__)
 
