@@ -3,6 +3,7 @@ import getpass
 import json
 import logging
 import socket
+import subprocess
 from pathlib import Path
 
 from tqdm import tqdm
@@ -46,13 +47,14 @@ class WebExport:
         outdir = Path(path)
         assert (not outdir.exists()) or outdir.is_dir()
         exdir = Path(path) / name
+        log.info(f"Writing WebExport to {exdir} ...")
         exdir.mkdir(exist_ok=False, parents=True)
         for rc, er in tqdm(list(self.export_regions.items()), desc="Writing regions"):
             fname = f"extdata-{rc}.json"
             er.data_url = f"{name}/{fname}"
             with open(exdir / fname, "wt") as f:
-                json.dump(er.data_ext(), f)
-        with open(exdir / self.MAIN_DATA_FILENAME, "wt") as f:
+                json.dump(er.data_ext, f)
+        with open(exdir / MAIN_DATA_FILENAME, "wt") as f:
             json.dump(self.to_json(), f, indent=2)
         log.info(f"Exported {len(self.export_regions)} regions to {exdir}")
 
@@ -92,9 +94,6 @@ class WebExportRegion:
         return d
 
 
-import subprocess
-
-
 def upload_export(dir_to_export, gs_prefix, gs_url, channel="test"):
     """The 'upload' subcommand"""
     CMD = ["gsutil", "-m", "cp", "-a", "public-read"]
@@ -113,7 +112,7 @@ def upload_export(dir_to_export, gs_prefix, gs_url, channel="test"):
     gs_tgt = f"{gs_prefix}/{datafile}"
     log.info(f"Uploading main data file to {gs_tgt} ...")
     subprocess.run(
-        CMD + ["-Z", out / WebExport.MAIN_DATA_FILENAME, gs_data_tgt], check=True
+        CMD + ["-Z", exdir / MAIN_DATA_FILENAME, gs_tgt], check=True
     )
     log.info(f"File URL: {gs_url}/{datafile_channel}")
 
