@@ -6,6 +6,7 @@ import socket
 import subprocess
 from pathlib import Path
 
+import numpy as np
 from tqdm import tqdm
 
 from ..regions import Region
@@ -28,7 +29,7 @@ class WebExport:
 
     def to_json(self):
         return {
-            "created": self.created.isoformat(),
+            "created": self.created,
             "created_by": self.created_by,
             "comment": self.comment,
             "regions": {k: a.to_json() for k, a in self.export_regions.items()},
@@ -55,7 +56,7 @@ class WebExport:
             with open(exdir / fname, "wt") as f:
                 json.dump(er.data_ext, f)
         with open(exdir / MAIN_DATA_FILENAME, "wt") as f:
-            json.dump(self.to_json(), f, indent=2)
+            json.dump(self.to_json(), f, indent=2, default=types_to_json)
         log.info(f"Exported {len(self.export_regions)} regions to {exdir}")
 
 
@@ -96,10 +97,17 @@ class WebExportRegion:
 
 def upload_export(dir_to_export, gs_prefix, gs_url, channel="test"):
     """The 'upload' subcommand"""
-    CMD = ["gsutil", "-m", "cp", "-a", "public-read"]
-    CMD += ["-h", "Cache-Control:public,max-age=30"]
-    gs_prefix = gs_prefix.rstrip('/')
-    gs_url = gs_url.rstrip('/')
+    CMD = [
+        "gsutil",
+        "-m",
+        "-h",
+        "Cache-Control:public,max-age=30",
+        "cp",
+        "-a",
+        "public-read",
+    ]
+    gs_prefix = gs_prefix.rstrip("/")
+    gs_url = gs_url.rstrip("/")
     exdir = Path(dir_to_export)
     assert exdir.is_dir()
 
@@ -111,12 +119,18 @@ def upload_export(dir_to_export, gs_prefix, gs_url, channel="test"):
     datafile = MAIN_DATA_FILENAME.replace("CHANNEL", channel)
     gs_tgt = f"{gs_prefix}/{datafile}"
     log.info(f"Uploading main data file to {gs_tgt} ...")
-    subprocess.run(
-        CMD + ["-Z", exdir / MAIN_DATA_FILENAME, gs_tgt], check=True
-    )
-    log.info(f"File URL: {gs_url}/{datafile_channel}")
+    cmd = CMD + ["-Z", exdir / MAIN_DATA_FILENAME, gs_tgt]
+    log.debug(f"Running {cmd!r}")
+    subprocess.run(cmd, check=True)
+    log.info(f"File URL: {gs_url}/{datafile}")
 
-    if args.channel != "main":
-        log.info(
-            f"Custom web URL: http://epidemicforecasting.org/?channel={args.channel}"
-        )
+    if channel != "main":
+        log.info(f"Custom web URL: http://epidemicforecasting.org/?channel={channel}")
+
+
+def types_to_json(obj):
+    if isinstance(obj, (np.float16, np.float32, np.float64, np.float128)):
+        return float(obj)
+    if isinstance(obj, datetime.datetime):
+        return obj.isoformat()
+    return obj
