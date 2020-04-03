@@ -30,6 +30,7 @@ class Region:
     def Code(self):
         return self._code
 
+    @property
     def DisplayName(self):
         if self.Level == "subdivision":
             return f"{self.Name}, {self.CountryCode}"
