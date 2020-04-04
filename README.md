@@ -19,11 +19,17 @@ A data library and a toolkit for modelling COVID-19 epidemics.
 * Clone the [epimodel-covid-data](https://github.com/epidemics/epimodel-covid-data/) repository. For convenience, I recommend cloninig it inside the `epimodel` repo directory as `data`.
 
 ```sh
+## Clone the repositories
 git clone git@github.com:epidemics/epimodel.git
 cd epimodel
-poetry install
 git clone git@github.com:epidemics/epimodel-covid-data.git data
-jupyter notebook  # For example
+
+## Install packages
+poetry install  # Best run it outside virtualenv - poetry will create its own
+## Or, if using conda, install (a likely list): pandas pymc3 unidecode jupyter
+
+poetry shell # One way to enter the virtualenv if not active already
+poetry run jupyter notebook  # For example
 ```
 
 ## Basic usage
