@@ -10,6 +10,7 @@ import yaml
 import epimodel
 from epimodel import RegionDataset
 from epimodel.exports.epidemics_org import WebExport, upload_export
+from epimodel.gleam import Batch
 
 log = logging.getLogger("gleambatch")
 
@@ -17,9 +18,10 @@ log = logging.getLogger("gleambatch")
 def update_CSSE(args):
     log.info("Downloading and parsing CSSE ...")
     csse = epimodel.imports.import_CSSE(args.rds)
-    csse.to_csv(args.dest)
+    dest = Path(args.config["data_dir"]) / "CSSE.csv"
+    csse.to_csv(dest)
     log.info(
-        f"Saved CSSE to {args.dest}, last day {csse.index.get_level_values(1).max()}"
+        f"Saved CSSE to {dest}, last day is {csse.index.get_level_values(1).max()}"
     )
 
 
@@ -38,17 +40,35 @@ def web_upload(args):
     )
 
 
+def import_batch(args):
+    batch = Batch.open(args.BATCH_FILE)
+    d = args.rds.data
+    regions = d.loc[(d.Level == "country") & (d.GleamID != "")].Region.values
+    batch.import_sims(
+        Path(args.config["gleamviz_sims_dir"]).expanduser(),
+        regions,
+        resample=args.config["gleam_resample"],
+        allow_unfinished=args.allow_missing,
+    )
+
+
 def create_parser():
     ap = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     ap.add_argument("-d", "--debug", action="store_true", help="Debugging logs.")
     ap.add_argument("-C", "--config", default="config.yaml", help="Config file.")
     sp = ap.add_subparsers(title="subcommands", required=True, dest="cmd")
 
-    upC = sp.add_parser("update_CSSE", help="Fetch data from John Hopkins CSSE.")
-    upC.set_defaults(func=update_CSSE)
-    upC.add_argument(
-        "-D", "--dest", default="`config.data_dir`/CSSE.csv", help="Destination path."
+    upp = sp.add_parser("update_CSSE", help="Fetch data from John Hopkins CSSE.")
+    upp.set_defaults(func=update_CSSE)
+
+    ibp = sp.add_parser("import_gleam_batch", help="Load batch results from GLEAM.")
+    ibp.add_argument(
+        "BATCH_FILE", help="The batch-*.hdf5 file with batch spec to be updated."
     )
+    ibp.add_argument(
+        "-M", "--allow-missing", action="store_true", help="Skip missing sim results.",
+    )
+    ibp.set_defaults(func=import_batch)
 
     exp = sp.add_parser("web_export", help="Create data export for web.")
     exp.add_argument("-c", "--comment", help="A short comment (to be part of path).")
@@ -73,7 +93,7 @@ def main():
     if args.debug:
         logging.root.setLevel(logging.DEBUG)
     with open(args.config, "rt") as f:
-        args.config = yaml.load(f)
+        args.config = yaml.safe_load(f)
     args.rds = RegionDataset.load(Path(args.config["data_dir"]) / "regions.csv")
     args.func(args)
 

@@ -1,15 +1,23 @@
 # Path to epimodel-data directory
 data_dir: data
 
-# Root directory of gleamviz (needs to contain data/sims)
-gleamviz_dir: ~/GLEAMviz/
+### GLEAM
+
+# data/sims subdirectory of gleamviz
+gleamviz_sims_dir: ~/GLEAMviz/data/sims/
+
+# Subsampling of imported data (see Pandas `df.resample`)
+gleam_resample: 7D
 
 ### Upload settings
+
 gs_prefix: "gs://static-covid/static/"
 gs_url_prefix: "https://storage.googleapis.com/static-covid/static/"
 
 ### Output directory for exported data
+
 output_dir: out/
 
 ### List of exported regions code
+
 export_regions: [CZ, ES, US-CA]
