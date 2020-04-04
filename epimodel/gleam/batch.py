@@ -60,10 +60,20 @@ class Batch:
         )
         return cls(hdf, _direct=False)
 
-    def import_sims(self, sims_dir, regions, *, allow_unfinished=False, resample=None):
+    def import_sims(
+        self,
+        sims_dir,
+        regions,
+        *,
+        allow_unfinished=False,
+        resample=None,
+        overwrite=False,
+    ):
         """
         Import simulation result data from GLEAMViz data/sims dir into the HDF5 file.
         """
+        if len(self.new_fraction) > 0 and not overwrite:
+            raise Exception(f"Would overwrite existing `new_fraction` in {self}!")
         sims_dir = Path(sims_dir)
         for sid, sim in self.simulations.iterrows():
             path = sims_dir / f"{sid}.gvh5" / "results.h5"
