@@ -70,18 +70,21 @@ class Batch:
             if not path.exists() and not allow_unfinished:
                 raise Exception(f"No gleam result found for {sid} {sim.Name!r}")
         dfs = []
+        skipped = set()
         for sid, sim in self.simulations.iterrows():
             path = sims_dir / f"{sid}.gvh5" / "results.h5"
             log.debug("Loading Gleam simulation from {} ..".format(path))
             with tables.File(path) as f:
                 for r in regions:
+                    if pd.isnull(r.GleamID):
+                        skipped.add(r.DisplayName)
+                        continue
                     gtype = self.LEVEL_TO_GTYPE[r.Level]
                     node = f.get_node(f"/population/new/{gtype}/median/dset")
                     ################### HACK: date TODO: get from Batch header
                     days = pd.date_range("2020-04-02", periods=node.shape[3], tz="utc")
                     dcols = {}
                     for ci, cn in self.COMPARTMENTS.items():
-                        assert r.GleamID != ""
                         new_per_1000 = node[ci, 0, int(r.GleamID), :]
                         new_fraction = np.expand_dims(new_per_1000 / 1000.0, 0)
                         idx = pd.MultiIndex.from_tuples(
@@ -97,6 +100,10 @@ class Batch:
                             .swaplevel(1, 2)
                         )
                     dfs.append(pd.DataFrame(dcols).sort_index())
+        if skipped:
+            log.info(f"Skipped {len(skipped)} regions without GleamID: {skipped!r}")
+        if not dfs:
+            raise Exception("No GLEAM records loaded!")
         dfall = pd.concat(dfs)
         len0 = len(dfall)
         if resample is not None:
