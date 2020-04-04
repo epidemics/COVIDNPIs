@@ -199,8 +199,7 @@ class RegionDataset:
         self.data["AllNames"] = pd.Series(dtype=object)
         self.data["Region"] = pd.Series(dtype=object)
         self.data["DisplayName"] = pd.Series(dtype=object)
-        self.data["Code"] = pd.Series(self.data.index)
-
+        self.data["Code"] = self.data.index
         conflicts = []
         for ri in self.data.index:
             reg = Region(self, ri)
