@@ -6,6 +6,7 @@ import socket
 import subprocess
 from pathlib import Path
 
+import pandas as pd
 import numpy as np
 from tqdm import tqdm
 
@@ -45,6 +46,7 @@ class WebExport:
             name = f"export-{self.created.isoformat()}"
             if self.comment:
                 name += self.comment
+        name = name.replace(" ", "_").replace(":", "-")
         outdir = Path(path)
         assert (not outdir.exists()) or outdir.is_dir()
         exdir = Path(path) / name
@@ -75,7 +77,7 @@ class WebExportRegion:
         d = {
             "data": self.data,
             "data_url": self.data_url,
-            "name": self.region.DisplayName,
+            "Name": self.region.DisplayName,
         }
         for n in [
             "Population",
@@ -90,8 +92,7 @@ class WebExportRegion:
             "CountryCodeISOa3",
             "SubdivisionCode",
         ]:
-            d[n] = self.region[n]
-            d[n.lower()] = self.region[n]
+            d[n] = None if pd.isnull(self.region[n]) else self.region[n]
         return d
 
 
