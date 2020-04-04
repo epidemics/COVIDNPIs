@@ -25,13 +25,10 @@ class Region:
             names.extend(r.OtherNames.split(RegionDataset.SEP))
         names = [n for n in names if not pd.isnull(n) and n]
         rds.data.at[code, "AllNames"] = list(set(names))
+        rds.data.at[code, "Region"] = self
+        rds.data.at[code, "DisplayName"] = self.get_display_name()
 
-    @property
-    def Code(self):
-        return self._code
-
-    @property
-    def DisplayName(self):
+    def get_display_name(self):
         if self.Level == "subdivision":
             return f"{self.Name}, {self.CountryCode}"
         if self.Level == "gleam_basin" or self.Level == "city":
@@ -108,7 +105,8 @@ class RegionDataset:
         Lat="f4",
         Lon="f4",
         Population="f4",
-        GleamID="int32",
+        # Stored as string to allow undefined values
+        GleamID="U",
     )
 
     def __init__(self):
@@ -169,7 +167,7 @@ class RegionDataset:
     def find_one_by_name(self, s, levels=None):
         """
         Find one region matching name (filter on levels).
-        
+     
         Raises KeyError if no or multiple regions found.
         """
         rs = self.find_all_by_name(s, levels=levels)
@@ -194,9 +192,15 @@ class RegionDataset:
         self.data[columns].to_csv(path, index_label="Code")
 
     def _rebuild_index(self):
+        """Rebuilds the indexes and ALL Region objects!"""
         self._name_index = {}
         self._code_index = {}
+        self.data = self.data.sort_index()
         self.data["AllNames"] = pd.Series(dtype=object)
+        self.data["Region"] = pd.Series(dtype=object)
+        self.data["DisplayName"] = pd.Series(dtype=object)
+        self.data["Code"] = pd.Series(self.data.index)
+
         conflicts = []
         for ri in self.data.index:
             reg = Region(self, ri)
