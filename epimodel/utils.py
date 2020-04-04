@@ -47,7 +47,7 @@ def write_csv(df, path, regions=None, with_name=True):
     if with_name and regions is None:
         raise ValueError("Provide `regions` with `with_name=True`")
     if with_name:
-        ns = pd.Series(regions.data.Name, name="_Name")
+        ns = pd.Series(regions.data.DisplayName, name="_Name")
         df = df.join(ns, how="inner")
     df.write_csv(path)
 
