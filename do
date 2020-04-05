@@ -24,15 +24,21 @@ def update_CSSE(args):
         f"Saved CSSE to {dest}, last day is {csse.index.get_level_values(1).max()}"
     )
 
+
 def update_foretold(args):
     if args.config["foretold_channel"] == "SECRET":
-        log.warning("`foretold_channel` in the config file is not set to non-default value.")
+        log.warning(
+            "`foretold_channel` in the config file is not set to non-default value."
+        )
     else:
         log.info("Downloading and parsing foretold")
-        foretold = epimodel.imports.import_foretold(args.rds, args.config['foretold_channel'])
-        dest = Path(args.config['data_dir']) / "foretold.csv"
+        foretold = epimodel.imports.import_foretold(
+            args.rds, args.config["foretold_channel"]
+        )
+        dest = Path(args.config["data_dir"]) / "foretold.csv"
         foretold.to_csv(dest)
         log.info(f"Saved Foretold to {dest}")
+
 
 def web_export(args):
     ex = WebExport(comment=args.comment)
