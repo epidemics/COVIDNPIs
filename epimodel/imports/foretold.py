@@ -25,6 +25,7 @@ SKIP_NAMES = {
     "wuhan",
 }
 
+
 def calculations(pa):
     pred_xs = np.array(pa["value"]["floatCdf"]["xs"])
     pred_ys = np.array(pa["value"]["floatCdf"]["ys"])
@@ -32,6 +33,7 @@ def calculations(pa):
     mean = np.dot(pdf, pred_xs)
     var = np.dot(pdf, np.abs(pred_xs - mean) ** 2)
     return mean, var
+
 
 def import_foretold(rds: RegionDataset, foretold_channel: str):
 
@@ -48,10 +50,10 @@ def import_foretold(rds: RegionDataset, foretold_channel: str):
         pa = p["node"]["previousAggregate"]
         if not pa:
             continue
-        name = re.sub("^@locations/n-", "", p["node"]["labelSubject"]).replace("-"," ")
+        name = re.sub("^@locations/n-", "", p["node"]["labelSubject"]).replace("-", " ")
         if name in SKIP_NAMES:
-                skipped.add(name)
-                continue
+            skipped.add(name)
+            continue
         rs = rds.find_all_by_name(name)
         if len(rs) < 1:
             not_found.add(name)
@@ -72,8 +74,8 @@ def import_foretold(rds: RegionDataset, foretold_channel: str):
     if conflicts:
         log.info(f"Multiple matches for {len(conflicts)} records: {conflicts!r}")
 
-    df = pd.DataFrame(data, columns=['Code', 'Date', 'Mean', 'Variance'])
-    df.set_index('Code', inplace=True)
+    df = pd.DataFrame(data, columns=["Code", "Date", "Mean", "Variance"])
+    df.set_index("Code", inplace=True)
     return df.sort_values(["Code", "Date"])
 
 
@@ -110,6 +112,7 @@ def fetch_foretold(channel_id: str) -> bytes:
     if response.status_code != 200:
         raise RuntimeError(f"Error fetching data, status code: {response.status_code}")
     return response.content
+
 
 QUERY = """query measurables(
   $measurableIds: [String!]
@@ -181,5 +184,3 @@ QUERY = """query measurables(
     __typename
   }
 }"""
-
-
