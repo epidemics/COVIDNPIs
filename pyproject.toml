@@ -18,6 +18,8 @@ jupyter = "^1.0.0"
 pyro-ppl = "^1.3.0"
 seaborn = "^0.10.0"
 plotly = "^4.6.0"
+pyyaml = "^5.3"
+requests = "^2.23"
 
 [tool.poetry.dev-dependencies]
 pytest = "^5.4.1"
