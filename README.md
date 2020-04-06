@@ -19,7 +19,7 @@ A data library and a toolkit for modelling COVID-19 epidemics.
 * Clone the [epimodel-covid-data](https://github.com/epidemics/epimodel-covid-data/) repository. For convenience, I recommend cloninig it inside the `epimodel` repo directory as `data`.
 
 ```sh
-## Clone the repositories
+## Clone the repositories (or use their https://... withou github login)
 git clone git@github.com:epidemics/epimodel.git
 cd epimodel
 git clone git@github.com:epidemics/epimodel-covid-data.git data
@@ -51,7 +51,7 @@ print(cz.Name)
 # TODO: attributes for tree-structure access
 
 # Load John Hopkins CSSE dataset with our helper (creates indexes etc.)
-csse = read_csv('data/CSSE.csv')
+csse = read_csv('data/johns-hopkins.csv')
 print(csse.loc[('CZ', "2020-03-28")])
 ```
 
