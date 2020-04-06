@@ -6,6 +6,8 @@ import numpy as np
 
 from ..regions import RegionDataset
 
+from urllib.error import HTTPError
+
 log = logging.getLogger(__name__)
 
 
@@ -68,7 +70,7 @@ def import_johns_hopkins(rds: RegionDataset, prefix=None):
                     f"{prefix}/time_series_covid19_{n.lower()}_{r}.csv", dtype="U",
                     usecols=lambda x: x not in DROP_COLUMNS[r]
                 )
-            except:
+            except (HTTPError, FileNotFoundError) as e:
                 log.info(f"Category '{n}' not found for regional record {r}")
                 continue
 
@@ -76,15 +78,12 @@ def import_johns_hopkins(rds: RegionDataset, prefix=None):
 
             rd = rd.apply(pd.to_numeric, downcast="float", errors="ignore")
 
-            try:
-                rd = (rd
-                    .groupby(by=["Country/Region","Province/State"])
-                    .agg("sum"))
-                rd.reset_index(inplace=True)
-                d = pd.concat([d,rd])
-            except:
-                log.info(f"Regional record {r} does not have matching columns with the global record")
-                continue
+            rd = (rd
+                .groupby(by=["Country/Region","Province/State"])
+                .agg("sum"))
+            rd.reset_index(inplace=True)
+            d = pd.concat([d,rd])
+            #n.b. this yields unexpected results if the date columns in the global record do not match those in the US record
         
         d.reset_index(inplace=True)
 
