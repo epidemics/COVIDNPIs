@@ -26,9 +26,13 @@ git clone git@github.com:epidemics/epimodel-covid-data.git data
 
 ## Install packages
 poetry install  # Best run it outside virtualenv - poetry will create its own
-## Or, if using conda, install (a likely list): pandas pymc3 unidecode jupyter
+# Alternatively, you can also install PyMC3 or Pyro, and jupyter (in both cases):
+poetry install -E pymc3
+poetry install -E pyro
 
-poetry shell # One way to enter the virtualenv if not active already
+## Or, if using conda, install (a likely list): pandas pymc3 unidecode jupyter ...
+
+poetry shell # One way to enter the virtualenv (if not active already)
 poetry run jupyter notebook  # For example
 ```
 
