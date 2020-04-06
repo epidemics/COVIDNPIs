@@ -28,7 +28,7 @@ SUBDIVIDED_COUNTRIES = {"CA", "US", "CN", "AU"}
 GITHUB_PREFIX = "https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/"
 
 
-def import_CSSE(rds: RegionDataset, prefix=None):
+def import_johns_hopkins(rds: RegionDataset, prefix=None):
     """
     Read a DataFrame of John Hopkins data from given directory or URL.
     

@@ -15,9 +15,19 @@ from epimodel.gleam import Batch
 log = logging.getLogger("gleambatch")
 
 
-def update_CSSE(args):
+def import_countermeasures(args):
+    log.info(f"Importing countermeasures from {args.SRC} into {args.DEST} ...")
+    cms = epimodel.imports.import_countermeasures_csv(args.rds, args.SRC)
+    cms.to_csv(args.DEST)
+    log.info(
+        f"Saved countermeasures to {args.DEST}, {len(cms.columns)} features, "
+        f"last day is {cms.index.get_level_values(1).max()}"
+    )
+
+
+def update_johns_hopkins(args):
     log.info("Downloading and parsing CSSE ...")
-    csse = epimodel.imports.import_CSSE(args.rds)
+    csse = epimodel.imports.import_johns_hopkins(args.rds)
     dest = Path(args.config["data_dir"]) / "CSSE.csv"
     csse.to_csv(dest)
     log.info(
@@ -36,7 +46,7 @@ def update_foretold(args):
             args.rds, args.config["foretold_channel"]
         )
         dest = Path(args.config["data_dir"]) / "foretold.csv"
-        foretold.to_csv(dest, float_format='%.7g')
+        foretold.to_csv(dest, float_format="%.7g")
         log.info(f"Saved Foretold to {dest}")
 
 
@@ -73,8 +83,8 @@ def create_parser():
     ap.add_argument("-C", "--config", default="config.yaml", help="Config file.")
     sp = ap.add_subparsers(title="subcommands", required=True, dest="cmd")
 
-    upp = sp.add_parser("update_CSSE", help="Fetch data from John Hopkins CSSE.")
-    upp.set_defaults(func=update_CSSE)
+    upp = sp.add_parser("update_johns_hopkins", help="Fetch data from Johns Hopkins CSSE.")
+    upp.set_defaults(func=update_johns_hopkins)
 
     upf = sp.add_parser("update_foretold", help="Fetch data from Foretold.")
     upf.set_defaults(func=update_foretold)
@@ -101,6 +111,13 @@ def create_parser():
         help="Channel to upload to ('main' for main site).",
     )
     uplp.set_defaults(func=web_upload)
+
+    iftp = sp.add_parser(
+        "import_countermeasures", help="Import one CSV file from countermeasures DB."
+    )
+    iftp.add_argument("SRC", help="Input CSV.")
+    iftp.add_argument("DEST", help="Output CSV.")
+    iftp.set_defaults(func=import_countermeasures)
 
     return ap
 
