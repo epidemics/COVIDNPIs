@@ -25,6 +25,14 @@ SKIP_NAMES = {
     "wuhan",
 }
 
+SUBST_NAMES = {
+    "united kingdon": "United Kingdom",
+    "ivory coast": "Cote d'Ivoire",
+}
+
+QUANTILES = np.arange(0.01, 1.0, 0.01)
+QUANTILE_COLS = [f"{x:.2f}" for x in QUANTILES]
+
 
 def calculations(pa):
     pred_xs = np.array(pa["value"]["floatCdf"]["xs"])
@@ -32,7 +40,9 @@ def calculations(pa):
     pdf = np.concatenate((pred_ys[1:], [1.0])) - pred_ys
     mean = np.dot(pdf, pred_xs)
     var = np.dot(pdf, np.abs(pred_xs - mean) ** 2)
-    return mean, var
+    # Quantiles, assumes both pred_ys, pred_xs are sorted
+    qvals = [pred_xs[sum(pred_ys < qprob)] for qprob in QUANTILES]
+    return [mean, var] + qvals
 
 
 def import_foretold(rds: RegionDataset, foretold_channel: str):
@@ -51,6 +61,8 @@ def import_foretold(rds: RegionDataset, foretold_channel: str):
         if not pa:
             continue
         name = re.sub("^@locations/n-", "", p["node"]["labelSubject"]).replace("-", " ")
+        if name in SUBST_NAMES:
+            name = SUBST_NAMES[name]
         if name in SKIP_NAMES:
             skipped.add(name)
             continue
@@ -74,7 +86,9 @@ def import_foretold(rds: RegionDataset, foretold_channel: str):
     if conflicts:
         log.info(f"Multiple matches for {len(conflicts)} records: {conflicts!r}")
 
-    df = pd.DataFrame(data, columns=["Code", "Date", "Mean", "Variance"])
+    df = pd.DataFrame(
+        data, columns=["Code", "Date", "Mean", "Variance", *QUANTILE_COLS]
+    )
     df.set_index("Code", inplace=True)
     return df.sort_values(["Code", "Date"])
 
