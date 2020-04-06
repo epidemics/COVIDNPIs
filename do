@@ -36,7 +36,7 @@ def update_foretold(args):
             args.rds, args.config["foretold_channel"]
         )
         dest = Path(args.config["data_dir"]) / "foretold.csv"
-        foretold.to_csv(dest)
+        foretold.to_csv(dest, float_format='%.7g')
         log.info(f"Saved Foretold to {dest}")
 
 
