@@ -12,10 +12,10 @@ jobs:
         uses: actions/setup-python@v1
         with:
           python-version: 3.7
-      - name: Black Code Formatter
-        uses: lgeiger/black-action@v1.0.1
-        with:
-          args: ". --check --exclude get-poetry.py"
+      - name: Install dependencies
+        run: python -m pip install --upgrade black
+      - name: Check with Black
+        run: black . --check --exclude get-poetry.py
 
   Test:
     needs: Linting
