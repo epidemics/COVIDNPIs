@@ -1,38 +1,54 @@
 name: Check and test
 
-on: [push]
+on: [push, pull_request]
 
 jobs:
-  checks:
-    name: check
+  Linting:
     runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@master
-      - uses: actions/setup-python@master
+      - uses: actions/checkout@v2
+      - name: Set up Python 3.7
+        uses: actions/setup-python@v1
         with:
-          python-version: "3.7"
+          python-version: 3.7
       - name: Black Code Formatter
         uses: lgeiger/black-action@v1.0.1
         with:
           args: ". --check"
 
-  tests:
-    name: test
+  Test:
+    needs: Linting
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [3.6, 3.7, 3.8]
+
     steps:
-      - uses: actions/checkout@master
-      - uses: actions/setup-python@master
+      - uses: actions/checkout@v2
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v1
         with:
-          python-version: "3.7"
-      - uses: abatilo/actions-poetry@v1.5.0
-        name: poetry install
+          python-version: ${{ matrix.python-version }}
+      - name: Get full python version
+        id: full-python-version
+        run: |
+          echo ::set-output name=version::$(python -c "import sys; print('-'.join(str(v) for v in sys.version_info))")
+      - name: Install and set up Poetry
+        run: |
+          python get-poetry.py --preview -y
+          source $HOME/.poetry/env
+          poetry config virtualenvs.in-project true
+      - name: Set up cache
+        uses: actions/cache@v1
         with:
-          poetry_version: 1.0
-          python_version: 3.7
-          args: install
-      - uses: abatilo/actions-poetry@v1.5.0
-        name: pytest
-        with:
-          poetry_version: 1.0
-          python_version: 3.7
-          args: run python -m pytest
+          path: .venv
+          key: venv-${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-${{ hashFiles('**/poetry.lock') }}
+      - name: Install dependencies
+        run: |
+          source $HOME/.poetry/env
+          poetry install -E 'pymc3 pyro'
+      - name: Test
+        run: |
+          source $HOME/.poetry/env
+          poetry run pytest
