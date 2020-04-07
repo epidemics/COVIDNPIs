@@ -8,18 +8,18 @@ def shift_right(t, dist, axis, pad=0.0):
     """
     assert dist >= 0
     t = T.as_tensor(t)
-    s = list(t.shape.eval())
-    axis = axis % len(s)
-    dist = min(dist, s[axis])
+    if dist == 0:
+        return t
+    p = T.ones_like(t) * pad
 
-    lpad = np.full(s[:axis] + [dist] + s[axis + 1 :], pad)
+    # Slices
+    ts = [slice(None)] * t.ndim
+    ts[axis] = slice(None, -dist)  # only for dim > 0
 
-    i2 = [slice(None)] * len(s)
-    i2[axis] = slice(None, s[axis] - dist)
+    ps = [slice(None)] * t.ndim
+    ps[axis] = slice(None, dist)
 
-    print(lpad, i2)
-    res = T.concatenate((lpad, t[i2]), axis=axis)
-    assert all(res.shape.eval() == t.shape.eval())
+    res = T.concatenate((p[ps], t[ts]), axis=axis)
     return res
 
 
