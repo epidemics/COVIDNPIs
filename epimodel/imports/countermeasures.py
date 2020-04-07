@@ -9,7 +9,7 @@ from ..regions import RegionDataset
 
 log = logging.getLogger(__name__)
 
-SKIP_NAMES = {"US", "European Union", "Kosovo", "Palestine"}
+SKIP_NAMES = {"US", "European Union", "Kosovo", "Palestine", "North Cyprus"}
 
 SUBST_NAMES = {"Macau": "China:Macau", "Hong Kong": "China:Hong Kong"}
 
