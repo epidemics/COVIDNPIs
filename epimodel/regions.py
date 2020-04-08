@@ -1,4 +1,5 @@
 import datetime
+import enum
 import logging
 import re
 import weakref
@@ -19,6 +20,8 @@ class Region:
     def __init__(self, rds, code):
         self._rds = weakref.ref(rds)
         self._code = code
+        self._parent = None
+        self._children = {}
         r = rds.data.loc[code]
         names = [r.Name, r.OfficialName]
         if not pd.isnull(r.OtherNames):
@@ -45,42 +48,104 @@ class Region:
         return f"<{self.__class__.__name__} {self._code} {self.Name} ({self.Level})>"
 
     def __setattr__(self, name, val):
+        """Forbid direct writes to anything but _variables."""
         if name.startswith("_"):
             super().__setattr__(name, val)
         else:
             raise AttributeError(
-                f"Setting attribute {name} on {self.__class__.__name__} not allowed"
-                " (use indexing)."
+                f"Setting attribute {name} on {self!r} not allowed (use rds.data directly)."
             )
+
+    @property
+    def Code(self):
+        return self._code
+
+    @property
+    def parent(self):
+        return self._parent
+
+    @property
+    def children(self):
+        return self._children
+
+    def _region_prop(self, name):
+        """Return the Region corresponding to code in `self[name]` (None if that is None)."""
+        rds = self._rds()
+        assert rds is not None
+        cid = rds.data.at[self._code, name]
+        if pd.isnull(cid) or cid == "":
+            return None
+        return rds[cid]
+
+    @property
+    def continent(self):
+        return self._region_prop("ContinentCode")
+
+    @property
+    def subregion(self):
+        return self._region_prop("SubregionCode")
+
+    @property
+    def country(self):
+        return self._region_prop("CountryCode")
+
+    @property
+    def subdivision(self):
+        return self._region_prop("SubdivisionCode")
+
+
+class Level(enum.Enum):
+    """
+    Region levels in the dataset. The numbers are NOT canonical, only the names are.
+
+    Ordered by "size" - world is the largest.
+    """
+
+    gleam_basin = 1
+    subdivision = 2
+    country = 3
+    subregion = 4
+    continent = 5
+    world = 6
+
+    def __ge__(self, other):
+        if self.__class__ is other.__class__:
+            return self.value >= other.value
+        return NotImplemented
+
+    def __gt__(self, other):
+        if self.__class__ is other.__class__:
+            return self.value > other.value
+        return NotImplemented
+
+    def __le__(self, other):
+        if self.__class__ is other.__class__:
+            return self.value <= other.value
+        return NotImplemented
+
+    def __lt__(self, other):
+        if self.__class__ is other.__class__:
+            return self.value < other.value
+        return NotImplemented
 
 
 class RegionDataset:
     """
+    A set of regions and their attributes, with a hierarchy. A common index for most data files.
 
     The Id is:
-    # EARTH - root node
-    # Continent?
-    US - ISOa2 code, Level="country"
+    W     - The world, root node, Level="world"
+    W-AS  - Prefixed ISO continent code, Level="continent"
+    (TBD) - Subregion code, Level="subregion"
+    US    - ISOa2 code, Level="country"
     US-CA - ISO 3166-2 state/province code, Level="subdivision"
+    G-AAA - Prefixed IANA code, used for GLEAM basins, Level="gleam_basin"
     """
 
     # Separating names in name list and column name from date
     SEP = "|"
 
-    LEVELS = pd.CategoricalDtype(
-        pd.Index(
-            [
-                "world",
-                "continent",
-                "subregion",
-                "country",
-                "subdivision",
-                "gleam_basin",
-            ],
-            dtype="U",
-        ),
-        ordered=True,
-    )
+    LEVELS = pd.CategoricalDtype(pd.Index(list(Level), dtype="U",), ordered=True,)
 
     COLUMN_TYPES = OrderedDict(
         #        Parent="string",
@@ -125,19 +190,25 @@ class RegionDataset:
         self._code_index = {}
 
     @classmethod
-    def load(cls, path):
+    def load(cls, *paths):
         """
-        Create a RegionDataset from a given CSV.
+        Create a RegionDataset and its Regions from the given CSV.
+
+        Optionally also loads other CSVs with additional regions (e.g. GLEAM regions)
         """
         s = cls()
-        data = pd.read_csv(
-            path,
-            dtype=cls.COLUMN_TYPES,
-            index_col="Code",
-            na_values=[""],
-            keep_default_na=False,
-        )
-        s.data = s.data.append(data)
+        for path in paths:
+            log.debug("Loading regions from {path!r} ...")
+            data = pd.read_csv(
+                path,
+                dtype=cls.COLUMN_TYPES,
+                index_col="Code",
+                na_values=[""],
+                keep_default_na=False,
+            )
+            # Convert Level to enum
+            data.Level = data.Level.map(lambda name: Level[name])
+            s.data = s.data.append(data)
         s.data.sort_index()
         s._rebuild_index()
         return s
@@ -187,9 +258,12 @@ class RegionDataset:
             if r.OfficialName in names:
                 names.remove(r.OfficialName)
             self.data.loc[r.Code, "OtherNames"] = self.SEP.join(names)
-        # Write non-generated columns
-        columns = self.COLUMN_TYPES.keys()
-        self.data[columns].to_csv(path, index_label="Code")
+        # Write only non-generated columns
+        df = self.data[self.COLUMN_TYPES.keys()]
+        # Convert Level to names
+        df.Level = df.Level.map(lambda l: l.name)
+        # Write
+        df.to_csv(path, index_label="Code")
 
     def _rebuild_index(self):
         """Rebuilds the indexes and ALL Region objects!"""
@@ -199,14 +273,17 @@ class RegionDataset:
         self.data["AllNames"] = pd.Series(dtype=object)
         self.data["Region"] = pd.Series(dtype=object)
         self.data["DisplayName"] = pd.Series(dtype=object)
-        self.data["Code"] = self.data.index
         conflicts = []
+
+        # Create Regions
         for ri in self.data.index:
             reg = Region(self, ri)
             for n in set(normalize_name(name) for name in reg.AllNames):
                 self._name_index.setdefault(n, list()).append(reg)
             assert ri not in self._code_index
             self._code_index[ri] = reg
+
+        # Unify names in index and find conflicts
         for k in self._name_index:
             self._name_index[k] = list(set(self._name_index[k]))
             if len(self._name_index[k]) > 1:
@@ -215,3 +292,20 @@ class RegionDataset:
             log.info(
                 f"Name index has {len(conflicts)} potential conflicts: {conflicts!r}"
             )
+
+        # Add parent/children relations
+        for r in self.regions:
+            parent = None
+            if parent is None and r.Level <= Level.gleam_basin:
+                parent = r.subdivision
+            if parent is None and r.Level <= Level.subdivision:
+                parent = r.country
+            if parent is None and r.Level <= Level.country:
+                parent = r.subregion
+            if parent is None and r.Level <= Level.subregion:
+                parent = r.continent
+            if parent is None and r.Level <= Level.world:
+                parent = self["W"]
+            print(r, parent)
+            r._parent = parent
+            parent._children.add(r)
