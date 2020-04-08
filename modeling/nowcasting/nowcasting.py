@@ -21,6 +21,8 @@ def exp_model(data_x, data_y, date, days_prev, days_to_pred, actual_pred=None):
 
     data_xp = np.linspace(days_prev + 1, days_prev + days_to_pred, days_to_pred)
 
-    pred_next_week = [[datelist[i], int(func(data_xp[i], *popt))] for i in range(days_to_pred)]
+    pred_next_week = [
+        [datelist[i], int(func(data_xp[i], *popt))] for i in range(days_to_pred)
+    ]
 
     return pred_next_week

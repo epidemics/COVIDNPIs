@@ -4,8 +4,8 @@ from scipy.optimize import curve_fit
 from epimodel import RegionDataset, read_csv
 from modeling.nowcasting.nowcasting import exp_model
 
-rds = RegionDataset.load('../data/regions.csv')
-csse_ds = read_csv('../data/CSSE.csv')
+rds = RegionDataset.load("../data/regions.csv")
+csse_ds = read_csv("../data/CSSE.csv")
 
 
 def exp_csse(data, actual_pred=None, date=None):
@@ -19,7 +19,7 @@ def exp_csse(data, actual_pred=None, date=None):
 
     for region in regions:
         reg_data = data.loc[region]
-        reg_data_prev = reg_data[-1 * days_prev:]
+        reg_data_prev = reg_data[-1 * days_prev :]
         data_y = reg_data_prev[case_to_pred].to_list()
 
         if actual_pred is None:
@@ -34,7 +34,9 @@ def exp_csse(data, actual_pred=None, date=None):
         pred_next_week = None
 
         try:
-            pred_next_week = exp_model(data_x, data_y, date, days_prev, days_to_pred, actual_pred)
+            pred_next_week = exp_model(
+                data_x, data_y, date, days_prev, days_to_pred, actual_pred
+            )
         except ValueError:
             print(region, "data has NaNs")
         except Exception as inst:
