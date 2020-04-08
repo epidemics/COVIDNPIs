@@ -16,12 +16,47 @@ from .utils import normalize_name
 log = logging.getLogger(__name__)
 
 
+class Level(enum.Enum):
+    """
+    Region levels in the dataset. The numbers are NOT canonical, only the names are.
+
+    Ordered by "size" - world is the largest.
+    """
+
+    gleam_basin = 1
+    subdivision = 2
+    country = 3
+    subregion = 4
+    continent = 5
+    world = 6
+
+    def __ge__(self, other):
+        if self.__class__ is other.__class__:
+            return self.value >= other.value
+        return NotImplemented
+
+    def __gt__(self, other):
+        if self.__class__ is other.__class__:
+            return self.value > other.value
+        return NotImplemented
+
+    def __le__(self, other):
+        if self.__class__ is other.__class__:
+            return self.value <= other.value
+        return NotImplemented
+
+    def __lt__(self, other):
+        if self.__class__ is other.__class__:
+            return self.value < other.value
+        return NotImplemented
+
+
 class Region:
     def __init__(self, rds, code):
         self._rds = weakref.ref(rds)
         self._code = code
         self._parent = None
-        self._children = {}
+        self._children = set()
         r = rds.data.loc[code]
         names = [r.Name, r.OfficialName]
         if not pd.isnull(r.OtherNames):
@@ -32,9 +67,9 @@ class Region:
         rds.data.at[code, "DisplayName"] = self.get_display_name()
 
     def get_display_name(self):
-        if self.Level == "subdivision":
+        if self.Level == Level.subdivision:
             return f"{self.Name}, {self.CountryCode}"
-        if self.Level == "gleam_basin" or self.Level == "city":
+        if self.Level == Level.gleam_basin:
             return f"{self.Name}, {self.SubdivisionCode}"
         return self.Name
 
@@ -94,41 +129,6 @@ class Region:
         return self._region_prop("SubdivisionCode")
 
 
-class Level(enum.Enum):
-    """
-    Region levels in the dataset. The numbers are NOT canonical, only the names are.
-
-    Ordered by "size" - world is the largest.
-    """
-
-    gleam_basin = 1
-    subdivision = 2
-    country = 3
-    subregion = 4
-    continent = 5
-    world = 6
-
-    def __ge__(self, other):
-        if self.__class__ is other.__class__:
-            return self.value >= other.value
-        return NotImplemented
-
-    def __gt__(self, other):
-        if self.__class__ is other.__class__:
-            return self.value > other.value
-        return NotImplemented
-
-    def __le__(self, other):
-        if self.__class__ is other.__class__:
-            return self.value <= other.value
-        return NotImplemented
-
-    def __lt__(self, other):
-        if self.__class__ is other.__class__:
-            return self.value < other.value
-        return NotImplemented
-
-
 class RegionDataset:
     """
     A set of regions and their attributes, with a hierarchy. A common index for most data files.
@@ -145,7 +145,7 @@ class RegionDataset:
     # Separating names in name list and column name from date
     SEP = "|"
 
-    LEVELS = pd.CategoricalDtype(pd.Index(list(Level), dtype="U",), ordered=True,)
+    LEVELS = pd.CategoricalDtype(pd.Index(list(Level), dtype="O",), ordered=True,)
 
     COLUMN_TYPES = OrderedDict(
         #        Parent="string",
@@ -197,11 +197,12 @@ class RegionDataset:
         Optionally also loads other CSVs with additional regions (e.g. GLEAM regions)
         """
         s = cls()
+        cols = dict(cls.COLUMN_TYPES, Level="U")
         for path in paths:
             log.debug("Loading regions from {path!r} ...")
             data = pd.read_csv(
                 path,
-                dtype=cls.COLUMN_TYPES,
+                dtype=cols,
                 index_col="Code",
                 na_values=[""],
                 keep_default_na=False,
@@ -224,12 +225,23 @@ class RegionDataset:
         """
         return self._code_index[code.upper()]
 
+    def get(self, code, default=None):
+        """
+        Returns the Region corresponding to code, or `default`.
+        """
+        try:
+            return self[code]
+        except KeyError:
+            return default
+
     def find_all_by_name(self, s, levels=None):
         """
         Return all Regions with some matching names (filtering on levels).
         """
-        if isinstance(levels, str):
-            levels = [levels]
+        if levels is not None:
+            if isinstance(levels, Level):
+                levels = [levels]
+            assert all(isinstance(x, Level) for x in levels)
         rs = tuple(self._name_index.get(normalize_name(s), []))
         if levels is not None:
             rs = tuple(r for r in rs if r.Level in levels)
@@ -304,8 +316,8 @@ class RegionDataset:
                 parent = r.subregion
             if parent is None and r.Level <= Level.subregion:
                 parent = r.continent
-            if parent is None and r.Level <= Level.world:
-                parent = self["W"]
-            print(r, parent)
+            if parent is None and r.Level < Level.world:
+                parent = self.get("W", None)
             r._parent = parent
-            parent._children.add(r)
+            if parent is not None:
+                parent._children.add(r)

@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 import tqdm
 
-from ..regions import RegionDataset
+from ..regions import RegionDataset, Level
 
 log = logging.getLogger(__name__)
 
@@ -30,17 +30,17 @@ def import_countermeasures_csv(rds: RegionDataset, path):
             if country in SKIP_NAMES or prov in SKIP_NAMES:
                 skipped.add(name)
                 return None
-            c = rds.find_one_by_name(country, levels="country")
+            c = rds.find_one_by_name(country, levels=Level.country)
             ps = [
                 p
-                for p in rds.find_all_by_name(prov, levels="subdivision")
+                for p in rds.find_all_by_name(prov, levels=Level.subdivision)
                 if p.CountryCode == c.Code
             ]
             if len(ps) != 1:
                 raise Exception(f"Unique region for {name} not found: {ps}")
             return ps[0].Code
         else:
-            return rds.find_one_by_name(name, levels="country").Code
+            return rds.find_one_by_name(name, levels=Level.country).Code
 
     df = pd.read_csv(
         path,

@@ -4,7 +4,7 @@ import dateutil
 import pandas as pd
 import numpy as np
 
-from ..regions import RegionDataset
+from ..regions import RegionDataset, Level
 
 from urllib.error import HTTPError
 
@@ -107,7 +107,7 @@ def import_johns_hopkins(rds: RegionDataset, prefix=None):
             if prov in SKIP_NAMES or country in SKIP_NAMES:
                 skipped.add((country, prov))
                 continue
-            rs = rds.find_all_by_name(country, levels="country")
+            rs = rds.find_all_by_name(country, levels=Level.country)
             if len(rs) > 1:
                 conflicts.add((country, prov))
                 continue
@@ -121,7 +121,7 @@ def import_johns_hopkins(rds: RegionDataset, prefix=None):
                 codes[i] = c
             else:
                 # Add province
-                rs = rds.find_all_by_name(prov, levels="subdivision")
+                rs = rds.find_all_by_name(prov, levels=Level.subdivision)
                 rs = [r for r in rs if r.CountryCode == c]
                 if len(rs) < 1:
                     not_found.add((country, prov))
