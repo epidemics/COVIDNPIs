@@ -6,6 +6,8 @@ import numpy as np
 
 from ..regions import RegionDataset
 
+from urllib.error import HTTPError
+
 log = logging.getLogger(__name__)
 
 
@@ -25,10 +27,34 @@ SUBSTITUTE_PROVINCE = {}
 
 SUBDIVIDED_COUNTRIES = {"CA", "US", "CN", "AU"}
 
+SUBDIVIDED_DATASETS = ["US"]  # datasets with more granular data
+
+DROP_COLUMNS = {
+    "US": [
+        "UID",
+        "iso2",
+        "iso3",
+        "code3",
+        "FIPS",
+        "Admin2",
+        "Combined_Key",
+        "Population",
+        "Lat",
+        "Long",
+        "Long_",
+    ],
+    "global": ["Lat", "Long"],
+}
+
+SUBSTITUTE_COLUMNS = {
+    "US": {"Province_State": "Province/State", "Country_Region": "Country/Region"},
+    "global": {},
+}
+
 GITHUB_PREFIX = "https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/"
 
 
-def import_CSSE(rds: RegionDataset, prefix=None):
+def import_johns_hopkins(rds: RegionDataset, prefix=None):
     """
     Read a DataFrame of John Hopkins data from given directory or URL.
     
@@ -42,8 +68,34 @@ def import_CSSE(rds: RegionDataset, prefix=None):
     ds = []
     for n in ["Recovered", "Confirmed", "Deaths"]:
         d = pd.read_csv(
-            f"{prefix}/time_series_covid19_{n.lower()}_global.csv", dtype="U",
+            f"{prefix}/time_series_covid19_{n.lower()}_global.csv",
+            dtype="U",
+            usecols=lambda x: x not in DROP_COLUMNS["global"],
         )
+        d = d.apply(pd.to_numeric, downcast="float", errors="ignore")
+
+        for r in SUBDIVIDED_DATASETS:
+            try:
+                rd = pd.read_csv(
+                    f"{prefix}/time_series_covid19_{n.lower()}_{r}.csv",
+                    dtype="U",
+                    usecols=lambda x: x not in DROP_COLUMNS[r],
+                )
+            except (HTTPError, FileNotFoundError) as e:
+                log.info(f"Category '{n}' not found for regional record {r}")
+                continue
+
+            rd.rename(columns=SUBSTITUTE_COLUMNS[r], inplace=True)
+
+            rd = rd.apply(pd.to_numeric, downcast="float", errors="ignore")
+
+            rd = rd.groupby(by=["Country/Region", "Province/State"]).agg("sum")
+            rd.reset_index(inplace=True)
+            d = pd.concat([d, rd])
+            # n.b. this yields unexpected results if the date columns in the global record do not match those in the US record
+
+        d.reset_index(inplace=True)
+
         codes = np.full(len(d), "", dtype="U64")
 
         for i, r in d.iterrows():
@@ -80,12 +132,12 @@ def import_CSSE(rds: RegionDataset, prefix=None):
                 codes[i] = rs[0].Code
 
         d.index = pd.Index(codes, name="Code")
-        for col in ["Country/Region", "Province/State", "Lat", "Long"]:
+
+        for col in ["Country/Region", "Province/State", "index"]:
             del d[col]
         d.columns = pd.DatetimeIndex(pd.to_datetime(d.columns, utc=True), name="Date")
-        ds.append(
-            pd.to_numeric(d.loc[d.index != ""].stack(), downcast="float").to_frame(n)
-        )
+
+        ds.append(d.loc[d.index != ""].stack().to_frame(n))
 
     if skipped:
         log.info(f"Skipped {len(skipped)} records: {skipped!r}")

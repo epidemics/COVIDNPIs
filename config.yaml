@@ -1,6 +1,9 @@
 # Path to epimodel-data directory
 data_dir: data
 
+# Replace with the actual channel (non-public)
+foretold_channel: SECRET
+
 ### GLEAM
 
 # data/sims subdirectory of gleamviz

@@ -186,7 +186,7 @@ class RegionDataset:
                 names.remove(r.Name)
             if r.OfficialName in names:
                 names.remove(r.OfficialName)
-            r["OtherNames"] = self.SEP.join(names)
+            self.data.loc[r.Code, "OtherNames"] = self.SEP.join(names)
         # Write non-generated columns
         columns = self.COLUMN_TYPES.keys()
         self.data[columns].to_csv(path, index_label="Code")

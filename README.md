@@ -19,11 +19,21 @@ A data library and a toolkit for modelling COVID-19 epidemics.
 * Clone the [epimodel-covid-data](https://github.com/epidemics/epimodel-covid-data/) repository. For convenience, I recommend cloninig it inside the `epimodel` repo directory as `data`.
 
 ```sh
+## Clone the repositories (or use their https://... withou github login)
 git clone git@github.com:epidemics/epimodel.git
 cd epimodel
-poetry install
 git clone git@github.com:epidemics/epimodel-covid-data.git data
-jupyter notebook  # For example
+
+## Install packages
+poetry install  # Best run it outside virtualenv - poetry will create its own
+# Alternatively, you can also install PyMC3 or Pyro, and jupyter (in both cases):
+poetry install -E pymc3
+poetry install -E pyro
+
+## Or, if using conda, install (a likely list): pandas pymc3 unidecode jupyter ...
+
+poetry shell # One way to enter the virtualenv (if not active already)
+poetry run jupyter notebook  # For example
 ```
 
 ## Basic usage
@@ -41,7 +51,7 @@ print(cz.Name)
 # TODO: attributes for tree-structure access
 
 # Load John Hopkins CSSE dataset with our helper (creates indexes etc.)
-csse = read_csv('data/CSSE.csv')
+csse = read_csv('data/johns-hopkins.csv')
 print(csse.loc[('CZ', "2020-03-28")])
 ```
 
