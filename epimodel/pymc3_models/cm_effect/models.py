@@ -5,17 +5,15 @@ import pymc3 as pm
 import theano.tensor as T
 from pymc3 import Model
 
-from ..utils import geom_convolution
+from epimodel.pymc3_models.utils import geom_convolution
 
 log = logging.getLogger(__name__)
 
 
 class BaseCMModel(Model):
-    def __init__(self, data, model=None, name=""):
+    def __init__(self, data, name="", model=None):
         super().__init__(name, model)
         self.d = data
-        self.prefix = "" if not (name) else (name + "_")
-        # TODO: Use prefix
         self.plot_trace_vars = set()
         self.trace = None
 
@@ -29,10 +27,26 @@ class BaseCMModel(Model):
         kws = {}
         if shape is not None:
             kws["shape"] = shape
-        v = pm.Lognormal(name, T.log(mean), log_var, **kws)
+        v = pm.Lognormal(name, mean, log_var, **kws)
         self.__dict__[name] = v
         if plot_trace:
             self.plot_trace_vars.add(name)
+        return v
+
+    def ObservedLN(self, name, mean, log_var, observed, plot_trace=True, shape=None):
+        """Create a lognorm variable, adding it to self as attribute."""
+        if name in self.__dict__:
+            log.warning(f"Variable {name} already present, overwriting def")
+
+        kws = {}
+        if shape is not None:
+            kws["shape"] = shape
+
+        v = pm.Lognormal(name, pm.math.log(mean), log_var, observed=observed, **kws)
+        self.__dict__[name] = v
+        if plot_trace:
+            self.plot_trace_vars.add(name)
+
         return v
 
     def Det(self, name, exp, plot_trace=True):
@@ -70,17 +84,22 @@ class BaseCMModel(Model):
     def run(self, N, chains=2, cores=2):
         print(self.check_test_point())
         with self:
-            self.trace = pm.sample(1000, chains=chains, cores=cores, init="adapt_diag")
+            self.trace = pm.sample(N, chains=chains, cores=cores, init="adapt_diag")
 
 
 class CMModelV2(BaseCMModel):
-    def __init__(self, data):
-        super().__init__(data)
+    def __init__(self, data, name="", model=None):
+        super().__init__(data, name, model)
+
+        self.CMDelayCut = 10
+        self.DelayProb = np.array([0.00, 0.01, 0.02, 0.06, 0.10, 0.13, 0.15, 0.15, 0.13, 0.10, 0.07, 0.05, 0.03])
+        self.DailyGrowthNoiseMultiplier = 0.1
+        self.ConfirmedCasesNoiseMultiplier = 0.4
 
     def build_reduction_lognorm(self, scale=0.1):
         """Less informative prior for CM reduction, allows values >1.0"""
         # [CM] How much countermeasures reduce growth rate
-        self.LN("CMReduction", 1.0, scale, shape=(self.nCMs,))
+        self.LN("CMReduction", 0, scale, shape=(self.nCMs,))
 
     def build_reduction_exp_gamma(self, alpha=0.5, beta=1.0):
         """CM reduction prior from ICL paper, only values <=1.0"""
@@ -94,14 +113,53 @@ class CMModelV2(BaseCMModel):
         """Build the part of model that predicts the growth rates."""
 
         # [] Baseline growth rate (wide prior OK, mean estimates ~10% daily growth)
-        self.LN("BaseGrowthRate", 1.2, 2.3)
+        self.LN("BaseGrowthRate", np.log(1.2), 2.0)
 
         # [region] Region growth rate
         # TODO: Estimate growth rate variance
-        self.LN("RegionGrowthRate", self.BaseGrowthRate, 0.3, shape=(self.nRs,))
+        self.LN("RegionGrowthRate", pm.math.log(self.BaseGrowthRate), 0.3, shape=(self.nRs,))
 
         # [region] Region unreliability as common scale multiplier of its:
         # * measurements (measurement unreliability)
         # * expected growth noise
         # TODO: Estimate good prior (but can be weak?)
-        self.LN("RegionScaleMult", 1.0, 2.3, shape=(self.nRs,))
+        self.LN("RegionScaleMult", 0.0, 1.0, shape=(self.nRs,))
+
+        try:
+            self.ActiveCMReduction = T.reshape(self.CMReduction, (1, self.nCMs, 1)) ** self.d.ActiveCMs
+        except AttributeError:
+            # TODO: make a custom exception class for not build error or similar
+            raise Exception("Missing CM Reduction Prior; have you built that?")
+
+        self.Det("GrowthReduction", T.prod(self.ActiveCMReduction, axis=1))
+        self.DelayedGrowthReduction = geom_convolution(self.GrowthReduction, self.DelayProb, axis=1)[:, self.CMDelayCut:]
+        self.Det("PredictedGrowth", T.reshape(self.RegionGrowthRate, (self.nRs, 1)) * self.DelayedGrowthReduction)
+        self.LN("DailyGrowth", pm.math.log(self.PredictedGrowth),
+                self.RegionScaleMult.reshape((self.nRs, 1)) * self.DailyGrowthNoiseMultiplier,
+                shape=(self.nRs, self.nDs - self.CMDelayCut),
+                )
+
+    def build_output_model(self):
+        self.LN("InitialSize", 0, 10, shape=(self.nRs,))
+        try:
+            self.Det("Size", T.reshape(self.InitialSize, (self.nRs, 1)) * self.DailyGrowth.cumprod(axis=1))
+        except AttributeError:
+            raise Exception("Missing CM Reduction Prior; have you built that?")
+
+        Observed = pm.Lognormal("Observed",
+                                pm.math.log(self.Size), self.RegionScaleMult.reshape((self.nRs, 1)) * self.ConfirmedCasesNoiseMultiplier,
+                                shape=(self.nRs, self.nDs - self.CMDelayCut),
+                                observed=self.d.Confirmed[:, self.CMDelayCut:])
+        # self.ObservedLN("Observed",
+        #         self.Size,
+        #         self.RegionScaleMult.reshape((self.nRs, 1)) * self.ConfirmedCasesNoiseMultiplier,
+        #         shape=(self.nRs, self.nDs - self.CMDelayCut),
+        #         observed=self.d.Confirmed[:, self.CMDelayCut:]
+        #         )
+
+    def build_all(self):
+        self.build_reduction_lognorm()
+        self.build_rates()
+        self.build_output_model()
+        log.info("Checking model test point")
+        log.info(f"\n{self.check_test_point()}\n")

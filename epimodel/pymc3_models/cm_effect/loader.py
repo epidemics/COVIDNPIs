@@ -24,7 +24,7 @@ class Loader:
         self.CMs = list(features)
 
         # Countries / regions
-        self.Rs = list(regions)
+        self.Rs = list(set(regions))
 
         self.rds = RegionDataset.load(self.data_dir / "regions.csv")
 
@@ -45,6 +45,9 @@ class Loader:
 
         self.ActiveCMs = None
 
+        self.Rs = self.filter_regions(regions, min_final_jh=101)
+
+
         self.update()
 
     def update(self):
@@ -54,11 +57,11 @@ class Loader:
             # Confirmed cases, masking values smaller than 10
             v = (
                 self.johns_hopkins[name]
-                .loc[(tuple(self.Rs), self.Ds)]
-                .unstack(1)
-                .values
+                    .loc[(tuple(self.Rs), self.Ds)]
+                    .unstack(1)
+                    .values
             )
-            assert v.shape == (len(self.Rs), len(self.Ds))
+
             if cutoff is not None:
                 v[v < cutoff] = np.nan
             # [country, day]
