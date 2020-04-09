@@ -4,6 +4,7 @@ import json
 import logging
 import socket
 import subprocess
+import inflection
 from pathlib import Path
 
 import pandas as pd
@@ -36,8 +37,18 @@ class WebExport:
             "regions": {k: a.to_json() for k, a in self.export_regions.items()},
         }
 
-    def new_region(self, region):
-        er = WebExportRegion(region)
+    def new_region(self, region, ratesds):
+
+        cursor = region
+        rates = None
+        while cursor is not None:
+            rates = ratesds.get(cursor.M49Code)
+            if rates is not None:
+                break
+
+            cursor = cursor.parent
+
+        er = WebExportRegion(region, rates)
         self.export_regions[region.Code] = er
         return er
 
@@ -51,7 +62,7 @@ class WebExport:
         assert (not outdir.exists()) or outdir.is_dir()
         exdir = Path(path) / name
         log.info(f"Writing WebExport to {exdir} ...")
-        exdir.mkdir(exist_ok=False, parents=True)
+        exdir.mkdir(exist_ok=(name!=None), parents=True)
         for rc, er in tqdm(list(self.export_regions.items()), desc="Writing regions"):
             fname = f"extdata-{rc}.json"
             er.data_url = f"{name}/{fname}"
@@ -63,9 +74,10 @@ class WebExport:
 
 
 class WebExportRegion:
-    def __init__(self, region):
+    def __init__(self, region, rates):
         assert isinstance(region, Region)
         self.region = region
+        self.rates = rates
         # Any per-region data. Large ones should go to data_ext.
         self.data = {}  # {name: anything}
         # Extended data to be written in a separate per-region file
@@ -77,22 +89,36 @@ class WebExportRegion:
         d = {
             "data": self.data,
             "data_url": self.data_url,
-            "Name": self.region.DisplayName,
+            "name": self.region.DisplayName,
+            "level": self.region.Level.name
         }
-        for n in [
+
+        if(self.rates is not None):
+            d["rates"] = {
+                "hosp": self.rates.Hospitalization,
+                "crit": self.rates.Critical,
+                "cfr": self.rates.CaseFatalityRate
+            }
+
+        fields = [(inflection.underscore(name),name) for name in [
             "Population",
             "Lat",
             "Lon",
             "OfficialName",
-            "Level",
             "M49Code",
             "ContinentCode",
             "SubregionCode",
             "CountryCode",
-            "CountryCodeISOa3",
             "SubdivisionCode",
-        ]:
-            d[n] = None if pd.isnull(self.region[n]) else self.region[n]
+        ]]
+
+        fields.append(("country_code_iso3", "CountryCodeISOa3"))
+        for (jsonName, name) in fields:
+            # if not pd.isnull(self.region[name]):
+            #     d[jsonName] = self.region[name]
+            
+            d[jsonName] = None if pd.isnull(self.region[name]) else self.region[name]
+
         return d
 
 

@@ -8,7 +8,7 @@ from pathlib import Path
 import yaml
 
 import epimodel
-from epimodel import RegionDataset
+from epimodel import RegionDataset, RatesDataset
 from epimodel.exports.epidemics_org import WebExport, upload_export
 from epimodel.gleam import Batch
 
@@ -53,9 +53,9 @@ def update_foretold(args):
 def web_export(args):
     ex = WebExport(comment=args.comment)
     for code in args.config["export_regions"]:
-        ex.new_region(args.rds[code])
+        ex.new_region(args.rds[code], args.ratesds)
     # TODO: add data to ex
-    ex.write(args.config["output_dir"])
+    ex.write(args.config["output_dir"], args.name)
 
 
 def web_upload(args):
@@ -100,6 +100,7 @@ def create_parser():
 
     exp = sp.add_parser("web_export", help="Create data export for web.")
     exp.add_argument("-c", "--comment", help="A short comment (to be part of path).")
+    exp.add_argument("-n", "--name", help="Name for the folder.")
     exp.set_defaults(func=web_export)
 
     uplp = sp.add_parser("web_upload", help="Upload data to the configured GCS bucket")
@@ -130,6 +131,7 @@ def main():
     with open(args.config, "rt") as f:
         args.config = yaml.safe_load(f)
     args.rds = RegionDataset.load(Path(args.config["data_dir"]) / "regions.csv")
+    args.ratesds = RatesDataset.load(Path(args.config["data_dir"]) / "rates_by_m49.csv")
     args.func(args)
 
 
