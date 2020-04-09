@@ -14,7 +14,7 @@ class BaseCMModel(Model):
     def __init__(self, data, model=None, name=""):
         super().__init__(name, model)
         self.d = data
-        self.prefix = '' if not(name) else (name + '_')
+        self.prefix = "" if not (name) else (name + "_")
         # TODO: Use prefix
         self.plot_trace_vars = set()
         self.trace = None
@@ -28,7 +28,7 @@ class BaseCMModel(Model):
             pass
         kws = {}
         if shape is not None:
-            kws['shape'] = shape
+            kws["shape"] = shape
         v = pm.Lognormal(name, T.log(mean), log_var, **kws)
         self.__dict__[name] = v
         if plot_trace:
@@ -105,4 +105,3 @@ class CMModelV2(BaseCMModel):
         # * expected growth noise
         # TODO: Estimate good prior (but can be weak?)
         self.LN("RegionScaleMult", 1.0, 2.3, shape=(self.nRs,))
-
