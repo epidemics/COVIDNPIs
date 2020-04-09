@@ -6,6 +6,8 @@ import numpy as np
 import pandas as pd
 import tables
 
+from .. import Level
+
 log = logging.getLogger(__name__)
 
 
@@ -21,7 +23,11 @@ class Batch:
     """
 
     SIMULATION_COLUMNS = ["Name", "Group", "Key", "Params", "DefinitionXML"]
-    LEVEL_TO_GTYPE = {"country": "country", "continent": "continent"}
+    LEVEL_TO_GTYPE = {
+        Level.country: "country",
+        Level.continent: "continent",
+        Level.gleam_basin: "city",
+    }
     COMPARTMENTS = {2: "Infected", 3: "Recovered"}
 
     def __init__(self, hdf_file, *, _direct=True):

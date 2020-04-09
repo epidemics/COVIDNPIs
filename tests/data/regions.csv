@@ -1,359 +1,787 @@
-Code,Level,Name,OfficialName,OtherNames,ContinentCode,SubregionCode,CountryCode,CountryCodeISOa3,M49Code,Lat,Lon,Population
-AW,country,Aruba,Aruba,,,,AW,ABW,533,,,
-AF,country,Afghanistan,Islamic Republic of Afghanistan,,,,AF,AFG,004,,,
-AO,country,Angola,Republic of Angola,,,,AO,AGO,024,,,
-AI,country,Anguilla,Anguilla,,,,AI,AIA,660,,,
-AX,country,Aland Islands,Åland Islands,,,,AX,ALA,248,,,
-AL,country,Albania,Republic of Albania,,,,AL,ALB,008,,,
-AD,country,Andorra,Principality of Andorra,,,,AD,AND,020,,,
-AE,country,United Arab Emirates,United Arab Emirates,,,,AE,ARE,784,,,
-AR,country,Argentina,Argentine Republic,,,,AR,ARG,032,,,
-AM,country,Armenia,Republic of Armenia,,,,AM,ARM,051,,,
-AS,country,American Samoa,American Samoa,,,,AS,ASM,016,,,
-AQ,country,Antarctica,Antarctica,,,,AQ,ATA,010,,,
-TF,country,French Southern Territories,French Southern Territories,,,,TF,ATF,260,,,
-AG,country,Antigua and Barbuda,Antigua and Barbuda,,,,AG,ATG,028,,,
-AU,country,Australia,Australia,,,,AU,AUS,036,,,
-AT,country,Austria,Republic of Austria,,,,AT,AUT,040,,,
-AZ,country,Azerbaijan,Republic of Azerbaijan,,,,AZ,AZE,031,,,
-BI,country,Burundi,Republic of Burundi,,,,BI,BDI,108,,,
-BE,country,Belgium,Kingdom of Belgium,,,,BE,BEL,056,,,
-BJ,country,Benin,Republic of Benin,,,,BJ,BEN,204,,,
-BQ,country,"Bonaire, Sint Eustatius and Saba","Bonaire, Sint Eustatius and Saba",,,,BQ,BES,535,,,
-BF,country,Burkina Faso,Burkina Faso,,,,BF,BFA,854,,,
-BD,country,Bangladesh,People's Republic of Bangladesh,,,,BD,BGD,050,,,
-BG,country,Bulgaria,Republic of Bulgaria,,,,BG,BGR,100,,,
-BH,country,Bahrain,Kingdom of Bahrain,,,,BH,BHR,048,,,
-BS,country,Bahamas,Commonwealth of the Bahamas,,,,BS,BHS,044,,,
-BA,country,Bosnia and Herzegovina,Republic of Bosnia and Herzegovina,,,,BA,BIH,070,,,
-BL,country,Saint Barthelemy,Saint Barthélemy,,,,BL,BLM,652,,,
-BY,country,Belarus,Republic of Belarus,,,,BY,BLR,112,,,
-BZ,country,Belize,Belize,,,,BZ,BLZ,084,,,
-BM,country,Bermuda,Bermuda,,,,BM,BMU,060,,,
-BO,country,Bolivia,Plurinational State of Bolivia,"Bolivia, Plurinational State of",,,BO,BOL,068,,,
-BR,country,Brazil,Federative Republic of Brazil,,,,BR,BRA,076,,,
-BB,country,Barbados,Barbados,,,,BB,BRB,052,,,
-BN,country,Brunei,Brunei Darussalam,,,,BN,BRN,096,,,
-BT,country,Bhutan,Kingdom of Bhutan,,,,BT,BTN,064,,,
-BV,country,Bouvet Island,Bouvet Island,,,,BV,BVT,074,,,
-BW,country,Botswana,Republic of Botswana,,,,BW,BWA,072,,,
-CF,country,Central African Republic,Central African Republic,,,,CF,CAF,140,,,
-CA,country,Canada,Canada,,,,CA,CAN,124,,,
-CC,country,Cocos (Keeling) Islands,Cocos (Keeling) Islands,,,,CC,CCK,166,,,
-CH,country,Switzerland,Swiss Confederation,,,,CH,CHE,756,,,
-CL,country,Chile,Republic of Chile,,,,CL,CHL,152,,,
-CN,country,China,People's Republic of China,,,,CN,CHN,156,,,
-CI,country,Cote d'Ivoire,Republic of Côte d'Ivoire,,,,CI,CIV,384,,,
-CM,country,Cameroon,Republic of Cameroon,,,,CM,CMR,120,,,
-CD,country,Democratic Republic of the Congo,"Congo, The Democratic Republic of the",Congo (Kinshasa)|The Democratic Republic of the Congo,,,CD,COD,180,,,
-CG,country,Congo Republic,Republic of the Congo,Congo (Brazzaville),,,CG,COG,178,,,
-CK,country,Cook Islands,Cook Islands,,,,CK,COK,184,,,
-CO,country,Colombia,Republic of Colombia,,,,CO,COL,170,,,
-KM,country,Comoros,Union of the Comoros,,,,KM,COM,174,,,
-CV,country,Cabo Verde,Republic of Cabo Verde,,,,CV,CPV,132,,,
-CR,country,Costa Rica,Republic of Costa Rica,,,,CR,CRI,188,,,
-CU,country,Cuba,Republic of Cuba,,,,CU,CUB,192,,,
-CW,country,Curacao,Curaçao,,,,CW,CUW,531,,,
-CX,country,Christmas Island,Christmas Island,,,,CX,CXR,162,,,
-KY,country,Cayman Islands,Cayman Islands,,,,KY,CYM,136,,,
-CY,country,Cyprus,Republic of Cyprus,,,,CY,CYP,196,,,
-CZ,country,Czechia,Czech Republic,,,,CZ,CZE,203,,,
-DE,country,Germany,Federal Republic of Germany,,,,DE,DEU,276,,,
-DJ,country,Djibouti,Republic of Djibouti,,,,DJ,DJI,262,,,
-DM,country,Dominica,Commonwealth of Dominica,,,,DM,DMA,212,,,
-DK,country,Denmark,Kingdom of Denmark,,,,DK,DNK,208,,,
-DO,country,Dominican Republic,Dominican Republic,,,,DO,DOM,214,,,
-DZ,country,Algeria,People's Democratic Republic of Algeria,,,,DZ,DZA,012,,,
-EC,country,Ecuador,Republic of Ecuador,,,,EC,ECU,218,,,
-EG,country,Egypt,Arab Republic of Egypt,,,,EG,EGY,818,,,
-ER,country,Eritrea,the State of Eritrea,,,,ER,ERI,232,,,
-EH,country,Western Sahara,Western Sahara,,,,EH,ESH,732,,,
-ES,country,Spain,Kingdom of Spain,,,,ES,ESP,724,,,
-EE,country,Estonia,Republic of Estonia,,,,EE,EST,233,,,
-ET,country,Ethiopia,Federal Democratic Republic of Ethiopia,,,,ET,ETH,231,,,
-FI,country,Finland,Republic of Finland,,,,FI,FIN,246,,,
-FJ,country,Fiji,Republic of Fiji,,,,FJ,FJI,242,,,
-FK,country,Falkland Islands,Falkland Islands (Malvinas),,,,FK,FLK,238,,,
-FR,country,France,French Republic,,,,FR,FRA,250,,,
-FO,country,Faroe Islands,Faroe Islands,,,,FO,FRO,234,,,
-FM,country,Micronesia,Federated States of Micronesia,"Micronesia, Federated States of",,,FM,FSM,583,,,
-GA,country,Gabon,Gabonese Republic,,,,GA,GAB,266,,,
-GB,country,United Kingdom,United Kingdom of Great Britain and Northern Ireland,,,,GB,GBR,826,,,
-GE,country,Georgia,Georgia,,,,GE,GEO,268,,,
-GG,country,Guernsey,Guernsey,,,,GG,GGY,831,,,
-GH,country,Ghana,Republic of Ghana,,,,GH,GHA,288,,,
-GI,country,Gibraltar,Gibraltar,,,,GI,GIB,292,,,
-GN,country,Guinea,Republic of Guinea,,,,GN,GIN,324,,,
-GP,country,Guadeloupe,Guadeloupe,,,,GP,GLP,312,,,
-GM,country,Gambia,Republic of the Gambia,,,,GM,GMB,270,,,
-GW,country,Guinea-Bissau,Republic of Guinea-Bissau,,,,GW,GNB,624,,,
-GQ,country,Equatorial Guinea,Republic of Equatorial Guinea,,,,GQ,GNQ,226,,,
-GR,country,Greece,Hellenic Republic,,,,GR,GRC,300,,,
-GD,country,Grenada,Grenada,,,,GD,GRD,308,,,
-GL,country,Greenland,Greenland,,,,GL,GRL,304,,,
-GT,country,Guatemala,Republic of Guatemala,,,,GT,GTM,320,,,
-GF,country,French Guiana,French Guiana,,,,GF,GUF,254,,,
-GU,country,Guam,Guam,,,,GU,GUM,316,,,
-GY,country,Guyana,Republic of Guyana,,,,GY,GUY,328,,,
-HM,country,Heard Island and McDonald Islands,Heard Island and McDonald Islands,,,,HM,HMD,334,,,
-HN,country,Honduras,Republic of Honduras,,,,HN,HND,340,,,
-HR,country,Croatia,Republic of Croatia,,,,HR,HRV,191,,,
-HT,country,Haiti,Republic of Haiti,,,,HT,HTI,332,,,
-HU,country,Hungary,Hungary,,,,HU,HUN,348,,,
-ID,country,Indonesia,Republic of Indonesia,,,,ID,IDN,360,,,
-IM,country,Isle of Man,Isle of Man,,,,IM,IMN,833,,,
-IN,country,India,Republic of India,,,,IN,IND,356,,,
-IO,country,British Indian Ocean Territory,British Indian Ocean Territory,,,,IO,IOT,086,,,
-IE,country,Ireland,Ireland,,,,IE,IRL,372,,,
-IR,country,Iran,Islamic Republic of Iran,"Iran, Islamic Republic of",,,IR,IRN,364,,,
-IQ,country,Iraq,Republic of Iraq,,,,IQ,IRQ,368,,,
-IS,country,Iceland,Republic of Iceland,,,,IS,ISL,352,,,
-IL,country,Israel,State of Israel,,,,IL,ISR,376,,,
-IT,country,Italy,Italian Republic,,,,IT,ITA,380,,,
-JM,country,Jamaica,Jamaica,,,,JM,JAM,388,,,
-JE,country,Jersey,Jersey,,,,JE,JEY,832,,,
-JO,country,Jordan,Hashemite Kingdom of Jordan,,,,JO,JOR,400,,,
-JP,country,Japan,Japan,,,,JP,JPN,392,,,
-KZ,country,Kazakhstan,Republic of Kazakhstan,,,,KZ,KAZ,398,,,
-KE,country,Kenya,Republic of Kenya,,,,KE,KEN,404,,,
-KG,country,Kyrgyzstan,Kyrgyz Republic,,,,KG,KGZ,417,,,
-KH,country,Cambodia,Kingdom of Cambodia,,,,KH,KHM,116,,,
-KI,country,Kiribati,Republic of Kiribati,,,,KI,KIR,296,,,
-KN,country,Saint Kitts and Nevis,Saint Kitts and Nevis,,,,KN,KNA,659,,,
-KR,country,South Korea,"Korea, Republic of","Korea, South",,,KR,KOR,410,,,
-KW,country,Kuwait,State of Kuwait,,,,KW,KWT,414,,,
-LA,country,Laos,Lao People's Democratic Republic,Lao PDR,,,LA,LAO,418,,,
-LB,country,Lebanon,Lebanese Republic,,,,LB,LBN,422,,,
-LR,country,Liberia,Republic of Liberia,,,,LR,LBR,430,,,
-LY,country,Libya,Libya,,,,LY,LBY,434,,,
-LC,country,Saint Lucia,Saint Lucia,,,,LC,LCA,662,,,
-LI,country,Liechtenstein,Principality of Liechtenstein,,,,LI,LIE,438,,,
-LK,country,Sri Lanka,Democratic Socialist Republic of Sri Lanka,,,,LK,LKA,144,,,
-LS,country,Lesotho,Kingdom of Lesotho,,,,LS,LSO,426,,,
-LT,country,Lithuania,Republic of Lithuania,,,,LT,LTU,440,,,
-LU,country,Luxembourg,Grand Duchy of Luxembourg,,,,LU,LUX,442,,,
-LV,country,Latvia,Republic of Latvia,,,,LV,LVA,428,,,
-MF,country,Saint Martin (French part),Saint Martin (French part),,,,MF,MAF,663,,,
-MA,country,Morocco,Kingdom of Morocco,,,,MA,MAR,504,,,
-MC,country,Monaco,Principality of Monaco,,,,MC,MCO,492,,,
-MD,country,Moldova,Republic of Moldova,"Moldova, Republic of",,,MD,MDA,498,,,
-MG,country,Madagascar,Republic of Madagascar,,,,MG,MDG,450,,,
-MV,country,Maldives,Republic of Maldives,,,,MV,MDV,462,,,
-MX,country,Mexico,United Mexican States,,,,MX,MEX,484,,,
-MH,country,Marshall Islands,Republic of the Marshall Islands,,,,MH,MHL,584,,,
-MK,country,Macedonia,Republic of North Macedonia,North Macedonia,,,MK,MKD,807,,,
-ML,country,Mali,Republic of Mali,,,,ML,MLI,466,,,
-MT,country,Malta,Republic of Malta,,,,MT,MLT,470,,,
-MM,country,Myanmar,Republic of Myanmar,Burma,,,MM,MMR,104,,,
-ME,country,Montenegro,Montenegro,,,,ME,MNE,499,,,
-MN,country,Mongolia,Mongolia,,,,MN,MNG,496,,,
-MP,country,Northern Mariana Islands,Commonwealth of the Northern Mariana Islands,,,,MP,MNP,580,,,
-MZ,country,Mozambique,Republic of Mozambique,,,,MZ,MOZ,508,,,
-MR,country,Mauritania,Islamic Republic of Mauritania,,,,MR,MRT,478,,,
-MS,country,Montserrat,Montserrat,,,,MS,MSR,500,,,
-MQ,country,Martinique,Martinique,,,,MQ,MTQ,474,,,
-MU,country,Mauritius,Republic of Mauritius,,,,MU,MUS,480,,,
-MW,country,Malawi,Republic of Malawi,,,,MW,MWI,454,,,
-MY,country,Malaysia,Malaysia,,,,MY,MYS,458,,,
-YT,country,Mayotte,Mayotte,,,,YT,MYT,175,,,
-NA,country,Namibia,Republic of Namibia,,,,NA,NAM,516,,,
-NC,country,New Caledonia,New Caledonia,,,,NC,NCL,540,,,
-NE,country,Niger,Republic of the Niger,,,,NE,NER,562,,,
-NF,country,Norfolk Island,Norfolk Island,,,,NF,NFK,574,,,
-NG,country,Nigeria,Federal Republic of Nigeria,,,,NG,NGA,566,,,
-NI,country,Nicaragua,Republic of Nicaragua,,,,NI,NIC,558,,,
-NU,country,Niue,Niue,,,,NU,NIU,570,,,
-NL,country,Netherlands,Kingdom of the Netherlands,,,,NL,NLD,528,,,
-NO,country,Norway,Kingdom of Norway,,,,NO,NOR,578,,,
-NP,country,Nepal,Federal Democratic Republic of Nepal,,,,NP,NPL,524,,,
-NR,country,Nauru,Republic of Nauru,,,,NR,NRU,520,,,
-NZ,country,New Zealand,New Zealand,,,,NZ,NZL,554,,,
-OM,country,Oman,Sultanate of Oman,,,,OM,OMN,512,,,
-PK,country,Pakistan,Islamic Republic of Pakistan,,,,PK,PAK,586,,,
-PA,country,Panama,Republic of Panama,,,,PA,PAN,591,,,
-PN,country,Pitcairn,Pitcairn,,,,PN,PCN,612,,,
-PE,country,Peru,Republic of Peru,,,,PE,PER,604,,,
-PH,country,Philippines,Republic of the Philippines,,,,PH,PHL,608,,,
-PW,country,Palau,Republic of Palau,,,,PW,PLW,585,,,
-PG,country,Papua New Guinea,Independent State of Papua New Guinea,,,,PG,PNG,598,,,
-PL,country,Poland,Republic of Poland,,,,PL,POL,616,,,
-PR,country,Puerto Rico,Puerto Rico,,,,PR,PRI,630,,,
-KP,country,North Korea,Democratic People's Republic of Korea,"Korea, Democratic People's Republic of",,,KP,PRK,408,,,
-PT,country,Portugal,Portuguese Republic,,,,PT,PRT,620,,,
-PY,country,Paraguay,Republic of Paraguay,,,,PY,PRY,600,,,
-PS,country,"Palestine, State of",the State of Palestine,,,,PS,PSE,275,,,
-PF,country,French Polynesia,French Polynesia,,,,PF,PYF,258,,,
-QA,country,Qatar,State of Qatar,,,,QA,QAT,634,,,
-RE,country,Reunion,Réunion,,,,RE,REU,638,,,
-RO,country,Romania,Romania,,,,RO,ROU,642,,,
-RU,country,Russia,Russian Federation,,,,RU,RUS,643,,,
-RW,country,Rwanda,Rwandese Republic,,,,RW,RWA,646,,,
-SA,country,Saudi Arabia,Kingdom of Saudi Arabia,,,,SA,SAU,682,,,
-SD,country,Sudan,Republic of the Sudan,,,,SD,SDN,729,,,
-SN,country,Senegal,Republic of Senegal,,,,SN,SEN,686,,,
-SG,country,Singapore,Republic of Singapore,,,,SG,SGP,702,,,
-GS,country,South Georgia and the South Sandwich Islands,South Georgia and the South Sandwich Islands,,,,GS,SGS,239,,,
-SH,country,"Saint Helena, Ascension and Tristan da Cunha","Saint Helena, Ascension and Tristan da Cunha",,,,SH,SHN,654,,,
-SJ,country,Svalbard and Jan Mayen,Svalbard and Jan Mayen,,,,SJ,SJM,744,,,
-SB,country,Solomon Islands,Solomon Islands,,,,SB,SLB,090,,,
-SL,country,Sierra Leone,Republic of Sierra Leone,,,,SL,SLE,694,,,
-SV,country,El Salvador,Republic of El Salvador,,,,SV,SLV,222,,,
-SM,country,San Marino,Republic of San Marino,,,,SM,SMR,674,,,
-SO,country,Somalia,Federal Republic of Somalia,,,,SO,SOM,706,,,
-PM,country,Saint Pierre and Miquelon,Saint Pierre and Miquelon,,,,PM,SPM,666,,,
-RS,country,Serbia,Republic of Serbia,,,,RS,SRB,688,,,
-SS,country,South Sudan,Republic of South Sudan,,,,SS,SSD,728,,,
-ST,country,Sao Tome and Principe,Democratic Republic of Sao Tome and Principe,,,,ST,STP,678,,,
-SR,country,Suriname,Republic of Suriname,,,,SR,SUR,740,,,
-SK,country,Slovakia,Slovak Republic,,,,SK,SVK,703,,,
-SI,country,Slovenia,Republic of Slovenia,,,,SI,SVN,705,,,
-SE,country,Sweden,Kingdom of Sweden,,,,SE,SWE,752,,,
-SZ,country,Eswatini,Kingdom of Eswatini,,,,SZ,SWZ,748,,,
-SX,country,Sint Maarten (Dutch part),Sint Maarten (Dutch part),,,,SX,SXM,534,,,
-SC,country,Seychelles,Republic of Seychelles,,,,SC,SYC,690,,,
-SY,country,Syrian Arab Republic,Syrian Arab Republic,Syria,,,SY,SYR,760,,,
-TC,country,Turks and Caicos Islands,Turks and Caicos Islands,,,,TC,TCA,796,,,
-TD,country,Chad,Republic of Chad,,,,TD,TCD,148,,,
-TG,country,Togo,Togolese Republic,,,,TG,TGO,768,,,
-TH,country,Thailand,Kingdom of Thailand,,,,TH,THA,764,,,
-TJ,country,Tajikistan,Republic of Tajikistan,,,,TJ,TJK,762,,,
-TK,country,Tokelau,Tokelau,,,,TK,TKL,772,,,
-TM,country,Turkmenistan,Turkmenistan,,,,TM,TKM,795,,,
-TL,country,Timor-Leste,Democratic Republic of Timor-Leste,,,,TL,TLS,626,,,
-TO,country,Tonga,Kingdom of Tonga,,,,TO,TON,776,,,
-TT,country,Trinidad and Tobago,Republic of Trinidad and Tobago,,,,TT,TTO,780,,,
-TN,country,Tunisia,Republic of Tunisia,,,,TN,TUN,788,,,
-TR,country,Turkey,Republic of Turkey,,,,TR,TUR,792,,,
-TV,country,Tuvalu,Tuvalu,,,,TV,TUV,798,,,
-TW,country,Taiwan,"Taiwan, Province of China",,,,TW,TWN,158,,,
-TZ,country,Tanzania,United Republic of Tanzania,"Tanzania, United Republic of",,,TZ,TZA,834,,,
-UG,country,Uganda,Republic of Uganda,,,,UG,UGA,800,,,
-UA,country,Ukraine,Ukraine,,,,UA,UKR,804,,,
-UM,country,United States Minor Outlying Islands,United States Minor Outlying Islands,,,,UM,UMI,581,,,
-UY,country,Uruguay,Eastern Republic of Uruguay,,,,UY,URY,858,,,
-US,country,United States,United States of America,US,,,US,USA,840,,,
-UZ,country,Uzbekistan,Republic of Uzbekistan,,,,UZ,UZB,860,,,
-VA,country,Holy See,Holy See (Vatican City State),Vatican City,,,VA,VAT,336,,,
-VC,country,Saint Vincent and the Grenadines,Saint Vincent and the Grenadines,,,,VC,VCT,670,,,
-VE,country,Venezuela,Bolivarian Republic of Venezuela,"Venezuela, Bolivarian Republic of",,,VE,VEN,862,,,
-VG,country,"Virgin Islands, British",British Virgin Islands,,,,VG,VGB,092,,,
-VI,country,"Virgin Islands, U.S.",Virgin Islands of the United States,,,,VI,VIR,850,,,
-VN,country,Viet Nam,Socialist Republic of Viet Nam,Vietnam,,,VN,VNM,704,,,
-VU,country,Vanuatu,Republic of Vanuatu,,,,VU,VUT,548,,,
-WF,country,Wallis and Futuna,Wallis and Futuna,,,,WF,WLF,876,,,
-WS,country,Samoa,Independent State of Samoa,,,,WS,WSM,882,,,
-YE,country,Yemen,Republic of Yemen,,,,YE,YEM,887,,,
-ZA,country,South Africa,Republic of South Africa,,,,ZA,ZAF,710,,,
-ZM,country,Zambia,Republic of Zambia,,,,ZM,ZMB,894,,,
-ZW,country,Zimbabwe,Republic of Zimbabwe,,,,ZW,ZWE,716,,,
-AU-ACT,subdivision,Australian Capital Territory,Australian Capital Territory,,,,AU,,,,,
-AU-NSW,subdivision,New South Wales,New South Wales,,,,AU,,,,,
-AU-NT,subdivision,Northern Territory,Northern Territory,,,,AU,,,,,
-AU-QLD,subdivision,Queensland,Queensland,,,,AU,,,,,
-AU-SA,subdivision,South Australia,South Australia,,,,AU,,,,,
-AU-TAS,subdivision,Tasmania,Tasmania,,,,AU,,,,,
-AU-VIC,subdivision,Victoria,Victoria,,,,AU,,,,,
-AU-WA,subdivision,Western Australia,Western Australia,,,,AU,,,,,
-CA-AB,subdivision,Alberta,Alberta,,,,CA,,,,,
-CA-BC,subdivision,British Columbia,British Columbia,,,,CA,,,,,
-CA-MB,subdivision,Manitoba,Manitoba,,,,CA,,,,,
-CA-NB,subdivision,New Brunswick,New Brunswick,,,,CA,,,,,
-CA-NL,subdivision,Newfoundland and Labrador,Newfoundland and Labrador,,,,CA,,,,,
-CA-NS,subdivision,Nova Scotia,Nova Scotia,,,,CA,,,,,
-CA-NT,subdivision,Northwest Territories,Northwest Territories,,,,CA,,,,,
-CA-NU,subdivision,Nunavut,Nunavut,,,,CA,,,,,
-CA-ON,subdivision,Ontario,Ontario,,,,CA,,,,,
-CA-PE,subdivision,Prince Edward Island,Prince Edward Island,,,,CA,,,,,
-CA-QC,subdivision,Quebec,Quebec,,,,CA,,,,,
-CA-SK,subdivision,Saskatchewan,Saskatchewan,,,,CA,,,,,
-CA-YT,subdivision,Yukon Territory,Yukon Territory,Yukon,,,CA,,,,,
-CN-AH,subdivision,Anhui,Anhui Sheng,,,,CN,,,,,
-CN-BJ,subdivision,Beijing,Beijing Shi,,,,CN,,,,,
-CN-CQ,subdivision,Chongqing,Chongqing Shi,,,,CN,,,,,
-CN-FJ,subdivision,Fujian,Fujian Sheng,,,,CN,,,,,
-CN-GD,subdivision,Guangdong,Guangdong Sheng,,,,CN,,,,,
-CN-GS,subdivision,Gansu,Gansu Sheng,,,,CN,,,,,
-CN-GX,subdivision,Guangxi,Guangxi Zhuangzu Zizhiqu,,,,CN,,,,,
-CN-GZ,subdivision,Guizhou,Guizhou Sheng,,,,CN,,,,,
-CN-HA,subdivision,Henan,Henan Sheng,,,,CN,,,,,
-CN-HB,subdivision,Hubei,Hubei Sheng,,,,CN,,,,,
-CN-HE,subdivision,Hebei,Hebei Sheng,,,,CN,,,,,
-CN-HI,subdivision,Hainan,Hainan Sheng,,,,CN,,,,,
-CN-HK,subdivision,Hong Kong,Hong Kong SAR,,,,CN,,,,,
-CN-HL,subdivision,Heilongjiang,Heilongjiang Sheng,,,,CN,,,,,
-CN-HN,subdivision,Hunan,Hunan Sheng,,,,CN,,,,,
-CN-JL,subdivision,Jilin,Jilin Sheng,,,,CN,,,,,
-CN-JS,subdivision,Jiangsu,Jiangsu Sheng,,,,CN,,,,,
-CN-JX,subdivision,Jiangxi,Jiangxi Sheng,,,,CN,,,,,
-CN-LN,subdivision,Liaoning,Liaoning Sheng,,,,CN,,,,,
-CN-MO,subdivision,Macau,Macao SAR,Macao,,,CN,,,,,
-CN-NM,subdivision,Inner Mongolia,Nei Mongol Zizhiqu,,,,CN,,,,,
-CN-NX,subdivision,Ningxia,Ningxia Huizi Zizhiqu,,,,CN,,,,,
-CN-QH,subdivision,Qinghai,Qinghai Sheng,,,,CN,,,,,
-CN-SC,subdivision,Sichuan,Sichuan Sheng,,,,CN,,,,,
-CN-SD,subdivision,Shandong,Shandong Sheng,,,,CN,,,,,
-CN-SH,subdivision,Shanghai,Shanghai Shi,,,,CN,,,,,
-CN-SN,subdivision,Shaanxi,Shaanxi Sheng,,,,CN,,,,,
-CN-SX,subdivision,Shanxi,Shanxi Sheng,,,,CN,,,,,
-CN-TJ,subdivision,Tianjin,Tianjin Shi,,,,CN,,,,,
-CN-XJ,subdivision,Xinjiang,Xinjiang Uygur Zizhiqu,,,,CN,,,,,
-CN-XZ,subdivision,Tibet,Xizang Zizhiqu,,,,CN,,,,,
-CN-YN,subdivision,Yunnan,Yunnan Sheng,,,,CN,,,,,
-CN-ZJ,subdivision,Zhejiang,Zhejiang Sheng,,,,CN,,,,,
-US-AK,subdivision,Alaska,Alaska,,,,US,,,,,
-US-AL,subdivision,Alabama,Alabama,,,,US,,,,,
-US-AR,subdivision,Arkansas,Arkansas,,,,US,,,,,
-US-AS,subdivision,American Samoa,American Samoa,,,,US,,,,,
-US-AZ,subdivision,Arizona,Arizona,,,,US,,,,,
-US-CA,subdivision,California,California,,,,US,,,,,
-US-CO,subdivision,Colorado,Colorado,,,,US,,,,,
-US-CT,subdivision,Connecticut,Connecticut,,,,US,,,,,
-US-DC,subdivision,District of Columbia,District of Columbia,,,,US,,,,,
-US-DE,subdivision,Delaware,Delaware,,,,US,,,,,
-US-FL,subdivision,Florida,Florida,,,,US,,,,,
-US-GA,subdivision,Georgia,Georgia,,,,US,,,,,
-US-GU,subdivision,Guam,Guam,,,,US,,,,,
-US-HI,subdivision,Hawaii,Hawaii,,,,US,,,,,
-US-IA,subdivision,Iowa,Iowa,,,,US,,,,,
-US-ID,subdivision,Idaho,Idaho,,,,US,,,,,
-US-IL,subdivision,Illinois,Illinois,,,,US,,,,,
-US-IN,subdivision,Indiana,Indiana,,,,US,,,,,
-US-KS,subdivision,Kansas,Kansas,,,,US,,,,,
-US-KY,subdivision,Kentucky,Kentucky,,,,US,,,,,
-US-LA,subdivision,Louisiana,Louisiana,,,,US,,,,,
-US-MA,subdivision,Massachusetts,Massachusetts,,,,US,,,,,
-US-MD,subdivision,Maryland,Maryland,,,,US,,,,,
-US-ME,subdivision,Maine,Maine,,,,US,,,,,
-US-MI,subdivision,Michigan,Michigan,,,,US,,,,,
-US-MN,subdivision,Minnesota,Minnesota,,,,US,,,,,
-US-MO,subdivision,Missouri,Missouri,,,,US,,,,,
-US-MP,subdivision,Northern Mariana Islands,Northern Mariana Islands,,,,US,,,,,
-US-MS,subdivision,Mississippi,Mississippi,,,,US,,,,,
-US-MT,subdivision,Montana,Montana,,,,US,,,,,
-US-NC,subdivision,North Carolina,North Carolina,,,,US,,,,,
-US-ND,subdivision,North Dakota,North Dakota,,,,US,,,,,
-US-NE,subdivision,Nebraska,Nebraska,,,,US,,,,,
-US-NH,subdivision,New Hampshire,New Hampshire,,,,US,,,,,
-US-NJ,subdivision,New Jersey,New Jersey,,,,US,,,,,
-US-NM,subdivision,New Mexico,New Mexico,,,,US,,,,,
-US-NV,subdivision,Nevada,Nevada,,,,US,,,,,
-US-NY,subdivision,New York,New York,,,,US,,,,,
-US-OH,subdivision,Ohio,Ohio,,,,US,,,,,
-US-OK,subdivision,Oklahoma,Oklahoma,,,,US,,,,,
-US-OR,subdivision,Oregon,Oregon,,,,US,,,,,
-US-PA,subdivision,Pennsylvania,Pennsylvania,,,,US,,,,,
-US-PR,subdivision,Puerto Rico,Puerto Rico,,,,US,,,,,
-US-RI,subdivision,Rhode Island,Rhode Island,,,,US,,,,,
-US-SC,subdivision,South Carolina,South Carolina,,,,US,,,,,
-US-SD,subdivision,South Dakota,South Dakota,,,,US,,,,,
-US-TN,subdivision,Tennessee,Tennessee,,,,US,,,,,
-US-TX,subdivision,Texas,Texas,,,,US,,,,,
-US-UM,subdivision,United States Minor Outlying Islands,United States Minor Outlying Islands,,,,US,,,,,
-US-UT,subdivision,Utah,Utah,,,,US,,,,,
-US-VA,subdivision,Virginia,Virginia,,,,US,,,,,
-US-VI,subdivision,Virgin Islands,Virgin Islands,,,,US,,,,,
-US-VT,subdivision,Vermont,Vermont,,,,US,,,,,
-US-WA,subdivision,Washington,Washington,,,,US,,,,,
-US-WI,subdivision,Wisconsin,Wisconsin,,,,US,,,,,
-US-WV,subdivision,West Virginia,West Virginia,,,,US,,,,,
-US-WY,subdivision,Wyoming,Wyoming,,,,US,,,,,
+Code,Name,OfficialName,OtherNames,Level,M49Code,ContinentCode,SubregionCode,CountryCode,CountryCodeISOa3,SubdivisionCode,Lat,Lon,Population,GleamID
+AD,Andorra,Principality of Andorra,,country,020,,,AD,AND,,,,,
+AE,United Arab Emirates,United Arab Emirates,,country,784,W-AS,,AE,ARE,,,,,6
+AF,Afghanistan,Islamic Republic of Afghanistan,,country,004,W-AS,,AF,AFG,,,,,1
+AG,Antigua and Barbuda,Antigua and Barbuda,,country,028,W-NA,,AG,ATG,,,,,10
+AI,Anguilla,Anguilla,,country,660,W-NA,,AI,AIA,,,,,3
+AL,Albania,Republic of Albania,,country,008,W-EU,,AL,ALB,,,,,5
+AM,Armenia,Republic of Armenia,,country,051,W-AS,,AM,ARM,,,,,8
+AO,Angola,Republic of Angola,,country,024,W-AF,,AO,AGO,,,,,2
+AR,Argentina,Argentine Republic,,country,032,W-SA,,AR,ARG,,,,,7
+AS,American Samoa,American Samoa,,country,016,W-OC,,AS,ASM,,,,,9
+AT,Austria,Republic of Austria,,country,040,W-EU,,AT,AUT,,,,,12
+AU,Australia,Australia,,country,036,W-OC,,AU,AUS,,,,,11
+AU-ACT,Australian Capital Territory,Australian Capital Territory,,subdivision,,,,AU,,,,,,
+AU-NSW,New South Wales,New South Wales,,subdivision,,,,AU,,,,,,
+AU-NT,Northern Territory,Northern Territory,,subdivision,,,,AU,,,,,,
+AU-QLD,Queensland,Queensland,,subdivision,,,,AU,,,,,,
+AU-SA,South Australia,South Australia,,subdivision,,,,AU,,,,,,
+AU-TAS,Tasmania,Tasmania,,subdivision,,,,AU,,,,,,
+AU-VIC,Victoria,Victoria,,subdivision,,,,AU,,,,,,
+AU-WA,Western Australia,Western Australia,,subdivision,,,,AU,,,,,,
+AW,Aruba,Aruba,,country,533,W-NA,,AW,ABW,,,,,0
+AX,Aland Islands,Åland Islands,,country,248,W-EU,,AX,ALA,,,,,4
+AZ,Azerbaijan,Republic of Azerbaijan,,country,031,W-AS,,AZ,AZE,,,,,13
+BA,Bosnia and Herzegovina,Republic of Bosnia and Herzegovina,,country,070,W-EU,,BA,BIH,,,,,23
+BB,Barbados,Barbados,,country,052,W-NA,,BB,BRB,,,,,30
+BD,Bangladesh,People's Republic of Bangladesh,,country,050,W-AS,,BD,BGD,,,,,19
+BE,Belgium,Kingdom of Belgium,,country,056,W-EU,,BE,BEL,,,,,15
+BF,Burkina Faso,Burkina Faso,,country,854,W-AF,,BF,BFA,,,,,18
+BG,Bulgaria,Republic of Bulgaria,,country,100,W-EU,,BG,BGR,,,,,20
+BH,Bahrain,Kingdom of Bahrain,,country,048,W-AS,,BH,BHR,,,,,21
+BI,Burundi,Republic of Burundi,,country,108,W-AF,,BI,BDI,,,,,14
+BJ,Benin,Republic of Benin,,country,204,W-AF,,BJ,BEN,,,,,16
+BL,Saint Barthelemy,Saint Barthélemy,St-Barthélemy,country,652,W-NA,,BL,BLM,,,,,24
+BM,Bermuda,Bermuda,,country,060,W-NA,,BM,BMU,,,,,27
+BN,Brunei,Brunei Darussalam,,country,096,W-AS,,BN,BRN,,,,,31
+BO,Bolivia,Plurinational State of Bolivia,"Bolivia, Plurinational State of",country,068,W-SA,,BO,BOL,,,,,28
+BQ,"Bonaire, Sint Eustatius and Saba","Bonaire, Sint Eustatius and Saba",Caribbean Netherlands,country,535,W-NA,,BQ,BES,,,,,17
+BR,Brazil,Federative Republic of Brazil,,country,076,W-SA,,BR,BRA,,,,,29
+BS,Bahamas,Commonwealth of the Bahamas,,country,044,W-NA,,BS,BHS,,,,,22
+BT,Bhutan,Kingdom of Bhutan,,country,064,W-AS,,BT,BTN,,,,,32
+BV,Bouvet Island,Bouvet Island,,country,074,,,BV,BVT,,,,,
+BW,Botswana,Republic of Botswana,,country,072,W-AF,,BW,BWA,,,,,33
+BY,Belarus,Republic of Belarus,,country,112,W-EU,,BY,BLR,,,,,25
+BZ,Belize,Belize,,country,084,W-NA,,BZ,BLZ,,,,,26
+CA,Canada,Canada,,country,124,W-NA,,CA,CAN,,,,,35
+CA-AB,Alberta,Alberta,,subdivision,,,,CA,,,,,,
+CA-BC,British Columbia,British Columbia,,subdivision,,,,CA,,,,,,
+CA-MB,Manitoba,Manitoba,,subdivision,,,,CA,,,,,,
+CA-NB,New Brunswick,New Brunswick,,subdivision,,,,CA,,,,,,
+CA-NL,Newfoundland and Labrador,Newfoundland and Labrador,,subdivision,,,,CA,,,,,,
+CA-NS,Nova Scotia,Nova Scotia,,subdivision,,,,CA,,,,,,
+CA-NT,Northwest Territories,Northwest Territories,,subdivision,,,,CA,,,,,,
+CA-NU,Nunavut,Nunavut,,subdivision,,,,CA,,,,,,
+CA-ON,Ontario,Ontario,,subdivision,,,,CA,,,,,,
+CA-PE,Prince Edward Island,Prince Edward Island,,subdivision,,,,CA,,,,,,
+CA-QC,Quebec,Quebec,,subdivision,,,,CA,,,,,,
+CA-SK,Saskatchewan,Saskatchewan,,subdivision,,,,CA,,,,,,
+CA-YT,Yukon Territory,Yukon Territory,Yukon,subdivision,,,,CA,,,,,,
+CC,Cocos (Keeling) Islands,Cocos (Keeling) Islands,,country,166,W-AS,,CC,CCK,,,,,36
+CD,Democratic Republic of the Congo,"Congo, The Democratic Republic of the","The Democratic Republic of the Congo|Congo, Dem. Rep.|Congo (Kinshasa)",country,180,W-AF,,CD,COD,,,,,42
+CF,Central African Republic,Central African Republic,,country,140,W-AF,,CF,CAF,,,,,34
+CG,Congo Republic,Republic of the Congo,"Congo (Brazzaville)|Congo, Rep.",country,178,W-AF,,CG,COG,,,,,43
+CH,Switzerland,Swiss Confederation,,country,756,W-EU,,CH,CHE,,,,,37
+CI,Cote d'Ivoire,Republic of Côte d'Ivoire,,country,384,W-AF,,CI,CIV,,,,,40
+CK,Cook Islands,Cook Islands,,country,184,W-OC,,CK,COK,,,,,44
+CL,Chile,Republic of Chile,,country,152,W-SA,,CL,CHL,,,,,38
+CM,Cameroon,Republic of Cameroon,,country,120,W-AF,,CM,CMR,,,,,41
+CN,China,People's Republic of China,,country,156,W-AS,,CN,CHN,,,,,39
+CN-AH,Anhui,Anhui Sheng,,subdivision,,,,CN,,,,,,
+CN-BJ,Beijing,Beijing Shi,,subdivision,,,,CN,,,,,,
+CN-CQ,Chongqing,Chongqing Shi,,subdivision,,,,CN,,,,,,
+CN-FJ,Fujian,Fujian Sheng,,subdivision,,,,CN,,,,,,
+CN-GD,Guangdong,Guangdong Sheng,,subdivision,,,,CN,,,,,,
+CN-GS,Gansu,Gansu Sheng,,subdivision,,,,CN,,,,,,
+CN-GX,Guangxi,Guangxi Zhuangzu Zizhiqu,,subdivision,,,,CN,,,,,,
+CN-GZ,Guizhou,Guizhou Sheng,,subdivision,,,,CN,,,,,,
+CN-HA,Henan,Henan Sheng,,subdivision,,,,CN,,,,,,
+CN-HB,Hubei,Hubei Sheng,,subdivision,,,,CN,,,,,,
+CN-HE,Hebei,Hebei Sheng,,subdivision,,,,CN,,,,,,
+CN-HI,Hainan,Hainan Sheng,,subdivision,,,,CN,,,,,,
+CN-HK,Hong Kong,Hong Kong SAR,,subdivision,,,,CN,,,,,,
+CN-HL,Heilongjiang,Heilongjiang Sheng,,subdivision,,,,CN,,,,,,
+CN-HN,Hunan,Hunan Sheng,,subdivision,,,,CN,,,,,,
+CN-JL,Jilin,Jilin Sheng,,subdivision,,,,CN,,,,,,
+CN-JS,Jiangsu,Jiangsu Sheng,,subdivision,,,,CN,,,,,,
+CN-JX,Jiangxi,Jiangxi Sheng,,subdivision,,,,CN,,,,,,
+CN-LN,Liaoning,Liaoning Sheng,,subdivision,,,,CN,,,,,,
+CN-MO,Macau,Macao SAR,Macao,subdivision,,,,CN,,,,,,
+CN-NM,Inner Mongolia,Nei Mongol Zizhiqu,,subdivision,,,,CN,,,,,,
+CN-NX,Ningxia,Ningxia Huizi Zizhiqu,,subdivision,,,,CN,,,,,,
+CN-QH,Qinghai,Qinghai Sheng,,subdivision,,,,CN,,,,,,
+CN-SC,Sichuan,Sichuan Sheng,,subdivision,,,,CN,,,,,,
+CN-SD,Shandong,Shandong Sheng,,subdivision,,,,CN,,,,,,
+CN-SH,Shanghai,Shanghai Shi,,subdivision,,,,CN,,,,,,
+CN-SN,Shaanxi,Shaanxi Sheng,,subdivision,,,,CN,,,,,,
+CN-SX,Shanxi,Shanxi Sheng,,subdivision,,,,CN,,,,,,
+CN-TJ,Tianjin,Tianjin Shi,,subdivision,,,,CN,,,,,,
+CN-XJ,Xinjiang,Xinjiang Uygur Zizhiqu,,subdivision,,,,CN,,,,,,
+CN-XZ,Tibet,Xizang Zizhiqu,,subdivision,,,,CN,,,,,,
+CN-YN,Yunnan,Yunnan Sheng,,subdivision,,,,CN,,,,,,
+CN-ZJ,Zhejiang,Zhejiang Sheng,,subdivision,,,,CN,,,,,,
+CO,Colombia,Republic of Colombia,,country,170,W-SA,,CO,COL,,,,,45
+CR,Costa Rica,Republic of Costa Rica,,country,188,W-NA,,CR,CRI,,,,,48
+CU,Cuba,Republic of Cuba,,country,192,W-NA,,CU,CUB,,,,,49
+CV,Cabo Verde,Republic of Cabo Verde,Cape Verde,country,132,W-AF,,CV,CPV,,,,,47
+CW,Curacao,Curaçao,,country,531,W-NA,,CW,CUW,,,,,50
+CX,Christmas Island,Christmas Island,,country,162,W-AS,,CX,CXR,,,,,51
+CY,Cyprus,Republic of Cyprus,,country,196,W-AS,,CY,CYP,,,,,54
+CZ,Czechia,Czech Republic,,country,203,W-EU,,CZ,CZE,,,,,55
+DE,Germany,Federal Republic of Germany,,country,276,W-EU,,DE,DEU,,,,,56
+DJ,Djibouti,Republic of Djibouti,,country,262,W-AF,,DJ,DJI,,,,,57
+DK,Denmark,Kingdom of Denmark,,country,208,W-EU,,DK,DNK,,,,,59
+DM,Dominica,Commonwealth of Dominica,,country,212,W-NA,,DM,DMA,,,,,58
+DO,Dominican Republic,Dominican Republic,,country,214,W-NA,,DO,DOM,,,,,60
+DZ,Algeria,People's Democratic Republic of Algeria,,country,012,W-AF,,DZ,DZA,,,,,61
+EC,Ecuador,Republic of Ecuador,,country,218,W-SA,,EC,ECU,,,,,62
+EE,Estonia,Republic of Estonia,,country,233,W-EU,,EE,EST,,,,,66
+EG,Egypt,Arab Republic of Egypt,"Egypt, Arab Rep.",country,818,W-AF,,EG,EGY,,,,,63
+EH,Western Sahara,Western Sahara,,country,732,,,EH,ESH,,,,,
+ER,Eritrea,the State of Eritrea,,country,232,W-AF,,ER,ERI,,,,,64
+ES,Spain,Kingdom of Spain,,country,724,W-EU,,ES,ESP,,,,,65
+ET,Ethiopia,Federal Democratic Republic of Ethiopia,,country,231,W-AF,,ET,ETH,,,,,67
+FI,Finland,Republic of Finland,,country,246,W-EU,,FI,FIN,,,,,68
+FJ,Fiji,Republic of Fiji,,country,242,W-OC,,FJ,FJI,,,,,69
+FK,Falkland Islands,Falkland Islands (Malvinas),,country,238,W-SA,,FK,FLK,,,,,70
+FM,Micronesia,Federated States of Micronesia,"Micronesia, Federated States of|Micronesia, Fed. States of",country,583,W-OC,,FM,FSM,,,,,73
+FO,Faroe Islands,Faroe Islands,Faeroe Islands,country,234,W-EU,,FO,FRO,,,,,72
+FR,France,French Republic,,country,250,W-EU,,FR,FRA,,,,,71
+GA,Gabon,Gabonese Republic,,country,266,W-AF,,GA,GAB,,,,,74
+GB,United Kingdom,United Kingdom of Great Britain and Northern Ireland,,country,826,W-EU,,GB,GBR,,,,,75
+GD,Grenada,Grenada,,country,308,W-NA,,GD,GRD,,,,,86
+GE,Georgia,Georgia,,country,268,W-AS,,GE,GEO,,,,,76
+GF,French Guiana,French Guiana,,country,254,W-SA,,GF,GUF,,,,,89
+GG,Guernsey,Guernsey,,country,831,W-EU,,GG,GGY,,,,,77
+GH,Ghana,Republic of Ghana,,country,288,W-AF,,GH,GHA,,,,,78
+GI,Gibraltar,Gibraltar,,country,292,W-EU,,GI,GIB,,,,,79
+GL,Greenland,Greenland,,country,304,W-NA,,GL,GRL,,,,,87
+GM,Gambia,Republic of the Gambia,,country,270,W-AF,,GM,GMB,,,,,82
+GN,Guinea,Republic of Guinea,,country,324,W-AF,,GN,GIN,,,,,80
+GP,Guadeloupe,Guadeloupe,,country,312,W-NA,,GP,GLP,,,,,81
+GQ,Equatorial Guinea,Republic of Equatorial Guinea,,country,226,W-AF,,GQ,GNQ,,,,,84
+GR,Greece,Hellenic Republic,,country,300,W-EU,,GR,GRC,,,,,85
+GS,South Georgia and the South Sandwich Islands,South Georgia and the South Sandwich Islands,,country,239,,,GS,SGS,,,,,
+GT,Guatemala,Republic of Guatemala,,country,320,W-NA,,GT,GTM,,,,,88
+GU,Guam,Guam,,country,316,W-OC,,GU,GUM,,,,,90
+GW,Guinea-Bissau,Republic of Guinea-Bissau,,country,624,W-AF,,GW,GNB,,,,,83
+GY,Guyana,Republic of Guyana,,country,328,W-SA,,GY,GUY,,,,,91
+HM,Heard Island and McDonald Islands,Heard Island and McDonald Islands,,country,334,,,HM,HMD,,,,,
+HN,Honduras,Republic of Honduras,,country,340,W-NA,,HN,HND,,,,,92
+HR,Croatia,Republic of Croatia,,country,191,W-EU,,HR,HRV,,,,,93
+HT,Haiti,Republic of Haiti,,country,332,W-NA,,HT,HTI,,,,,94
+HU,Hungary,Hungary,,country,348,W-EU,,HU,HUN,,,,,95
+ID,Indonesia,Republic of Indonesia,,country,360,W-AS,,ID,IDN,,,,,96
+IE,Ireland,Ireland,,country,372,W-EU,,IE,IRL,,,,,99
+IL,Israel,State of Israel,,country,376,W-AS,,IL,ISR,,,,,103
+IM,Isle of Man,Isle of Man,,country,833,W-EU,,IM,IMN,,,,,97
+IN,India,Republic of India,,country,356,W-AS,,IN,IND,,,,,98
+IO,British Indian Ocean Territory,British Indian Ocean Territory,,country,086,,,IO,IOT,,,,,
+IQ,Iraq,Republic of Iraq,,country,368,W-AS,,IQ,IRQ,,,,,101
+IR,Iran,Islamic Republic of Iran,"Iran, Islamic Republic of",country,364,W-AS,,IR,IRN,,,,,100
+IS,Iceland,Republic of Iceland,,country,352,W-EU,,IS,ISL,,,,,102
+IT,Italy,Italian Republic,,country,380,W-EU,,IT,ITA,,,,,104
+JE,Jersey,Jersey,,country,832,W-EU,,JE,JEY,,,,,106
+JM,Jamaica,Jamaica,,country,388,W-NA,,JM,JAM,,,,,105
+JO,Jordan,Hashemite Kingdom of Jordan,,country,400,W-AS,,JO,JOR,,,,,107
+JP,Japan,Japan,,country,392,W-AS,,JP,JPN,,,,,108
+KE,Kenya,Republic of Kenya,,country,404,W-AF,,KE,KEN,,,,,110
+KG,Kyrgyzstan,Kyrgyz Republic,,country,417,W-AS,,KG,KGZ,,,,,111
+KH,Cambodia,Kingdom of Cambodia,,country,116,W-AS,,KH,KHM,,,,,112
+KI,Kiribati,Republic of Kiribati,,country,296,W-OC,,KI,KIR,,,,,113
+KM,Comoros,Union of the Comoros,,country,174,W-AF,,KM,COM,,,,,46
+KN,Saint Kitts and Nevis,Saint Kitts and Nevis,St. Kitts and Nevis,country,659,W-NA,,KN,KNA,,,,,114
+KP,North Korea,Democratic People's Republic of Korea,"Korea, Democratic People's Republic of|Korea, Dem. Rep.",country,408,W-AS,,KP,PRK,,,,,171
+KR,South Korea,"Korea, Republic of","Korea, Rep.|Korea, South",country,410,W-AS,,KR,KOR,,,,,115
+KW,Kuwait,State of Kuwait,,country,414,W-AS,,KW,KWT,,,,,117
+KY,Cayman Islands,Cayman Islands,,country,136,W-NA,,KY,CYM,,,,,52
+KZ,Kazakhstan,Republic of Kazakhstan,,country,398,W-AS,,KZ,KAZ,,,,,109
+LA,Laos,Lao People's Democratic Republic,Lao PDR,country,418,W-AS,,LA,LAO,,,,,118
+LB,Lebanon,Lebanese Republic,,country,422,W-AS,,LB,LBN,,,,,119
+LC,Saint Lucia,Saint Lucia,St. Lucia,country,662,W-NA,,LC,LCA,,,,,122
+LI,Liechtenstein,Principality of Liechtenstein,,country,438,,,LI,LIE,,,,,
+LK,Sri Lanka,Democratic Socialist Republic of Sri Lanka,,country,144,W-AS,,LK,LKA,,,,,123
+LR,Liberia,Republic of Liberia,,country,430,W-AF,,LR,LBR,,,,,120
+LS,Lesotho,Kingdom of Lesotho,,country,426,W-AF,,LS,LSO,,,,,124
+LT,Lithuania,Republic of Lithuania,,country,440,W-EU,,LT,LTU,,,,,125
+LU,Luxembourg,Grand Duchy of Luxembourg,,country,442,W-EU,,LU,LUX,,,,,126
+LV,Latvia,Republic of Latvia,,country,428,W-EU,,LV,LVA,,,,,127
+LY,Libya,Libya,,country,434,W-AF,,LY,LBY,,,,,121
+MA,Morocco,Kingdom of Morocco,,country,504,W-AF,,MA,MAR,,,,,128
+MC,Monaco,Principality of Monaco,,country,492,W-EU,,MC,MCO,,,,,129
+MD,Moldova,Republic of Moldova,"Moldova, Republic of",country,498,W-EU,,MD,MDA,,,,,130
+ME,Montenegro,Montenegro,,country,499,W-EU,,ME,MNE,,,,,139
+MF,Saint Martin (French part),Saint Martin (French part),,country,663,,,MF,MAF,,,,,
+MG,Madagascar,Republic of Madagascar,,country,450,W-AF,,MG,MDG,,,,,131
+MH,Marshall Islands,Republic of the Marshall Islands,,country,584,W-OC,,MH,MHL,,,,,134
+MK,Macedonia,Republic of North Macedonia,North Macedonia,country,807,W-EU,,MK,MKD,,,,,135
+ML,Mali,Republic of Mali,,country,466,W-AF,,ML,MLI,,,,,136
+MM,Myanmar,Republic of Myanmar,Burma,country,104,W-AS,,MM,MMR,,,,,138
+MN,Mongolia,Mongolia,,country,496,W-AS,,MN,MNG,,,,,140
+MP,Northern Mariana Islands,Commonwealth of the Northern Mariana Islands,,country,580,W-OC,,MP,MNP,,,,,141
+MQ,Martinique,Martinique,,country,474,W-NA,,MQ,MTQ,,,,,145
+MR,Mauritania,Islamic Republic of Mauritania,,country,478,W-AF,,MR,MRT,,,,,143
+MS,Montserrat,Montserrat,,country,500,W-NA,,MS,MSR,,,,,144
+MT,Malta,Republic of Malta,,country,470,W-EU,,MT,MLT,,,,,137
+MU,Mauritius,Republic of Mauritius,,country,480,W-AF,,MU,MUS,,,,,146
+MV,Maldives,Republic of Maldives,,country,462,W-AS,,MV,MDV,,,,,132
+MW,Malawi,Republic of Malawi,,country,454,W-AF,,MW,MWI,,,,,147
+MX,Mexico,United Mexican States,,country,484,W-NA,,MX,MEX,,,,,133
+MY,Malaysia,Malaysia,,country,458,W-AS,,MY,MYS,,,,,148
+MZ,Mozambique,Republic of Mozambique,,country,508,W-AF,,MZ,MOZ,,,,,142
+NA,Namibia,Republic of Namibia,,country,516,W-AF,,NA,NAM,,,,,150
+NC,New Caledonia,New Caledonia,,country,540,W-OC,,NC,NCL,,,,,151
+NE,Niger,Republic of the Niger,,country,562,W-AF,,NE,NER,,,,,152
+NF,Norfolk Island,Norfolk Island,,country,574,W-OC,,NF,NFK,,,,,153
+NG,Nigeria,Federal Republic of Nigeria,,country,566,W-AF,,NG,NGA,,,,,154
+NI,Nicaragua,Republic of Nicaragua,,country,558,W-NA,,NI,NIC,,,,,155
+NL,Netherlands,Kingdom of the Netherlands,,country,528,W-EU,,NL,NLD,,,,,157
+NO,Norway,Kingdom of Norway,,country,578,W-EU,,NO,NOR,,,,,158
+NP,Nepal,Federal Democratic Republic of Nepal,,country,524,W-AS,,NP,NPL,,,,,159
+NR,Nauru,Republic of Nauru,,country,520,W-OC,,NR,NRU,,,,,160
+NU,Niue,Niue,,country,570,W-OC,,NU,NIU,,,,,156
+NZ,New Zealand,New Zealand,,country,554,W-OC,,NZ,NZL,,,,,161
+OM,Oman,Sultanate of Oman,,country,512,W-AS,,OM,OMN,,,,,162
+PA,Panama,Republic of Panama,,country,591,W-NA,,PA,PAN,,,,,164
+PE,Peru,Republic of Peru,,country,604,W-SA,,PE,PER,,,,,165
+PF,French Polynesia,French Polynesia,,country,258,W-OC,,PF,PYF,,,,,174
+PG,Papua New Guinea,Independent State of Papua New Guinea,,country,598,W-OC,,PG,PNG,,,,,168
+PH,Philippines,Republic of the Philippines,,country,608,W-AS,,PH,PHL,,,,,166
+PK,Pakistan,Islamic Republic of Pakistan,,country,586,W-AS,,PK,PAK,,,,,163
+PL,Poland,Republic of Poland,,country,616,W-EU,,PL,POL,,,,,169
+PM,Saint Pierre and Miquelon,Saint Pierre and Miquelon,St. Pierre and Miquelon,country,666,W-NA,,PM,SPM,,,,,189
+PN,Pitcairn,Pitcairn,,country,612,,,PN,PCN,,,,,
+PR,Puerto Rico,Puerto Rico,,country,630,W-NA,,PR,PRI,,,,,170
+PS,"Palestine, State of",the State of Palestine,,country,275,,,PS,PSE,,,,,
+PT,Portugal,Portuguese Republic,,country,620,W-EU,,PT,PRT,,,,,172
+PW,Palau,Republic of Palau,,country,585,W-OC,,PW,PLW,,,,,167
+PY,Paraguay,Republic of Paraguay,,country,600,W-SA,,PY,PRY,,,,,173
+QA,Qatar,State of Qatar,,country,634,W-AS,,QA,QAT,,,,,175
+RE,Reunion,Réunion,,country,638,W-AF,,RE,REU,,,,,176
+RO,Romania,Romania,,country,642,W-EU,,RO,ROU,,,,,177
+RS,Serbia,Republic of Serbia,,country,688,W-EU,,RS,SRB,,,,,190
+RU,Russia,Russian Federation,,country,643,W-EU,,RU,RUS,,,,,178
+RW,Rwanda,Rwandese Republic,,country,646,W-AF,,RW,RWA,,,,,179
+SA,Saudi Arabia,Kingdom of Saudi Arabia,,country,682,W-AS,,SA,SAU,,,,,180
+SB,Solomon Islands,Solomon Islands,,country,090,W-OC,,SB,SLB,,,,,185
+SC,Seychelles,Republic of Seychelles,,country,690,W-AF,,SC,SYC,,,,,199
+SD,Sudan,Republic of the Sudan,,country,729,W-AF,,SD,SDN,,,,,181
+SE,Sweden,Kingdom of Sweden,,country,752,W-EU,,SE,SWE,,,,,196
+SG,Singapore,Republic of Singapore,,country,702,W-AS,,SG,SGP,,,,,183
+SH,"Saint Helena, Ascension and Tristan da Cunha","Saint Helena, Ascension and Tristan da Cunha",,country,654,,,SH,SHN,,,,,
+SI,Slovenia,Republic of Slovenia,,country,705,W-EU,,SI,SVN,,,,,195
+SJ,Svalbard and Jan Mayen,Svalbard and Jan Mayen,Svalbard Islands,country,744,W-EU,,SJ,SJM,,,,,184
+SK,Slovakia,Slovak Republic,,country,703,W-EU,,SK,SVK,,,,,194
+SL,Sierra Leone,Republic of Sierra Leone,,country,694,W-AF,,SL,SLE,,,,,186
+SM,San Marino,Republic of San Marino,,country,674,,,SM,SMR,,,,,
+SN,Senegal,Republic of Senegal,,country,686,W-AF,,SN,SEN,,,,,182
+SO,Somalia,Federal Republic of Somalia,,country,706,W-AF,,SO,SOM,,,,,188
+SR,Suriname,Republic of Suriname,,country,740,W-SA,,SR,SUR,,,,,193
+SS,South Sudan,Republic of South Sudan,,country,728,W-AF,,SS,SSD,,,,,191
+ST,Sao Tome and Principe,Democratic Republic of Sao Tome and Principe,,country,678,W-AF,,ST,STP,,,,,192
+SV,El Salvador,Republic of El Salvador,,country,222,W-NA,,SV,SLV,,,,,187
+SX,Sint Maarten (Dutch part),Sint Maarten (Dutch part),St. Maarten,country,534,W-NA,,SX,SXM,,,,,198
+SY,Syrian Arab Republic,Syrian Arab Republic,Syria,country,760,W-AS,,SY,SYR,,,,,200
+SZ,Eswatini,Kingdom of Eswatini,Swaziland,country,748,W-AF,,SZ,SWZ,,,,,197
+TC,Turks and Caicos Islands,Turks and Caicos Islands,,country,796,W-NA,,TC,TCA,,,,,201
+TD,Chad,Republic of Chad,,country,148,W-AF,,TD,TCD,,,,,202
+TF,French Southern Territories,French Southern Territories,,country,260,,,TF,ATF,,,,,
+TG,Togo,Togolese Republic,,country,768,W-AF,,TG,TGO,,,,,203
+TH,Thailand,Kingdom of Thailand,,country,764,W-AS,,TH,THA,,,,,204
+TJ,Tajikistan,Republic of Tajikistan,,country,762,W-AS,,TJ,TJK,,,,,205
+TK,Tokelau,Tokelau,,country,772,,,TK,TKL,,,,,
+TL,Timor-Leste,Democratic Republic of Timor-Leste,,country,626,W-AS,,TL,TLS,,,,,207
+TM,Turkmenistan,Turkmenistan,,country,795,W-AS,,TM,TKM,,,,,206
+TN,Tunisia,Republic of Tunisia,,country,788,W-AF,,TN,TUN,,,,,210
+TO,Tonga,Kingdom of Tonga,,country,776,W-OC,,TO,TON,,,,,208
+TR,Turkey,Republic of Turkey,,country,792,W-AS,,TR,TUR,,,,,211
+TT,Trinidad and Tobago,Republic of Trinidad and Tobago,,country,780,W-NA,,TT,TTO,,,,,209
+TV,Tuvalu,Tuvalu,,country,798,W-OC,,TV,TUV,,,,,212
+TW,Taiwan,"Taiwan, Province of China",,country,158,W-AS,,TW,TWN,,,,,213
+TZ,Tanzania,United Republic of Tanzania,"Tanzania, United Republic of",country,834,W-AF,,TZ,TZA,,,,,214
+UA,Ukraine,Ukraine,,country,804,W-EU,,UA,UKR,,,,,216
+UG,Uganda,Republic of Uganda,,country,800,W-AF,,UG,UGA,,,,,215
+UM,United States Minor Outlying Islands,United States Minor Outlying Islands,,country,581,,,UM,UMI,,,,,
+US,United States,United States of America,US,country,840,W-NA,,US,USA,,,,,218
+US-AK,Alaska,Alaska,,subdivision,,,,US,,,,,,
+US-AL,Alabama,Alabama,,subdivision,,,,US,,,,,,
+US-AR,Arkansas,Arkansas,,subdivision,,,,US,,,,,,
+US-AS,American Samoa,American Samoa,,subdivision,,,,US,,,,,,
+US-AZ,Arizona,Arizona,,subdivision,,,,US,,,,,,
+US-CA,California,California,,subdivision,,,,US,,,,,,
+US-CO,Colorado,Colorado,,subdivision,,,,US,,,,,,
+US-CT,Connecticut,Connecticut,,subdivision,,,,US,,,,,,
+US-DC,District of Columbia,District of Columbia,,subdivision,,,,US,,,,,,
+US-DE,Delaware,Delaware,,subdivision,,,,US,,,,,,
+US-FL,Florida,Florida,,subdivision,,,,US,,,,,,
+US-GA,Georgia,Georgia,,subdivision,,,,US,,,,,,
+US-GU,Guam,Guam,,subdivision,,,,US,,,,,,
+US-HI,Hawaii,Hawaii,,subdivision,,,,US,,,,,,
+US-IA,Iowa,Iowa,,subdivision,,,,US,,,,,,
+US-ID,Idaho,Idaho,,subdivision,,,,US,,,,,,
+US-IL,Illinois,Illinois,,subdivision,,,,US,,,,,,
+US-IN,Indiana,Indiana,,subdivision,,,,US,,,,,,
+US-KS,Kansas,Kansas,,subdivision,,,,US,,,,,,
+US-KY,Kentucky,Kentucky,,subdivision,,,,US,,,,,,
+US-LA,Louisiana,Louisiana,,subdivision,,,,US,,,,,,
+US-MA,Massachusetts,Massachusetts,,subdivision,,,,US,,,,,,
+US-MD,Maryland,Maryland,,subdivision,,,,US,,,,,,
+US-ME,Maine,Maine,,subdivision,,,,US,,,,,,
+US-MI,Michigan,Michigan,,subdivision,,,,US,,,,,,
+US-MN,Minnesota,Minnesota,,subdivision,,,,US,,,,,,
+US-MO,Missouri,Missouri,,subdivision,,,,US,,,,,,
+US-MP,Northern Mariana Islands,Northern Mariana Islands,,subdivision,,,,US,,,,,,
+US-MS,Mississippi,Mississippi,,subdivision,,,,US,,,,,,
+US-MT,Montana,Montana,,subdivision,,,,US,,,,,,
+US-NC,North Carolina,North Carolina,,subdivision,,,,US,,,,,,
+US-ND,North Dakota,North Dakota,,subdivision,,,,US,,,,,,
+US-NE,Nebraska,Nebraska,,subdivision,,,,US,,,,,,
+US-NH,New Hampshire,New Hampshire,,subdivision,,,,US,,,,,,
+US-NJ,New Jersey,New Jersey,,subdivision,,,,US,,,,,,
+US-NM,New Mexico,New Mexico,,subdivision,,,,US,,,,,,
+US-NV,Nevada,Nevada,,subdivision,,,,US,,,,,,
+US-NY,New York,New York,,subdivision,,,,US,,,,,,
+US-OH,Ohio,Ohio,,subdivision,,,,US,,,,,,
+US-OK,Oklahoma,Oklahoma,,subdivision,,,,US,,,,,,
+US-OR,Oregon,Oregon,,subdivision,,,,US,,,,,,
+US-PA,Pennsylvania,Pennsylvania,,subdivision,,,,US,,,,,,
+US-PR,Puerto Rico,Puerto Rico,,subdivision,,,,US,,,,,,
+US-RI,Rhode Island,Rhode Island,,subdivision,,,,US,,,,,,
+US-SC,South Carolina,South Carolina,,subdivision,,,,US,,,,,,
+US-SD,South Dakota,South Dakota,,subdivision,,,,US,,,,,,
+US-TN,Tennessee,Tennessee,,subdivision,,,,US,,,,,,
+US-TX,Texas,Texas,,subdivision,,,,US,,,,,,
+US-UM,United States Minor Outlying Islands,United States Minor Outlying Islands,,subdivision,,,,US,,,,,,
+US-UT,Utah,Utah,,subdivision,,,,US,,,,,,
+US-VA,Virginia,Virginia,,subdivision,,,,US,,,,,,
+US-VI,Virgin Islands,Virgin Islands,Virgin Islands (U.S.),subdivision,,,,US,,,,,,
+US-VT,Vermont,Vermont,,subdivision,,,,US,,,,,,
+US-WA,Washington,Washington,,subdivision,,,,US,,,,,,
+US-WI,Wisconsin,Wisconsin,,subdivision,,,,US,,,,,,
+US-WV,West Virginia,West Virginia,,subdivision,,,,US,,,,,,
+US-WY,Wyoming,Wyoming,,subdivision,,,,US,,,,,,
+UY,Uruguay,Eastern Republic of Uruguay,,country,858,W-SA,,UY,URY,,,,,217
+UZ,Uzbekistan,Republic of Uzbekistan,,country,860,W-AS,,UZ,UZB,,,,,219
+VA,Holy See,Holy See (Vatican City State),Vatican City,country,336,,,VA,VAT,,,,,
+VC,Saint Vincent and the Grenadines,Saint Vincent and the Grenadines,St. Vincent and Grenadines,country,670,W-NA,,VC,VCT,,,,,220
+VE,Venezuela,Bolivarian Republic of Venezuela,"Venezuela, Bolivarian Republic of",country,862,W-SA,,VE,VEN,,,,,221
+VG,"Virgin Islands, British",British Virgin Islands,,country,092,W-NA,,VG,VGB,,,,,222
+VI,"Virgin Islands, U.S.",Virgin Islands of the United States,Virgin Islands (U.S.),country,850,W-NA,,VI,VIR,,,,,223
+VN,Viet Nam,Socialist Republic of Viet Nam,Vietnam,country,704,W-AS,,VN,VNM,,,,,224
+VU,Vanuatu,Republic of Vanuatu,,country,548,W-OC,,VU,VUT,,,,,225
+W,World,The World,Earth|The Earth,world,001,,,,,,,,7576600600.0,-1
+W-AF,Africa,,,continent,002,,,,,,,,1216130000.0,0
+W-AN,Antarctica,,,continent,010,,,,,,,,1106.0,-1
+W-AS,Asia,,,continent,142,,,,,,,,4581757400.0,1
+W-EU,Europe,,,continent,150,,,,,,,,738849000.0,2
+W-NA,North america,,,continent,003,,,,,,,,579024000.0,3
+W-OC,Oceania,,,continent,009,,,,,,,,38304000.0,4
+W-SA,South america,,,continent,005,,,,,,,,422535000.0,5
+WF,Wallis and Futuna,Wallis and Futuna,Wallis and Futuna Islands,country,876,W-OC,,WF,WLF,,,,,226
+WS,Samoa,Independent State of Samoa,,country,882,W-OC,,WS,WSM,,,,,227
+YE,Yemen,Republic of Yemen,,country,887,W-AS,,YE,YEM,,,,,228
+YT,Mayotte,Mayotte,,country,175,W-AF,,YT,MYT,,,,,149
+ZA,South Africa,Republic of South Africa,,country,710,W-AF,,ZA,ZAF,,,,,229
+ZM,Zambia,Republic of Zambia,,country,894,W-AF,,ZM,ZMB,,,,,230
+ZW,Zimbabwe,Republic of Zimbabwe,,country,716,W-AF,,ZW,ZWE,,,,,231
+G-AAA,Anaa,,,gleam_basin,,W-OC,,PF,PYF,,-17.353,-145.51,,710
+G-AAB,Arrabury,,,gleam_basin,,W-OC,,AU,AUS,,,,,1668
+G-AAC,El Arish,,,gleam_basin,,W-AF,,EG,EGY,,31.073,33.836,,59
+G-AAE,Annaba,,,gleam_basin,,W-AF,,DZ,DZA,,36.822,7.809,504000.0,45
+G-AAL,Aalborg,,,gleam_basin,,W-EU,,DK,DNK,,57.093,9.849,122000.0,1565
+G-AAN,Al Ain,,,gleam_basin,,W-AS,,AE,ARE,,24.262,55.609,409000.0,3180
+G-AAQ,Anapa,,,gleam_basin,,W-EU,,RU,RUS,,45.002,37.347,54000.0,1913
+G-AAR,Aarhus,,,gleam_basin,,W-EU,,DK,DNK,,56.3,10.619,238000.0,1566
+G-AAT,Altay,,,gleam_basin,,W-AS,,CN,CHN,,47.75,88.086,142000.0,459
+G-AAX,Araxa,,,gleam_basin,,W-SA,,BR,BRA,,-19.563,-46.96,83000.0,2023
+G-AAY,Al Ghaydah,,,gleam_basin,,W-AS,,YE,YEM,,16.192,52.175,,587
+G-ABA,Abakan,,,gleam_basin,,W-EU,,RU,RUS,,53.74,91.385,167000.0,1901
+G-ABB,Asaba,,,gleam_basin,,W-AF,,NG,NGA,,6.204,6.665,73000.0,1425
+G-ABD,Abadan,,,gleam_basin,,W-AS,,IR,IRN,,30.371,48.228,41000.0,2962
+G-ABE,Lehigh Valley,,,gleam_basin,,W-NA,,US,USA,,40.652,-75.441,,2415
+G-ABI,Abilene,,,gleam_basin,,W-NA,,US,USA,,32.411,-99.682,115000.0,2416
+G-ABJ,Abidjan,,,gleam_basin,,W-AF,,CI,CIV,,5.261,-3.926,3802000.0,2050
+G-ABK,Kebri Dehar,,,gleam_basin,,W-AF,,ET,ETH,,6.734,44.253,,240
+G-ABL,Ambler,,,gleam_basin,,W-NA,,US,USA,,67.106,-157.857,7000.0,2486
+G-ABQ,Albuquerque,,,gleam_basin,,W-NA,,US,USA,,35.04,-106.609,759000.0,2417
+G-ABR,Aberdeen (US),,,gleam_basin,,W-NA,,US,USA,,45.449,-98.422,,2418
+G-ABS,Abu Simbel,,,gleam_basin,,W-AF,,EG,EGY,,22.376,31.612,,57
+G-ABT,Al Baha,,,gleam_basin,,W-AS,,SA,SAU,,20.296,41.634,,263
+G-ABU,Atambua,,,gleam_basin,,W-AS,,ID,IDN,,,,36000.0,1297
+G-ABV,Abuja,,,gleam_basin,,W-AF,,NG,NGA,,9.007,7.263,1576000.0,1426
+G-ABX,Albury,,,gleam_basin,,W-OC,,AU,AUS,,-36.068,146.958,104000.0,1660
+G-ABY,Albany (US-GA),,,gleam_basin,,W-NA,,US,USA,,31.535,-84.195,,2419
+G-ABZ,Aberdeen (UK),,,gleam_basin,,W-EU,,GB,GBR,,57.202,-2.198,,785
+G-ACA,Acapulco,,,gleam_basin,,W-NA,,MX,MEX,,16.757,-99.754,,1021
+G-ACC,Accra,,,gleam_basin,,W-AF,,GH,GHA,,5.605,-0.167,2121000.0,103
+G-ACE,Lanzarote,,,gleam_basin,,W-EU,,ES,ESP,,28.945,-13.605,,2902
+G-ACH,Altenrhein,,,gleam_basin,,W-EU,,CH,CHE,,47.485,9.561,,278
+G-ACP,Maragheh,,,gleam_basin,,W-AS,,IR,IRN,,37.348,46.128,151000.0,2959
+G-ACR,Araracuara,,,gleam_basin,,W-SA,,CO,COL,,-0.583,-72.408,,1391
+G-ACT,Waco,,,gleam_basin,,W-NA,,US,USA,,31.611,-97.23,188000.0,2370
+G-ACU,Achutupo,,,gleam_basin,,W-NA,,PA,PAN,,,,,3008
+G-ACV,Arcata,,,gleam_basin,,W-NA,,US,USA,,40.978,-124.109,34000.0,2369
+G-ACX,Xingyi,,,gleam_basin,,W-AS,,CN,CHN,,25.086,104.959,816000.0,437
+G-ACY,Atlantic City,,,gleam_basin,,W-NA,,US,USA,,39.458,-74.577,241000.0,2371
+G-ACZ,Zabol,,,gleam_basin,,W-AS,,IR,IRN,,31.098,61.544,234000.0,2960
+G-ADA,Adana,,,gleam_basin,,W-AS,,TR,TUR,,36.982,35.28,1293000.0,1759
+G-ADB,Izmir,,,gleam_basin,,W-AS,,TR,TUR,,38.292,27.157,2587000.0,1746
+G-ADD,Addis Ababa,,,gleam_basin,,W-AF,,ET,ETH,,8.978,38.799,3100000.0,228
+G-ADE,Aden,,,gleam_basin,,W-AS,,YE,YEM,,12.83,45.029,1000000.0,579
+G-ADF,Adiyaman,,,gleam_basin,,W-AS,,TR,TUR,,37.731,38.469,224000.0,1745
+G-ADH,Aldan,,,gleam_basin,,W-EU,,RU,RUS,,58.603,125.409,24000.0,1819
+G-ADK,Adak Island,,,gleam_basin,,W-NA,,US,USA,,51.878,-176.646,,2150
+G-ADL,Adelaide,,,gleam_basin,,W-OC,,AU,AUS,,-34.945,138.531,1145000.0,1595
+G-ADQ,Kodiak,,,gleam_basin,,W-NA,,US,USA,,57.75,-152.494,9000.0,2483
+G-ADU,Ardabil,,,gleam_basin,,W-AS,,IR,IRN,,38.326,48.424,415000.0,2935
+G-ADV,Addeain,,,gleam_basin,,W-AF,,SD,SDN,,,,,3012
+G-ADZ,San Andres Island,,,gleam_basin,,W-SA,,CO,COL,,12.584,-81.711,,1369
+G-AEB,Baise,,,gleam_basin,,W-AS,,CN,CHN,,23.721,106.96,340000.0,331
+G-AEG,Aek Godang,,,gleam_basin,,W-AS,,ID,IDN,,1.4,99.43,,1244
+G-AER,Sochi,,,gleam_basin,,W-EU,,RU,RUS,,43.45,39.957,328000.0,1910
+G-AES,Alesund,,,gleam_basin,,W-EU,,NO,NOR,,62.562,6.12,48000.0,1145
+G-AET,Allakaket,,,gleam_basin,,W-NA,,US,USA,,66.552,-152.622,,2446
+G-AEX,Alexandria (US),,,gleam_basin,,W-NA,,US,USA,,31.327,-92.55,,2114
+G-AEY,Akureyri,,,gleam_basin,,W-EU,,IS,ISL,,65.66,-18.073,17000.0,1348
+G-AFA,San Rafael,,,gleam_basin,,W-SA,,AR,ARG,,-34.588,-68.404,109000.0,3183
+G-AFL,Alta Floresta,,,gleam_basin,,W-SA,,BR,BRA,,-9.866,-56.105,40000.0,1942
+G-AFS,Zarafshan,,,gleam_basin,,W-AS,,UZ,UZB,,41.614,64.233,,2836
+G-AFZ,Sabzevar,,,gleam_basin,,W-AS,,IR,IRN,,36.168,57.595,226000.0,2930
+G-AGA,Agadir,,,gleam_basin,,W-AF,,MA,MAR,,30.325,-9.413,825000.0,810
+G-AGB,Augsburg,,,gleam_basin,,W-EU,,DE,DEU,,48.425,10.932,359000.0,724
+G-AGF,Agen,,,gleam_basin,,W-EU,,FR,FRA,,44.175,0.591,58000.0,1489
+G-AGH,Angelholm,,,gleam_basin,,W-EU,,SE,SWE,,56.296,12.847,,2551
+G-AGP,Malaga,,,gleam_basin,,W-EU,,ES,ESP,,36.675,-4.499,550000.0,2873
+G-AGR,Agra,,,gleam_basin,,W-AS,,IN,IND,,27.156,77.961,1592000.0,1040
+G-AGS,Augusta (US-GA),,,gleam_basin,,W-NA,,US,USA,,33.37,-81.965,,2055
+G-AGT,Ciudad del Este,,,gleam_basin,,W-SA,,PY,PRY,,-25.455,-54.843,321000.0,243
+G-AGU,Aguascalientes,,,gleam_basin,,W-NA,,MX,MEX,,21.706,-102.318,869000.0,980
+G-AGX,Agatti Island,,,gleam_basin,,W-AS,,IN,IND,,10.824,72.176,,1039
+G-AHB,Abha,,,gleam_basin,,W-AS,,SA,SAU,,18.24,42.657,211000.0,259
+G-AHN,Athens (US),,,gleam_basin,,W-NA,,US,USA,,33.949,-83.326,,2278
+G-AHO,Alghero,,,gleam_basin,,W-EU,,IT,ITA,,40.632,8.291,34000.0,3084
+G-AHU,Al Hoceima,,,gleam_basin,,W-AF,,MA,MAR,,35.177,-3.84,396000.0,818
+G-AIA,Alliance,,,gleam_basin,,W-NA,,US,USA,,42.053,-102.804,32000.0,2238
+G-AIN,Wainwright,,,gleam_basin,,W-NA,,US,USA,,70.638,-159.995,,2292
+G-AIT,Aitutaki Island,,,gleam_basin,,W-OC,,CK,COK,,-18.831,-159.764,,1355
+G-AIU,Atiu Island,,,gleam_basin,,W-OC,,CK,COK,,-19.968,-158.119,,1357
+G-AJA,Ajaccio,,,gleam_basin,,W-EU,,FR,FRA,,41.924,8.803,54000.0,1499
+G-AJF,Jouf,,,gleam_basin,,W-AS,,SA,SAU,,29.785,40.1,,251
+G-AJI,Agri,,,gleam_basin,,W-AS,,TR,TUR,,39.655,43.026,88000.0,1756
+G-AJL,Aizawl,,,gleam_basin,,W-AS,,IN,IND,,23.841,92.62,283000.0,1072
+G-AJN,Anjouan,,,gleam_basin,,W-AF,,KM,COM,,-12.132,44.43,,1359
+G-AJR,Arvidsjaur,,,gleam_basin,,W-EU,,SE,SWE,,65.59,19.282,,2550
+G-AJU,Aracaju,,,gleam_basin,,W-SA,,BR,BRA,,-10.984,-37.07,685000.0,1977
+G-AJY,Agadez,,,gleam_basin,,W-AF,,NE,NER,,16.966,8.0,118000.0,71
+G-AKB,Atka,,,gleam_basin,,W-NA,,US,USA,,52.22,-174.206,,2178
+G-AKF,Kufra,,,gleam_basin,,W-AF,,LY,LBY,,24.179,23.314,,157
+G-AKJ,Asahikawa,,,gleam_basin,,W-AS,,JP,JPN,,43.671,142.447,357000.0,3111
+G-AKL,Auckland,,,gleam_basin,,W-OC,,NZ,NZL,,-37.008,174.792,1377000.0,3046
+G-AKN,King Salmon,,,gleam_basin,,W-NA,,US,USA,,58.677,-156.649,,2385
+G-AKP,Anaktuvuk Pass,,,gleam_basin,,W-NA,,US,USA,,68.134,-151.743,,2177
+G-AKS,Auki,,,gleam_basin,,W-OC,,SB,SLB,,-8.703,160.682,,3025
+G-AKU,Aksu,,,gleam_basin,,W-AS,,CN,CHN,,41.263,80.292,340000.0,351
+G-AKV,Akulivik,,,gleam_basin,,W-NA,,CA,CAN,,60.819,-78.149,,2627
+G-AKX,Aktobe,,,gleam_basin,,W-AS,,KZ,KAZ,,50.246,57.207,313000.0,659
+G-AKY,Sittwe,,,gleam_basin,,W-AS,,MM,MMR,,20.133,92.873,179000.0,873
+G-ALA,Almaty,,,gleam_basin,,W-AS,,KZ,KAZ,,43.352,77.04,1209000.0,668
+G-ALB,Albany (US-NY),,,gleam_basin,,W-NA,,US,USA,,42.748,-73.802,,2408
+G-ALC,Alicante,,,gleam_basin,,W-EU,,ES,ESP,,38.282,-0.558,316000.0,2904
+G-ALF,Alta,,,gleam_basin,,W-EU,,NO,NOR,,69.976,23.372,12000.0,1164
+G-ALG,Algiers,,,gleam_basin,,W-AF,,DZ,DZA,,36.691,3.215,3354000.0,43
+G-ALH,Albany,,,gleam_basin,,W-OC,,AU,AUS,,-34.943,117.809,597000.0,1656
+G-ALO,Waterloo,,,gleam_basin,,W-NA,,US,USA,,42.557,-92.4,112000.0,2407
+G-ALP,Aleppo,,,gleam_basin,,W-AS,,SY,SYR,,36.181,37.224,2738000.0,652
+G-ALS,Alamosa,,,gleam_basin,,W-NA,,US,USA,,37.435,-105.867,11000.0,2410
+G-ALW,Walla Walla,,,gleam_basin,,W-NA,,US,USA,,46.095,-118.288,58000.0,2409
+G-AMA,Amarillo,,,gleam_basin,,W-NA,,US,USA,,35.219,-101.706,206000.0,2368
+G-AMD,Ahmedabad,,,gleam_basin,,W-AS,,IN,IND,,23.077,72.635,3720000.0,1101
+G-AMF,Ama,,,gleam_basin,,W-OC,,PG,PNG,,,,,2992
+G-AMH,Arba Minch,,,gleam_basin,,W-AF,,ET,ETH,,6.039,37.59,70000.0,237
+G-AMM,Amman,,,gleam_basin,,W-AS,,JO,JOR,,31.723,35.993,1060000.0,151
+G-AMQ,Ambon,,,gleam_basin,,W-AS,,ID,IDN,,-3.71,128.089,356000.0,1285
+G-AMS,Amsterdam,,,gleam_basin,,W-EU,,NL,NLD,,52.309,4.764,1030999.0,837
+G-AMV,Amderma,,,gleam_basin,,W-EU,,RU,RUS,,69.763,61.556,0.0,1889
+G-ANC,Anchorage,,,gleam_basin,,W-NA,,US,USA,,61.174,-149.996,253000.0,2346
+G-ANE,Angers,,,gleam_basin,,W-EU,,FR,FRA,,47.56,-0.312,188000.0,1533
+G-ANF,Antofagasta,,,gleam_basin,,W-SA,,CL,CHL,,-23.445,-70.445,310000.0,302
+G-ANI,Aniak,,,gleam_basin,,W-NA,,US,USA,,61.582,-159.543,,2347
+G-ANM,Antalaha,,,gleam_basin,,W-AF,,MG,MDG,,-14.999,50.32,47000.0,1453
+G-ANS,Andahuaylas,,,gleam_basin,,W-SA,,PE,PER,,-13.706,-73.35,17000.0,1225
+G-ANU,Antigua,,,gleam_basin,,W-NA,,AG,ATG,,17.137,-61.793,,1180
+G-ANX,Andenes,,,gleam_basin,,W-EU,,NO,NOR,,69.293,16.144,,1160
+G-AOE,Eskisehir,,,gleam_basin,,W-AS,,TR,TUR,,39.81,30.519,515000.0,1767
+G-AOG,Anshan,,,gleam_basin,,W-AS,,CN,CHN,,41.105,122.854,1639000.0,406
+G-AOI,Ancona,,,gleam_basin,,W-EU,,IT,ITA,,43.616,13.362,101000.0,3089
+G-AOJ,Aomori,,,gleam_basin,,W-AS,,JP,JPN,,40.735,140.691,298000.0,3128
+G-AOK,Karpathos,,,gleam_basin,,W-EU,,GR,GRC,,35.421,27.146,,922
+G-AOR,Alor Setar,,,gleam_basin,,W-AS,,MY,MYS,,6.19,100.398,336000.0,180
+G-APL,Nampula,,,gleam_basin,,W-AF,,MZ,MOZ,,-15.106,39.282,389000.0,963
+G-APN,Alpena,,,gleam_basin,,W-NA,,US,USA,,45.078,-83.56,14000.0,2080
+G-APO,Apartado,,,gleam_basin,,W-SA,,CO,COL,,7.812,-76.716,86000.0,1363
+G-APW,Apia,,,gleam_basin,,W-OC,,WS,WSM,,-13.83,-172.008,62000.0,1739
+G-AQA,Araraquara,,,gleam_basin,,W-SA,,BR,BRA,,-21.812,-48.133,168000.0,2048
+G-AQG,Anqing,,,gleam_basin,,W-AS,,CN,CHN,,30.582,117.05,580000.0,471
+G-AQI,Qaisumah,,,gleam_basin,,W-AS,,SA,SAU,,28.335,46.125,21000.0,268
+G-AQJ,Aqaba,,,gleam_basin,,W-AS,,JO,JOR,,29.612,35.018,95000.0,152
+G-AQP,Arequipa,,,gleam_basin,,W-SA,,PE,PER,,-16.341,-71.583,815000.0,1231
+G-ARC,Arctic Village,,,gleam_basin,,W-NA,,US,USA,,68.115,-145.579,,2505
+G-ARH,Arkhangelsk,,,gleam_basin,,W-EU,,RU,RUS,,64.6,40.717,357000.0,1921
+G-ARI,Arica,,,gleam_basin,,W-SA,,CL,CHL,,-18.348,-70.339,186000.0,308
+G-ARK,Arusha,,,gleam_basin,,W-AF,,TZ,TZA,,-3.368,36.633,341000.0,215
+G-ARM,Armidale,,,gleam_basin,,W-OC,,AU,AUS,,-30.528,151.617,23000.0,1680
+G-ARN,Stockholm,,,gleam_basin,,W-EU,,SE,SWE,,59.652,17.919,1264000.0,2571
+G-ART,Watertown (US-NY),,,gleam_basin,,W-NA,,US,USA,,43.992,-76.022,,2504
+G-ARU,Aracatuba,,,gleam_basin,,W-SA,,BR,BRA,,-21.141,-50.425,170000.0,2037
+G-ASB,Ashgabat,,,gleam_basin,,W-AS,,TM,TKM,,37.987,58.361,728000.0,833
+G-ASE,Aspen,,,gleam_basin,,W-NA,,US,USA,,39.223,-106.869,9000.0,2447
+G-ASF,Astrakhan,,,gleam_basin,,W-EU,,RU,RUS,,46.283,48.006,503000.0,1911
+G-ASJ,Amami,,,gleam_basin,,W-AS,,JP,JPN,,28.431,129.713,,3149
+G-ASM,Asmara,,,gleam_basin,,W-AF,,ER,ERI,,15.292,38.911,621000.0,2848
+G-ASO,Asosa,,,gleam_basin,,W-AF,,ET,ETH,,10.019,34.586,31000.0,241
+G-ASP,Alice Springs,,,gleam_basin,,W-OC,,AU,AUS,,-23.807,133.902,28000.0,1579
+G-ASR,Kayseri,,,gleam_basin,,W-AS,,TR,TUR,,38.77,35.495,593000.0,1779
+G-ASU,Asuncion,,,gleam_basin,,W-SA,,PY,PRY,,-25.24,-57.52,1870000.0,244
+G-ASV,Amboseli,,,gleam_basin,,W-AF,,KE,KEN,,-2.645,37.253,,1734
+G-ASW,Aswan,,,gleam_basin,,W-AF,,EG,EGY,,23.964,32.82,313000.0,58
+G-ATA,Anta,,,gleam_basin,,W-SA,,PE,PER,,-9.347,-77.598,31000.0,1218
+G-ATH,Athens (GR),,,gleam_basin,,W-EU,,GR,GRC,,37.936,23.944,,915
+G-ATK,Atqasuk,,,gleam_basin,,W-NA,,US,USA,,70.467,-157.436,,2205
+G-ATL,Atlanta,,,gleam_basin,,W-NA,,US,USA,,33.637,-84.428,5229000.0,2204
+G-ATM,Altamira,,,gleam_basin,,W-SA,,BR,BRA,,-3.254,-52.254,71000.0,1970
+G-ATQ,Amritsar,,,gleam_basin,,W-AS,,IN,IND,,31.71,74.797,1212000.0,1068
+G-ATY,Watertown (US-SD),,,gleam_basin,,W-NA,,US,USA,,44.914,-97.155,,2208
+G-ATZ,Asyut,,,gleam_basin,,W-AF,,EG,EGY,,27.046,31.012,421000.0,54
+G-AUA,Aruba,,,gleam_basin,,W-NA,,AW,ABW,,,,,2973
+G-AUC,Arauca,,,gleam_basin,,W-SA,,CO,COL,,7.069,-70.737,69000.0,1371
+G-AUG,Augusta (US-ME),,,gleam_basin,,W-NA,,US,USA,,44.321,-69.797,,2180
+G-AUH,Abu Dhabi,,,gleam_basin,,W-AS,,AE,ARE,,24.433,54.651,603000.0,3179
+G-AUQ,Hiva Oa,,,gleam_basin,,W-OC,,PF,PYF,,-9.769,-139.011,,686
+G-AUR,Aurillac,,,gleam_basin,,W-EU,,FR,FRA,,44.891,2.422,35000.0,1502
+G-AUS,Austin,,,gleam_basin,,W-NA,,US,USA,,30.194,-97.67,1639000.0,2181
+G-AUU,Aurukun ,,,gleam_basin,,W-OC,,AU,AUS,,-13.354,141.721,,1601
+G-AUX,Araguaina,,,gleam_basin,,W-SA,,BR,BRA,,-7.228,-48.241,50000.0,1962
+G-AUY,Aneityum,,,gleam_basin,,W-OC,,VU,VUT,,-20.249,169.771,,1317
+G-AVA,Anshun,,,gleam_basin,,W-AS,,CN,CHN,,26.261,105.873,849000.0,337
+G-AVL,Asheville,,,gleam_basin,,W-NA,,US,USA,,35.436,-82.542,309000.0,2144
+G-AVP,Wilkes-Barre,,,gleam_basin,,W-NA,,US,USA,,41.339,-75.723,41000.0,2143
+G-AVV,Avalon,,,gleam_basin,,W-OC,,AU,AUS,,-38.039,144.469,,1594
+G-AWZ,Ahwaz,,,gleam_basin,,W-AS,,IR,IRN,,31.337,48.762,1112000.0,2931
+G-AXA,Anguilla,,,gleam_basin,,W-NA,,AI,AIA,,,,,2810
+G-AXD,Alexandroupolis,,,gleam_basin,,W-EU,,GR,GRC,,40.856,25.956,,925
+G-AXK,Ataq,,,gleam_basin,,W-AS,,YE,YEM,,14.551,46.826,37000.0,586
+G-AXP,Spring Point,,,gleam_basin,,W-NA,,BS,BHS,,22.442,-73.971,,3230
+G-AXR,Arutua,,,gleam_basin,,W-OC,,PF,PYF,,-15.248,-146.617,,695
+G-AXT,Akita,,,gleam_basin,,W-AS,,JP,JPN,,39.616,140.219,320000.0,3132
+G-AXU,Axum,,,gleam_basin,,W-AF,,ET,ETH,,14.147,38.773,41000.0,235
+G-AYP,Ayacucho,,,gleam_basin,,W-SA,,PE,PER,,-13.155,-74.204,166000.0,1223
+G-AYQ,Ayers Rock,,,gleam_basin,,W-OC,,AU,AUS,,-25.186,130.976,,1634
+G-AYT,Antalya,,,gleam_basin,,W-AS,,TR,TUR,,36.899,30.801,783000.0,1768
+G-AZD,Yazd,,,gleam_basin,,W-AS,,IR,IRN,,31.905,54.277,478000.0,2944
+G-AZN,Andizhan,,,gleam_basin,,W-AS,,UZ,UZB,,40.728,72.294,338000.0,2840
+G-AZO,Kalamazoo,,,gleam_basin,,W-NA,,US,USA,,42.235,-85.552,214000.0,2266
+G-AZR,Adrar,,,gleam_basin,,W-AF,,DZ,DZA,,27.838,-0.186,57000.0,30
+G-AZS,Samana,,,gleam_basin,,W-NA,,DO,DOM,,19.267,-69.742,11000.0,1200
+G-BAH,Bahrain,,,gleam_basin,,W-AS,,BH,BHR,,,,,3232
+G-BAL,Batman,,,gleam_basin,,W-AS,,TR,TUR,,37.929,41.117,302000.0,1777
+G-BAQ,Barranquilla,,,gleam_basin,,W-SA,,CO,COL,,10.89,-74.781,1798000.0,1395
+G-BAS,Balalae,,,gleam_basin,,W-OC,,SB,SLB,,-6.991,155.887,,3024
+G-BAV,Baotou,,,gleam_basin,,W-AS,,CN,CHN,,40.56,109.997,2036000.0,355
+G-BAX,Barnaul,,,gleam_basin,,W-EU,,RU,RUS,,53.364,83.538,600000.0,1898
+G-BAZ,Barcelos,,,gleam_basin,,W-SA,,BR,BRA,,-0.981,-62.92,13000.0,1963
+G-BBA,Balmaceda,,,gleam_basin,,W-SA,,CL,CHL,,-45.916,-71.689,,292
+G-BBI,Bhubaneshwar,,,gleam_basin,,W-AS,,IN,IND,,20.244,85.818,844000.0,1058
+G-BBK,Kasane,,,gleam_basin,,W-AF,,BW,BWA,,-17.833,25.162,9000.0,218
+G-BBN,Bario,,,gleam_basin,,W-AS,,MY,MYS,,3.734,115.479,,168
+G-BBO,Berbera,,,gleam_basin,,W-AF,,SO,SOM,,10.389,44.941,242000.0,2829
+G-BCA,Baracoa,,,gleam_basin,,W-NA,,CU,CUB,,20.365,-74.506,48000.0,3241
+G-BCD,Bacolod,,,gleam_basin,,W-AS,,PH,PHL,,10.776,123.015,949000.0,622
+G-BCI,Barcaldine,,,gleam_basin,,W-OC,,AU,AUS,,-23.565,145.307,1000.0,1686
+G-BCM,Bacau,,,gleam_basin,,W-EU,,RO,ROU,,46.522,26.91,200000.0,140
+G-BCN,Barcelona (ES),,,gleam_basin,,W-EU,,ES,ESP,,41.297,2.078,,2884
+G-BCV,Belmopan,,,gleam_basin,,W-NA,,BZ,BLZ,,,,15000.0,864
+G-BDA,Bermuda,,,gleam_basin,,W-NA,,BM,BMU,,,,,839
+G-BDB,Bundaberg,,,gleam_basin,,W-OC,,AU,AUS,,-24.904,152.319,52000.0,1687
+G-BDH,Bandar Lengeh,,,gleam_basin,,W-AS,,IR,IRN,,26.532,54.825,,2971
+G-BDJ,Banjarmasin,,,gleam_basin,,W-AS,,ID,IDN,,-3.442,114.763,604000.0,1313
+G-BDL,Hartford,,,gleam_basin,,W-NA,,US,USA,,41.939,-72.683,915000.0,2398
+G-BDO,Bandung,,,gleam_basin,,W-AS,,ID,IDN,,-6.901,107.576,2394000.0,1312
+G-BDP,Bhadrapur,,,gleam_basin,,W-AS,,NP,NPL,,26.571,88.08,20000.0,568
+G-BDQ,Vadodara,,,gleam_basin,,W-AS,,IN,IND,,22.336,73.226,1756000.0,1114
+G-BDS,Brindisi,,,gleam_basin,,W-EU,,IT,ITA,,40.658,17.947,104000.0,3096
+G-BDU,Bardufoss,,,gleam_basin,,W-EU,,NO,NOR,,69.056,18.54,,1174
+G-BEB,Benbecula,,,gleam_basin,,W-EU,,GB,GBR,,57.481,-7.363,,760
+G-BEG,Belgrade,,,gleam_basin,,W-EU,,RS,SRB,,44.818,20.309,1099000.0,2051
+G-BEJ,Tanjung Redeb,,,gleam_basin,,W-AS,,ID,IDN,,2.155,117.432,,1233
+G-BEL,Belem,,,gleam_basin,,W-SA,,BR,BRA,,-1.379,-48.476,2167000.0,1937
+G-BEN,Benghazi,,,gleam_basin,,W-AF,,LY,LBY,,32.097,20.27,1180000.0,154
+G-BES,Brest (FR),,,gleam_basin,,W-EU,,FR,FRA,,48.448,-4.419,,1491
+G-BET,Bethel,,,gleam_basin,,W-NA,,US,USA,,60.78,-161.838,20000.0,2457
+G-BEU,Bedourie,,,gleam_basin,,W-OC,,AU,AUS,,-24.346,139.46,0.0,1570
+G-BEW,Beira,,,gleam_basin,,W-AF,,MZ,MOZ,,-19.796,34.908,531000.0,961
+G-BEY,Beirut,,,gleam_basin,,W-AS,,LB,LBN,,33.821,35.488,1846000.0,271
+G-BFD,Bradford,,,gleam_basin,,W-NA,,US,USA,,41.803,-78.64,502000.0,2428
+G-BFF,Scottsbluff,,,gleam_basin,,W-NA,,US,USA,,41.874,-103.596,26000.0,2427
+G-BFJ,Bijie,,,gleam_basin,,W-AS,,CN,CHN,,27.267,105.472,78000.0,452
+G-BFL,Bakersfield,,,gleam_basin,,W-NA,,US,USA,,35.434,-119.057,574000.0,2430
+G-BFN,Bloemfontein,,,gleam_basin,,W-AF,,ZA,ZAF,,-29.093,26.302,463000.0,637
+G-BFS,Belfast,,,gleam_basin,,W-EU,,GB,GBR,,54.658,-6.216,450000.0,788
+G-BFV,Buriram,,,gleam_basin,,W-AS,,TH,THA,,15.229,103.253,,544
+G-BGA,Bucaramanga,,,gleam_basin,,W-SA,,CO,COL,,7.127,-73.185,1008999.0,1399
+G-BGC,Braganca,,,gleam_basin,,W-EU,,PT,PRT,,41.858,-6.707,57000.0,1438
+G-BGF,Bangui,,,gleam_basin,,W-AF,,CF,CAF,,4.398,18.519,832000.0,2811
+G-BGG,Bingol,,,gleam_basin,,W-AS,,TR,TUR,,38.859,40.596,81000.0,1780
+G-BGI,Barbados,,,gleam_basin,,W-NA,,BB,BRB,,,,,1933
+G-BGM,Binghamton,,,gleam_basin,,W-NA,,US,USA,,42.209,-75.98,151000.0,2470
+G-BGN,Belaya Gora,,,gleam_basin,,W-EU,,RU,RUS,,68.557,146.232,,1916
+G-BGO,Bergen,,,gleam_basin,,W-EU,,NO,NOR,,60.293,5.218,214000.0,1167
+G-BGR,Bangor,,,gleam_basin,,W-NA,,US,USA,,44.807,-68.828,59000.0,2471
+G-BGW,Baghdad,,,gleam_basin,,W-AS,,IQ,IRQ,,33.263,44.235,5054000.0,2915
+G-BHB,Bar Harbor,,,gleam_basin,,W-NA,,US,USA,,44.45,-68.362,5000.0,2421
+G-BHE,Blenheim,,,gleam_basin,,W-OC,,NZ,NZL,,-41.518,173.87,30000.0,3059
+G-BHH,Bisha,,,gleam_basin,,W-AS,,SA,SAU,,19.984,42.621,,264
+G-BHI,Bahia Blanca,,,gleam_basin,,W-SA,,AR,ARG,,-38.725,-62.169,282000.0,3212
+G-BHJ,Bhuj,,,gleam_basin,,W-AS,,IN,IND,,23.288,69.67,289000.0,1103
+G-BHK,Bukhara,,,gleam_basin,,W-AS,,UZ,UZB,,39.775,64.483,319000.0,2845
+G-BHM,Birmingham (US),,,gleam_basin,,W-NA,,US,USA,,33.563,-86.754,,2420
+G-BHO,Bhopal,,,gleam_basin,,W-AS,,IN,IND,,23.288,77.337,1727000.0,1104
+G-BHQ,Broken Hill,,,gleam_basin,,W-OC,,AU,AUS,,-32.001,141.472,17000.0,1662
+G-BHR,Bharatpur,,,gleam_basin,,W-AS,,NP,NPL,,27.678,84.429,229000.0,565
+G-BHU,Bhavnagar,,,gleam_basin,,W-AS,,IN,IND,,21.752,72.185,555000.0,1105
+G-BHV,Bahawalpur,,,gleam_basin,,W-AS,,PK,PAK,,29.348,71.718,553000.0,130
+G-BHX,Birmingham (UK),,,gleam_basin,,W-EU,,GB,GBR,,52.454,-1.748,,786
+G-BHY,Beihai,,,gleam_basin,,W-AS,,CN,CHN,,21.539,109.294,729000.0,451
+G-BIA,Bastia,,,gleam_basin,,W-EU,,FR,FRA,,42.553,9.484,41000.0,1529
+G-BIB,Baidoa,,,gleam_basin,,W-AF,,SO,SOM,,3.102,43.629,130000.0,2834
+G-BID,Block Island,,,gleam_basin,,W-NA,,US,USA,,41.168,-71.578,,2456
+G-BIK,Biak,,,gleam_basin,,W-AS,,ID,IDN,,-1.19,136.108,104000.0,1304
+G-BIL,Billings,,,gleam_basin,,W-NA,,US,USA,,45.808,-108.543,121000.0,2455
+G-BIM,Bimini,,,gleam_basin,,W-NA,,BS,BHS,,25.7,-79.265,,3229
+G-BIN,Bamyan,,,gleam_basin,,W-AS,,AF,AFG,,34.817,67.817,62000.0,897
+G-BIO,Bilbao,,,gleam_basin,,W-EU,,ES,ESP,,43.301,-2.911,876000.0,2907
+G-BIQ,Biarritz,,,gleam_basin,,W-EU,,FR,FRA,,43.468,-1.531,145000.0,1530
+G-BIR,Biratnagar,,,gleam_basin,,W-AS,,NP,NPL,,26.482,87.264,182000.0,567
+G-BIS,Bismarck,,,gleam_basin,,W-NA,,US,USA,,46.773,-100.746,97000.0,2458
+G-BJA,Bejaia,,,gleam_basin,,W-AF,,DZ,DZA,,36.712,5.07,385000.0,40
+G-BJB,Bojnurd,,,gleam_basin,,W-AS,,IR,IRN,,37.493,57.308,209000.0,2956
+G-BJF,Batsfjord,,,gleam_basin,,W-EU,,NO,NOR,,70.601,29.691,,1171
+G-BJI,Bemidji,,,gleam_basin,,W-NA,,US,USA,,47.509,-94.934,17000.0,2349
+G-BJL,Banjul,,,gleam_basin,,W-AF,,GM,GMB,,13.338,-16.652,43000.0,1554
+G-BJM,Bujumbura,,,gleam_basin,,W-AF,,BI,BDI,,-3.324,29.319,332000.0,900
+G-BJR,Bahar Dar,,,gleam_basin,,W-AF,,ET,ETH,,11.608,37.322,,236
+G-BJV,Bodrum,,,gleam_basin,,W-AS,,TR,TUR,,37.251,27.664,39000.0,1774
+G-BJX,Leon (MX),,,gleam_basin,,W-NA,,MX,MEX,,20.994,-101.481,,1018
+G-BJZ,Badajoz,,,gleam_basin,,W-EU,,ES,ESP,,38.891,-6.821,140000.0,2901
+G-BKC,Buckland,,,gleam_basin,,W-NA,,US,USA,,65.982,-161.149,,2372
+G-BKG,Branson,,,gleam_basin,,W-NA,,US,USA,,36.532,-93.201,25000.0,2202
+G-BKI,Kota Kinabalu,,,gleam_basin,,W-AS,,MY,MYS,,5.937,116.051,528000.0,186
+G-BKK,Bangkok,,,gleam_basin,,W-AS,,TH,THA,,13.681,100.747,6704000.0,538
+G-BKM,Bakelalan,,,gleam_basin,,W-AS,,ID,IDN,,3.974,115.618,,1287
+G-BKO,Bamako,,,gleam_basin,,W-AF,,ML,MLI,,12.534,-7.95,1494000.0,2919
+G-BKQ,Blackall,,,gleam_basin,,W-OC,,AU,AUS,,-24.428,145.429,,1647
+G-BKS,Bengkulu,,,gleam_basin,,W-AS,,ID,IDN,,-3.864,102.339,427000.0,1288
+G-BKW,Beckley,,,gleam_basin,,W-NA,,US,USA,,37.787,-81.124,60000.0,2373
+G-BKY,Bukavu,,,gleam_basin,,W-AF,,CD,COD,,-2.309,28.809,437000.0,1343
+G-BKZ,Bukoba,,,gleam_basin,,W-AF,,TZ,TZA,,-1.332,31.821,101000.0,212
+G-BLA,Barcelona (VE),,,gleam_basin,,W-SA,,VE,VEN,,10.111,-64.692,,1710
+G-BLE,Borlange,,,gleam_basin,,W-EU,,SE,SWE,,60.422,15.515,39000.0,2558
+G-BLI,Bellingham,,,gleam_basin,,W-NA,,US,USA,,48.793,-122.538,126000.0,2351
+G-BLJ,Batna,,,gleam_basin,,W-AF,,DZ,DZA,,35.752,6.309,281000.0,32
+G-BLK,Blackpool,,,gleam_basin,,W-EU,,GB,GBR,,53.772,-3.029,273000.0,779
+G-BLL,Billund,,,gleam_basin,,W-EU,,DK,DNK,,55.74,9.152,,1562
+G-BLQ,Bologna,,,gleam_basin,,W-EU,,IT,ITA,,44.535,11.289,488000.0,3086
+G-BLR,Bengaluru,,,gleam_basin,,W-AS,,IN,IND,,13.198,77.706,6787000.0,1085
+G-BLV,Belleville,,,gleam_basin,,W-NA,,US,USA,,38.545,-89.835,44000.0,2284
+G-BLZ,Blantyre,,,gleam_basin,,W-AF,,MW,MWI,,-15.679,34.974,585000.0,2870
+G-BMD,Belo Tsiribihina,,,gleam_basin,,W-AF,,MG,MDG,,-19.687,44.542,,1451
+G-BME,Broome,,,gleam_basin,,W-OC,,AU,AUS,,-17.945,122.232,13000.0,1635
+G-BMI,Bloomington,,,gleam_basin,,W-NA,,US,USA,,40.477,-88.916,135000.0,2309
+G-BMO,Bhamo,,,gleam_basin,,W-AS,,MM,MMR,,24.269,97.246,48000.0,877
+G-BMU,Bima,,,gleam_basin,,W-AS,,ID,IDN,,-8.54,118.687,67000.0,1274
+G-BMV,Ban Me Thuot,,,gleam_basin,,W-AS,,VN,VNM,,12.668,108.12,,1132
+G-BMW,Bordj Mokhtar,,,gleam_basin,,W-AF,,DZ,DZA,,21.375,0.924,,34
+G-BMY,Ile Art,,,gleam_basin,,W-OC,,NC,NCL,,-19.721,163.661,,3172
+G-BNA,Nashville,,,gleam_basin,,W-NA,,US,USA,,36.125,-86.678,1077000.0,2224
+G-BNB,Boende,,,gleam_basin,,W-AF,,CD,COD,,-0.217,20.85,32000.0,1334
+G-BNC,Beni,,,gleam_basin,,W-AF,,CD,COD,,0.575,29.474,333000.0,1335
+G-BND,Bandar Abbas,,,gleam_basin,,W-AS,,IR,IRN,,27.218,56.378,352000.0,2938
+G-BNE,Brisbane,,,gleam_basin,,W-OC,,AU,AUS,,-27.384,153.117,1860000.0,1603
+G-BNI,Benin City,,,gleam_basin,,W-AF,,NG,NGA,,6.317,5.6,1190000.0,1415
+G-BNK,Ballina,,,gleam_basin,,W-OC,,AU,AUS,,-28.834,153.562,14000.0,1610
+G-BNN,Bronnoysund,,,gleam_basin,,W-EU,,NO,NOR,,65.461,12.217,,1142
+G-BNS,Barinas,,,gleam_basin,,W-SA,,VE,VEN,,8.615,-70.214,284000.0,1708
+G-BNX,Banja Luka,,,gleam_basin,,W-EU,,BA,BIH,,44.941,17.298,222000.0,2818
+G-BOB,Bora Bora,,,gleam_basin,,W-OC,,PF,PYF,,-16.444,-151.751,,692
+G-BOC,Bocas del Toro,,,gleam_basin,,W-NA,,PA,PAN,,9.341,-82.251,10000.0,3005
+G-BOD,Bordeaux,,,gleam_basin,,W-EU,,FR,FRA,,44.828,-0.716,803000.0,1511
+G-BOG,Bogota,,,gleam_basin,,W-SA,,CO,COL,,4.702,-74.147,7772000.0,1377
+G-BOI,Boise,,,gleam_basin,,W-NA,,US,USA,,43.564,-116.223,385000.0,2244
+G-BOJ,Burgas,,,gleam_basin,,W-EU,,BG,BGR,,42.57,27.515,196000.0,83
+G-BOM,Mumbai,,,gleam_basin,,W-AS,,IN,IND,,19.089,72.868,18978000.0,1090
+G-BON,Bonaire,,,gleam_basin,,W-NA,,BQ,BES,,12.131,-68.269,,796
+G-BOO,Bodo,,,gleam_basin,,W-EU,,NO,NOR,,67.269,14.365,34000.0,1146
+G-BOS,Boston,,,gleam_basin,,W-NA,,US,USA,,42.364,-71.005,4638000.0,2489
+G-BOY,Bobo Dioulasso,,,gleam_basin,,W-AF,,BF,BFA,,11.16,-4.331,360000.0,273
+G-BPL,Bole,,,gleam_basin,,W-AS,,CN,CHN,,44.895,82.3,225000.0,364
+G-BPN,Balikpapan,,,gleam_basin,,W-AS,,ID,IDN,,-1.268,116.894,446000.0,1262
+G-BPS,Porto Seguro,,,gleam_basin,,W-SA,,BR,BRA,,-16.439,-39.081,123000.0,1974
+G-BPT,Beaumont,,,gleam_basin,,W-NA,,US,USA,,29.951,-94.021,149000.0,2216
+G-BPX,Qamdo,,,gleam_basin,,W-AS,,CN,CHN,,30.554,97.108,100000.0,365
+G-BQB,Busselton,,,gleam_basin,,W-OC,,AU,AUS,,-33.688,115.402,10000.0,1622
+G-BQG,Bogorodskoye,,,gleam_basin,,W-EU,,RU,RUS,,52.38,140.448,103000.0,1846
+G-BQK,Brunswick,,,gleam_basin,,W-NA,,US,USA,,31.259,-81.466,54000.0,2248
+G-BQL,Boulia,,,gleam_basin,,W-OC,,AU,AUS,,-22.913,139.9,1000.0,1623
+G-BQN,Aguadilla,,,gleam_basin,,W-NA,,PR,PRI,,18.495,-67.129,12000.0,196
+G-BQS,Blagoveschensk,,,gleam_basin,,W-EU,,RU,RUS,,50.425,127.412,,1848
+G-BQT,Brest (BY),,,gleam_basin,,W-EU,,BY,BLR,,52.108,23.898,,904
+G-BRA,Barreiras,,,gleam_basin,,W-SA,,BR,BRA,,-12.079,-45.009,158000.0,1956
+G-BRC,San Carlos de Bariloche,,,gleam_basin,,W-SA,,AR,ARG,,-41.151,-71.158,95000.0,3185
+G-BRD,Brainerd,,,gleam_basin,,W-NA,,US,USA,,46.398,-94.138,20000.0,2153
+G-BRE,Bremen,,,gleam_basin,,W-EU,,DE,DEU,,53.048,8.787,725000.0,728
+G-BRI,Bari,,,gleam_basin,,W-EU,,IT,ITA,,41.139,16.761,501000.0,3073
+G-BRL,Burlington (US-IA),,,gleam_basin,,W-NA,,US,USA,,40.783,-91.126,,2152
+G-BRM,Barquisimeto,,,gleam_basin,,W-SA,,VE,VEN,,10.043,-69.359,1116000.0,1705
+G-BRN,Berne,,,gleam_basin,,W-EU,,CH,CHE,,46.914,7.497,6000.0,275
+G-BRQ,Brno,,,gleam_basin,,W-EU,,CZ,CZE,,49.151,16.694,388000.0,1176
+G-BRR,Barra,,,gleam_basin,,W-EU,,GB,GBR,,57.023,-7.443,2000.0,765
+G-BRS,Bristol,,,gleam_basin,,W-EU,,GB,GBR,,51.383,-2.719,554000.0,764
+G-BRU,Brussels,,,gleam_basin,,W-EU,,BE,BEL,,50.901,4.484,1743000.0,720
+G-BRW,Barrow,,,gleam_basin,,W-NA,,US,USA,,71.285,-156.766,,2151
+G-BSA,Bosaso,,,gleam_basin,,W-AF,,SO,SOM,,11.275,49.149,74000.0,2830
+G-BSB,Brasilia,,,gleam_basin,,W-SA,,BR,BRA,,-15.869,-47.921,3717000.0,1961
+G-BSC,Bahia Solano,,,gleam_basin,,W-SA,,CO,COL,,6.203,-77.395,,1370
+G-BSD,Baoshan,,,gleam_basin,,W-AS,,CN,CHN,,25.053,99.168,1000000.0,354
+G-BSG,Bata,,,gleam_basin,,W-AF,,GQ,GNQ,,1.905,9.806,173000.0,2054
+G-BSK,Biskra,,,gleam_basin,,W-AF,,DZ,DZA,,34.793,5.738,202000.0,23
+G-BSL,Basel,,,gleam_basin,,W-EU,,FR,FRA,,47.59,7.529,830000.0,1501
+G-BSO,Basco,,,gleam_basin,,W-AS,,PH,PHL,,20.451,121.98,,599
+G-BSR,Basrah,,,gleam_basin,,W-AS,,IQ,IRQ,,30.549,47.662,2600000.0,2913
+G-BTC,Batticaloa,,,gleam_basin,,W-AS,,LK,LKA,,7.706,81.679,129000.0,754
+G-BTH,Batam,,,gleam_basin,,W-AS,,ID,IDN,,1.121,104.119,944000.0,1240
+G-BTI,Barter Island,,,gleam_basin,,W-NA,,US,USA,,70.134,-143.582,,2090
+G-BTJ,Banda Aceh,,,gleam_basin,,W-AS,,ID,IDN,,5.523,95.421,514000.0,1241
+G-BTK,Bratsk,,,gleam_basin,,W-EU,,RU,RUS,,56.371,101.698,246000.0,1809
+G-BTM,Butte,,,gleam_basin,,W-NA,,US,USA,,45.955,-112.497,31000.0,2089
+G-BTR,Baton Rouge,,,gleam_basin,,W-NA,,US,USA,,30.533,-91.15,584000.0,2088
+G-BTS,Bratislava,,,gleam_basin,,W-EU,,SK,SVK,,48.17,17.213,424000.0,2812
+G-BTT,Bettles,,,gleam_basin,,W-NA,,US,USA,,66.914,-151.529,,2087
+G-BTU,Bintulu,,,gleam_basin,,W-AS,,MY,MYS,,3.124,113.02,152000.0,167
+G-BTV,Burlington (US-VT),,,gleam_basin,,W-NA,,US,USA,,44.472,-73.153,,2139
+G-BUA,Buka,,,gleam_basin,,W-OC,,PG,PNG,,-5.422,154.673,,2981
+G-BUC,Burketown,,,gleam_basin,,W-OC,,AU,AUS,,-17.749,139.534,0.0,1586
+G-BUD,Budapest,,,gleam_basin,,W-EU,,HU,HUN,,47.43,19.261,1679000.0,830
+G-BUF,Buffalo,,,gleam_basin,,W-NA,,US,USA,,42.94,-78.732,926000.0,2336
+G-BUL,Bulolo,,,gleam_basin,,W-OC,,PG,PNG,,-7.216,146.65,16000.0,2980
+G-BUN,Buenaventura,,,gleam_basin,,W-SA,,CO,COL,,3.82,-76.99,253000.0,1365
+G-BUQ,Bulawayo,,,gleam_basin,,W-AF,,ZW,ZWE,,-20.017,28.618,699000.0,958
+G-BUS,Batumi,,,gleam_basin,,W-AS,,GE,GEO,,41.61,41.6,156000.0,842
+G-BUW,Baubau,,,gleam_basin,,W-AS,,ID,IDN,,-5.487,122.569,24000.0,1245
+G-BUX,Bunia,,,gleam_basin,,W-AF,,CD,COD,,1.566,30.221,97000.0,1329
+G-BUZ,Bushehr,,,gleam_basin,,W-AS,,IR,IRN,,28.945,50.835,165000.0,2933
+G-BVB,Boa Vista,,,gleam_basin,,W-SA,,BR,BRA,,2.841,-60.692,235000.0,2039
+G-BVC,Boa Vista Island,,,gleam_basin,,W-AF,,CV,CPV,,16.136,-22.889,,138
+G-BVE,Brive-La-Gaillarde,,,gleam_basin,,W-EU,,FR,FRA,,45.04,1.486,55000.0,1536
+G-BVH,Vilhena,,,gleam_basin,,W-SA,,BR,BRA,,-12.694,-60.098,63000.0,2040
+G-BVI,Birdsville,,,gleam_basin,,W-OC,,AU,AUS,,-25.897,139.348,0.0,1683
+G-BVV,Iturup Island,,,gleam_basin,,W-EU,,RU,RUS,,,,,1922
+G-BWA,Bhairawa,,,gleam_basin,,W-AS,,NP,NPL,,27.506,83.416,,553
+G-BWI,Baltimore,,,gleam_basin,,W-NA,,US,USA,,39.175,-76.668,2171000.0,2335
+G-BWN,Bandar Seri Begawan,,,gleam_basin,,W-AS,,BN,BRN,,4.944,114.928,296000.0,1789
+G-BWT,Burnie,,,gleam_basin,,W-OC,,AU,AUS,,-40.999,145.731,20000.0,1569
+G-BWW,Cayo Las Brujas,,,gleam_basin,,W-NA,,CU,CUB,,22.621,-79.147,,3236
+G-BXB,Irarutu,,,gleam_basin,,W-AS,,ID,IDN,,-2.532,133.439,,1307
+G-BXR,Bam,,,gleam_basin,,W-AS,,IR,IRN,,29.084,58.45,99000.0,2967
+G-BXU,Butuan,,,gleam_basin,,W-AS,,PH,PHL,,8.951,125.479,191000.0,620
+G-BYC,Yacuiba,,,gleam_basin,,W-SA,,BO,BOL,,-21.961,-63.652,83000.0,85
+G-BYF,Albert,,,gleam_basin,,W-EU,,FR,FRA,,49.972,2.698,,1490
+G-BYJ,Beja,,,gleam_basin,,W-EU,,PT,PRT,,38.079,-7.932,60000.0,1428
+G-BYM,Bayamo,,,gleam_basin,,W-NA,,CU,CUB,,20.396,-76.621,193000.0,3237
+G-BYN,Bayankhongor,,,gleam_basin,,W-AS,,MN,MNG,,46.163,100.704,,845
+G-BYO,Bonito,,,gleam_basin,,W-SA,,BR,BRA,,-21.247,-56.452,,1934
+G-BZE,Belize City,,,gleam_basin,,W-NA,,BZ,BLZ,,17.539,-88.308,63000.0,862
+G-BZG,Bydgoszcz,,,gleam_basin,,W-EU,,PL,POL,,53.097,17.978,366000.0,2859
+G-BZL,Barisal,,,gleam_basin,,W-AS,,BD,BGD,,22.801,90.301,202000.0,66
+G-BZN,Bozeman,,,gleam_basin,,W-NA,,US,USA,,45.778,-111.153,54000.0,2403
+G-BZO,Bolzano,,,gleam_basin,,W-EU,,IT,ITA,,46.46,11.326,96000.0,3091
+G-BZR,Beziers,,,gleam_basin,,W-EU,,FR,FRA,,43.324,3.354,81000.0,1524
+G-BZV,Brazzaville,,,gleam_basin,,W-AF,,CG,COG,,-4.252,15.253,1355000.0,1346
