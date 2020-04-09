@@ -12,13 +12,13 @@ log = logging.getLogger(__name__)
 
 
 class Loader:
-    def __init__(self, start, end, regions, features, data_dir=None):
+    def __init__(self, start_date, end_date, regions, features, data_dir=None):
         if data_dir is None:
             data_dir = Path(__file__).parents[3] / "data"
         self.data_dir = data_dir
 
         # Days
-        self.Ds = pd.date_range(start=start, end=end, tz="utc")
+        self.Ds = pd.date_range(start=start_date, end=end_date, tz="utc")
 
         # Features
         self.CMs = list(features)

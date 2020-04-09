@@ -83,7 +83,7 @@ class BaseCMModel(Model):
 
     def run(self, N, chains=2, cores=2):
         print(self.check_test_point())
-        with self:
+        with self.model:
             self.trace = pm.sample(N, chains=chains, cores=cores, init="adapt_diag")
 
 
@@ -125,12 +125,7 @@ class CMModelV2(BaseCMModel):
         # TODO: Estimate good prior (but can be weak?)
         self.LN("RegionScaleMult", 0.0, 1.0, shape=(self.nRs,))
 
-        try:
-            self.ActiveCMReduction = T.reshape(self.CMReduction, (1, self.nCMs, 1)) ** self.d.ActiveCMs
-        except AttributeError:
-            # TODO: make a custom exception class for not build error or similar
-            raise Exception("Missing CM Reduction Prior; have you built that?")
-
+        self.ActiveCMReduction = T.reshape(self.CMReduction, (1, self.nCMs, 1)) ** self.d.ActiveCMs
         self.Det("GrowthReduction", T.prod(self.ActiveCMReduction, axis=1))
         self.DelayedGrowthReduction = geom_convolution(self.GrowthReduction, self.DelayProb, axis=1)[:, self.CMDelayCut:]
         self.Det("PredictedGrowth", T.reshape(self.RegionGrowthRate, (self.nRs, 1)) * self.DelayedGrowthReduction)
