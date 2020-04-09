@@ -14,6 +14,8 @@ class BaseCMModel(Model):
     def __init__(self, data, model=None, name=""):
         super().__init__(name, model)
         self.d = data
+        self.prefix = '' if not(name) else (name + '_')
+        # TODO: Use prefix
         self.plot_trace_vars = set()
         self.trace = None
 
@@ -21,7 +23,13 @@ class BaseCMModel(Model):
         """Create a lognorm variable, adding it to self as attribute."""
         if name in self.__dict__:
             log.warning(f"Variable {name} already present, overwriting def")
-        v = pm.Lognormal(name, T.log(mean), log_var)
+        if hyperprior:
+            # TODO
+            pass
+        kws = {}
+        if shape is not None:
+            kws['shape'] = shape
+        v = pm.Lognormal(name, T.log(mean), log_var, **kws)
         self.__dict__[name] = v
         if plot_trace:
             self.plot_trace_vars.add(name)
@@ -49,10 +57,14 @@ class BaseCMModel(Model):
     def nCMs(self):
         return len(self.d.CMs)
 
+    def plot_traces(self):
+        assert self.trace is not None
+        return pm.traceplot(self.trace, var_names=list(self.plot_trace_vars))
+
     def plot_effect(self):
         assert self.trace is not None
-        pm.forestplot(
-            self.trace, var_names=[f"{self.name}_CMReduction"], credible_interval=0.9
+        return pm.forestplot(
+            self.trace, var_names=[f"CMReduction"], credible_interval=0.9
         )
 
     def run(self, N, chains=2, cores=2):
@@ -84,13 +96,13 @@ class CMModelV2(BaseCMModel):
         # [] Baseline growth rate (wide prior OK, mean estimates ~10% daily growth)
         self.LN("BaseGrowthRate", 1.2, 2.3)
 
-        # [country] Country growth rate
+        # [region] Region growth rate
         # TODO: Estimate growth rate variance
-        self.LN("CountryGrowthRate", self.BaseGrowthRate, 0.3, shape=(self.nCs,))
+        self.LN("RegionGrowthRate", self.BaseGrowthRate, 0.3, shape=(self.nRs,))
 
-        # [country] Country unreliability as common scale multiplier of its:
+        # [region] Region unreliability as common scale multiplier of its:
         # * measurements (measurement unreliability)
         # * expected growth noise
         # TODO: Estimate good prior (but can be weak?)
-        self.LN("CountryScaleMult", 1.0, 2.3, shape=(self.nCs,))
+        self.LN("RegionScaleMult", 1.0, 2.3, shape=(self.nRs,))
 

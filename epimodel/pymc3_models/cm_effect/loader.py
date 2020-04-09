@@ -14,7 +14,7 @@ log = logging.getLogger(__name__)
 class Loader:
     def __init__(self, start, end, regions, features, data_dir=None):
         if data_dir is None:
-            data_dir = Path(__file__).parents[4] / "data"
+            data_dir = Path(__file__).parents[3] / "data"
         self.data_dir = data_dir
 
         # Days
@@ -54,7 +54,7 @@ class Loader:
             # Confirmed cases, masking values smaller than 10
             v = (
                 self.johns_hopkins[name]
-                .loc[(tuple(self.Rs), tuple(self.Ds))]
+                .loc[(tuple(self.Rs), self.Ds)]
                 .unstack(1)
                 .values
             )
@@ -83,7 +83,7 @@ class Loader:
         """Print data stats, plot graphs, ..."""
 
         print("\nCountermeasures                            min   .. mean  .. max")
-        for i, cm in enumerate(CMs):
+        for i, cm in enumerate(self.CMs):
             vals = np.array(self.sel_features[cm])
             print(
                 f"{i:2} {cm:42} {vals.min():.3f} .. {vals.mean():.3f} .. {vals.max():.3f}"
