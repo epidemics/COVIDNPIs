@@ -62,7 +62,7 @@ class WebExport:
         assert (not outdir.exists()) or outdir.is_dir()
         exdir = Path(path) / name
         log.info(f"Writing WebExport to {exdir} ...")
-        exdir.mkdir(exist_ok=(name!=None), parents=True)
+        exdir.mkdir(exist_ok=(name != None), parents=True)
         for rc, er in tqdm(list(self.export_regions.items()), desc="Writing regions"):
             fname = f"extdata-{rc}.json"
             er.data_url = f"{name}/{fname}"
@@ -90,33 +90,36 @@ class WebExportRegion:
             "data": self.data,
             "data_url": self.data_url,
             "name": self.region.DisplayName,
-            "level": self.region.Level.name
+            "level": self.region.Level.name,
         }
 
-        if(self.rates is not None):
+        if self.rates is not None:
             d["rates"] = {
                 "hosp": self.rates.Hospitalization,
                 "crit": self.rates.Critical,
-                "cfr": self.rates.CaseFatalityRate
+                "cfr": self.rates.CaseFatalityRate,
             }
 
-        fields = [(inflection.underscore(name),name) for name in [
-            "Population",
-            "Lat",
-            "Lon",
-            "OfficialName",
-            "M49Code",
-            "ContinentCode",
-            "SubregionCode",
-            "CountryCode",
-            "SubdivisionCode",
-        ]]
+        fields = [
+            (inflection.underscore(name), name)
+            for name in [
+                "Population",
+                "Lat",
+                "Lon",
+                "OfficialName",
+                "M49Code",
+                "ContinentCode",
+                "SubregionCode",
+                "CountryCode",
+                "SubdivisionCode",
+            ]
+        ]
 
         fields.append(("country_code_iso3", "CountryCodeISOa3"))
         for (jsonName, name) in fields:
             # if not pd.isnull(self.region[name]):
             #     d[jsonName] = self.region[name]
-            
+
             d[jsonName] = None if pd.isnull(self.region[name]) else self.region[name]
 
         return d

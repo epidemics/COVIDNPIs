@@ -15,6 +15,7 @@ from .utils import normalize_name
 
 log = logging.getLogger(__name__)
 
+
 class Rates:
     def __init__(self, rds, code):
         self._rds = weakref.ref(rds)
@@ -41,15 +42,14 @@ class Rates:
                 f"Setting attribute {name} on {self!r} not allowed (use ratesds.data directly)."
             )
 
+
 class RatesDataset:
     """
     A set of rates
     """
 
     COLUMN_TYPES = OrderedDict(
-        Hospitalization="f4",
-        Critical="f4",
-        CaseFatalityRate="f4"
+        Hospitalization="f4", Critical="f4", CaseFatalityRate="f4"
     )
 
     def __init__(self):
