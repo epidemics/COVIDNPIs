@@ -5,8 +5,6 @@ from epimodel import RegionDataset, read_csv
 from modeling.nowcasting.nowcasting import exp_model
 
 
-
-
 def exp_csse(data, actual_pred=None, date=None):
     days_prev = 7
     days_to_pred = 14
@@ -18,7 +16,7 @@ def exp_csse(data, actual_pred=None, date=None):
 
     for region in regions:
         reg_data = data.loc[region]
-        reg_data_prev = reg_data[-1 * days_prev:]
+        reg_data_prev = reg_data[-1 * days_prev :]
         data_y_Confirmed = reg_data_prev["Confirmed"].to_list()
         data_y_Deaths = reg_data_prev["Deaths"].to_list()
         data_y_Recovered = reg_data_prev["Recovered"].to_list()
@@ -36,18 +34,26 @@ def exp_csse(data, actual_pred=None, date=None):
         datelist = pd.date_range(start=date, periods=days_to_pred).tolist()
 
         try:
-            pred_next_week_confirmed = exp_model(data_x, data_y_Confirmed, date, days_prev, days_to_pred, actual_pred)
+            pred_next_week_confirmed = exp_model(
+                data_x, data_y_Confirmed, date, days_prev, days_to_pred, actual_pred
+            )
         except ValueError:
-            pred_next_week_confirmed = [[datelist[i], "NaN"] for i in range(days_to_pred)]
+            pred_next_week_confirmed = [
+                [datelist[i], "NaN"] for i in range(days_to_pred)
+            ]
             print(region, "data has NaNs")
         except Exception as inst:
-            pred_next_week_confirmed = [[datelist[i], "NaN"] for i in range(days_to_pred)]
+            pred_next_week_confirmed = [
+                [datelist[i], "NaN"] for i in range(days_to_pred)
+            ]
             print("There was an error doing the forecasting")
             print(type(inst))
             print(inst)
 
         try:
-            pred_next_week_deaths = exp_model(data_x, data_y_Deaths, date, days_prev, days_to_pred, actual_pred)
+            pred_next_week_deaths = exp_model(
+                data_x, data_y_Deaths, date, days_prev, days_to_pred, actual_pred
+            )
         except ValueError:
             pred_next_week_deaths = [[datelist[i], "NaN"] for i in range(days_to_pred)]
             print(region, "data has NaNs")
@@ -58,18 +64,26 @@ def exp_csse(data, actual_pred=None, date=None):
             print(inst)
 
         try:
-            pred_next_week_recovered = exp_model(data_x, data_y_Recovered, date, days_prev, days_to_pred, actual_pred)
+            pred_next_week_recovered = exp_model(
+                data_x, data_y_Recovered, date, days_prev, days_to_pred, actual_pred
+            )
         except ValueError:
-            pred_next_week_recovered = [[datelist[i], "NaN"] for i in range(days_to_pred)]
+            pred_next_week_recovered = [
+                [datelist[i], "NaN"] for i in range(days_to_pred)
+            ]
             print(region, "data has NaNs")
         except Exception as inst:
-            pred_next_week_recovered = [[datelist[i], "NaN"] for i in range(days_to_pred)]
+            pred_next_week_recovered = [
+                [datelist[i], "NaN"] for i in range(days_to_pred)
+            ]
             print("There was an error doing the forecasting")
             print(type(inst))
             print(inst)
 
         try:
-            pred_next_week_active = exp_model(data_x, data_y_Active, date, days_prev, days_to_pred, actual_pred)
+            pred_next_week_active = exp_model(
+                data_x, data_y_Active, date, days_prev, days_to_pred, actual_pred
+            )
         except ValueError:
             pred_next_week_active = [[datelist[i], "NaN"] for i in range(days_to_pred)]
             print(region, "data has NaNs")
@@ -79,16 +93,33 @@ def exp_csse(data, actual_pred=None, date=None):
             print(type(inst))
             print(inst)
 
-        pred_next_week = [[pred_next_week_recovered[i][1], pred_next_week_confirmed[i][1], pred_next_week_deaths[i][1],
-                           pred_next_week_active[i][1]] for i in range(len(pred_next_week_confirmed))]
+        pred_next_week = [
+            [
+                pred_next_week_recovered[i][1],
+                pred_next_week_confirmed[i][1],
+                pred_next_week_deaths[i][1],
+                pred_next_week_active[i][1],
+            ]
+            for i in range(len(pred_next_week_confirmed))
+        ]
 
         code = [region]
-        index = pd.MultiIndex.from_product((code, datelist), names=('Code', 'Date'))
+        index = pd.MultiIndex.from_product((code, datelist), names=("Code", "Date"))
 
-        df3 = pd.DataFrame(data=pred_next_week, index=index, columns=['Recovered', 'Confirmed', 'Deaths', 'Active'])
+        df3 = pd.DataFrame(
+            data=pred_next_week,
+            index=index,
+            columns=["Recovered", "Confirmed", "Deaths", "Active"],
+        )
 
-        index2 = pd.MultiIndex.from_product((code, reg_data.index), names=('Code', 'Date'))
-        df4 = pd.DataFrame(data=reg_data.values, index=index2, columns=['Recovered', 'Confirmed', 'Deaths', 'Active'])
+        index2 = pd.MultiIndex.from_product(
+            (code, reg_data.index), names=("Code", "Date")
+        )
+        df4 = pd.DataFrame(
+            data=reg_data.values,
+            index=index2,
+            columns=["Recovered", "Confirmed", "Deaths", "Active"],
+        )
         df4 = df4.append(df3)
 
         nowcasting.append(df4)
@@ -98,8 +129,8 @@ def exp_csse(data, actual_pred=None, date=None):
 
 
 if __name__ == "__main__":
-    rds = RegionDataset.load('../data/regions.csv')
-    csse_ds = read_csv('../data/johns-hopkins.csv')
+    rds = RegionDataset.load("../data/regions.csv")
+    csse_ds = read_csv("../data/johns-hopkins.csv")
 
     nowcasting_df = exp_csse(csse_ds)
-    nowcasting_df.to_csv('nowcasting.csv')
+    nowcasting_df.to_csv("nowcasting.csv")
