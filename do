@@ -28,7 +28,7 @@ def import_countermeasures(args):
 def update_johns_hopkins(args):
     log.info("Downloading and parsing CSSE ...")
     csse = epimodel.imports.import_johns_hopkins(args.rds)
-    dest = Path(args.config["data_dir"]) / "CSSE.csv"
+    dest = Path(args.config["data_dir"]) / "johns-hopkins.csv"
     csse.to_csv(dest)
     log.info(
         f"Saved CSSE to {dest}, last day is {csse.index.get_level_values(1).max()}"
