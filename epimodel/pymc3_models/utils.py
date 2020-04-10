@@ -2,6 +2,14 @@ import theano.tensor as T
 import numpy as np
 
 
+def array_stats(d):
+    d = np.array(d)
+    return (
+        f"{d.mean():.3g} std={d.std():.3f} "
+        f"({np.quantile(d, 0.05):.3g} .. {np.quantile(d, 0.95):.3g})"
+    )
+
+
 def shift_right(t, dist, axis, pad=0.0):
     """
     Return the signal shifted by dist along given axis, padded by `pad`.
