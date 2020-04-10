@@ -6,7 +6,7 @@ import socket
 import subprocess
 from pathlib import Path
 from enum import Enum
-from typing import Optional, Iterable, Dict, Any
+from typing import Optional, Dict, Any
 
 import pandas as pd
 import numpy as np
@@ -89,7 +89,6 @@ class WebExportRegion:
         # Any per-region data. Large ones should go to data_ext.
         self.data = self.extract_smallish_data(rates, hopkins, foretold)
         # Extended data to be written in a separate per-region file
-        # TODO: this is where we should have extra data
         self.data_ext = self.extract_models_data(models, simulations_spec)
         # Relative URL of the extended data file, set on write
         self.data_url = None
