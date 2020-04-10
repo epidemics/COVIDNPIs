@@ -82,7 +82,7 @@ class BaseCMModel(Model):
     def run(self, N, chains=2, cores=2):
         print(self.check_test_point())
         with self:
-            self.trace = pm.sample(1000, chains=chains, cores=cores, init="adapt_diag")
+            self.trace = pm.sample(N, chains=chains, cores=cores, init="adapt_diag")
 
 
 class CMModelV2(BaseCMModel):
