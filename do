@@ -51,24 +51,36 @@ def update_foretold(args):
         foretold.to_csv(dest, float_format="%.7g")
         log.info(f"Saved Foretold to {dest}")
 
+
 def _web_export(
     comment: str,
     export_regions: List[str],
     region_dataset: RegionDataset,
     models: Path,
     rates: Path,
+    hopkins: Path,
+    foretold: Path,
     output_dir: Path,
+    date_resample: str,
 ) -> None:
-    ex = WebExport(comment=comment)
+    ex = WebExport(date_resample, comment=comment)
 
-    models_df: pd.DataFrame = pd.read_hdf(models)
-    rates_df: pd.DataFrame = pd.read_csv(rates)
+    simulation_specs: pd.DataFrame = pd.read_hdf(models, "simulations")
+    models_df: pd.DataFrame = pd.read_hdf(models, "new_fraction")
+    # TODO: unify indexing
+    rates_df: pd.DataFrame = pd.read_csv(rates, index_col="CodeM49")
+    hopkins_df: pd.DataFrame = pd.read_csv(hopkins, index_col="Code")
+    foretold_df: pd.DataFrame = pd.read_csv(foretold, index_col="Code")
 
     for code in export_regions:
+        reg = region_dataset[code]
         ex.new_region(
-            region_dataset[code],
-            models_df.loc[code],
-            rates_df.loc[code]
+            reg,
+            models_df.loc[code].sort_index(level="Date"),
+            simulation_specs,
+            rates_df.loc[int(reg.M49Code)],
+            hopkins_df.loc[code],
+            foretold_df.loc[code],
         )
 
     ex.write(output_dir)
@@ -81,7 +93,10 @@ def web_export(args):
         args.rds,
         args.models_file,
         args.rates,
+        args.john_hopkins,
+        args.foretold,
         args.config["output_dir"],
+        args.config["gleam_resample"],
     )
 
 
@@ -130,12 +145,10 @@ def create_parser():
     # TODO: candidate to be split into two steps: "integrate data" -> export
     exp = sp.add_parser("web_export", help="Create data export for web.")
     exp.add_argument("-c", "--comment", help="A short comment (to be part of path).")
-    exp.add_argument(
-        "-m", "--models-file", help="A result HDF file of import_gleam_batch step"
-    )
-    exp.add_argument(
-        "-r", "--rates", help="Path to a file for hospital rates (M49 indexed)"
-    )
+    exp.add_argument("models_file", help="A result HDF file of import_gleam_batch step")
+    exp.add_argument("rates", help="Path to a file for hospital rates (M49 indexed)")
+    exp.add_argument("john_hopkins", help="John Hopkins data (UN code indexed)")
+    exp.add_argument("foretold", help="Foretold data (UN code indexed)")
     # TODO: additional data files we want to have in the export
     exp.set_defaults(func=web_export)
 
@@ -166,7 +179,7 @@ def main():
         logging.root.setLevel(logging.DEBUG)
     with open(args.config, "rt") as f:
         args.config = yaml.safe_load(f)
-    args.rds = RegionDataset.load(Path(args.config["data_dir"]) / "export_regions.csv")
+    args.rds = RegionDataset.load(Path(args.config["data_dir"]) / "regions.csv")
     args.func(args)
 
 

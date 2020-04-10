@@ -6,7 +6,7 @@ import socket
 import subprocess
 from pathlib import Path
 from enum import Enum
-from typing import Optional, Iterable
+from typing import Optional, Iterable, Dict, Any
 
 import pandas as pd
 import numpy as np
@@ -24,10 +24,11 @@ class WebExport:
     Document holding one data export to web. Contains a subset of Regions.
     """
 
-    def __init__(self, comment=None):
+    def __init__(self, date_resample: str, comment=None):
         self.created = datetime.datetime.now().astimezone(datetime.timezone.utc)
         self.created_by = f"{getpass.getuser()}@{socket.gethostname()}"
         self.comment = comment
+        self.date_resample = date_resample
         self.export_regions = {}
 
     def to_json(self):
@@ -35,18 +36,22 @@ class WebExport:
             "created": self.created,
             "created_by": self.created_by,
             "comment": self.comment,
+            "date_resample": self.date_resample,
             "regions": {k: a.to_json() for k, a in self.export_regions.items()},
         }
 
-    def new_region(self, region, models: pd.DataFrame, rates: pd.DataFrame):
-        er = WebExportRegion(region, models, rates)
+    def new_region(
+        self,
+        region,
+        models: pd.DataFrame,
+        simulation_spec: pd.DataFrame,
+        rates: pd.DataFrame,
+        hopkins: pd.DataFrame,
+        foretold: pd.DataFrame,
+    ):
+        er = WebExportRegion(region, models, simulation_spec, rates, hopkins, foretold)
         self.export_regions[region.Code] = er
         return er
-
-    def add_data_from(
-        self, dataframe: pd.DataFrame, columns: Optional[Iterable[str]] = None
-    ) -> None:
-        raise NotImplementedError
 
     def write(self, path, name=None):
         if name is None:
@@ -70,18 +75,49 @@ class WebExport:
 
 
 class WebExportRegion:
-    def __init__(self, region, models: pd.DataFrame, rates: pd.DataFrame):
+    def __init__(
+        self,
+        region,
+        models: pd.DataFrame,
+        simulations_spec: pd.DataFrame,
+        rates: pd.DataFrame,
+        hopkins: pd.DataFrame,
+        foretold: pd.DataFrame,
+    ):
         assert isinstance(region, Region)
         self.region = region
         # Any per-region data. Large ones should go to data_ext.
-        breakpoint()
         # TODO: this is where we should add the models data
-        self.data = {}  # {name: anything}
+        self.data = self.extract_models_data(
+            models, simulations_spec
+        )  # {name: anything}
+        breakpoint()
         # Extended data to be written in a separate per-region file
         # TODO: this is where we should have extra data
         self.data_ext = {}  # {name: anything}
         # Relative URL of the extended data file, set on write
         self.data_url = None
+
+    @staticmethod
+    def extract_models_data(
+        models: pd.DataFrame, simulation_spec: pd.DataFrame
+    ) -> Dict[str, Any]:
+        d = {
+            "start_date": models.index.levels[0].min().isoformat(),
+        }
+        traces = []
+        for simulation_id, simulation_def in simulation_spec.iterrows():
+            trace_data = models.xs(simulation_id, level="SimulationID")
+            trace = {
+                "group": simulation_def["Group"],
+                "key": simulation_def["Key"],
+                "name": simulation_def["Name"],
+                "infected": trace_data.loc[:, "Infected"].tolist(),
+                "recovered": trace_data.loc[:, "Recovered"].tolist(),
+            }
+            traces.append(trace)
+        d["traces"] = traces
+        return d
 
     def to_json(self):
         d = {
