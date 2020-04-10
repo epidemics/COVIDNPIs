@@ -8,7 +8,7 @@ from pathlib import Path
 import yaml
 
 import epimodel
-from epimodel import RegionDataset
+from epimodel import RegionDataset, Level
 from epimodel.exports.epidemics_org import WebExport, upload_export
 from epimodel.gleam import Batch
 
@@ -68,7 +68,7 @@ def web_upload(args):
 def import_batch(args):
     batch = Batch.open(args.BATCH_FILE)
     d = args.rds.data
-    regions = d.loc[(d.Level == "country") & (d.GleamID != "")].Region.values
+    regions = d.loc[(d.Level == Level.country) & (d.GleamID != "")].Region.values
     batch.import_sims(
         Path(args.config["gleamviz_sims_dir"]).expanduser(),
         regions,
