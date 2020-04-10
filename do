@@ -66,11 +66,16 @@ def _web_export(
     ex = WebExport(date_resample, comment=comment)
 
     simulation_specs: pd.DataFrame = pd.read_hdf(models, "simulations")
-    models_df: pd.DataFrame = pd.read_hdf(models, "new_fraction")
-    # TODO: unify indexing
-    rates_df: pd.DataFrame = pd.read_csv(rates, index_col="CodeM49")
-    hopkins_df: pd.DataFrame = pd.read_csv(hopkins, index_col="Code", parse_dates=["Date"])
-    foretold_df: pd.DataFrame = pd.read_csv(foretold, index_col="Code", parse_dates=["Date"])
+    models_df: pd.DataFrame = pd.read_hdf(
+        models, "new_fraction"
+    )  # TODO: unify indexing
+    rates_df: pd.DataFrame = pd.read_csv(rates, index_col="Code")
+    hopkins_df: pd.DataFrame = pd.read_csv(
+        hopkins, index_col="Code", parse_dates=["Date"]
+    )
+    foretold_df: pd.DataFrame = pd.read_csv(
+        foretold, index_col="Code", parse_dates=["Date"]
+    )
 
     for code in export_regions:
         reg = region_dataset[code]
@@ -78,9 +83,9 @@ def _web_export(
             reg,
             models_df.loc[code].sort_index(level="Date"),
             simulation_specs,
-            rates_df.loc[int(reg.M49Code)],
-            hopkins_df.loc[code].set_index('Date').sort_index(),
-            foretold_df.loc[code].set_index('Date').sort_index(),
+            rates_df.loc[code],
+            hopkins_df.loc[code].set_index("Date").sort_index(),
+            foretold_df.loc[code].set_index("Date").sort_index(),
         )
 
     ex.write(output_dir)
@@ -146,9 +151,9 @@ def create_parser():
     exp = sp.add_parser("web_export", help="Create data export for web.")
     exp.add_argument("-c", "--comment", help="A short comment (to be part of path).")
     exp.add_argument("models_file", help="A result HDF file of import_gleam_batch step")
-    exp.add_argument("rates", help="Path to a file for hospital rates (M49 indexed)")
-    exp.add_argument("john_hopkins", help="John Hopkins data (UN code indexed)")
-    exp.add_argument("foretold", help="Foretold data (UN code indexed)")
+    exp.add_argument("rates", help="Path to a file for hospital rates")
+    exp.add_argument("john_hopkins", help="John Hopkins data")
+    exp.add_argument("foretold", help="Foretold data")
     # TODO: additional data files we want to have in the export
     exp.set_defaults(func=web_export)
 
