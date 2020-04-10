@@ -74,9 +74,10 @@ class WebExportRegion:
         assert isinstance(region, Region)
         self.region = region
         # Any per-region data. Large ones should go to data_ext.
+        # TODO: this is where we should add the models data
         self.data = {}  # {name: anything}
         # Extended data to be written in a separate per-region file
-        ## TODO: this is where we should have extra data
+        # TODO: this is where we should have extra data
         self.data_ext = {}  # {name: anything}
         # Relative URL of the extended data file, set on write
         self.data_url = None
