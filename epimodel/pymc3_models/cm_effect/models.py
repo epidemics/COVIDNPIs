@@ -66,7 +66,7 @@ class BaseCMModel(Model):
             self.trace, var_names=[self.prefix + "CMReduction"], credible_interval=0.9
         )
 
-    def print_CMReduction(self, varname):
+    def print_CMReduction(self):
         varname = self.prefix + "CMReduction"
         for i, c in enumerate(self.d.CMs):
             print(f"{i:2} {c:30} {varname:20} {array_stats(self.trace[varname][:,i])}")
@@ -217,10 +217,10 @@ class CMModelV2g(CMModelV2):
     CM effect model V2g (exp(-gamma) prior)
     """
 
-    def build_reduction_var(self, scale=0.1):
+    def build_reduction_var(self, alpha=0.5, beta=1.0):
         """
         CM reduction prior from ICL paper, only values <=1.0
         """
         # [CM] How much countermeasures reduce growth rate
         CMReductionGamma = pm.Gamma("CMReductionGamma", alpha, beta, shape=(self.nCMs,))
-        return self.Det("CMReduction", T.exp((-1.0) * self.CMReductionGamma))
+        return self.Det("CMReduction", T.exp((-1.0) * CMReductionGamma))

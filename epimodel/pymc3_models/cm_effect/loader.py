@@ -47,6 +47,17 @@ class Loader:
 
         self.update()
 
+    def split_0to1_features(self):
+        """
+        Split joined features in model-0to1 into separate bool features.
+
+        Resulting DF is stored in `self.features_split` and returned.
+        """
+
+
+        self.features_split = pd.DataFrame(fs)
+        return 
+
     def update(self):
         """(Re)compute the values used in the model after any parameter/region/etc changes."""
 
