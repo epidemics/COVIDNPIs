@@ -56,15 +56,16 @@ def _web_export(
     comment: str,
     export_regions: List[str],
     region_dataset: RegionDataset,
-    rates_path: Path,
+    models: Path,  # TODO: use below
+    rates: Path,
     output_dir: Path,
 ) -> None:
     ex = WebExport(comment=comment)
     for code in export_regions:
         ex.new_region(region_dataset[code])
 
-    rates: pd.DataFrame = pd.read_csv(rates_path)
-    ex.add_data_from(rates, columns=['beds', 'crits'])
+    rates_df: pd.DataFrame = pd.read_csv(rates)
+    ex.add_data_from(rates_df, columns=['beds', 'crits'])
     ex.write(output_dir)
 
 
@@ -73,6 +74,7 @@ def web_export(args):
         args.comment,
         args.config["export_regions"],
         args.rds,
+        args.models_file,
         args.rates,
         args.config["output_dir"],
     )
@@ -124,7 +126,7 @@ def create_parser():
     exp = sp.add_parser("web_export", help="Create data export for web.")
     exp.add_argument("-c", "--comment", help="A short comment (to be part of path).")
     exp.add_argument(
-        "-b", "--batch-file", help="A result HDF file of import_gleam_batch step"
+        "-m", "--models-file", help="A result HDF file of import_gleam_batch step"
     )
     exp.add_argument(
         "-r", "--rates", help="Path to a file for hospital rates (M49 indexed)"
