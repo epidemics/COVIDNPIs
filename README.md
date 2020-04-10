@@ -78,3 +78,11 @@ Assuming you've installed deps via `poetry install` in the root epimodel repo.
     # TODO: some parameters based on the output of the previous step?
     ./do web_export
     ```
+
+### Gleam Batch file
+Has two dataframes:
+* `simulations`: indexed by SimulationID, contains information about what simulation ID had what parameters
+* `new_fraction`: actually contains the modelled data for Infected and Recovered (values/columns). Indexed by `['Code', 'Date', 'SimulationID']`:
+    * `Code`: country code (e.g. `AE`)
+    * `Date`: a date for which we model Infected and Recovered
+    * `SimulationID`: corresponding simulation ID to be able to be able to map it to parameters in `simulations` 
