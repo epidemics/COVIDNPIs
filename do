@@ -8,7 +8,7 @@ from pathlib import Path
 import yaml
 
 import epimodel
-from epimodel import RegionDataset
+from epimodel import RegionDataset, Level
 from epimodel.exports.epidemics_org import WebExport, upload_export
 from epimodel.gleam import Batch
 
@@ -28,7 +28,7 @@ def import_countermeasures(args):
 def update_johns_hopkins(args):
     log.info("Downloading and parsing CSSE ...")
     csse = epimodel.imports.import_johns_hopkins(args.rds)
-    dest = Path(args.config["data_dir"]) / "CSSE.csv"
+    dest = Path(args.config["data_dir"]) / "johns-hopkins.csv"
     csse.to_csv(dest)
     log.info(
         f"Saved CSSE to {dest}, last day is {csse.index.get_level_values(1).max()}"
@@ -68,7 +68,7 @@ def web_upload(args):
 def import_batch(args):
     batch = Batch.open(args.BATCH_FILE)
     d = args.rds.data
-    regions = d.loc[(d.Level == "country") & (d.GleamID != "")].Region.values
+    regions = d.loc[(d.Level == Level.country) & (d.GleamID != "")].Region.values
     batch.import_sims(
         Path(args.config["gleamviz_sims_dir"]).expanduser(),
         regions,
