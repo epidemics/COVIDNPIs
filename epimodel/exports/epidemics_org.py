@@ -99,7 +99,7 @@ class WebExportRegion:
         rates: Optional[pd.DataFrame],
         hopkins: Optional[pd.DataFrame],
         foretold: Optional[pd.DataFrame],
-    ) -> Dict[str, Any]:
+    ) -> Dict[str, Dict[str, Any]]:
         d = {
             "critical_rates": rates.to_dict() if rates is not None else None,
             "hopkins": {
