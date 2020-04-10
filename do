@@ -65,7 +65,7 @@ def _web_export(
         ex.new_region(region_dataset[code])
 
     rates_df: pd.DataFrame = pd.read_csv(rates)
-    ex.add_data_from(rates_df, columns=['beds', 'crits'])
+    ex.add_data_from(rates_df, columns=["beds", "crits"])
     ex.write(output_dir)
 
 
