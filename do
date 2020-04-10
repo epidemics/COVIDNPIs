@@ -69,8 +69,8 @@ def _web_export(
     models_df: pd.DataFrame = pd.read_hdf(models, "new_fraction")
     # TODO: unify indexing
     rates_df: pd.DataFrame = pd.read_csv(rates, index_col="CodeM49")
-    hopkins_df: pd.DataFrame = pd.read_csv(hopkins, index_col="Code")
-    foretold_df: pd.DataFrame = pd.read_csv(foretold, index_col="Code")
+    hopkins_df: pd.DataFrame = pd.read_csv(hopkins, index_col="Code", parse_dates=["Date"])
+    foretold_df: pd.DataFrame = pd.read_csv(foretold, index_col="Code", parse_dates=["Date"])
 
     for code in export_regions:
         reg = region_dataset[code]
@@ -79,8 +79,8 @@ def _web_export(
             models_df.loc[code].sort_index(level="Date"),
             simulation_specs,
             rates_df.loc[int(reg.M49Code)],
-            hopkins_df.loc[code],
-            foretold_df.loc[code],
+            hopkins_df.loc[code].set_index('Date').sort_index(),
+            foretold_df.loc[code].set_index('Date').sort_index(),
         )
 
     ex.write(output_dir)

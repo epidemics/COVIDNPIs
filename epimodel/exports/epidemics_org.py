@@ -87,23 +87,38 @@ class WebExportRegion:
         assert isinstance(region, Region)
         self.region = region
         # Any per-region data. Large ones should go to data_ext.
-        # TODO: this is where we should add the models data
-        self.data = self.extract_models_data(
-            models, simulations_spec
-        )  # {name: anything}
-        breakpoint()
+        self.data = self.extract_smallish_data(rates, hopkins, foretold)
         # Extended data to be written in a separate per-region file
         # TODO: this is where we should have extra data
-        self.data_ext = {}  # {name: anything}
+        self.data_ext = self.extract_models_data(models, simulations_spec)
         # Relative URL of the extended data file, set on write
         self.data_url = None
+
+    @staticmethod
+    def extract_smallish_data(
+        rates: pd.DataFrame, hopkins: pd.DataFrame, foretold: pd.DataFrame
+    ) -> Dict[str, Any]:
+        d = {
+            "critical_rates": rates.to_dict(),
+            "hopkins": {
+                "date_index": [x.isoformat() for x in hopkins.index],
+                **hopkins.astype(int).to_dict(orient="list"),
+            },
+            "foretold": {
+                "date_index": [x.isoformat() for x in foretold.index],
+                **foretold.loc[:, ["Mean", "Variance"]]
+                .astype(int)
+                .to_dict(orient="list"),
+            },
+        }
+        return d
 
     @staticmethod
     def extract_models_data(
         models: pd.DataFrame, simulation_spec: pd.DataFrame
     ) -> Dict[str, Any]:
         d = {
-            "start_date": models.index.levels[0].min().isoformat(),
+            "date_index": [x.isoformat() for x in models.index.levels[0]],
         }
         traces = []
         for simulation_id, simulation_def in simulation_spec.iterrows():
@@ -117,7 +132,7 @@ class WebExportRegion:
             }
             traces.append(trace)
         d["traces"] = traces
-        return d
+        return {"models": d}
 
     def to_json(self):
         d = {
