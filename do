@@ -60,10 +60,11 @@ def _web_export(
     output_dir: Path,
 ) -> None:
     ex = WebExport(comment=comment)
-    rates: pd.DataFrame = pd.read_csv(rates_path)
     for code in export_regions:
-        ex.new_region(region_dataset[code], rates[code])
-    # TODO: add data to ex
+        ex.new_region(region_dataset[code])
+
+    rates: pd.DataFrame = pd.read_csv(rates_path)
+    ex.add_data_from(rates, columns=['beds', 'crits'])
     ex.write(output_dir)
 
 

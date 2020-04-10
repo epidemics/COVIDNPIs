@@ -6,6 +6,7 @@ import socket
 import subprocess
 from pathlib import Path
 from enum import Enum
+from typing import Optional, Iterable
 
 import pandas as pd
 import numpy as np
@@ -42,6 +43,11 @@ class WebExport:
         self.export_regions[region.Code] = er
         return er
 
+    def add_data_from(
+        self, dataframe: pd.DataFrame, columns: Optional[Iterable[str]] = None
+    ) -> None:
+        raise NotImplementedError
+
     def write(self, path, name=None):
         if name is None:
             name = f"export-{self.created.isoformat()}"
@@ -70,6 +76,7 @@ class WebExportRegion:
         # Any per-region data. Large ones should go to data_ext.
         self.data = {}  # {name: anything}
         # Extended data to be written in a separate per-region file
+        ## TODO: this is where we should have extra data
         self.data_ext = {}  # {name: anything}
         # Relative URL of the extended data file, set on write
         self.data_url = None
