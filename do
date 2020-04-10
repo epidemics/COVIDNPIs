@@ -51,21 +51,26 @@ def update_foretold(args):
         foretold.to_csv(dest, float_format="%.7g")
         log.info(f"Saved Foretold to {dest}")
 
-
 def _web_export(
     comment: str,
     export_regions: List[str],
     region_dataset: RegionDataset,
-    models: Path,  # TODO: use below
+    models: Path,
     rates: Path,
     output_dir: Path,
 ) -> None:
     ex = WebExport(comment=comment)
-    for code in export_regions:
-        ex.new_region(region_dataset[code])
 
+    models_df: pd.DataFrame = pd.read_hdf(models)
     rates_df: pd.DataFrame = pd.read_csv(rates)
-    ex.add_data_from(rates_df, columns=["beds", "crits"])
+
+    for code in export_regions:
+        ex.new_region(
+            region_dataset[code],
+            models_df.loc[code],
+            rates_df.loc[code]
+        )
+
     ex.write(output_dir)
 
 

@@ -38,8 +38,8 @@ class WebExport:
             "regions": {k: a.to_json() for k, a in self.export_regions.items()},
         }
 
-    def new_region(self, region):
-        er = WebExportRegion(region)
+    def new_region(self, region, models: pd.DataFrame, rates: pd.DataFrame):
+        er = WebExportRegion(region, models, rates)
         self.export_regions[region.Code] = er
         return er
 
@@ -70,10 +70,11 @@ class WebExport:
 
 
 class WebExportRegion:
-    def __init__(self, region):
+    def __init__(self, region, models: pd.DataFrame, rates: pd.DataFrame):
         assert isinstance(region, Region)
         self.region = region
         # Any per-region data. Large ones should go to data_ext.
+        breakpoint()
         # TODO: this is where we should add the models data
         self.data = {}  # {name: anything}
         # Extended data to be written in a separate per-region file
