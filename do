@@ -98,8 +98,11 @@ def create_parser():
     )
     ibp.set_defaults(func=import_batch)
 
+    # TODO: candidate to be split into two steps: "integrate data" -> export
     exp = sp.add_parser("web_export", help="Create data export for web.")
     exp.add_argument("-c", "--comment", help="A short comment (to be part of path).")
+    exp.add_argument("-b", "--batch-file", help="A result HDF file of import_gleam_batch step")
+    # TODO: additional data files we want to have in the export
     exp.set_defaults(func=web_export)
 
     uplp = sp.add_parser("web_upload", help="Upload data to the configured GCS bucket")
