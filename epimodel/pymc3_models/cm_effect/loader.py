@@ -72,7 +72,7 @@ class Loader:
         self.ActiveCMs = self.get_ActiveCMs(self.Ds[0], self.Ds[-1])
 
     def get_ActiveCMs(self, start, end):
-        local_Ds = pd.date_range(start=start, end=end, tz="utc") 
+        local_Ds = pd.date_range(start=start, end=end, tz="utc")
         self.sel_features = self.features_0to1.loc[self.Rs, self.CMs]
         if "Mask wearing" in self.sel_features.columns:
             self.sel_features["Mask wearing"] *= 0.01
