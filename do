@@ -14,7 +14,7 @@ from epimodel import Level, RegionDataset
 from epimodel.exports.epidemics_org import WebExport, upload_export
 from epimodel.gleam import Batch
 
-log = logging.getLogger("gleambatch")
+log = logging.getLogger(__name__)
 
 
 def import_countermeasures(args):
@@ -52,6 +52,55 @@ def update_foretold(args):
         log.info(f"Saved Foretold to {dest}")
 
 
+def get_cmi(df: pd.DataFrame):
+    return df.index.levels[0].unique()
+
+
+def analyze_data_consistency(
+    export_regions: List[str], models, rates_df, hopkins, foretold
+) -> None:
+    codes = {
+        "models": get_cmi(models),
+        "hopkins": get_cmi(hopkins),
+        "foretold": get_cmi(foretold),
+        "rates": rates_df.index.unique(),
+    }
+
+    union_codes = set()
+    any_nan = False
+    for source_name, ixs in codes.items():
+        if ixs.isna().sum() > 0:
+            log.error("Dataset %s contains NaN in index!", source_name)
+            any_nan = True
+        union_codes.update(ixs)
+
+    if any_nan:
+        raise ValueError("Some datasets indexed by NaNs. Fix the source data.")
+
+    df = pd.DataFrame(index=sorted(union_codes))
+    for source_name, ixs in codes.items():
+        df[source_name] = pd.Series(True, index=ixs)
+    df = df.fillna(False)
+
+    log.info("Total Data availability, number of locations: %s", df.sum().to_dict())
+    log.info("Export requested for %s regions: %s", len(export_regions), export_regions)
+
+    if diff_export_and_models := set(export_regions).difference(get_cmi(models)):
+        log.error(
+            "You requested to export %s but that's not modelled yet.",
+            diff_export_and_models,
+        )
+        raise ValueError(
+            f"Regions {diff_export_and_models} not present in modelled data. Remove it from config."
+        )
+
+    log.info(
+        "From exported regions (N=%s): %s",
+        len(export_regions),
+        df.loc[export_regions].sum().to_dict(),
+    )
+
+
 def _web_export(
     comment: str,
     export_regions: List[str],
@@ -65,16 +114,22 @@ def _web_export(
 ) -> None:
     ex = WebExport(date_resample, comment=comment)
 
+    export_regions = sorted(export_regions)
+
     simulation_specs: pd.DataFrame = pd.read_hdf(models, "simulations")
-    models_df: pd.DataFrame = pd.read_hdf(
-        models, "new_fraction"
-    )  # TODO: unify indexing
-    rates_df: pd.DataFrame = pd.read_csv(rates, index_col="Code")
+    models_df: pd.DataFrame = pd.read_hdf(models, "new_fraction")
+
+    rates_df: pd.DataFrame = pd.read_csv(rates, index_col="Code", keep_default_na=False)
+
     hopkins_df: pd.DataFrame = pd.read_csv(
-        hopkins, index_col="Code", parse_dates=["Date"]
+        hopkins, index_col=["Code", "Date"], parse_dates=["Date"]
     )
     foretold_df: pd.DataFrame = pd.read_csv(
-        foretold, index_col="Code", parse_dates=["Date"]
+        foretold, index_col=["Code", "Date"], parse_dates=["Date"]
+    )
+
+    analyze_data_consistency(
+        export_regions, models_df, rates_df, hopkins_df, foretold_df
     )
 
     for code in export_regions:
@@ -84,8 +139,8 @@ def _web_export(
             models_df.loc[code].sort_index(level="Date"),
             simulation_specs,
             rates_df.loc[code],
-            hopkins_df.loc[code].set_index("Date").sort_index(),
-            foretold_df.loc[code].set_index("Date").sort_index(),
+            hopkins_df.loc[code].sort_index(),
+            foretold_df.loc[code].sort_index(),
         )
 
     ex.write(output_dir)
