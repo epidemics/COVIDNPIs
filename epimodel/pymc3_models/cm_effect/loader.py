@@ -69,15 +69,19 @@ class Loader:
         self.Recovered = prep("Recovered", self.RecoveredCutoff)
         self.Active = prep("Active", self.ActiveCutoff)
 
+        self.ActiveCMs = self.get_ActiveCMs(self.Ds[0], self.Ds[-1])
+
+    def get_ActiveCMs(self, start, end):
+        local_Ds = pd.date_range(start=start, end=end, tz="utc") 
         self.sel_features = self.features_0to1.loc[self.Rs, self.CMs]
         if "Mask wearing" in self.sel_features.columns:
             self.sel_features["Mask wearing"] *= 0.01
         ActiveCMs = np.stack(
-            [self.sel_features.loc[rc].loc[self.Ds].T for rc in self.Rs]
+            [self.sel_features.loc[rc].loc[local_Ds].T for rc in self.Rs]
         )
-        assert ActiveCMs.shape == (len(self.Rs), len(self.CMs), len(self.Ds))
+        assert ActiveCMs.shape == (len(self.Rs), len(self.CMs), len(local_Ds))
         # [region, CM, day] Which CMs are active, and to what extent
-        self.ActiveCMs = ActiveCMs.astype(self.TheanoType)
+        return ActiveCMs.astype(self.TheanoType)
 
     def stats(self):
         """Print data stats, plot graphs, ..."""
