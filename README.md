@@ -67,14 +67,14 @@ print(csse.loc[('CZ', "2020-03-28")])
 Assuming you've installed deps via `poetry install` in the root epimodel repo.
 
 0. clone data repo: `git clone https://github.com/epidemics/epimodel-covid-data data`
-1. add a Foretold token into `config.yaml` in `foretold_channel`
-2. run:
+1. `./do update_john_hopkins`
+2. add a Foretold token into `config.yaml` in `foretold_channel` and run `./do update_foretold`
+3. **TODO?: Run gleamviz and get batch file? What's being fetched inside the file?** 
+4. having the Gleam Batch import file:
     ```
-    ./do update_john_hopkins
-    ./do update_foretold
-    ```
-3. get the result gleambatch import file (from someone who ran gleamviz):
-    ```
-    # e.g. here it's being manually downloaded into data
     ./do import_gleam_batch data/batch-2020-04-03T23-35-24.482054+02-00.hdf5
+    ```
+5.  ```
+    # TODO: some parameters based on the output of the previous step?
+    ./do web_export
     ```
