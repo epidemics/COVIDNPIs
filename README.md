@@ -70,11 +70,8 @@ Assuming you've installed deps via `poetry install` in the root epimodel repo.
 1. `./do update_john_hopkins`
 2. add a Foretold token into `config.yaml` in `foretold_channel` and run `./do update_foretold`
 3. **TODO?: Run gleamviz and get batch file? What's being fetched inside the file?** 
-4. having the Gleam Batch simulation dir results:
-    ```
-    ./do import_gleam_batch gmeaviz_sims_dir
-    ```
-5.  `./do web_export --batch-file batch.hdf # TODO arguments`
+4. having the Gleam Batch simulation dir results: `./do import_gleam_batch`
+5.  `./do -C config-local.yaml web_export data/batch-2020-04-03T23-35-24.482054+02-00.hdf5 data/rates_by_m49.csv data/johns-hopkins.csv data/foretold.csv` 
 
 ### Gleam Batch file
 Has two dataframes:
