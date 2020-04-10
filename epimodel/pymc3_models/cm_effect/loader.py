@@ -32,9 +32,6 @@ class Loader:
         self.johns_hopkins = read_csv(self.data_dir / "johns-hopkins.csv")
         self.features_0to1 = read_csv(self.data_dir / "countermeasures-model-0to1.csv")
 
-        # Selected features:
-        self.features = self.features_0to1
-
         self.TheanoType = "float64"
 
         self.Confirmed = None
@@ -50,42 +47,15 @@ class Loader:
 
         self.update()
 
-    def split_0to1_features(self, exclusive=False):
+    def split_0to1_features(self):
         """
         Split joined features in model-0to1 into separate bool features.
 
         Resulting DF is stored in `self.features_split` and returned.
         """
-        fs = {}
-        f01 = self.features_0to1
 
-        fs["Masks over 60"] = f01["Mask wearing"] >= 60
-
-        fs["Asymptomatic contact isolation"] = f01["Asymptomatic contact isolation"]
-
-        fs["Gatherings limited to 10"] = f01["Gatherings limited to"] > 0
-        fs["Gatherings limited to 100"] = f01["Gatherings limited to"] > 0
-        fs["Gatherings limited to 1000"] = f01["Gatherings limited to"] > 0
-
-        fs["Business suspended - some"] = f01["Business suspended"] > 0.1
-        fs["Business suspended - many"] = f01["Business suspended"] > 0.6
-
-        fs["Schools and universities closed"] = f01["Schools and universities closed"]
-
-        fs["Distancing and hygiene over 0.2"] = (
-            f01["Minor distancing and hygiene measures"] > 0.2
-        )
-
-        fs["General curfew - permissive"] = f01["General curfew"] > 0.1
-        fs["General curfew - strict"] = f01["General curfew"] > 0.6
-
-        fs["Healthcare specialisation over 0.2"] = (
-            f01["Healthcare specialisation"] > 0.2
-        )
-
-        fs["Phone line"] = f01["Phone line"]
-
-        return pd.DataFrame(fs).astype("f4")
+        self.features_split = pd.DataFrame(fs)
+        return
 
     def update(self):
         """(Re)compute the values used in the model after any parameter/region/etc changes."""
@@ -113,7 +83,7 @@ class Loader:
 
     def get_ActiveCMs(self, start, end):
         local_Ds = pd.date_range(start=start, end=end, tz="utc")
-        self.sel_features = self.features.loc[self.Rs, self.CMs]
+        self.sel_features = self.features_0to1.loc[self.Rs, self.CMs]
         if "Mask wearing" in self.sel_features.columns:
             self.sel_features["Mask wearing"] *= 0.01
         ActiveCMs = np.stack(
@@ -123,17 +93,17 @@ class Loader:
         # [region, CM, day] Which CMs are active, and to what extent
         return ActiveCMs.astype(self.TheanoType)
 
-    def print_stats(self):
+    def stats(self):
         """Print data stats, plot graphs, ..."""
 
         print("\nCountermeasures                            min   .. mean  .. max")
         for i, cm in enumerate(self.CMs):
             vals = np.array(self.sel_features[cm])
             print(
-                f"{i:2} {cm:42} {vals.min():.3f} .. {vals.mean():.3f}"
-                f" .. {vals.max():.3f}"
-                f"  {set(vals) if len(set(vals)) <= 4 else ''}"
+                f"{i:2} {cm:42} {vals.min():.3f} .. {vals.mean():.3f} .. {vals.max():.3f}"
             )
+            if len(set(vals)) < 10:
+                print(f"{'':46}{set(vals)}")
 
         # TODO: add more
 
