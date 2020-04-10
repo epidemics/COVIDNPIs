@@ -5,6 +5,7 @@ import logging
 import socket
 import subprocess
 from pathlib import Path
+from enum import Enum
 
 import pandas as pd
 import numpy as np
@@ -134,4 +135,7 @@ def types_to_json(obj):
         return float(obj)
     if isinstance(obj, datetime.datetime):
         return obj.isoformat()
-    return obj
+    if isinstance(obj, Enum):
+        return obj.name
+    else:
+        raise TypeError(f"Unserializable object {obj} of type {type(obj)}")
