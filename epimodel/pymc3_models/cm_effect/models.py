@@ -160,7 +160,7 @@ class CMModelV2(BaseCMModel):
         # * measurements (measurement unreliability)
         # * expected growth noise
         # TODO: Estimate good prior (but can be weak?)
-        RegionScaleMult = self.LogNorm("RegionScaleMult", 1.0, 2.3, shape=(self.nRs,))
+        RegionScaleMult = self.LogNorm("RegionScaleMult", 1.0, 1.0, shape=(self.nRs,))
 
         # [region, day] The ideal predicted daily growth
         PredictedGrowth = self.Det(
