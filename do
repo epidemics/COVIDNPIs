@@ -3,7 +3,7 @@
 import argparse
 import logging
 from pathlib import Path
-from typing import List
+from typing import List, Optional
 import pandas as pd
 
 import yaml
@@ -82,7 +82,7 @@ def analyze_data_consistency(
         df[source_name] = pd.Series(True, index=ixs)
     df = df.fillna(False)
 
-    log.info("Total Data availability, number of locations: %s", df.sum().to_dict())
+    log.info("Total data availability, number of locations: %s", df.sum().to_dict())
     log.info("Export requested for %s regions: %s", len(export_regions), export_regions)
 
     if diff_export_and_models := set(export_regions).difference(get_cmi(models)):
@@ -99,6 +99,13 @@ def analyze_data_consistency(
         len(export_regions),
         df.loc[export_regions].sum().to_dict(),
     )
+
+
+def get_df_else_none(df: pd.DataFrame, code) -> Optional[pd.DataFrame]:
+    if code in df.index:
+        return df.loc[code].sort_index()
+    else:
+        return None
 
 
 def _web_export(
@@ -138,9 +145,9 @@ def _web_export(
             reg,
             models_df.loc[code].sort_index(level="Date"),
             simulation_specs,
-            rates_df.loc[code],
-            hopkins_df.loc[code].sort_index(),
-            foretold_df.loc[code].sort_index(),
+            get_df_else_none(rates_df, code),
+            get_df_else_none(hopkins_df, code),
+            get_df_else_none(foretold_df, code),
         )
 
     ex.write(output_dir)

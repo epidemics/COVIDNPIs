@@ -45,9 +45,9 @@ class WebExport:
         region,
         models: pd.DataFrame,
         simulation_spec: pd.DataFrame,
-        rates: pd.DataFrame,
-        hopkins: pd.DataFrame,
-        foretold: pd.DataFrame,
+        rates: Optional[pd.DataFrame],
+        hopkins: Optional[pd.DataFrame],
+        foretold: Optional[pd.DataFrame],
     ):
         er = WebExportRegion(region, models, simulation_spec, rates, hopkins, foretold)
         self.export_regions[region.Code] = er
@@ -80,9 +80,9 @@ class WebExportRegion:
         region,
         models: pd.DataFrame,
         simulations_spec: pd.DataFrame,
-        rates: pd.DataFrame,
-        hopkins: pd.DataFrame,
-        foretold: pd.DataFrame,
+        rates: Optional[pd.DataFrame],
+        hopkins: Optional[pd.DataFrame],
+        foretold: Optional[pd.DataFrame],
     ):
         assert isinstance(region, Region)
         self.region = region
@@ -96,20 +96,24 @@ class WebExportRegion:
 
     @staticmethod
     def extract_smallish_data(
-        rates: pd.DataFrame, hopkins: pd.DataFrame, foretold: pd.DataFrame
+        rates: Optional[pd.DataFrame],
+        hopkins: Optional[pd.DataFrame],
+        foretold: Optional[pd.DataFrame],
     ) -> Dict[str, Any]:
         d = {
-            "critical_rates": rates.to_dict(),
+            "critical_rates": rates.to_dict() if rates is not None else None,
             "hopkins": {
                 "date_index": [x.isoformat() for x in hopkins.index],
-                **hopkins.astype(int).to_dict(orient="list"),
-            },
+                **hopkins.to_dict(orient="list"),
+            }
+            if hopkins is not None
+            else None,
             "foretold": {
                 "date_index": [x.isoformat() for x in foretold.index],
-                **foretold.loc[:, ["Mean", "Variance"]]
-                .astype(int)
-                .to_dict(orient="list"),
-            },
+                **foretold.loc[:, ["Mean", "Variance"]].to_dict(orient="list"),
+            }
+            if foretold is not None
+            else None,
         }
         return d
 
