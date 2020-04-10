@@ -2,13 +2,15 @@
 
 import argparse
 import logging
-import subprocess
 from pathlib import Path
+from typing import List
+import pandas as pd
 
 import yaml
 
 import epimodel
-from epimodel import RegionDataset, Level
+
+from epimodel import Level, RegionDataset
 from epimodel.exports.epidemics_org import WebExport, upload_export
 from epimodel.gleam import Batch
 
@@ -50,12 +52,29 @@ def update_foretold(args):
         log.info(f"Saved Foretold to {dest}")
 
 
-def web_export(args):
-    ex = WebExport(comment=args.comment)
-    for code in args.config["export_regions"]:
-        ex.new_region(args.rds[code])
+def _web_export(
+    comment: str,
+    export_regions: List[str],
+    region_dataset: RegionDataset,
+    rates_path: Path,
+    output_dir: Path,
+) -> None:
+    ex = WebExport(comment=comment)
+    rates: pd.DataFrame = pd.read_csv(rates_path)
+    for code in export_regions:
+        ex.new_region(region_dataset[code], rates[code])
     # TODO: add data to ex
-    ex.write(args.config["output_dir"])
+    ex.write(output_dir)
+
+
+def web_export(args):
+    _web_export(
+        args.comment,
+        args.config["export_regions"],
+        args.rds,
+        args.rates,
+        args.config["output_dir"],
+    )
 
 
 def web_upload(args):
@@ -83,7 +102,9 @@ def create_parser():
     ap.add_argument("-C", "--config", default="config.yaml", help="Config file.")
     sp = ap.add_subparsers(title="subcommands", required=True, dest="cmd")
 
-    upp = sp.add_parser("update_johns_hopkins", help="Fetch data from Johns Hopkins CSSE.")
+    upp = sp.add_parser(
+        "update_johns_hopkins", help="Fetch data from Johns Hopkins CSSE."
+    )
     upp.set_defaults(func=update_johns_hopkins)
 
     upf = sp.add_parser("update_foretold", help="Fetch data from Foretold.")
@@ -101,7 +122,12 @@ def create_parser():
     # TODO: candidate to be split into two steps: "integrate data" -> export
     exp = sp.add_parser("web_export", help="Create data export for web.")
     exp.add_argument("-c", "--comment", help="A short comment (to be part of path).")
-    exp.add_argument("-b", "--batch-file", help="A result HDF file of import_gleam_batch step")
+    exp.add_argument(
+        "-b", "--batch-file", help="A result HDF file of import_gleam_batch step"
+    )
+    exp.add_argument(
+        "-r", "--rates", help="Path to a file for hospital rates (M49 indexed)"
+    )
     # TODO: additional data files we want to have in the export
     exp.set_defaults(func=web_export)
 
@@ -132,7 +158,7 @@ def main():
         logging.root.setLevel(logging.DEBUG)
     with open(args.config, "rt") as f:
         args.config = yaml.safe_load(f)
-    args.rds = RegionDataset.load(Path(args.config["data_dir"]) / "regions.csv")
+    args.rds = RegionDataset.load(Path(args.config["data_dir"]) / "export_regions.csv")
     args.func(args)
 
 
