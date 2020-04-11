@@ -3,7 +3,7 @@
 import argparse
 import logging
 from pathlib import Path
-from typing import List, Optional
+from typing import List, Optional, Dict
 import pandas as pd
 
 import yaml
@@ -57,7 +57,12 @@ def get_cmi(df: pd.DataFrame):
 
 
 def analyze_data_consistency(
-    export_regions: List[str], models, rates_df, hopkins, foretold
+    debug: Optional[None],
+    export_regions: List[str],
+    models,
+    rates_df,
+    hopkins,
+    foretold,
 ) -> None:
     codes = {
         "models": get_cmi(models),
@@ -84,6 +89,14 @@ def analyze_data_consistency(
 
     log.info("Total data availability, number of locations: %s", df.sum().to_dict())
     log.info("Export requested for %s regions: %s", len(export_regions), export_regions)
+
+    if debug:
+        _df = df.loc[export_regions, ["hopkins", "rates"]]
+        res = _df.loc[~_df.all(axis=1)].replace({False: "Missing", True: "OK"})
+        log.debug(
+            "Data presence for hopkins or rates in the following countries: \n%s", res
+        )
+        breakpoint()
 
     diff_export_and_models = set(export_regions).difference(get_cmi(models))
     if diff_export_and_models:
@@ -113,6 +126,31 @@ def get_extra_path(args, name: str) -> Path:
     return Path(args.config["data_dir"]) / args.config["web_export"][name]
 
 
+def aggregate_countries(
+    hopkins: pd.DataFrame, mapping: Dict[str, List[str]]
+) -> pd.DataFrame:
+    to_append = []
+    all_state_codes = []
+    for country_code, state_codes in mapping.items():
+        log.info(
+            "Aggregating hopkins data for %s into a single code %s",
+            state_codes,
+            country_code,
+        )
+        aggregated = (
+            hopkins.loc[state_codes]
+            .reset_index("Date")
+            .groupby("Date")
+            .sum()
+            .assign(Code=country_code)
+            .reset_index()
+            .set_index(["Code", "Date"])
+        )
+        to_append.append(aggregated)
+        all_state_codes.extend(state_codes)
+    return hopkins.drop(index=all_state_codes).append(pd.concat(to_append))
+
+
 def web_export(args) -> None:
     ex = WebExport(args.config["gleam_resample"], comment=args.comment)
 
@@ -129,13 +167,13 @@ def web_export(args) -> None:
 
     hopkins_df: pd.DataFrame = pd.read_csv(
         hopkins, index_col=["Code", "Date"], parse_dates=["Date"]
-    )
+    ).pipe(aggregate_countries, args.config["state_to_country"])
     foretold_df: pd.DataFrame = pd.read_csv(
         foretold, index_col=["Code", "Date"], parse_dates=["Date"]
     )
 
     analyze_data_consistency(
-        export_regions, models_df, rates_df, hopkins_df, foretold_df
+        args.debug, export_regions, models_df, rates_df, hopkins_df, foretold_df
     )
 
     for code in export_regions:
