@@ -1,4 +1,6 @@
 import logging
+import os
+from datetime import datetime
 
 import numpy as np
 import pymc3 as pm
@@ -9,6 +11,8 @@ from epimodel.pymc3_models.utils import geom_convolution
 
 log = logging.getLogger(__name__)
 
+import matplotlib.pyplot as plt
+
 
 class BaseCMModel(Model):
     def __init__(self, data, name="", model=None):
@@ -16,6 +20,7 @@ class BaseCMModel(Model):
         self.d = data
         self.plot_trace_vars = set()
         self.trace = None
+        self.heldout_day_labels = None
 
     def LN(self, name, mean, log_var, plot_trace=True, hyperprior=None, shape=None):
         """Create a lognorm variable, adding it to self as attribute."""
@@ -42,7 +47,7 @@ class BaseCMModel(Model):
         if shape is not None:
             kws["shape"] = shape
 
-        v = pm.Lognormal(name, pm.math.log(mean), log_var, observed=observed, **kws)
+        v = pm.Lognormal(name, mean, log_var, observed=observed, **kws)
         self.__dict__[name] = v
         if plot_trace:
             self.plot_trace_vars.add(name)
@@ -86,6 +91,48 @@ class BaseCMModel(Model):
         with self.model:
             self.trace = pm.sample(N, chains=chains, cores=cores, init="adapt_diag")
 
+    def heldout_days_validation_plot(self, save_fig=True, output_dir="./out"):
+        assert self.trace is not None
+        assert self.heldout_day_labels is not None
+
+        labels = self.heldout_day_labels
+        predictions = self.trace["HeldoutDays"]
+
+        means = np.mean(predictions, axis=0)
+        li = np.percentile(predictions, 2.5, axis=0)
+        ui = np.percentile(predictions, 97.5, axis=0)
+
+        N_heldout_days = means.shape[1]
+
+        plt.figure(figsize=(12, 4), dpi=300)
+
+        max_val = 10 ** np.ceil(np.log10(max(np.max(ui), np.max(labels))))
+        min_val = 10 ** np.floor(np.log10(min(np.min(li), np.min(labels))))
+
+        for day in range(N_heldout_days):
+            plt.subplot(1, N_heldout_days, day + 1)
+            x = labels[:, day]
+            err = np.array([means[:, day] - li[:, day], -means[:, day] + ui[:, day]])
+            y = means[:, day]
+            plt.errorbar(x, y, yerr=err, linestyle=None, fmt='ko')
+            ax = plt.gca()
+            ax.set_xscale("log")
+            ax.set_yscale("log")
+            plt.plot([0, 10 ** 6], [0, 10 ** 6], '-r')
+            plt.xlim([min_val, max_val])
+            plt.ylim([min_val, max_val])
+            plt.xlabel("Observed")
+            plt.ylabel("Predicted")
+            plt.title(f"Heldout Day {day + 1}")
+
+        plt.tight_layout()
+        if save_fig:
+            datetime_str = datetime.now().strftime("%d-%m;%H:%M")
+            if not os.path.exists(output_dir):
+                os.makedirs(output_dir)
+            log.info(f"Saving Day Validation Plot at {os.path.abspath(output_dir)}")
+            plt.savefig(f"{output_dir}/HeldoutDaysValidation_{datetime_str}.pdf")
+
 
 class CMModelV2(BaseCMModel):
     def __init__(self, data, name="", model=None):
@@ -123,34 +170,60 @@ class CMModelV2(BaseCMModel):
         # * measurements (measurement unreliability)
         # * expected growth noise
         # TODO: Estimate good prior (but can be weak?)
-        self.LN("RegionScaleMult", 0.0, 1.0, shape=(self.nRs,))
+        self.LN("RegionScaleMult", 0.0, 1.0, shape=(self.nRs,), plot_trace=False)
 
         self.ActiveCMReduction = T.reshape(self.CMReduction, (1, self.nCMs, 1)) ** self.d.ActiveCMs
-        self.Det("GrowthReduction", T.prod(self.ActiveCMReduction, axis=1))
-        self.DelayedGrowthReduction = geom_convolution(self.GrowthReduction, self.DelayProb, axis=1)[:, self.CMDelayCut:]
-        self.Det("PredictedGrowth", T.reshape(self.RegionGrowthRate, (self.nRs, 1)) * self.DelayedGrowthReduction)
+        self.Det("GrowthReduction", T.prod(self.ActiveCMReduction, axis=1), plot_trace=False)
+        self.DelayedGrowthReduction = geom_convolution(self.GrowthReduction, self.DelayProb, axis=1)[:,
+                                      self.CMDelayCut:]
+        self.Det("PredictedGrowth", T.reshape(self.RegionGrowthRate, (self.nRs, 1)) * self.DelayedGrowthReduction,
+                 plot_trace=False)
         self.LN("DailyGrowth", pm.math.log(self.PredictedGrowth),
                 self.RegionScaleMult.reshape((self.nRs, 1)) * self.DailyGrowthNoiseMultiplier,
                 shape=(self.nRs, self.nDs - self.CMDelayCut),
-                )
+                plot_trace=False)
 
     def build_output_model(self):
         self.LN("InitialSize", 0, 10, shape=(self.nRs,))
         try:
-            self.Det("Size", T.reshape(self.InitialSize, (self.nRs, 1)) * self.DailyGrowth.cumprod(axis=1))
+            self.Det("Size", T.reshape(self.InitialSize, (self.nRs, 1)) * self.DailyGrowth.cumprod(axis=1),
+                     plot_trace=False)
         except AttributeError:
             raise Exception("Missing CM Reduction Prior; have you built that?")
 
-        Observed = pm.Lognormal("Observed",
-                                pm.math.log(self.Size), self.RegionScaleMult.reshape((self.nRs, 1)) * self.ConfirmedCasesNoiseMultiplier,
-                                shape=(self.nRs, self.nDs - self.CMDelayCut),
-                                observed=self.d.Confirmed[:, self.CMDelayCut:])
-        # self.ObservedLN("Observed",
-        #         self.Size,
-        #         self.RegionScaleMult.reshape((self.nRs, 1)) * self.ConfirmedCasesNoiseMultiplier,
-        #         shape=(self.nRs, self.nDs - self.CMDelayCut),
-        #         observed=self.d.Confirmed[:, self.CMDelayCut:]
-        #         )
+        self.ObservedLN("Observed",
+                        self.Size,
+                        self.RegionScaleMult.reshape((self.nRs, 1)) * self.ConfirmedCasesNoiseMultiplier,
+                        shape=(self.nRs, self.nDs - self.CMDelayCut),
+                        observed=self.d.Confirmed[:, self.CMDelayCut:],
+                        plot_trace=False
+                        )
+
+    def build_heldout_days_output_model(self, N_days_holdout):
+        # effectively the same as the normal output model except we reduce the number of observations given
+        self.LN("InitialSize", 0, 10, shape=(self.nRs,))
+        try:
+            self.Det("Size", T.reshape(self.InitialSize, (self.nRs, 1)) * self.DailyGrowth.cumprod(axis=1),
+                     plot_trace=False)
+        except AttributeError:
+            raise Exception("Missing CM Reduction Prior; have you built that?")
+
+        # now we only observe the days until the final days.
+        self.ObservedLN("Observed",
+                        pm.math.log(self.Size[:, :-N_days_holdout]),
+                        self.RegionScaleMult.reshape((self.nRs, 1)) * self.ConfirmedCasesNoiseMultiplier,
+                        shape=(self.nRs, self.nDs - self.CMDelayCut - N_days_holdout),
+                        observed=self.d.Confirmed[:, self.CMDelayCut:-N_days_holdout],
+                        plot_trace=False
+                        )
+
+        self.LN("HeldoutDays",
+                pm.math.log(self.Size[:, -N_days_holdout:]),
+                self.RegionScaleMult.reshape((self.nRs, 1)) * self.ConfirmedCasesNoiseMultiplier,
+                shape=(self.nRs, N_days_holdout), plot_trace=True
+                )
+
+        self.heldout_day_labels = self.d.Confirmed[:, -N_days_holdout:]
 
     def build_all(self):
         self.build_reduction_lognorm()
