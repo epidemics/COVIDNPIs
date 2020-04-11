@@ -49,9 +49,17 @@ class WebExport:
         hopkins: Optional[pd.DataFrame],
         foretold: Optional[pd.DataFrame],
         timezones: Optional[pd.DataFrame],
+        un_age_dist: Optional[pd.DataFrame],
     ):
         er = WebExportRegion(
-            region, models, simulation_spec, rates, hopkins, foretold, timezones
+            region,
+            models,
+            simulation_spec,
+            rates,
+            hopkins,
+            foretold,
+            timezones,
+            un_age_dist,
         )
         self.export_regions[region.Code] = er
         return er
@@ -87,11 +95,14 @@ class WebExportRegion:
         hopkins: Optional[pd.DataFrame],
         foretold: Optional[pd.DataFrame],
         timezones: Optional[pd.DataFrame],
+        un_age_dist: Optional[pd.DataFrame],
     ):
         assert isinstance(region, Region)
         self.region = region
         # Any per-region data. Large ones should go to data_ext.
-        self.data = self.extract_smallish_data(rates, hopkins, foretold, timezones)
+        self.data = self.extract_smallish_data(
+            rates, hopkins, foretold, timezones, un_age_dist
+        )
         # Extended data to be written in a separate per-region file
         self.data_ext = self.extract_models_data(models, simulations_spec)
         # Relative URL of the extended data file, set on write
@@ -103,27 +114,32 @@ class WebExportRegion:
         hopkins: Optional[pd.DataFrame],
         foretold: Optional[pd.DataFrame],
         timezones: Optional[pd.DataFrame],
+        un_age_dist: Optional[pd.DataFrame],
     ) -> Dict[str, Dict[str, Any]]:
-        d = {
-            "Rates": rates.replace({np.nan: None}).to_dict()
-            if rates is not None
-            else None,
-            "JohnsHopkins": {
+        d = {}
+
+        if rates is not None:
+            d["Rates"] = rates.replace({np.nan: None}).to_dict()
+
+        if hopkins is not None:
+            d["JohnsHopkins"] = {
                 "Date": [x.date().isoformat() for x in hopkins.index],
                 **hopkins.replace({np.nan: None}).to_dict(orient="list"),
             }
-            if hopkins is not None
-            else None,
-            "Foretold": {
+
+        if foretold is not None:
+            d["Foretold"] = {
                 "Date": [x.isoformat() for x in foretold.index],
                 **foretold.replace({np.nan: None})
                 .loc[:, ["Mean", "Variance", "0.05", "0.50", "0.95"]]
                 .to_dict(orient="list"),
             }
-            if foretold is not None
-            else None,
-            "Timezones": timezones["Timezone"].tolist(),
-        }
+
+        d["Timezones"] = timezones["Timezone"].tolist()
+
+        if un_age_dist is not None:
+            d["AgeDist"] = un_age_dist.iloc[:-3].to_dict()
+
         return d
 
     @staticmethod
@@ -206,6 +222,8 @@ def upload_export(dir_to_export, gs_prefix, gs_url, channel="test"):
 def types_to_json(obj):
     if isinstance(obj, (np.float16, np.float32, np.float64, np.float128)):
         return float(obj)
+    if isinstance(obj, (np.int64)):
+        return int(obj)
     if isinstance(obj, datetime.datetime):
         return obj.isoformat()
     if isinstance(obj, Enum):
@@ -323,6 +341,7 @@ def process_export(args) -> None:
     foretold = get_extra_path(args, "foretold")
     rates = get_extra_path(args, "rates")
     timezone = get_extra_path(args, "timezones")
+    un_age_dist = get_extra_path(args, "un_age_dist")
 
     export_regions = sorted(args.config["export_regions"])
 
@@ -333,6 +352,8 @@ def process_export(args) -> None:
     timezone_df: pd.DataFrame = pd.read_csv(
         timezone, index_col="Code", keep_default_na=False
     )
+
+    un_age_dist_df: pd.DataFrame = pd.read_csv(un_age_dist, index_col="Code M49")
 
     hopkins_df: pd.DataFrame = pd.read_csv(
         hopkins, index_col=["Code", "Date"], parse_dates=["Date"]
@@ -347,6 +368,7 @@ def process_export(args) -> None:
 
     for code in export_regions:
         reg = args.rds[code]
+        m49 = int(reg["M49Code"])
         ex.new_region(
             reg,
             models_df.loc[code].sort_index(level="Date"),
@@ -355,6 +377,7 @@ def process_export(args) -> None:
             get_df_else_none(hopkins_df, code),
             get_df_else_none(foretold_df, code),
             get_df_list(timezone_df, code),
+            get_df_else_none(un_age_dist_df, m49),
         )
 
     ex.write(args.config["output_dir"])

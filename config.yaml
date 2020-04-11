@@ -18,6 +18,7 @@ web_export:
  foretold: foretold.csv
  rates: rates.csv
  timezones: timezones.csv
+ un_age_dist: various/age_dist_un.csv
 
 ### Upload settings
 gs_prefix: "gs://static-covid/static/"
