@@ -188,7 +188,7 @@ state_to_country:
        'CN-HB', 'CN-HE', 'CN-HI', 'CN-HK', 'CN-HL', 'CN-HN', 'CN-JL', 'CN-JS', 'CN-JX',
        'CN-LN', 'CN-MO', 'CN-NM', 'CN-NX', 'CN-QH', 'CN-SC', 'CN-SD', 'CN-SH', 'CN-SN',
        'CN-SX', 'CN-TJ', 'CN-XJ', 'CN-XZ', 'CN-YN', 'CN-ZJ']
-  CA: ['CA-AB','CA-BC','CA-MB','CA-NB','CA-NL','CA-NS','CA-NT','CA-ON','CA-PE','CA-QC','CA-SK','CA-YT']
+  #CA: ['CA-AB','CA-BC','CA-MB','CA-NB','CA-NL','CA-NS','CA-NT','CA-ON','CA-PE','CA-QC','CA-SK','CA-YT']
   GU: ['US-GU']
   MP: ['US-MP']
   PR: ['US-PR']
