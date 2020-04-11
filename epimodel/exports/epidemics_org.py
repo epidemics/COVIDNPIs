@@ -115,9 +115,9 @@ class WebExportRegion:
             if hopkins is not None
             else None,
             "foretold": {
-                "date_index": [x.isoformat() for x in foretold.index],
+                "Date": [x.isoformat() for x in foretold.index],
                 **foretold.replace({np.nan: None})
-                .loc[:, ["Mean", "Variance"]]
+                .loc[:, ["Mean", "Variance", "0.05", "0.50", "0.95"]]
                 .to_dict(orient="list"),
             }
             if foretold is not None
