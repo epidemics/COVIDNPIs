@@ -51,6 +51,8 @@ class DataPreprocessor(object):
         region_ds = RegionDataset.load(os.path.join(data_base_path, "regions.csv"))
         johnhop_ds = read_csv(os.path.join(data_base_path, "johns-hopkins.csv"))
 
+        self.johnhop_ds = johnhop_ds
+
         cm_set_dirs = [
             "countermeasures-features.csv",
             "countermeasures-model-0to1.csv",
@@ -82,18 +84,18 @@ class DataPreprocessor(object):
                 ):
                     filtered_countries.append(c.Code)
         nCs = len(filtered_countries)
+        # note that it is essential to sort these values to get the correct corresponances from the john hopkins dataset
+        filtered_countries.sort()
 
         sd = CM_dataset.loc[filtered_countries, selected_CMs]
         if "Mask wearing" in selected_CMs:
             sd["Mask wearing"] *= 0.01
 
-        logger.info(
-            "\nCountermeasures                               min   .. mean  .. max"
-        )
+        logger_str = "\nCountermeasures                               min   .. mean  .. max"
         for i, cm in enumerate(selected_CMs):
-            logger.info(
-                f"{i:2} {cm:42} {sd[cm].min().min():.3f} .. {sd[cm].mean().mean():.3f} .. {sd[cm].max().max():.3f}"
-            )
+            logger_str = f"{logger_str}\n{i:2} {cm:42} {sd[cm].min().min():.3f} .. {sd[cm].mean().mean():.3f} .. {sd[cm].max().max():.3f}"
+
+        logger.info(logger_str)
         ActiveCMs = np.stack([sd.loc[c].loc[Ds].T for c in filtered_countries])
         assert ActiveCMs.shape == (nCs, nCMs, nDs)
         # [country, CM, day] Which CMs are active, and to what extent
