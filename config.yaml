@@ -17,6 +17,7 @@ web_export:
  john_hopkins: johns-hopkins.csv
  foretold: foretold.csv
  rates: rates.csv
+ timezones: timezones.csv
 
 ### Upload settings
 gs_prefix: "gs://static-covid/static/"

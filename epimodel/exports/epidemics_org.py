@@ -48,8 +48,9 @@ class WebExport:
         rates: Optional[pd.DataFrame],
         hopkins: Optional[pd.DataFrame],
         foretold: Optional[pd.DataFrame],
+        timezones: Optional[pd.DataFrame],
     ):
-        er = WebExportRegion(region, models, simulation_spec, rates, hopkins, foretold)
+        er = WebExportRegion(region, models, simulation_spec, rates, hopkins, foretold, timezones)
         self.export_regions[region.Code] = er
         return er
 
@@ -83,11 +84,12 @@ class WebExportRegion:
         rates: Optional[pd.DataFrame],
         hopkins: Optional[pd.DataFrame],
         foretold: Optional[pd.DataFrame],
+        timezones: Optional[pd.DataFrame],
     ):
         assert isinstance(region, Region)
         self.region = region
         # Any per-region data. Large ones should go to data_ext.
-        self.data = self.extract_smallish_data(rates, hopkins, foretold)
+        self.data = self.extract_smallish_data(rates, hopkins, foretold, timezones)
         # Extended data to be written in a separate per-region file
         self.data_ext = self.extract_models_data(models, simulations_spec)
         # Relative URL of the extended data file, set on write
@@ -98,11 +100,12 @@ class WebExportRegion:
         rates: Optional[pd.DataFrame],
         hopkins: Optional[pd.DataFrame],
         foretold: Optional[pd.DataFrame],
+        timezones: Optional[pd.DataFrame],
     ) -> Dict[str, Dict[str, Any]]:
         d = {
             "critical_rates": rates.replace({pd.np.nan: None}).to_dict() if rates is not None else None,
             "hopkins": {
-                "date_index": [x.isoformat() for x in hopkins.index],
+                "date_index": [x.date().isoformat() for x in hopkins.index],
                 **hopkins.replace({pd.np.nan: None}).to_dict(orient="list"),
             }
             if hopkins is not None
@@ -113,6 +116,7 @@ class WebExportRegion:
             }
             if foretold is not None
             else None,
+            "timezones": timezones["Timezone"].tolist()
         }
         return d
 
@@ -272,6 +276,8 @@ def get_df_else_none(df: pd.DataFrame, code) -> Optional[pd.DataFrame]:
     else:
         return None
 
+def get_df_list(df: pd.DataFrame, code) -> Optional[pd.DataFrame]:
+    return df.loc[df.index == code].sort_index()
 
 def get_extra_path(args, name: str) -> Path:
     return Path(args.config["data_dir"]) / args.config["web_export"][name]
@@ -308,6 +314,7 @@ def process_export(args) -> None:
     hopkins = get_extra_path(args, "john_hopkins")
     foretold = get_extra_path(args, "foretold")
     rates = get_extra_path(args, "rates")
+    timezone = get_extra_path(args, "timezones")
 
     export_regions = sorted(args.config["export_regions"])
 
@@ -315,6 +322,7 @@ def process_export(args) -> None:
     models_df: pd.DataFrame = pd.read_hdf(args.models_file, "new_fraction")
 
     rates_df: pd.DataFrame = pd.read_csv(rates, index_col="Code", keep_default_na=False)
+    timezone_df: pd.DataFrame = pd.read_csv(timezone, index_col="Code", keep_default_na=False)
 
     hopkins_df: pd.DataFrame = pd.read_csv(
         hopkins, index_col=["Code", "Date"], parse_dates=["Date"]
@@ -336,6 +344,7 @@ def process_export(args) -> None:
             get_df_else_none(rates_df, code),
             get_df_else_none(hopkins_df, code),
             get_df_else_none(foretold_df, code),
+            get_df_list(timezone_df, code),
         )
 
     ex.write(args.config["output_dir"])
