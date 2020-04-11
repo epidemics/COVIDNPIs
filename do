@@ -85,7 +85,8 @@ def analyze_data_consistency(
     log.info("Total data availability, number of locations: %s", df.sum().to_dict())
     log.info("Export requested for %s regions: %s", len(export_regions), export_regions)
 
-    if diff_export_and_models := set(export_regions).difference(get_cmi(models)):
+    diff_export_and_models = set(export_regions).difference(get_cmi(models))
+    if diff_export_and_models:
         log.error(
             "You requested to export %s but that's not modelled yet.",
             diff_export_and_models,
@@ -107,24 +108,20 @@ def get_df_else_none(df: pd.DataFrame, code) -> Optional[pd.DataFrame]:
     else:
         return None
 
+def get_extra_path(args, name: str) -> Path:
+    return Path(args.config["data_dir"]) / args.config["web_export"][name]
 
-def _web_export(
-    comment: str,
-    export_regions: List[str],
-    region_dataset: RegionDataset,
-    models: Path,
-    rates: Path,
-    hopkins: Path,
-    foretold: Path,
-    output_dir: Path,
-    date_resample: str,
-) -> None:
-    ex = WebExport(date_resample, comment=comment)
+def web_export(args) -> None:
+    ex = WebExport(args.config["gleam_resample"], comment=args.comment)
 
-    export_regions = sorted(export_regions)
+    hopkins = get_extra_path(args, "john_hopkins")
+    foretold = get_extra_path(args, "foretold")
+    rates = get_extra_path(args, "rates")
 
-    simulation_specs: pd.DataFrame = pd.read_hdf(models, "simulations")
-    models_df: pd.DataFrame = pd.read_hdf(models, "new_fraction")
+    export_regions = sorted(args.config["export_regions"])
+
+    simulation_specs: pd.DataFrame = pd.read_hdf(args.models_file, "simulations")
+    models_df: pd.DataFrame = pd.read_hdf(args.models_file, "new_fraction")
 
     rates_df: pd.DataFrame = pd.read_csv(rates, index_col="Code", keep_default_na=False)
 
@@ -140,7 +137,7 @@ def _web_export(
     )
 
     for code in export_regions:
-        reg = region_dataset[code]
+        reg = args.rds[code]
         ex.new_region(
             reg,
             models_df.loc[code].sort_index(level="Date"),
@@ -150,22 +147,7 @@ def _web_export(
             get_df_else_none(foretold_df, code),
         )
 
-    ex.write(output_dir)
-
-
-def web_export(args):
-    _web_export(
-        args.comment,
-        args.config["export_regions"],
-        args.rds,
-        args.models_file,
-        args.rates,
-        args.john_hopkins,
-        args.foretold,
-        args.config["output_dir"],
-        args.config["gleam_resample"],
-    )
-
+    ex.write(args.config["output_dir"])
 
 def web_upload(args):
     c = args.config
@@ -209,14 +191,9 @@ def create_parser():
     )
     ibp.set_defaults(func=import_batch)
 
-    # TODO: candidate to be split into two steps: "integrate data" -> export
     exp = sp.add_parser("web_export", help="Create data export for web.")
     exp.add_argument("-c", "--comment", help="A short comment (to be part of path).")
     exp.add_argument("models_file", help="A result HDF file of import_gleam_batch step")
-    exp.add_argument("rates", help="Path to a file for hospital rates")
-    exp.add_argument("john_hopkins", help="John Hopkins data")
-    exp.add_argument("foretold", help="Foretold data")
-    # TODO: additional data files we want to have in the export
     exp.set_defaults(func=web_export)
 
     uplp = sp.add_parser("web_upload", help="Upload data to the configured GCS bucket")
