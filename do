@@ -96,7 +96,6 @@ def analyze_data_consistency(
         log.debug(
             "Data presence for hopkins or rates in the following countries: \n%s", res
         )
-        breakpoint()
 
     diff_export_and_models = set(export_regions).difference(get_cmi(models))
     if diff_export_and_models:

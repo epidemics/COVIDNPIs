@@ -72,7 +72,7 @@ Also, you did `cp config.yaml config-local.yaml` and set `export_regions: [CZ, E
 2. add a Foretold token into `config-local.yaml` in `foretold_channel` and run `./do -C config-local.yaml update_foretold`
 3. **TODO?: Run gleamviz and get batch file? What's being fetched inside the file?** 
 4. having the Gleam Batch simulation dir results: `./do import_gleam_batch`
-5.  `./do -C config-local.yaml web_export data/batch-2020-04-03T23-35-24.482054+02-00.hdf5 data/rates.csv data/johns-hopkins.csv data/foretold.csv`
+5.  `./do -C config-local.yaml web_export data/batch-2020-04-03T23-35-24.482054+02-00.hdf5`
 
 ### Gleam Batch file
 Has two dataframes:

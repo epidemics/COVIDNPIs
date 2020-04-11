@@ -70,7 +70,7 @@ class WebExport:
             with open(exdir / fname, "wt") as f:
                 json.dump(er.data_ext, f)
         with open(exdir / MAIN_DATA_FILENAME, "wt") as f:
-            json.dump(self.to_json(), f, indent=2, default=types_to_json)
+            json.dump(self.to_json(), f, default=types_to_json)
         log.info(f"Exported {len(self.export_regions)} regions to {exdir}")
 
 
