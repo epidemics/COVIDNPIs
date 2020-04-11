@@ -103,16 +103,16 @@ class WebExportRegion:
         timezones: Optional[pd.DataFrame],
     ) -> Dict[str, Dict[str, Any]]:
         d = {
-            "critical_rates": rates.replace({pd.np.nan: None}).to_dict() if rates is not None else None,
+            "critical_rates": rates.replace({np.nan: None}).to_dict() if rates is not None else None,
             "hopkins": {
                 "date_index": [x.date().isoformat() for x in hopkins.index],
-                **hopkins.replace({pd.np.nan: None}).to_dict(orient="list"),
+                **hopkins.replace({np.nan: None}).to_dict(orient="list"),
             }
             if hopkins is not None
             else None,
             "foretold": {
                 "date_index": [x.isoformat() for x in foretold.index],
-                **foretold.replace({pd.np.nan: None}).loc[:, ["Mean", "Variance"]].to_dict(orient="list"),
+                **foretold.replace({np.nan: None}).loc[:, ["Mean", "Variance"]].to_dict(orient="list"),
             }
             if foretold is not None
             else None,
