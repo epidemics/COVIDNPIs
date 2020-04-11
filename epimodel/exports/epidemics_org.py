@@ -50,7 +50,9 @@ class WebExport:
         foretold: Optional[pd.DataFrame],
         timezones: Optional[pd.DataFrame],
     ):
-        er = WebExportRegion(region, models, simulation_spec, rates, hopkins, foretold, timezones)
+        er = WebExportRegion(
+            region, models, simulation_spec, rates, hopkins, foretold, timezones
+        )
         self.export_regions[region.Code] = er
         return er
 
@@ -103,7 +105,9 @@ class WebExportRegion:
         timezones: Optional[pd.DataFrame],
     ) -> Dict[str, Dict[str, Any]]:
         d = {
-            "critical_rates": rates.replace({np.nan: None}).to_dict() if rates is not None else None,
+            "critical_rates": rates.replace({np.nan: None}).to_dict()
+            if rates is not None
+            else None,
             "hopkins": {
                 "date_index": [x.date().isoformat() for x in hopkins.index],
                 **hopkins.replace({np.nan: None}).to_dict(orient="list"),
@@ -112,11 +116,13 @@ class WebExportRegion:
             else None,
             "foretold": {
                 "date_index": [x.isoformat() for x in foretold.index],
-                **foretold.replace({np.nan: None}).loc[:, ["Mean", "Variance"]].to_dict(orient="list"),
+                **foretold.replace({np.nan: None})
+                .loc[:, ["Mean", "Variance"]]
+                .to_dict(orient="list"),
             }
             if foretold is not None
             else None,
-            "timezones": timezones["Timezone"].tolist()
+            "timezones": timezones["Timezone"].tolist(),
         }
         return d
 
@@ -276,8 +282,10 @@ def get_df_else_none(df: pd.DataFrame, code) -> Optional[pd.DataFrame]:
     else:
         return None
 
+
 def get_df_list(df: pd.DataFrame, code) -> pd.DataFrame:
     return df.loc[[code]].sort_index()
+
 
 def get_extra_path(args, name: str) -> Path:
     return Path(args.config["data_dir"]) / args.config["web_export"][name]
@@ -322,7 +330,9 @@ def process_export(args) -> None:
     models_df: pd.DataFrame = pd.read_hdf(args.models_file, "new_fraction")
 
     rates_df: pd.DataFrame = pd.read_csv(rates, index_col="Code", keep_default_na=False)
-    timezone_df: pd.DataFrame = pd.read_csv(timezone, index_col="Code", keep_default_na=False)
+    timezone_df: pd.DataFrame = pd.read_csv(
+        timezone, index_col="Code", keep_default_na=False
+    )
 
     hopkins_df: pd.DataFrame = pd.read_csv(
         hopkins, index_col=["Code", "Date"], parse_dates=["Date"]
