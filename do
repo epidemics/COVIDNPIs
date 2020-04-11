@@ -108,8 +108,10 @@ def get_df_else_none(df: pd.DataFrame, code) -> Optional[pd.DataFrame]:
     else:
         return None
 
+
 def get_extra_path(args, name: str) -> Path:
     return Path(args.config["data_dir"]) / args.config["web_export"][name]
+
 
 def web_export(args) -> None:
     ex = WebExport(args.config["gleam_resample"], comment=args.comment)
@@ -148,6 +150,7 @@ def web_export(args) -> None:
         )
 
     ex.write(args.config["output_dir"])
+
 
 def web_upload(args):
     c = args.config
