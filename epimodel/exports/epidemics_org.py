@@ -276,8 +276,8 @@ def get_df_else_none(df: pd.DataFrame, code) -> Optional[pd.DataFrame]:
     else:
         return None
 
-def get_df_list(df: pd.DataFrame, code) -> Optional[pd.DataFrame]:
-    return df.loc[df.index == code].sort_index()
+def get_df_list(df: pd.DataFrame, code) -> pd.DataFrame:
+    return df.loc[[code]].sort_index()
 
 def get_extra_path(args, name: str) -> Path:
     return Path(args.config["data_dir"]) / args.config["web_export"][name]
