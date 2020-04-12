@@ -1,3 +1,4 @@
+import copy
 import logging
 import os
 from datetime import datetime
@@ -192,7 +193,7 @@ class CMModelV2(BaseCMModel):
             raise Exception("Missing CM Reduction Prior; have you built that?")
 
         self.ObservedLN("Observed",
-                        self.Size,
+                        pm.math.log(self.Size),
                         self.RegionScaleMult.reshape((self.nRs, 1)) * self.ConfirmedCasesNoiseMultiplier,
                         shape=(self.nRs, self.nDs - self.CMDelayCut),
                         observed=self.d.Confirmed[:, self.CMDelayCut:],
@@ -224,6 +225,86 @@ class CMModelV2(BaseCMModel):
                 )
 
         self.heldout_day_labels = self.d.Confirmed[:, -N_days_holdout:]
+
+    def build_heldout_region_heldout_priors(self, initial_size_dist, initial_size_kwargs, region_growth_dist,
+                                            region_growth_kwargs, region_scale_dist, region_scale_kwargs):
+        with self.model:
+            # add these arbitary distributions. don't add them to the plots.
+            self.HeldoutInitialSize = initial_size_dist(name="HeldoutInitialSize", **initial_size_kwargs)
+            self.HeldoutBaseGrowthRate = region_growth_dist(name="HeldoutBaseGrowthRate", **region_growth_kwargs)
+            self.HeldoutScale = region_scale_dist(name="HeldoutScale", **region_scale_kwargs)
+
+    def compute_heldout_region_indices(self, heldout_region):
+        observed_regions = copy.deepcopy(self.d.Rs)
+        observed_regions_indx = list(range(self.nRs))
+        heldout_region_indx = observed_regions.index(heldout_region)
+        observed_regions.remove(heldout_region)
+        observed_regions_indx.remove(heldout_region_indx)
+
+        return heldout_region_indx, observed_regions, np.array(observed_regions_indx, dtype=np.int8)
+
+    def build_heldout_region_growth_model(self, heldout_region):
+
+        # we need to add all but the excluded country, run as usual.
+        # need to provide initial estimates for the missing country
+        # for this model class, need initial size and base growth rate input
+
+        heldout_region_indx, observed_regions, observed_regions_indx = self.compute_heldout_region_indices(
+            heldout_region)
+
+        self.LN("BaseGrowthRate", np.log(1.2), 2.0)
+        self.LN("RegionGrowthRate", pm.math.log(self.BaseGrowthRate), 0.3, shape=(self.nRs - 1,))
+        self.LN("RegionScaleMult", 0.0, 1.0, shape=(self.nRs - 1,), plot_trace=False)
+
+        self.ActiveCMReduction = T.reshape(self.CMReduction, (1, self.nCMs, 1)) ** self.d.ActiveCMs[
+                                                                                   observed_regions_indx, :]
+        self.Det("GrowthReduction", T.prod(self.ActiveCMReduction, axis=1), plot_trace=False)
+        self.DelayedGrowthReduction = geom_convolution(self.GrowthReduction, self.DelayProb, axis=1)[:,
+                                      self.CMDelayCut:]
+        self.Det("PredictedGrowth", T.reshape(self.RegionGrowthRate, (self.nRs - 1, 1)) * self.DelayedGrowthReduction,
+                 plot_trace=False)
+        self.LN("DailyGrowth", pm.math.log(self.PredictedGrowth),
+                self.RegionScaleMult.reshape((self.nRs - 1, 1)) * self.DailyGrowthNoiseMultiplier,
+                shape=(self.nRs - 1, self.nDs - self.CMDelayCut),
+                plot_trace=False)
+
+        self.HeldoutCMReduction = T.reshape(self.CMReduction, (1, self.nCMs, 1)) ** self.d.ActiveCMs[heldout_region_indx, :]
+        self.Det("HeldoutGrowthReduction", T.prod(self.HeldoutCMReduction, axis=1), plot_trace=False)
+        self.DelayedHeldoutGrowthReduction = geom_convolution(self.HeldoutGrowthReduction, self.DelayProb, axis=1)[:,
+                                      self.CMDelayCut:]
+        self.Det("HeldoutPredictedGrowth",
+                 T.reshape(self.HeldoutBaseGrowthRate, (1, 1)) * self.DelayedHeldoutGrowthReduction,
+                 plot_trace=False)
+        self.LN("HeldoutDailyGrowth", pm.math.log(self.HeldoutPredictedGrowth),
+                self.HeldoutScale.reshape((1, 1)) * self.DailyGrowthNoiseMultiplier,
+                shape=(1, self.nDs - self.CMDelayCut),
+                plot_trace=False)
+
+    def build_heldout_region_observation_model(self, heldout_region):
+        heldout_region_indx, observed_regions, observed_regions_indx = self.compute_heldout_region_indices(
+            heldout_region)
+
+        self.LN("InitialSize", 0, 10, shape=(self.nRs - 1,))
+        self.Det("Size", T.reshape(self.InitialSize, (self.nRs - 1, 1)) * self.DailyGrowth.cumprod(axis=1),
+                 plot_trace=False)
+
+        self.ObservedLN("Observed",
+                        pm.math.log(self.Size),
+                        self.RegionScaleMult.reshape((self.nRs - 1, 1)) * self.ConfirmedCasesNoiseMultiplier,
+                        shape=(self.nRs, self.nDs - self.CMDelayCut),
+                        observed=self.d.Confirmed[observed_regions_indx, self.CMDelayCut:],
+                        plot_trace=False
+                        )
+
+        self.Det("HeldoutSize", T.reshape(self.HeldoutInitialSize, (1, 1)) * self.HeldoutDailyGrowth.cumprod(axis=1),
+                 plot_trace=False)
+        self.LN("HeldoutObserved",
+                pm.math.log(self.HeldoutSize),
+                self.HeldoutScale * self.ConfirmedCasesNoiseMultiplier,
+                shape=(1, self.nDs - self.CMDelayCut),
+                plot_trace=False
+                )
+        self.HeldoutConfirmed = self.d.Confirmed[heldout_region_indx, :]
 
     def build_all(self):
         self.build_reduction_lognorm()
