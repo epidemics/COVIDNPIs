@@ -138,7 +138,7 @@ class WebExportRegion:
         d["Timezones"] = timezones["Timezone"].tolist()
 
         if un_age_dist is not None:
-            d["AgeDist"] = un_age_dist.iloc[:-3].to_dict()
+            d["AgeDist"] = un_age_dist.to_dict()
 
         return d
 
@@ -353,7 +353,9 @@ def process_export(args) -> None:
         timezone, index_col="Code", keep_default_na=False
     )
 
-    un_age_dist_df: pd.DataFrame = pd.read_csv(un_age_dist, index_col="Code M49")
+    un_age_dist_df: pd.DataFrame = pd.read_csv(un_age_dist, index_col="Code M49").drop(
+        columns=["Type", "Region Name", "Parent Code M49"]
+    )
 
     hopkins_df: pd.DataFrame = pd.read_csv(
         hopkins, index_col=["Code", "Date"], parse_dates=["Date"]
