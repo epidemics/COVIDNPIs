@@ -47,7 +47,6 @@ class Loader:
 
         self.Rs = self.filter_regions(regions, min_final_jh=101)
 
-
         self.update()
 
     def update(self):
@@ -57,9 +56,9 @@ class Loader:
             # Confirmed cases, masking values smaller than 10
             v = (
                 self.johns_hopkins[name]
-                    .loc[(tuple(self.Rs), self.Ds)]
-                    .unstack(1)
-                    .values
+                .loc[(tuple(self.Rs), self.Ds)]
+                .unstack(1)
+                .values
             )
 
             if cutoff is not None:
