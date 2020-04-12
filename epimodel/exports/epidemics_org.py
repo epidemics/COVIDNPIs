@@ -222,7 +222,7 @@ def upload_export(dir_to_export, gs_prefix, gs_url, channel="test"):
 def types_to_json(obj):
     if isinstance(obj, (np.float16, np.float32, np.float64, np.float128)):
         return float(obj)
-    if isinstance(obj, (np.int64)):
+    if isinstance(obj, np.int64):
         return int(obj)
     if isinstance(obj, datetime.datetime):
         return obj.isoformat()
