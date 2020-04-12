@@ -14,8 +14,8 @@ import json
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-class DataPreprocessor(object):
 
+class DataPreprocessor(object):
     def __init__(self, params_dict=None, **kwargs):
 
         self.start_date = "2020-2-10"
@@ -91,7 +91,9 @@ class DataPreprocessor(object):
         if "Mask wearing" in selected_CMs:
             sd["Mask wearing"] *= 0.01
 
-        logger_str = "\nCountermeasures                               min   .. mean  .. max"
+        logger_str = (
+            "\nCountermeasures                               min   .. mean  .. max"
+        )
         for i, cm in enumerate(selected_CMs):
             logger_str = f"{logger_str}\n{i:2} {cm:42} {sd[cm].min().min():.3f} .. {sd[cm].mean().mean():.3f} .. {sd[cm].max().max():.3f}"
 
@@ -132,13 +134,14 @@ class DataPreprocessor(object):
             f"Data Preprocessing Complete using:\n\n{json.dumps(self.generate_params_dict(), indent=4)}"
         )
 
-        loaded_data = PreprocessedData(Active, Confirmed, ActiveCMs, cms01_cols, filtered_countries, Ds)
+        loaded_data = PreprocessedData(
+            Active, Confirmed, ActiveCMs, cms01_cols, filtered_countries, Ds
+        )
 
         return loaded_data
 
 
 class PreprocessedData(object):
-
     def __init__(self, Active, Confirmed, ActiveCMs, CMs, Rs, Ds):
         super().__init__()
         self.Active = Active
