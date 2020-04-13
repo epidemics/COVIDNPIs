@@ -22,8 +22,8 @@ web_export:
  traces_v3: various/traces_v3.csv
 
 ### Upload settings
-gs_prefix: "gs://static-covid/static/"
-gs_url_prefix: "https://storage.googleapis.com/static-covid/static/"
+gs_prefix: "gs://epidemics-covid/static/"
+gs_url_prefix: "https://storage.googleapis.com/epidemics-covid/static/"
 
 ### Output directory for exported data
 output_dir: out/
