@@ -81,9 +81,9 @@ class WebExport:
             fname = f"extdata-{rc}.json"
             er.data_url = f"{name}/{fname}"
             with open(exdir / fname, "wt") as f:
-                json.dump(er.data_ext, f)
+                json.dump(er.data_ext, f, allow_nan=False)
         with open(exdir / MAIN_DATA_FILENAME, "wt") as f:
-            json.dump(self.to_json(), f, default=types_to_json)
+            json.dump(self.to_json(), f, default=types_to_json, allow_nan=False)
         log.info(f"Exported {len(self.export_regions)} regions to {exdir}")
 
 
@@ -193,6 +193,18 @@ class WebExportRegion:
         return d
 
 
+def raise_(msg):
+    raise Exception(msg)
+
+
+def assert_valid_json(file):
+    with open(file, "r") as blob:
+        json.load(
+            blob,
+            parse_constant=(lambda x: raise_("Not valid JSON: detected `" + x + "'")),
+        )
+
+
 def upload_export(dir_to_export, gs_prefix, gs_url, channel="test"):
     """The 'upload' subcommand"""
     CMD = [
@@ -208,6 +220,8 @@ def upload_export(dir_to_export, gs_prefix, gs_url, channel="test"):
     gs_url = gs_url.rstrip("/")
     exdir = Path(dir_to_export)
     assert exdir.is_dir()
+
+    assert_valid_json(exdir / MAIN_DATA_FILENAME)
 
     log.info(f"Uploading data folder {exdir} to {gs_prefix}/{exdir.parts[-1]} ...")
     cmd = CMD + ["-Z", "-R", exdir, gs_prefix]
