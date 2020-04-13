@@ -19,6 +19,7 @@ web_export:
  rates: rates.csv
  timezones: timezones.csv
  un_age_dist: various/age_dist_un.csv
+ traces_v3: various/traces_v3.csv
 
 ### Upload settings
 gs_prefix: "gs://static-covid/static/"

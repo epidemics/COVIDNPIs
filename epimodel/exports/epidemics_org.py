@@ -50,6 +50,7 @@ class WebExport:
         foretold: Optional[pd.DataFrame],
         timezones: Optional[pd.DataFrame],
         un_age_dist: Optional[pd.DataFrame],
+        traces_v3: Optional[pd.DataFrame],
     ):
         er = WebExportRegion(
             region,
@@ -60,6 +61,7 @@ class WebExport:
             foretold,
             timezones,
             un_age_dist,
+            traces_v3,
         )
         self.export_regions[region.Code] = er
         return er
@@ -96,12 +98,13 @@ class WebExportRegion:
         foretold: Optional[pd.DataFrame],
         timezones: Optional[pd.DataFrame],
         un_age_dist: Optional[pd.DataFrame],
+        traces_v3: Optional[pd.DataFrame],
     ):
         assert isinstance(region, Region)
         self.region = region
         # Any per-region data. Large ones should go to data_ext.
         self.data = self.extract_smallish_data(
-            rates, hopkins, foretold, timezones, un_age_dist
+            rates, hopkins, foretold, timezones, un_age_dist, traces_v3
         )
         # Extended data to be written in a separate per-region file
         self.data_ext = self.extract_models_data(models, simulations_spec)
@@ -115,6 +118,7 @@ class WebExportRegion:
         foretold: Optional[pd.DataFrame],
         timezones: Optional[pd.DataFrame],
         un_age_dist: Optional[pd.DataFrame],
+        traces_v3: Optional[pd.DataFrame],
     ) -> Dict[str, Dict[str, Any]]:
         d = {}
 
@@ -134,6 +138,9 @@ class WebExportRegion:
                 .loc[:, ["Mean", "Variance", "0.05", "0.50", "0.95"]]
                 .to_dict(orient="list"),
             }
+
+        if traces_v3 is not None:
+            d["TracesV3"] = traces_v3["TracesV3"]
 
         d["Timezones"] = timezones["Timezone"].tolist()
 
@@ -342,6 +349,7 @@ def process_export(args) -> None:
     rates = get_extra_path(args, "rates")
     timezone = get_extra_path(args, "timezones")
     un_age_dist = get_extra_path(args, "un_age_dist")
+    traces_v3 = get_extra_path(args, "traces_v3")
 
     export_regions = sorted(args.config["export_regions"])
 
@@ -357,6 +365,8 @@ def process_export(args) -> None:
         columns=["Type", "Region Name", "Parent Code M49"]
     )
 
+    traces_v3_df: pd.DataFrame = pd.read_csv(traces_v3, index_col="CodeISO3")
+
     hopkins_df: pd.DataFrame = pd.read_csv(
         hopkins, index_col=["Code", "Date"], parse_dates=["Date"]
     ).pipe(aggregate_countries, args.config["state_to_country"])
@@ -371,6 +381,7 @@ def process_export(args) -> None:
     for code in export_regions:
         reg = args.rds[code]
         m49 = int(reg["M49Code"])
+        iso3 = reg["CountryCodeISOa3"]
         ex.new_region(
             reg,
             models_df.loc[code].sort_index(level="Date"),
@@ -380,6 +391,7 @@ def process_export(args) -> None:
             get_df_else_none(foretold_df, code),
             get_df_list(timezone_df, code),
             get_df_else_none(un_age_dist_df, m49),
+            get_df_else_none(traces_v3_df, iso3)
         )
 
     ex.write(args.config["output_dir"])
