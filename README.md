@@ -61,3 +61,23 @@ print(csse.loc[('CZ', "2020-03-28")])
 * We enforce [black](https://github.com/psf/black) formatting (with the default style).
 * Use `pytest` for testing, add tests for your code!
 * Use pull requests for both this and the data repository.
+
+
+## Running pipeline to get web export
+Assuming you've installed deps via `poetry install` and you are in the root epimodel repo.
+Also, you did `cp config.yaml config-local.yaml` and set `export_regions: [CZ, ES]`
+
+0. clone data repo: `git clone https://github.com/epidemics/epimodel-covid-data data`
+1. `./do -C config-local.yaml update_john_hopkins`
+2. add a Foretold token into `config-local.yaml` in `foretold_channel` and run `./do -C config-local.yaml update_foretold`
+3. **TODO?: Run gleamviz and get batch file? What's being fetched inside the file?** 
+4. having the Gleam Batch simulation dir results: `./do -C config-local.yaml import_gleam_batch batch_file`
+5.  `./do -C config-local.yaml web_export data/batch-2020-04-03T23-35-24.482054+02-00.hdf5`
+
+### Gleam Batch file
+Has two dataframes:
+* `simulations`: indexed by SimulationID, contains information about what simulation ID had what parameters
+* `new_fraction`: actually contains the modelled data for Infected and Recovered (values/columns). Indexed by `['Code', 'Date', 'SimulationID']`:
+    * `Code`: country code (e.g. `AE`)
+    * `Date`: a date for which we model Infected and Recovered
+    * `SimulationID`: corresponding simulation ID to be able to be able to map it to parameters in `simulations` 

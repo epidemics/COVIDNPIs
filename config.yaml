@@ -12,15 +12,185 @@ gleamviz_sims_dir: ~/GLEAMviz/data/sims/
 # Subsampling of imported data (see Pandas `df.resample`)
 gleam_resample: 7D
 
-### Upload settings
+### Extra data for web_export, relative to data_dir
+web_export:
+ john_hopkins: johns-hopkins.csv
+ foretold: foretold.csv
+ rates: rates.csv
+ timezones: timezones.csv
+ un_age_dist: various/age_dist_un.csv
+ traces_v3: various/traces_v3.csv
 
+### Upload settings
 gs_prefix: "gs://static-covid/static/"
 gs_url_prefix: "https://storage.googleapis.com/static-covid/static/"
 
 ### Output directory for exported data
-
 output_dir: out/
 
 ### List of exported regions code
+export_regions:
+  - AF
+  - AL
+  - DZ
+  - AO
+  - AG
+  - AR
+  - AM
+  - AU
+  - AT
+  - AZ
+  - BD
+  - BY
+  - BE
+  - BZ
+  - BJ
+  - BT
+  - BO
+  - BA
+  - BR
+  - BN
+  - BG
+  - BF
+  - KH
+  - CM
+  - CA
+  - TD
+  - CL
+  - CN
+  - CO
+  - CD
+  - CG
+  - CR
+  - CI
+  - HR
+  - CU
+  - CY
+  - CZ
+  - DK
+  - DO
+  - EC
+  - EG
+  - GQ
+  - ER
+  - EE
+  - ET
+  - FJ
+  - FI
+  - FR
+  - GA
+  - GE
+  - DE
+  - GH
+  - GR
+  - GU
+  - GT
+  - GG
+  - GY
+  - HT
+  - HN
+  - HU
+  - IS
+  - IN
+  - ID
+  - IR
+  - IQ
+  - IE
+  - IM
+  - IL
+  - IT
+  - JM
+  - JP
+  - JO
+  - KZ
+  - KE
+  - KW
+  - KG
+  - LV
+  - LB
+  - LR
+  - LT
+  - LU
+  - MK
+  - MG
+  - MY
+  - MV
+  - MT
+  - MR
+  - MU
+  - MX
+  - MD
+  - MC
+  - MN
+  - ME
+  - MA
+  - NA
+  - NP
+  - NL
+  - NZ
+  - NI
+  - NE
+  - NG
+  - MP
+  - "NO"
+  - OM
+  - PK
+  - PA
+  - PG
+  - PY
+  - PE
+  - PH
+  - PL
+  - PT
+  - PR
+  - QA
+  - RO
+  - RU
+  - RW
+  - SA
+  - SN
+  - RS
+  - SC
+  - SG
+  - SK
+  - SI
+  - SO
+  - ZA
+  - KR
+  - ES
+  - LK
+  - SD
+  - SR
+  - SV
+  - SE
+  - CH
+  - TZ
+  - TH
+  - TG
+  - TT
+  - TN
+  - TR
+  - UG
+  - UA
+  - AE
+  - GB
+  - US
+  - UY
+  - UZ
+  - VE
+  - VN
+  - ZM
+  - ZW
 
-export_regions: [CZ, ES, US-CA]
+### these are used to match our non-state codes (e.g. AU) for John Hopkins database
+### where they have it on state/province granularity
+state_to_country:
+  AU: ['AU-ACT', 'AU-NSW', 'AU-NT', 'AU-QLD', 'AU-SA', 'AU-TAS', 'AU-VIC', 'AU-WA']
+  CN: ['CN-AH', 'CN-BJ', 'CN-CQ', 'CN-FJ', 'CN-GD', 'CN-GS', 'CN-GX', 'CN-GZ', 'CN-HA',
+       'CN-HB', 'CN-HE', 'CN-HI', 'CN-HK', 'CN-HL', 'CN-HN', 'CN-JL', 'CN-JS', 'CN-JX',
+       'CN-LN', 'CN-MO', 'CN-NM', 'CN-NX', 'CN-QH', 'CN-SC', 'CN-SD', 'CN-SH', 'CN-SN',
+       'CN-SX', 'CN-TJ', 'CN-XJ', 'CN-XZ', 'CN-YN', 'CN-ZJ']
+  #CA: ['CA-AB','CA-BC','CA-MB','CA-NB','CA-NL','CA-NS','CA-NT','CA-ON','CA-PE','CA-QC','CA-SK','CA-YT']
+  GU: ['US-GU']
+  MP: ['US-MP']
+  PR: ['US-PR']

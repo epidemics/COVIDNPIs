@@ -2,17 +2,17 @@
 
 import argparse
 import logging
-import subprocess
 from pathlib import Path
 
 import yaml
 
 import epimodel
-from epimodel import RegionDataset, Level
-from epimodel.exports.epidemics_org import WebExport, upload_export
+
+from epimodel import Level, RegionDataset
+from epimodel.exports.epidemics_org import process_export, upload_export
 from epimodel.gleam import Batch
 
-log = logging.getLogger("gleambatch")
+log = logging.getLogger(__name__)
 
 
 def import_countermeasures(args):
@@ -51,11 +51,7 @@ def update_foretold(args):
 
 
 def web_export(args):
-    ex = WebExport(comment=args.comment)
-    for code in args.config["export_regions"]:
-        ex.new_region(args.rds[code])
-    # TODO: add data to ex
-    ex.write(args.config["output_dir"])
+    process_export(args)
 
 
 def web_upload(args):
@@ -83,7 +79,9 @@ def create_parser():
     ap.add_argument("-C", "--config", default="config.yaml", help="Config file.")
     sp = ap.add_subparsers(title="subcommands", required=True, dest="cmd")
 
-    upp = sp.add_parser("update_johns_hopkins", help="Fetch data from Johns Hopkins CSSE.")
+    upp = sp.add_parser(
+        "update_johns_hopkins", help="Fetch data from Johns Hopkins CSSE."
+    )
     upp.set_defaults(func=update_johns_hopkins)
 
     upf = sp.add_parser("update_foretold", help="Fetch data from Foretold.")
@@ -100,6 +98,7 @@ def create_parser():
 
     exp = sp.add_parser("web_export", help="Create data export for web.")
     exp.add_argument("-c", "--comment", help="A short comment (to be part of path).")
+    exp.add_argument("models_file", help="A result HDF file of import_gleam_batch step")
     exp.set_defaults(func=web_export)
 
     uplp = sp.add_parser("web_upload", help="Upload data to the configured GCS bucket")
