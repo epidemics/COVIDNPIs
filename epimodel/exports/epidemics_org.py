@@ -57,6 +57,7 @@ class WebExport:
         timezones: Optional[pd.DataFrame],
         un_age_dist: Optional[pd.DataFrame],
         r_estimates: Optional[pd.DataFrame],
+        hospital_capacity: Optional[pd.DataFrame],
     ):
         export_region = WebExportRegion(
             region,
@@ -71,6 +72,7 @@ class WebExport:
             timezones,
             un_age_dist,
             r_estimates,
+            hospital_capacity,
         )
         self.export_regions[region.Code] = export_region
         return export_region
@@ -142,6 +144,7 @@ class WebExportRegion:
         timezones: Optional[pd.DataFrame],
         un_age_dist: Optional[pd.DataFrame],
         r_estimates: Optional[pd.DataFrame],
+        hospital_capacity: Optional[pd.DataFrame],
     ):
         log.debug(f"Prepare WebExport: {region.Code}, {region.Name}")
 
@@ -153,7 +156,7 @@ class WebExportRegion:
 
         # Any per-region data. Large ones should go to data_ext.
         self.data = self.extract_smallish_data(
-            rates, hopkins, foretold, timezones, un_age_dist, r_estimates
+            rates, hopkins, foretold, timezones, un_age_dist, r_estimates, hospital_capacity
         )
         # Extended data to be written in a separate per-region file
         self.data_ext = self.extract_external_data(models, simulation_specs)
@@ -168,6 +171,7 @@ class WebExportRegion:
         timezones: pd.DataFrame,
         un_age_dist: Optional[pd.DataFrame],
         r_estimates: Optional[pd.DataFrame],
+        hospital_capacity: Optional[pd.DataFrame],
     ) -> Dict[str, Dict[str, Any]]:
         data = {}
 
@@ -206,6 +210,14 @@ class WebExportRegion:
                 "Date": [x.isoformat() for x in r_estimates.index],
                 **r_estimates[["MeanR", "StdR"]].to_dict(orient="list"),
             }
+
+        if hospital_capacity is not None:
+            capacity = {}
+            for key, value in hospital_capacity.to_dict().items():
+                if not isinstance(value, float) or not np.isnan(value):
+                    capacity[key] = value
+
+            data["Capacity"] = capacity
 
         return data
 
@@ -523,6 +535,8 @@ def process_export(
         columns=["Type", "Region Name", "Parent Code M49"]
     )
 
+    hospital_capacity_df = pd.read_csv(get_extra_path(args, "hospital_capacity"), index_col="Code")
+
     foretold_df: pd.DataFrame = pd.read_csv(
         foretold,
         index_col=["Code", "Date"],
@@ -571,5 +585,6 @@ def process_export(
             get_df_list(timezone_df, code),
             get_df_else_none(un_age_dist_df, m49),
             get_df_else_none(r_estimates_df, code),
+            get_df_else_none(hospital_capacity_df, code),
         )
     return ex
