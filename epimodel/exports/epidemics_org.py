@@ -391,7 +391,7 @@ def process_export(args) -> None:
             get_df_else_none(foretold_df, code),
             get_df_list(timezone_df, code),
             get_df_else_none(un_age_dist_df, m49),
-            get_df_else_none(traces_v3_df, iso3)
+            get_df_else_none(traces_v3_df, iso3),
         )
 
     ex.write(args.config["output_dir"])
