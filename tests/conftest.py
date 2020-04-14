@@ -13,3 +13,10 @@ def datadir(request):
 @pytest.fixture
 def regions(datadir):
     return epimodel.RegionDataset.load(datadir / "regions.csv")
+
+
+@pytest.fixture
+def regions_gleam(datadir):
+    return epimodel.RegionDataset.load(
+        datadir / "regions.csv", datadir / "regions-gleam.csv"
+    )

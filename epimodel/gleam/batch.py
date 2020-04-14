@@ -1,14 +1,28 @@
 import datetime
+import io
 import logging
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
 import tables
+import time
 
-from .. import Level
+from ..regions import Level
+from .definition import GleamDefinition
 
 log = logging.getLogger(__name__)
+
+SIMULATION_COLUMNS = ["Name", "Group", "Key", "StartDate", "DefinitionXML"]
+
+LEVEL_TO_GTYPE = {
+    Level.country: "country",
+    Level.continent: "continent",
+    Level.gleam_basin: "city",
+}
+COMPARTMENTS = {2: "Infected", 3: "Recovered"}
+
+GLEAM_ID_SUFFIX = "574"  # Magic? Or arbtrary?
 
 
 class Batch:
@@ -22,51 +36,115 @@ class Batch:
         since the last (e.g. daily new fracion, weekly new fraction, ...).
     """
 
-    SIMULATION_COLUMNS = ["Name", "Group", "Key", "Params", "DefinitionXML"]
-    LEVEL_TO_GTYPE = {
-        Level.country: "country",
-        Level.continent: "continent",
-        Level.gleam_basin: "city",
-    }
-    COMPARTMENTS = {2: "Infected", 3: "Recovered"}
-
-    def __init__(self, hdf_file, *, _direct=True):
+    def __init__(self, hdf_file, path, *, _direct=True):
         assert not _direct, "Use .new or .load"
         self.hdf = hdf_file
-        self.simulations = self.hdf["simulations"]
-        self.new_fraction = self.hdf["new_fraction"]
+        self.path = path
 
     def __repr__(self):
-        return f"<{self.__class__.__name__} {self.hdf.filename} {len(self.simulations)} sims, {len(self.new_fraction)} rows>"
+        return f"<{self.__class__.__name__} {self.hdf.filename}>"
 
     @classmethod
     def open(cls, path):
         path = Path(path)
         assert path.exists()
         hdf = pd.HDFStore(path, "a")
-        return cls(hdf, _direct=False)
+        return cls(hdf, path, _direct=False)
 
     @classmethod
-    def new(cls, dir_, name=None, suffix=None):
+    def new(cls, *, path=None, dir=None, comment=None):
         """
-        Create new batch, auto-naming it.
+        Create new batch HDF5 file.
+        
+        Either `path` should be a (non-existing) file, or a `dir` should
+        be given - name is then auto-generated (with optional comment suffix).
         """
-        if name is None:
-            now = datetime.datetime.now().astimezone()
-            name = f"batch-{now.isoformat()}" + (f"-{suffix}" if suffix else "")
-        path = Path(dir_) / f"{name}.hdf5"
+        if path is None:
+            dir = Path(dir)
+            assert dir.is_dir()
+            now = datetime.datetime.now().astimezone(datetime.timezone.utc)
+            name = f"batch-{now.isoformat()}" + (f"-{comment}" if comment else "")
+            path = dir / f"{name}.hdf5"
+        path = Path(path)
+
         assert not path.exists()
         hdf = pd.HDFStore(path, "w")
-        hdf["simulations"] = pd.DataFrame(
-            index=pd.Index([], name="SimulationID"), columns=cls.SIMULATION_COLUMNS
-        )
-        hdf["new_fraction"] = pd.DataFrame(
-            index=pd.MultiIndex.from_tuples([], names=["Code", "Date", "SimulationID"]),
-            columns=cls.COMPARTMENTS.values(),
-        )
-        return cls(hdf, _direct=False)
+        return cls(hdf, path, _direct=False)
 
-    def import_sims(
+    def set_initial_compartments(self, initial_df):
+        """
+        `initial_df` must be indexed by `Code` and columns should be
+        compartment names.
+        """
+        self.hdf.put(
+            "initial_compartments",
+            initial_df.astype("f2"),
+            format="table",
+            complib="bzip2",
+            complevel=9,
+        )
+
+    def close(self):
+        """
+        Close the HDF5 file. The Batch object is then unusable.
+        """
+        self.hdf.close()
+
+    def set_simulations(self, sims_def_group_key):
+        """
+        Write simulation records.
+
+        Each element of `sims_def_group_key` is `(definition, group, key)`.
+        
+        In addiMakes the ID unique, adds the initial compartments clearing any old seeds,
+        records the simulation and seeds in the HDF file.
+
+        """
+        last_id = 0
+        rows = []
+        for definition, group, key in sims_def_group_key:
+            d = definition.copy()
+            last_id = max(int(time.time() * 1000), last_id + 1)
+            gv2id = f"{last_id}.{GLEAM_ID_SUFFIX}"
+            d.set_id(gv2id)
+            s = io.BytesIO()
+            d.save(s)
+            rows.append(
+                {
+                    "SimulationID": gv2id,
+                    "Name": d.get_name(),
+                    "Group": group,
+                    "Key": key,
+                    "StartDate": d.get_start_date().isoformat(),
+                    "DefinitionXML": s.getvalue().decode("ascii"),
+                }
+            )
+        data = pd.DataFrame(rows).set_index("SimulationID", verify_integrity=True)
+        print(data)
+        self.hdf.put("simulations", data, format="table", complib="bzip2", complevel=9)
+
+        # self.set_initial_compartments
+        # init_df = init_compartments.reindex(columns=['SimulationID', 'Code'])
+        # init_df.columns = pd.Index(init_df.columns, name="Compartment")
+        # init_df = init_df.stack().to_frame(name='Size')
+        # self.hdf.append("initial_compartments", init_df, complib='bzip2', complevel=9)
+
+    def export_definitions_to_gleam(
+        self, sims_dir, sim_ids=None, overwrite=False,
+    ):
+        sims_df = self.hdf["simulations"]
+        sims_dir = Path(sims_dir)
+        if sim_ids is None:
+            sim_ids = sims_df.index
+        for sid in sim_ids:
+            row = sims_df.loc[sid]
+            p = sims_dir / f"{sid}.gvh5"
+            p.mkdir(exist_ok=overwrite)
+            (p / "definition.xml").write_bytes(
+                sims_df.loc[sid].DefinitionXML.encode("ascii")
+            )
+
+    def import_results_from_gleam(
         self,
         sims_dir,
         regions,
@@ -78,16 +156,17 @@ class Batch:
         """
         Import simulation result data from GLEAMViz data/sims dir into the HDF5 file.
         """
-        if len(self.new_fraction) > 0 and not overwrite:
+        if "new_fraction" in self.hdf and not overwrite:
             raise Exception(f"Would overwrite existing `new_fraction` in {self}!")
+        sims_df = self.hdf["simulations"]
         sims_dir = Path(sims_dir)
-        for sid, sim in self.simulations.iterrows():
+        for sid, sim in sims_df.iterrows():
             path = sims_dir / f"{sid}.gvh5" / "results.h5"
             if not path.exists() and not allow_unfinished:
                 raise Exception(f"No gleam result found for {sid} {sim.Name!r}")
         dfs = []
         skipped = set()
-        for sid, sim in self.simulations.iterrows():
+        for sid, sim in sims_df.iterrows():
             path = sims_dir / f"{sid}.gvh5" / "results.h5"
             log.debug("Loading Gleam simulation from {} ..".format(path))
             with tables.File(path) as f:
@@ -95,26 +174,22 @@ class Batch:
                     if pd.isnull(r.GleamID):
                         skipped.add(r.DisplayName)
                         continue
-                    gtype = self.LEVEL_TO_GTYPE[r.Level]
+                    gtype = LEVEL_TO_GTYPE[r.Level]
                     node = f.get_node(f"/population/new/{gtype}/median/dset")
                     ################### HACK: date TODO: get from Batch header
                     days = pd.date_range("2020-04-02", periods=node.shape[3], tz="utc")
                     dcols = {}
-                    for ci, cn in self.COMPARTMENTS.items():
+                    for ci, cn in COMPARTMENTS.items():
                         new_per_1000 = node[ci, 0, int(r.GleamID), :]
                         new_fraction = np.expand_dims(new_per_1000 / 1000.0, 0)
                         idx = pd.MultiIndex.from_tuples(
-                            [(r.Code, sid)], names=["Code", "SimulationID"]
+                            [(sid, r.Code)], names=["SimulationID", "Code"]
                         )
-                        dcols[cn] = (
-                            pd.DataFrame(
-                                new_fraction.astype("f2"),
-                                index=idx,
-                                columns=pd.Index(days, name="Date"),
-                            )
-                            .stack()
-                            .swaplevel(1, 2)
-                        )
+                        dcols[cn] = pd.DataFrame(
+                            new_fraction.astype("f2"),
+                            index=idx,
+                            columns=pd.Index(days, name="Date"),
+                        ).stack()
                     dfs.append(pd.DataFrame(dcols).sort_index())
         if skipped:
             log.info(f"Skipped {len(skipped)} regions without GleamID: {skipped!r}")
@@ -126,10 +201,21 @@ class Batch:
             dfall = dfall.groupby(
                 [
                     pd.Grouper(level=0),
-                    pd.Grouper(freq=resample, level=1),
-                    pd.Grouper(level=2),
+                    pd.Grouper(level=1),
+                    pd.Grouper(freq=resample, level=2),
                 ]
             ).mean()
-        self.hdf.put("new_fraction", dfall, format="table")
-        self.new_fraction = self.hdf["new_fraction"]
+
+        self.hdf.put(
+            "new_fraction", dfall, format="table", complib="bzip2", complevel=9
+        )
         log.info(f"Loaded {len0} GLEAM result rows into {self} (resampling {resample})")
+
+
+def generate_simulations(batch, definition, initial_compartments, rds, config):
+    return  #### TODO
+    epimodel.algorithms.estimate_missing_populations(rds)
+    # epimodel.algorithms.propagate_down(est, args.rds)
+    d.clear_seeds()
+    d.add_seeds(est)
+    pass

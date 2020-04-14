@@ -8,9 +8,9 @@ import yaml
 
 import epimodel
 
-from epimodel import Level, RegionDataset
+from epimodel import Level, RegionDataset, read_csv_names
 from epimodel.exports.epidemics_org import process_export, upload_export
-from epimodel.gleam import Batch
+from epimodel.gleam import Batch, batch
 
 log = logging.getLogger(__name__)
 
@@ -65,12 +65,37 @@ def import_batch(args):
     batch = Batch.open(args.BATCH_FILE)
     d = args.rds.data
     regions = d.loc[(d.Level == Level.country) & (d.GleamID != "")].Region.values
-    batch.import_sims(
+    log.info(
+        f"Importing results for {len(regions)} from GLEAM into {args.BATCH_FILE} ..."
+    )
+    batch.import_results_from_gleam(
         Path(args.config["gleamviz_sims_dir"]).expanduser(),
         regions,
         resample=args.config["gleam_resample"],
         allow_unfinished=args.allow_missing,
     )
+
+
+def generate_batch(args):
+    b = Batch.new(dir=args.config["output_dir"], comment=args.comment)
+    log.info(f"New batch file {b.path}")
+    log.info(f"Reading base GLEAM definition {args.BASE_DEF} ...")
+    d = epimodel.gleam.GleamDefinition(args.BASE_DEF)
+    log.info(f"Reading estimates from CSV {args.COUNTRY_ESTIMATES} ...")
+    est = read_csv_names(args.COUNTRY_ESTIMATES, levels=Level.country)
+    log.info(f"Generating scenarios ...")
+    batch.generate_simulations(b, d, est, rds=args.rds, config=args.config)
+
+
+def export_batch(args):
+    batch = Batch.open(args.BATCH_FILE)
+    gdir = args.config["gleamviz_sims_dir"]
+    if args.out_dir is not None:
+        gdir = args.out_dir
+    log.info(
+        f"Creating GLEAM XML definitions for batch {args.BATCH_FILE} in dir {gdir} ..."
+    )
+    batch.export_definitions_to_gleam(Path(gdir).expanduser())
 
 
 def create_parser():
@@ -95,6 +120,25 @@ def create_parser():
         "-M", "--allow-missing", action="store_true", help="Skip missing sim results.",
     )
     ibp.set_defaults(func=import_batch)
+
+    gbp = sp.add_parser(
+        "generate_gleam_batch", help="Create batch of definitions for GLEAM."
+    )
+    gbp.add_argument("-c", "--comment", help="A short comment (to be part of path).")
+    gbp.add_argument("BASE_DEF", help="Basic definition file to use.")
+    gbp.add_argument(
+        "COUNTRY_ESTIMATES", help="The country-level estimate source CSV file."
+    )
+    gbp.set_defaults(func=generate_batch)
+
+    ebp = sp.add_parser(
+        "export_gleam_batch", help="Create batch of definitions for GLEAM."
+    )
+    ebp.add_argument("-o", "--out_dir", help="Override output dir (must exist).")
+    ebp.add_argument(
+        "BATCH_FILE", help="The batch-*.hdf5 file with batch spec to be updated."
+    )
+    ebp.set_defaults(func=export_batch)
 
     exp = sp.add_parser("web_export", help="Create data export for web.")
     exp.add_argument("-c", "--comment", help="A short comment (to be part of path).")
@@ -128,7 +172,10 @@ def main():
         logging.root.setLevel(logging.DEBUG)
     with open(args.config, "rt") as f:
         args.config = yaml.safe_load(f)
-    args.rds = RegionDataset.load(Path(args.config["data_dir"]) / "regions.csv")
+    data_dir = Path(args.config["data_dir"])
+    args.rds = RegionDataset.load(
+        data_dir / "regions.csv", data_dir / "regions-gleam.csv"
+    )
     args.func(args)
 
 
