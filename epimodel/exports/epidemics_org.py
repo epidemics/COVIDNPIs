@@ -385,10 +385,10 @@ def process_export(args) -> None:
     traces_v3_df: pd.DataFrame = pd.read_csv(traces_v3, index_col="CodeISO3")
 
     hopkins_df: pd.DataFrame = pd.read_csv(
-        hopkins, index_col=["Code", "Date"], parse_dates=["Date"]
+        hopkins, index_col=["Code", "Date"], parse_dates=["Date"], keep_default_na=False,
     ).pipe(aggregate_countries, args.config["state_to_country"])
     foretold_df: pd.DataFrame = pd.read_csv(
-        foretold, index_col=["Code", "Date"], parse_dates=["Date"]
+        foretold, index_col=["Code", "Date"], parse_dates=["Date"], keep_default_na=False,
     )
 
     analyze_data_consistency(
