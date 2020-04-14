@@ -202,9 +202,8 @@ class RegionDataset:
                 keep_default_na=False,
             )
             # Convert Level to enum
-            data.Level = data.Level.map(lambda name: Level[name])
-            s.data = s.data.append(data)
-        s.data.sort_index()
+            data["Level"] = data["Level"].map(lambda name: Level[name])
+            s.data = s.data.append(data, verify_integrity=True)
         s._rebuild_index()
         return s
 
