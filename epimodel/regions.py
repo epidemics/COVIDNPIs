@@ -240,10 +240,13 @@ class RegionDataset:
         Return all Regions with some matching names (filtering on levels).
         """
         if levels is not None:
-            if isinstance(levels, Level):
+            if isinstance(levels, (Level, str)):
                 levels = [levels]
+            for i in range(len(levels)):
+                if isinstance(levels[i], str):
+                    levels[i] = Level[levels[i]]
             assert all(isinstance(x, Level) for x in levels)
-        rs = tuple(self._name_index.get(normalize_name(s), []))
+        rs = tuple(self._name_index.get(normalize_name(s), ()))
         if levels is not None:
             rs = tuple(r for r in rs if r.Level in levels)
         return rs
@@ -302,7 +305,7 @@ class RegionDataset:
             if len(self._name_index[k]) > 1:
                 conflicts.append(k)
         if conflicts:
-            log.info(
+            log.debug(
                 f"Name index has {len(conflicts)} potential conflicts: {conflicts!r}"
             )
 

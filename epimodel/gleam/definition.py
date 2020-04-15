@@ -52,6 +52,8 @@ class GleamDefinition:
         `sizes` must be indexed by `Code`. `rds` must have the gleam
         regions loaded.
         """
+        assert isinstance(rds, RegionDataset)
+        assert isinstance(compartments, pd.DataFrame)
         sroot = self.f1("./gv:definition/gv:seeds")
         for c in compartments.columns:
             sizes = compartments[c].sort_values(ascending=False)
@@ -75,6 +77,7 @@ class GleamDefinition:
         return self.f1("./gv:definition").attrib["name"]
 
     def set_name(self, val):
+        assert isinstance(val, str)
         self.f1("./gv:definition").attrib["name"] = val
 
     def set_default_name(self, comment=None):
@@ -88,7 +91,8 @@ class GleamDefinition:
         return self.f1("gv:definition").get("id")
 
     def set_id(self, val):
-        return self.f1("gv:definition").set("id", str(val))
+        assert isinstance(val, str)
+        return self.f1("gv:definition").set("id", val)
 
     def get_start_date(self):
         d = dateutil.parser.parse(
@@ -125,7 +129,8 @@ class GleamDefinition:
         )
 
     def set_variable(self, name: str, val: float):
-        assert val >= 0.0
+        assert isinstance(name, str)
+        assert isinstance(val, float)
         self.f1(
             f'./gv:definition/gv:compartmentalModel/gv:variables/gv:variable[@name="{name}"]'
         ).set("value", f"{val:.2f}")
