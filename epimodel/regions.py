@@ -218,6 +218,14 @@ class RegionDataset:
         """
         return self._code_index[code.upper()]
 
+    def __contains__(self, code):
+        """
+        Returns the Region corresponding to code, or raise KeyError.
+        """
+        if not isinstance(code, str):
+            return False
+        return code.upper() in self._code_index
+
     def get(self, code, default=None):
         """
         Returns the Region corresponding to code, or `default`.
