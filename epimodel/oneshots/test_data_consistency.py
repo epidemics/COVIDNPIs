@@ -22,7 +22,7 @@ def main(files):
             assert r.Code == r.CountryCode
         if r.Level == Level.continent:
             assert r.Code == r.ContinentCode
-            assert r.parent.Code == 'W'
+            assert r.parent.Code == "W"
 
 
 if __name__ == "__main__":
