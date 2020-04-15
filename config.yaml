@@ -21,6 +21,7 @@ web_export:
  un_age_dist: various/age_dist_un.csv
  traces_v3: various/traces_v3.csv
 
+### Generating GLEAM scenarios
 scenarios:
   - param_seasonalityAlphaMin: 0.85
     param_occupancyRate: 70  # Note this is in percent!
@@ -49,13 +50,22 @@ scenarios:
   
 groups:
   - param_beta: 1.285
-    label: "None"
+    group: "None"
   - param_beta: 1.0064 # 80%
-    label: "Low"
+    group: "Low"
   - param_beta: 0.629 # 50%
-    label: "Medium"
+    group: "Medium"
   - param_beta: 0.2516 # 20%
-    label: "High"
+    group: "High"
+
+# How to assign estimate different compartments
+compartment_multipliers:
+  Infectious: 1.0
+  Exposed: 1.8
+
+# Maximal fraction of population in a region that is in
+# some compartment
+compartments_max_fraction: 0.8
 
 ### Upload settings
 gs_prefix: "gs://static-covid/static/"

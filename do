@@ -12,7 +12,7 @@ from epimodel import Level, RegionDataset, read_csv_names
 from epimodel.exports.epidemics_org import process_export, upload_export
 from epimodel.gleam import Batch, batch
 
-log = logging.getLogger(__name__)
+log = logging.getLogger("do")
 
 
 def import_countermeasures(args):
@@ -81,10 +81,16 @@ def generate_batch(args):
     log.info(f"New batch file {b.path}")
     log.info(f"Reading base GLEAM definition {args.BASE_DEF} ...")
     d = epimodel.gleam.GleamDefinition(args.BASE_DEF)
+    # TODO: This shuld be somewhat more versatile
     log.info(f"Reading estimates from CSV {args.COUNTRY_ESTIMATES} ...")
-    est = read_csv_names(args.COUNTRY_ESTIMATES, levels=Level.country)
+    est = read_csv_names(args.COUNTRY_ESTIMATES, args.rds, levels=Level.country)
+    if len(est.columns) > 1:
+        raise Exception(f"Multiple columns found: {est.columns}")
+    est = est[est.columns[0]]
     log.info(f"Generating scenarios ...")
     batch.generate_simulations(b, d, est, rds=args.rds, config=args.config)
+    log.info(f"Generated batch {b.path!r}:\n  {b.stats()}")
+    b.close()
 
 
 def export_batch(args):
@@ -95,7 +101,9 @@ def export_batch(args):
     log.info(
         f"Creating GLEAM XML definitions for batch {args.BATCH_FILE} in dir {gdir} ..."
     )
-    batch.export_definitions_to_gleam(Path(gdir).expanduser())
+    batch.export_definitions_to_gleam(
+        Path(gdir).expanduser(), overwrite=args.overwrite, info_level=logging.INFO
+    )
 
 
 def create_parser():
@@ -135,6 +143,9 @@ def create_parser():
         "export_gleam_batch", help="Create batch of definitions for GLEAM."
     )
     ebp.add_argument("-o", "--out_dir", help="Override output dir (must exist).")
+    ebp.add_argument(
+        "-f", "--overwrite", action="store_true", help="Overwrite existing files."
+    )
     ebp.add_argument(
         "BATCH_FILE", help="The batch-*.hdf5 file with batch spec to be updated."
     )
@@ -176,6 +187,7 @@ def main():
     args.rds = RegionDataset.load(
         data_dir / "regions.csv", data_dir / "regions-gleam.csv"
     )
+    epimodel.algorithms.estimate_missing_populations(args.rds)
     args.func(args)
 
 

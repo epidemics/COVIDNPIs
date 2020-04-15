@@ -8,8 +8,9 @@ import pandas as pd
 import tables
 import time
 
-from ..regions import Level
+from ..regions import Level, RegionDataset
 from .definition import GleamDefinition
+from .. import algorithms
 
 log = logging.getLogger(__name__)
 
@@ -43,6 +44,25 @@ class Batch:
 
     def __repr__(self):
         return f"<{self.__class__.__name__} {self.hdf.filename}>"
+
+    def stats(self):
+        def get_table(n):
+            return self.hdf.get(n) if n in self.hdf else None
+
+        s = []
+        t = get_table("simulations")
+        if t is not None:
+            s.append(f"{len(t)} simulations")
+        t = get_table("initial_compartments")
+        if t is not None:
+            s.append(f"{len(t)} initial compartments {list(t.columns)}")
+        t = get_table("new_fraction")
+        if t is not None:
+            s.append(
+                f"{len(t)} rows of results {list(t.columns)} "
+                f"({len(t.index.levels[-1])} dates, {len(t.index.levels[-2])} regions)"
+            )
+        return ", ".join(s)
 
     @classmethod
     def open(cls, path):
@@ -90,19 +110,20 @@ class Batch:
         """
         self.hdf.close()
 
-    def set_simulations(self, sims_def_group_key):
+    def set_simulations(self, sims_def_name_group_key):
         """
         Write simulation records.
 
-        Each element of `sims_def_group_key` is `(definition, group, key)`.
+        Each element of `sims_def_group_key` is `(definition, name, group, key)`.
         
         In addiMakes the ID unique, adds the initial compartments clearing any old seeds,
         records the simulation and seeds in the HDF file.
 
+        TODO: Potentially have a nicer interface than list-of-tuples
         """
         last_id = 0
         rows = []
-        for definition, group, key in sims_def_group_key:
+        for definition, name, group, key in sims_def_name_group_key:
             d = definition.copy()
             last_id = max(int(time.time() * 1000), last_id + 1)
             gv2id = f"{last_id}.{GLEAM_ID_SUFFIX}"
@@ -112,7 +133,7 @@ class Batch:
             rows.append(
                 {
                     "SimulationID": gv2id,
-                    "Name": d.get_name(),
+                    "Name": name,
                     "Group": group,
                     "Key": key,
                     "StartDate": d.get_start_date().isoformat(),
@@ -120,17 +141,10 @@ class Batch:
                 }
             )
         data = pd.DataFrame(rows).set_index("SimulationID", verify_integrity=True)
-        print(data)
         self.hdf.put("simulations", data, format="table", complib="bzip2", complevel=9)
 
-        # self.set_initial_compartments
-        # init_df = init_compartments.reindex(columns=['SimulationID', 'Code'])
-        # init_df.columns = pd.Index(init_df.columns, name="Compartment")
-        # init_df = init_df.stack().to_frame(name='Size')
-        # self.hdf.append("initial_compartments", init_df, complib='bzip2', complevel=9)
-
     def export_definitions_to_gleam(
-        self, sims_dir, sim_ids=None, overwrite=False,
+        self, sims_dir, sim_ids=None, overwrite=False, info_level=logging.DEBUG,
     ):
         sims_df = self.hdf["simulations"]
         sims_dir = Path(sims_dir)
@@ -139,10 +153,9 @@ class Batch:
         for sid in sim_ids:
             row = sims_df.loc[sid]
             p = sims_dir / f"{sid}.gvh5"
+            log.log(info_level, f"Exporting sim to {p} ...")
             p.mkdir(exist_ok=overwrite)
-            (p / "definition.xml").write_bytes(
-                sims_df.loc[sid].DefinitionXML.encode("ascii")
-            )
+            (p / "definition.xml").write_bytes(row.DefinitionXML.encode("ascii"))
 
     def import_results_from_gleam(
         self,
@@ -212,10 +225,45 @@ class Batch:
         log.info(f"Loaded {len0} GLEAM result rows into {self} (resampling {resample})")
 
 
-def generate_simulations(batch, definition, initial_compartments, rds, config):
-    return  #### TODO
-    epimodel.algorithms.estimate_missing_populations(rds)
-    # epimodel.algorithms.propagate_down(est, args.rds)
+def generate_simulations(
+    batch: Batch,
+    definition: GleamDefinition,
+    sizes: pd.Series,
+    rds: RegionDataset,
+    config: dict,
+):
+    # Estimate infections in subregions
+    s = sizes.copy()
+    algorithms.distribute_down_with_population(s, rds)
+
+    # Create compartment sizes
+    mults = config["compartment_multipliers"]
+    mult_sum = sum(mults.values())
+    s = np.minimum(
+        s, rds.data.Population * config["compartments_max_fraction"] / mult_sum
+    )
+    s = s[pd.notnull(s)]
+    est = pd.DataFrame({n: s * m for n, m in mults.items()})
+
+    # Update definition and batch
+    d = definition.copy()
     d.clear_seeds()
-    d.add_seeds(est)
-    pass
+    d.add_seeds(rds, est)
+    batch.set_initial_compartments(est)
+
+    # Generate simulations
+    sims = []
+    for mit in config["groups"]:
+        for sce in config["scenarios"]:
+            par = dict(mit)
+            par.update(sce)
+            d2 = d.copy()
+
+            d2.set_seasonality(par["param_seasonalityAlphaMin"])
+            d2.set_traffic_occupancy(par["param_occupancyRate"])
+            d2.set_variable("beta", par["param_beta"])
+            # TODO: other params or variables?
+            d2.set_default_name()
+
+            sims.append((d, par["name"], par["group"], par["key"]))
+    batch.set_simulations(sims)
