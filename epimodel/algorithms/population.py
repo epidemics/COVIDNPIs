@@ -39,17 +39,22 @@ def distribute_down_with_population(
     at population (anything beyond the cap is lost).
     If a children already has value, it is preserved and substracted from the distributed
     amount (but only on the direct children levels).
+    If a region does not have a known Population, it is skipped, including
+    its subtree.
     """
 
     def rec(r):
-        val = s[r.Code]
+        val = s.get(r.Code, np.nan)
         if np.isfinite(val):
             child_vals = np.array([s.get(cr.Code, np.nan) for cr in r.children])
             val = max(0.0, val - np.sum(child_vals, where=np.isfinite(child_vals)))
             empty_children = [
-                cr for cr in r.children if not np.isfinite(s.get(cr.Code, np.nan))
+                cr
+                for cr in r.children
+                if not np.isfinite(s.get(cr.Code, np.nan))
+                and np.isfinite(cr.Population)
             ]
-            empty_pop_sum = np.sum(cr.Population for cr in empty_children)
+            empty_pop_sum = np.sum([cr.Population for cr in empty_children])
 
             for cr in empty_children:
                 v = val * cr.Population / max(empty_pop_sum, 1)
@@ -59,4 +64,5 @@ def distribute_down_with_population(
         for cr in r.children:
             rec(cr)
 
+    assert isinstance(s, pd.Series)
     rec(rds[root])
