@@ -1,11 +1,11 @@
 import logging
 
-import dateutil
 import numpy as np
 import pandas as pd
 import tqdm
 
-from ..regions import RegionDataset, Level
+from ..regions import Level, RegionDataset
+from ..utils import utc_date
 
 log = logging.getLogger(__name__)
 
@@ -51,7 +51,7 @@ def import_countermeasures_csv(rds: RegionDataset, path):
     )
 
     df = df.loc[pd.notnull(df.Country)]
-    df["Date"] = [pd.to_datetime(x, utc=True) for x in df["Date"]]
+    df["Date"] = [utc_date(x) for x in df["Date"]]
     df["Code"] = [_lookup(x) for x in df["Country"]]
     df = df.loc[pd.notnull(df.Code)]
     dti = pd.MultiIndex.from_arrays([df.Code, df.Date], names=["Code", "Date"])
