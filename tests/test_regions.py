@@ -18,5 +18,5 @@ def test_hierarchy(regions):
     assert ca.parent.parent.parent.parent is None
     assert ca.country.Code == "US"
     assert ca.country.country.Code == "US"
-    # assert ca.continent.Code == "W-NA"  ## TODO: Add contitnents and above
-    assert ca.subdivision is None
+    assert ca.continent.Code == "W-NA"
+    assert ca.subdivision is ca
