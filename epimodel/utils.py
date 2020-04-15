@@ -1,3 +1,4 @@
+import datetime
 import logging
 import re
 
@@ -39,11 +40,16 @@ def read_csv(
     )
 
 
-def read_csv_names(
+NAME_COLUMNS = ["Code", "code", "Name", "name"]
+
+DATE_COLUMNS = ["Date", "date", "Day", "day"]
+
+
+def read_csv_smart(
     path,
     rds: "epimodel.RegionDataset",
-    date_column: str = "Date",
-    name_column: str = "Name",
+    date_column: str = None,
+    name_column: str = None,
     skip_unknown: bool = False,
     levels=None,
     drop_underscored: bool = True,
@@ -51,28 +57,33 @@ def read_csv_names(
     **kwargs,
 ) -> pd.DataFrame:
     """
-    Read given CSV indexed by name or code, create indexes and perform basic checks.
+    Read given CSV indexed by name or code and optionally date, create indexes and
+    perform basic checks.
     
-    Checks that the CSV has name column, finds every name in region dataset
-    and and uses it as an index. Name matches must be unique within selected levels
-    (see `RegionDataset.find_one_by_name`).
+    For every row, the named region is found in the region dataset by name or code.
+    Name matches must be unique within selected levels
+    (see `RegionDataset.find_one_by_name`) and Codes.
 
+    If not given, the name/code column is auto-detected from "Code", "code", "Name",
+    "name". The date column names tried are "Date", "date", "Day", "day".
+    (All in that order). If `date_coumn` name is given, it must be present in the file.
+    
     If the CSV has 'Date' or `date_column` column, uses it as a secondary index.
     Dates are converted to datetime with UTC timezone.
 
-    By default drops any "_Undersored" columns (including the informative "_Name").
+    By default drops any "_Undersored" columns (including e.g. the informative "_Name").
 
     Any other keyword args are passed to `pd.read_csv`.
     """
 
     def find(n):
         rs = rds.find_all_by_name(n, levels=levels)
+        if n in rds:
+            rs.append(rds[n])
         if len(rs) > 1:
             raise Exception(f"Found multiple matches for {n!r}: {rs!r}")
         elif len(rs) == 1:
             return rs[0].Code
-        elif n in rds:
-            return rds[n].Code
         elif skip_unknown:
             unknown.add(n)
             return ""
@@ -81,11 +92,28 @@ def read_csv_names(
 
     unknown = set()
     data = pd.read_csv(path, **kwargs)
+
+    if name_column is None:
+        for n in NAME_COLUMNS:
+            if n in data.columns:
+                name_column = n
+                break
+    if name_column is None:
+        raise ValueError(f"CSV file has no column in {NAME_COLUMNS}")
     if name_column not in data.columns:
         raise ValueError(f"CSV file does not have column {name_column}")
     data["Code"] = data[name_column].map(find)
     data = data[data.Code != ""]
     del data[name_column]
+
+    if date_column is None:
+        for n in DATE_COLUMNS:
+            if n in data.columns:
+                date_column = n
+                break
+    if date_column is not None and date_column not in data.columns:
+        raise ValueError(f"CSV file does not have column {name_column}")
+
     if unknown:
         log.warning(f"Skipped unknown regions {unknown!r}")
     data = data.set_index("Code")
@@ -137,3 +165,19 @@ def normalize_name(name):
     whitespace is stripped.
     """
     return unidecode.unidecode(name).lower().replace("-", " ").replace("_", " ").strip()
+
+
+def utc_date(d):
+    """
+    Agressively convert any date spec (str, date or datetime) into UTC datetime with time 00:00:00.
+
+    Discards any old time and timezone info!
+    Note that dates as UTC 00:00:00 is used as the day identifier throughout epimodel.
+    """
+    if isinstance(d, str):
+        d = dateutil.parser.parse(d)
+    if isinstance(d, datetime.date):
+        d = datetime.datetime.combine(d, datetime.time())
+    if not isinstance(d, datetime.datetime):
+        raise TypeError(f"Only str, datetime or date objects accepted, got {d!r}")
+    return datetime.datetime.combine(d, datetime.time(tzinfo=datetime.timezone.utc))
