@@ -3,11 +3,11 @@ import requests
 import re
 import json
 
-import dateutil
 import pandas as pd
 import numpy as np
 
 from ..regions import RegionDataset
+from ..utils import utc_date
 
 log = logging.getLogger(__name__)
 
@@ -75,7 +75,7 @@ def import_foretold(rds: RegionDataset, foretold_channel: str):
             continue
 
         data_line.append(rs[0].Code)
-        data_line.append(dateutil.parser.isoparse(p["node"]["labelOnDate"]))
+        data_line.append(utc_date(p["node"]["labelOnDate"]))
         data_line.extend(calculations(pa))
         data.append(data_line)
 
