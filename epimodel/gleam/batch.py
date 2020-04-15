@@ -231,6 +231,7 @@ def generate_simulations(
     sizes: pd.Series,
     rds: RegionDataset,
     config: dict,
+    start_date: datetime.datetime,
 ):
     # Estimate infections in subregions
     s = sizes.copy()
@@ -247,6 +248,7 @@ def generate_simulations(
 
     # Update definition and batch
     d = definition.copy()
+    d.set_start_date(start_date)
     d.clear_seeds()
     d.add_seeds(rds, est)
     batch.set_initial_compartments(est)

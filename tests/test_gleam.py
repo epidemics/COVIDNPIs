@@ -33,7 +33,7 @@ def test_add_seeds_add_export_sims(regions_gleam, datadir, tmp_path):
     d.clear_seeds()
     d.add_seeds(regions_gleam, i_df)
 
-    b.set_simulations([(d, "MEDIUM", "WEAK_WEAK")])
+    b.set_simulations([(d, "Name1", "MEDIUM", "WEAK_WEAK")])
     b.set_initial_compartments(i_df)
     path = b.path
     b.close()

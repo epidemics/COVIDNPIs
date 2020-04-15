@@ -3,10 +3,10 @@ import datetime
 import logging
 import xml.etree.ElementTree as ET
 
-import dateutil
 import pandas as pd
 
 from ..regions import RegionDataset, Level
+from ..utils import utc_date
 
 log = logging.getLogger(__name__)
 
@@ -95,12 +95,7 @@ class GleamDefinition:
         return self.f1("gv:definition").set("id", val)
 
     def get_start_date(self):
-        d = dateutil.parser.parse(
-            self.f1("./gv:definition/gv:parameters").get("startDate")
-        )
-        if d.tzinfo is None:
-            d = d.replace(tzinfo=datetime.timezone.utc)
-        return d.astimezone(datetime.timezone.utc)
+        return utc_date(self.f1("./gv:definition/gv:parameters").get("startDate"))
 
     def set_start_date(self, date):
         if isinstance(date, datetime.datetime):
