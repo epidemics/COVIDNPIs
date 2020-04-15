@@ -8,7 +8,7 @@ import yaml
 
 import epimodel
 
-from epimodel import Level, RegionDataset, read_csv_names
+from epimodel import Level, RegionDataset, read_csv_smart, utils
 from epimodel.exports.epidemics_org import process_export, upload_export
 from epimodel.gleam import Batch, batch
 
@@ -83,12 +83,16 @@ def generate_batch(args):
     d = epimodel.gleam.GleamDefinition(args.BASE_DEF)
     # TODO: This shuld be somewhat more versatile
     log.info(f"Reading estimates from CSV {args.COUNTRY_ESTIMATES} ...")
-    est = read_csv_names(args.COUNTRY_ESTIMATES, args.rds, levels=Level.country)
+    est = read_csv_smart(args.COUNTRY_ESTIMATES, args.rds, levels=Level.country)
     if len(est.columns) > 1:
         raise Exception(f"Multiple columns found: {est.columns}")
     est = est[est.columns[0]]
-    log.info(f"Generating scenarios ...")
-    batch.generate_simulations(b, d, est, rds=args.rds, config=args.config)
+    if args.start_date:
+        start_date = utils.utc_date(args.start_date)
+    else:
+        start_date = d.get_start_date()
+    log.info(f"Generating scenarios with start_date {start_date.ctime()} ...")
+    batch.generate_simulations(b, d, est, rds=args.rds, config=args.config, start_date=start_date)
     log.info(f"Generated batch {b.path!r}:\n  {b.stats()}")
     b.close()
 
@@ -133,6 +137,11 @@ def create_parser():
         "generate_gleam_batch", help="Create batch of definitions for GLEAM."
     )
     gbp.add_argument("-c", "--comment", help="A short comment (to be part of path).")
+    gbp.add_argument(
+        "-D",
+        "--start_date",
+        help="Set a sim start date (default: from the simulation def).",
+    )
     gbp.add_argument("BASE_DEF", help="Basic definition file to use.")
     gbp.add_argument(
         "COUNTRY_ESTIMATES", help="The country-level estimate source CSV file."
