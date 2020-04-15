@@ -1,15 +1,18 @@
+import logging
 import re
 
 import dateutil
 import pandas as pd
 import unidecode
 
+log = logging.getLogger(__name__)
+
 
 def read_csv(
     path,
     rds: "epimodel.RegionDataset",
     date_column: str = "Date",
-    skip_unknown: bool = True,
+    skip_unknown: bool = False,
     drop_underscored: bool = True,
     **kwargs,
 ) -> pd.DataFrame:
@@ -41,12 +44,14 @@ def read_csv_names(
     rds: "epimodel.RegionDataset",
     date_column: str = "Date",
     name_column: str = "Name",
+    skip_unknown: bool = False,
     levels=None,
     drop_underscored: bool = True,
+    skip=(),
     **kwargs,
 ) -> pd.DataFrame:
     """
-    Read given CSV indexed by name, create indexes and perform basic checks.
+    Read given CSV indexed by name or code, create indexes and perform basic checks.
     
     Checks that the CSV has name column, finds every name in region dataset
     and and uses it as an index. Name matches must be unique within selected levels
@@ -59,13 +64,31 @@ def read_csv_names(
 
     Any other keyword args are passed to `pd.read_csv`.
     """
+
+    def find(n):
+        rs = rds.find_all_by_name(n, levels=levels)
+        if len(rs) > 1:
+            raise Exception(f"Found multiple matches for {n!r}: {rs!r}")
+        elif len(rs) == 1:
+            return rs[0].Code
+        elif n in rds:
+            return rds[n].Code
+        elif skip_unknown:
+            unknown.add(n)
+            return ""
+        else:
+            raise Exception(f"No region found for {n!r}")
+
+    unknown = set()
     data = pd.read_csv(path, **kwargs)
     if name_column not in data.columns:
         raise ValueError(f"CSV file does not have column {name_column}")
-    data["Code"] = data[name_column].map(
-        lambda n: rds.find_one_by_name(n, levels=levels)
-    )
+    data["Code"] = data[name_column].map(find)
+    data = data[data.Code != ""]
     del data[name_column]
+    if unknown:
+        log.warning(f"Skipped unknown regions {unknown!r}")
+    data = data.set_index("Code")
     return _process_loaded_table(
         data, rds, date_column=date_column, drop_underscored=drop_underscored
     )
@@ -93,7 +116,7 @@ def _process_loaded_table(
     return data.sort_index()
 
 
-def write_csv(df, path, regions=None, with_name=True):
+def write_csv(df, path, regions=None, with_name=False):
     """
     Write given CSV normally, adding purely informative "_Name" column by default.
     """
