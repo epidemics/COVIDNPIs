@@ -4,14 +4,15 @@ import json
 import logging
 import socket
 import subprocess
-from pathlib import Path
 from enum import Enum
-from typing import Optional, Dict, Any, List
+from pathlib import Path
+from typing import Any, Dict, List, Optional
 
-import pandas as pd
 import numpy as np
+import pandas as pd
 from tqdm import tqdm
 
+from ..gleam import Batch
 from ..regions import Region
 
 log = logging.getLogger(__name__)
@@ -391,14 +392,10 @@ def process_export(args) -> None:
 
     export_regions = sorted(args.config["export_regions"])
 
-    with pd.HDFStore(args.models_file) as hdf:
-        simulation_specs = hdf.get("simulations")
-        models_df = (
-            hdf.get("new_fraction")
-            .reset_index()
-            .set_index(["Code", "Date", "SimulationID"])
-        )
-        initial_df = hdf.get("initial_compartments")
+    batch = Batch.open(args.BATCH_FILE)
+    simulation_specs: pd.DataFrame = batch.hdf["simulations"]
+    models_df: pd.DataFrame = batch.hdf["new_fraction"]
+    cummulative_active_df = batch.get_cummulative_active_df()
 
     rates_df: pd.DataFrame = pd.read_csv(rates, index_col="Code", keep_default_na=False)
     timezone_df: pd.DataFrame = pd.read_csv(
@@ -438,6 +435,16 @@ def process_export(args) -> None:
         reg = args.rds[code]
         m49 = int(reg["M49Code"])
         iso3 = reg["CountryCodeISOa3"]
+
+        ##### TODO: go over simulation groups (mitigations), for each get stats and plots
+        for group in set(simulation_specs.Group):
+            sim_ids = list(simulation_specs[simulation_specs.Group == group].index)
+            stats = batch.generate_sim_stats(cummulative_active_df, reg, sim_ids)
+            # TODO: do something with the stats
+            print(reg, group, stats)
+            # TODO: plot Active as a curve
+            # TODO: Add interpolated traces between seasonalities
+
         ex.new_region(
             reg,
             models_df.loc[code].sort_index(level="Date"),

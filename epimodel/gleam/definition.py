@@ -58,7 +58,7 @@ class GleamDefinition:
         for c in compartments.columns:
             sizes = compartments[c].sort_values(ascending=False)
             sl = slice(None) if top is None else slice(0, top)
-            for rc, s in sizes.loc[sl].items():
+            for rc, s in list(sizes.items())[sl]:
                 r = rds[rc]
                 if r.Level != Level.gleam_basin:
                     continue
