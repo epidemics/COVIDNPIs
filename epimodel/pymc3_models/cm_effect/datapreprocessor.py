@@ -74,13 +74,13 @@ class DataPreprocessor(object):
         for cc in set(countries):
             c = region_ds[cc]
             if (
-                c.Level == Level.country
-                and c.Code in johnhop_ds.index
-                and c.Code in CM_dataset.index
+                    c.Level == Level.country
+                    and c.Code in johnhop_ds.index
+                    and c.Code in CM_dataset.index
             ):
                 if (
-                    johnhop_ds.loc[(c.Code, Ds[-1]), "Active"]
-                    > self.min_final_num_active_cases
+                        johnhop_ds.loc[(c.Code, Ds[-1]), "Active"]
+                        > self.min_final_num_active_cases
                 ):
                     filtered_countries.append(c.Code)
         nCs = len(filtered_countries)
@@ -113,9 +113,9 @@ class DataPreprocessor(object):
 
         Confirmed = (
             johnhop_ds["Confirmed"]
-            .loc[(tuple(filtered_countries), Ds)]
-            .unstack(1)
-            .values
+                .loc[(tuple(filtered_countries), Ds)]
+                .unstack(1)
+                .values
         )
         assert Confirmed.shape == (nCs, nDs)
         Confirmed[Confirmed < self.min_num_confirmed_mask] = np.nan

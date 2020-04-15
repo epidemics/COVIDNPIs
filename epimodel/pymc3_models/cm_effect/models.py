@@ -15,6 +15,16 @@ log = logging.getLogger(__name__)
 import matplotlib.pyplot as plt
 
 
+def save_fig_pdf(output_dir, figname):
+    datetime_str = datetime.now().strftime("%d-%m;%H-%M")
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
+    log.info(f"Saving Plot at {os.path.abspath(output_dir)}")
+    plt.savefig(
+        f"{output_dir}/{figname}_t{datetime_str}.pdf"
+    )
+
+
 class BaseCMModel(Model):
     def __init__(self, data, name="", model=None):
         super().__init__(name, model)
@@ -81,13 +91,65 @@ class BaseCMModel(Model):
         assert self.trace is not None
         return pm.traceplot(self.trace, var_names=list(self.plot_trace_vars))
 
-    def plot_observed_region(self, region_code):
+    def plot_region_predictions(self, save_fig=True, output_dir="./out"):
         assert self.trace is not None
-        region_indx = self.d.Rs.index(region_code)
 
-        self.trace[""]
+        for country_indx, region in enumerate(self.d.Rs):
+            if country_indx % 10 == 0:
+                plt.figure(figsize=(8, 20), dpi=300)
 
-    def plot_effect(self):
+            plt.subplot(5, 2, country_indx % 10 + 1)
+
+            means = np.mean(self.trace.Infected[:, country_indx, :], axis=0)
+            li = np.percentile(self.trace.Infected[:, country_indx, :], 2.5, axis=0)
+            ui = np.percentile(self.trace.Infected[:, country_indx, :], 97.5, axis=0)
+            err = np.array([means - li, ui - means])
+
+            means_delayed = np.mean(self.trace.ExpectedConfirmed[:, country_indx, :], axis=0)
+            li_delayed = np.percentile(self.trace.ExpectedConfirmed[:, country_indx, :], 2.5, axis=0)
+            ui_delayed = np.percentile(self.trace.ExpectedConfirmed[:, country_indx, :], 97.5, axis=0)
+            err_delayed = np.array([means_delayed - li_delayed, ui_delayed - means_delayed])
+
+            days = self.d.Ds
+            days_x = np.arange(len(days))
+
+            if self.nHODs > 0:
+                means_ho = np.mean(self.trace.HeldoutDaysObserved[:, country_indx, :], axis=0)
+                li_ho = np.percentile(self.trace.HeldoutDaysObserved[:, country_indx, :], 2.5, axis=0)
+                ui_ho = np.percentile(self.trace.HeldoutDaysObserved[:, country_indx, :], 97.5, axis=0)
+                err_ho = np.array([means_ho - li_ho, ui_ho - means_ho])
+
+                plt.errorbar(self.HeldoutDaysIndx, means_ho, yerr=err_ho, fmt="-^", linewidth=1, markersize=2,
+                             label="Heldout Pred Confirmed", zorder=1)
+                plt.scatter(self.HeldoutDaysIndx, labels[self.HeldoutDaysIndx], label="Heldout Confirmed", marker="*",
+                            color="tab:red", zorder=3)
+
+            labels = self.d.Confirmed[country_indx, :]
+
+            plt.errorbar(days_x, means, yerr=err, fmt="-D", linewidth=1, markersize=2, label="Infected",
+                         zorder=1)
+            plt.errorbar(days_x, means_delayed, yerr=err_delayed, fmt="-o", linewidth=1, markersize=2,
+                         label="Mean Pred Confirmed", zorder=2)
+            plt.scatter(self.ObservedDaysIndx, labels[self.ObservedDaysIndx], label="Observed Confirmed", marker="o",
+                        s=6, color="tab:purple",
+                        zorder=3)
+
+            ax = plt.gca()
+            ax.set_yscale("log")
+            plt.plot([0, 10 ** 6], [0, 10 ** 6], "-r")
+            plt.xlim([10, 60]);
+            plt.ylim([10, 10 ** 6])
+            plt.title(f"Region {region}")
+
+            if country_indx % 10 == 9 or country_indx == len(self.d.Rs) - 1:
+                plt.tight_layout()
+                if save_fig:
+                    save_fig_pdf(output_dir, f"CountryPredictionPlot{((country_indx+1)/10):.1f}")
+
+            elif country_indx % 10 == 0:
+                plt.legend(prop={'size': 6})
+
+    def plot_effect(self, save_fig=True, output_dir="./out"):
         assert self.trace is not None
         fig = plt.figure(figsize=(7, 3), dpi=300)
         means = np.mean(self.trace["CMReduction"], axis=0)
@@ -121,6 +183,8 @@ class BaseCMModel(Model):
         plt.title("Correlation")
 
         plt.tight_layout()
+        if save_fig:
+            save_fig_pdf(output_dir, f"CMEffect")
 
     def run(self, N, chains=2, cores=2):
         print(self.check_test_point())
@@ -156,13 +220,7 @@ class BaseCMModel(Model):
             plt.title(f"Heldout Day {ho_day + 1}")
             plt.tight_layout()
             if save_fig:
-                datetime_str = datetime.now().strftime("%d-%m;%H:%M")
-                if not os.path.exists(output_dir):
-                    os.makedirs(output_dir)
-                log.info(f"Saving Day Validation Plot at {os.path.abspath(output_dir)}")
-                plt.savefig(
-                    f"{output_dir}/HeldoutDaysValidation_d{ho_day}_t{datetime_str}.pdf"
-                )
+                save_fig_pdf(output_dir, f"HeldoutDaysValidation_d{ho_day}")
 
     def heldout_regions_validation_plot(self, save_fig=True, output_dir="./out"):
         assert self.trace is not None
@@ -207,13 +265,7 @@ class BaseCMModel(Model):
             plt.xlabel("Date")
 
             if save_fig:
-                datetime_str = datetime.now().strftime("%d-%m;%H:%M")
-                if not os.path.exists(output_dir):
-                    os.makedirs(output_dir)
-                log.info(f"Saving Day Validation Plot at {os.path.abspath(output_dir)}")
-                plt.savefig(
-                    f"{output_dir}/HeldoutRegionValidation_r{self.HeldoutRegions[indx]}_t{datetime_str}.pdf"
-                )
+                save_fig_pdf(output_dir, f"HeldoutRegionValidation_r{self.HeldoutRegions[indx]}")
 
 
 class CMModelFlexibleV2(BaseCMModel):
@@ -452,7 +504,7 @@ class CMModelFlexibleV3(BaseCMModel):
             ]
         )
         self.DailyGrowthNoise = 0.075
-        self.ConfirmedCasesNoise = 0.3
+        self.ConfirmationNoise = 0.25
 
         self.ObservedDaysIndx = np.arange(self.CMDelayCut, len(self.d.Ds))
 
@@ -546,9 +598,12 @@ class CMModelFlexibleV3(BaseCMModel):
         if transform_mean_lambda is None:
             transform_mean_lambda = lambda x: x
 
+        with self.model:
+            self.ActiveCMs = pm.Data("ActiveCMs", self.d.ActiveCMs)
+
         self.ActiveCMReduction = (
                 T.reshape(self.CMReduction, (1, self.nCMs, 1))
-                ** self.d.ActiveCMs[self.OR_indxs, :]
+                ** self.ActiveCMs[self.OR_indxs, :]
         )
         self.Det(
             "GrowthReduction", T.prod(self.ActiveCMReduction, axis=1), plot_trace=False
@@ -577,7 +632,7 @@ class CMModelFlexibleV3(BaseCMModel):
         if self.nHRs > 0:
             self.HeldoutActiveCMReduction = (
                     T.reshape(self.CMReduction, (1, self.nCMs, 1))
-                    ** self.d.ActiveCMs[self.HR_indxs, :]
+                    ** self.ActiveCMs[self.HR_indxs, :]
             )
             self.Det(
                 "HeldoutGrowthReduction",
@@ -627,7 +682,6 @@ class CMModelFlexibleV3(BaseCMModel):
                     name="Observed",
                     mu=transform_mean_lambda(
                         self.ExpectedConfirmed[:, self.ObservedDaysIndx]),
-                    sigma=self.RegionNoiseScale * self.ConfirmedCasesNoise,
                     shape=(self.nORs, self.nODs),
                     observed=self.d.Confirmed[self.OR_indxs, :][
                              :, self.ObservedDaysIndx],
@@ -638,8 +692,7 @@ class CMModelFlexibleV3(BaseCMModel):
                 pm.math.log(
                     self.ExpectedConfirmed[:, self.ObservedDaysIndx]
                 ),
-                #self.RegionNoiseScale.reshape((self.nORs, 1)) * self.ConfirmedCasesNoise,
-                0.3,
+                self.ConfirmationNoise,
                 shape=(self.nORs, self.nODs),
                 observed=self.d.Confirmed[self.OR_indxs, :][
                          :, self.ObservedDaysIndx
@@ -654,7 +707,6 @@ class CMModelFlexibleV3(BaseCMModel):
                         name="HeldoutDaysObserved",
                         mu=transform_mean_lambda(
                             self.ExpectedConfirmed[:, self.HeldoutDaysIndx]),
-                        sigma=self.ConfirmedCasesNoise.reshape(self.nORs, 1) * self.RegionNoiseScale,
                         shape=(self.nORs, self.nHODs),
                         **confirmed_noise_kwargs)
             else:
@@ -663,8 +715,7 @@ class CMModelFlexibleV3(BaseCMModel):
                     pm.math.log(
                         self.ExpectedConfirmed[:, self.HeldoutDaysIndx]
                     ),
-                    #self.ConfirmedCasesNoise * self.RegionNoiseScale.reshape((self.nORs, 1)),
-                    0.3,
+                    self.ConfirmationNoise,
                     shape=(self.nORs, self.nHODs),
                     plot_trace=False)
 
@@ -693,7 +744,6 @@ class CMModelFlexibleV3(BaseCMModel):
                         name="HeldoutConfirmed",
                         mu=transform_mean_lambda(
                             self.HeldoutExpectedConfirmed + 1e-6),
-                        sigma=self.ConfirmedCasesNoise * self.HeldoutNoiseScale.reshape(self.nHRs, 1),
                         shape=(self.nHRs, self.nDs),
                         **confirmed_noise_kwargs)
             else:
@@ -702,7 +752,7 @@ class CMModelFlexibleV3(BaseCMModel):
                     pm.math.log(
                         self.HeldoutExpectedConfirmed + 1e-6
                     ),
-                    self.ConfirmedCasesNoise * self.HeldoutNoiseScale.reshape((self.nHRs, 1)),
+                    self.ConfirmationNoise,
                     shape=(self.nHRs, self.nDs),
                     plot_trace=False,
                 )
