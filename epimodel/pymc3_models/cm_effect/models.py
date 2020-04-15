@@ -81,11 +81,46 @@ class BaseCMModel(Model):
         assert self.trace is not None
         return pm.traceplot(self.trace, var_names=list(self.plot_trace_vars))
 
+    def plot_observed_region(self, region_code):
+        assert self.trace is not None
+        region_indx = self.d.Rs.index(region_code)
+
+        self.trace[""]
+
     def plot_effect(self):
         assert self.trace is not None
-        return pm.forestplot(
-            self.trace, var_names=[f"CMReduction"], credible_interval=0.9
-        )
+        fig = plt.figure(figsize=(7, 3), dpi=300)
+        means = np.mean(self.trace["CMReduction"], axis=0)
+        li = np.percentile(self.trace["CMReduction"], 2.5, axis=0)
+        ui = np.percentile(self.trace["CMReduction"], 97.5, axis=0)
+        lq = np.percentile(self.trace["CMReduction"], 25, axis=0)
+        uq = np.percentile(self.trace["CMReduction"], 75, axis=0)
+
+        N_cms = means.size
+
+        plt.subplot(121)
+        plt.plot([1, 1], [1, -(N_cms)], "--r", linewidth=0.5)
+        y_vals = -1 * np.arange(N_cms)
+        plt.scatter(means, y_vals, marker="|", color='k')
+        for cm in range(N_cms):
+            plt.plot([li[cm], ui[cm]], [y_vals[cm], y_vals[cm]], "k", alpha=0.25)
+            plt.plot([lq[cm], uq[cm]], [y_vals[cm], y_vals[cm]], "k", alpha=0.5)
+
+        plt.xlim([0.5, 1.5])
+        plt.ylim([-(N_cms - 0.5), 0.5])
+        plt.ylabel("Countermeasure", rotation=90)
+        plt.yticks(y_vals, [f"$\\alpha_{{{i + 1}}}$" for i in range(N_cms)])
+        plt.xlabel("Countermeasure Effectiveness")
+
+        plt.subplot(122)
+        correlation = np.corrcoef(self.trace["CMReduction"], rowvar=False)
+        plt.imshow(correlation, cmap="PuOr", vmin=-1, vmax=1)
+        plt.colorbar()
+        plt.yticks(np.arange(N_cms), [f"$\\alpha_{{{i + 1}}}$" for i in range(N_cms)])
+        plt.xticks(np.arange(N_cms), [f"$\\alpha_{{{i + 1}}}$" for i in range(N_cms)])
+        plt.title("Correlation")
+
+        plt.tight_layout()
 
     def run(self, N, chains=2, cores=2):
         print(self.check_test_point())
@@ -287,6 +322,7 @@ class CMModelFlexibleV2(BaseCMModel):
         self.DelayedGrowthReduction = geom_convolution(
             self.GrowthReduction, self.DelayProb, axis=1
         )[:, self.CMDelayCut:]
+
         self.Det(
             "PredictedGrowth",
             T.reshape(self.RegionGrowthRate, (self.nORs, 1))
@@ -415,8 +451,8 @@ class CMModelFlexibleV3(BaseCMModel):
                 0.03,
             ]
         )
-        self.DailyGrowthNoise = 1
-        self.ConfirmedCasesNoise = 4
+        self.DailyGrowthNoise = 0.075
+        self.ConfirmedCasesNoise = 0.3
 
         self.ObservedDaysIndx = np.arange(self.CMDelayCut, len(self.d.Ds))
 
@@ -430,9 +466,10 @@ class CMModelFlexibleV3(BaseCMModel):
             self.ObservedDaysIndx = np.delete(
                 self.ObservedDaysIndx, np.array(self.HeldoutDays) - self.CMDelayCut
             )
-            self.HeldoutDaysIndx = np.array(self.HeldoutDays) - self.CMDelayCut
+            self.HeldoutDaysIndx = np.array(self.HeldoutDays)
         else:
             self.HeldoutDays = []
+            self.HeldoutDaysIndx = np.array([])
 
         # useful things for heldout stuff
         self.nORs = self.nRs - len(self.HeldoutRegions)
@@ -474,18 +511,34 @@ class CMModelFlexibleV3(BaseCMModel):
         if plot_trace:
             self.plot_trace_vars.add("CMReduction")
 
+    def build_region_reliability_prior(self, dist=None, dist_kwargs=None, plot_trace=True):
+        if dist is not None:
+            with self.model:
+                self.RegionNoiseScale = dist(name="RegionNoiseScale", shape=(self.nORs,), **dist_kwargs)
+        else:
+            self.LN("RegionNoiseScale", 0.0, 1.0, shape=(self.nORs,))
+
+        if plot_trace:
+            self.plot_trace_vars.add("RegionNoiseScale")
+
     def build_heldout_region_priors(
             self,
             init_size_dist,
             init_size_kwargs,
             growth_rate_dist,
             growth_rate_kwargs,
+            noise_scale_dist,
+            noise_scale_kwargs,
     ):
         self.HeldoutInitialSize = init_size_dist(
             name="HeldoutInitialSize", shape=(self.nHRs), **init_size_kwargs
         )
         self.HeldoutGrowthRate = growth_rate_dist(
             name="HeldoutGrowthRate", shape=(self.nHRs), **growth_rate_kwargs
+        )
+
+        self.HeldoutNoiseScale = noise_scale_dist(
+            name="HeldoutNoiseScale", shape=(self.nHRs), **noise_scale_kwargs
         )
 
     def build_rates(self, growth_noise_dist=None, growth_noise_kwargs=None, transform_mean_lambda=None):
@@ -502,17 +555,20 @@ class CMModelFlexibleV3(BaseCMModel):
         )
 
         if growth_noise_dist is not None:
-            with self.Model:
-                self.Growth = growth_noise_dist(name="Growth", mu=transform_mean_lambda(
-                    T.reshape(self.RegionGrowthRate, (self.nORs, 1))
-                    * self.GrowthReduction), shape=(self.nORs, self.nDs),
-                                                **growth_noise_kwargs)
+            with self.model:
+                self.Growth = growth_noise_dist(
+                    name="Growth",
+                    mu=transform_mean_lambda(
+                        T.reshape(self.RegionGrowthRate, (self.nORs, 1)) * self.GrowthReduction),
+                    # sigma=self.RegionNoiseScale * self.DailyGrowthNoise,
+                    shape=(self.nORs, self.nDs),
+                    **growth_noise_kwargs)
         else:
             self.LN(
                 "Growth",
                 pm.math.log(T.reshape(self.RegionGrowthRate, (self.nORs, 1))
                             * self.GrowthReduction),
-                0.1,
+                self.RegionNoiseScale.reshape((self.nORs, 1)) * self.DailyGrowthNoise,
                 shape=(self.nORs, self.nDs),
                 plot_trace=False,
             )
@@ -531,18 +587,18 @@ class CMModelFlexibleV3(BaseCMModel):
 
             if growth_noise_dist is not None:
                 with self.Model:
-                    self.HeldoutGrowth = growth_noise_dist(name="HeldoutGrowth",
-                                                           mu=transform_mean_lambda(
-                                                               T.reshape(self.HeldoutGrowthRate, (self.nHRs, 1))
-                                                               * self.HeldoutGrowthReduction),
-                                                           shape=(self.nORs, self.nDs),
-                                                           **growth_noise_kwargs)
+                    self.HeldoutGrowth = growth_noise_dist(
+                        name="HeldoutGrowth",
+                        mu=transform_mean_lambda(
+                            T.reshape(self.HeldoutGrowthRate, (self.nHRs, 1)) * self.HeldoutGrowthReduction),
+                        shape=(self.nHRs, self.nDs),
+                        **growth_noise_kwargs)
             else:
                 self.LN(
                     "HeldoutGrowth",
                     pm.math.log(T.reshape(self.HeldoutGrowthRate, (self.nHRs, 1))
                                 * self.HeldoutGrowthReduction),
-                    0.1,
+                    self.HeldoutNoiseScale * self.DailyGrowthNoise,
                     shape=(self.nHRs, self.nDs),
                     plot_trace=False,
                 )
@@ -563,24 +619,27 @@ class CMModelFlexibleV3(BaseCMModel):
         expected_confirmed = T.nnet.conv2d(self.Infected.reshape((1, 1, self.nORs, self.nDs)),
                                            np.reshape(self.DelayProb, newshape=(1, 1, 1, self.DelayProb.size)),
                                            border_mode="full")[:, :, :, :self.nDs]
-        self.ExpectedConfirmed = expected_confirmed.reshape((self.nORs, self.nDs))
+        self.Det("ExpectedConfirmed", expected_confirmed.reshape((self.nORs, self.nDs)), plot_trace=False)
 
         if confirmed_noise_dist is not None:
             with self.model:
-                self.Confirmed = confirmed_noise_dist(name="Confirmed",
-                                                      mu=transform_mean_lambda(
-                                                          self.ExpectedConfirmed[:, self.ObservedDaysIndx]),
-                                                      shape=(self.nORs, self.nODs),
-                                                      observed=self.d.Confirmed[self.OR_indxs, :][
-                                                               :, self.ObservedDaysIndx],
-                                                      **confirmed_noise_kwargs)
+                self.Observed = confirmed_noise_dist(
+                    name="Observed",
+                    mu=transform_mean_lambda(
+                        self.ExpectedConfirmed[:, self.ObservedDaysIndx]),
+                    sigma=self.RegionNoiseScale * self.ConfirmedCasesNoise,
+                    shape=(self.nORs, self.nODs),
+                    observed=self.d.Confirmed[self.OR_indxs, :][
+                             :, self.ObservedDaysIndx],
+                    **confirmed_noise_kwargs)
         else:
             self.ObservedLN(
                 "Observed",
                 pm.math.log(
                     self.ExpectedConfirmed[:, self.ObservedDaysIndx]
                 ),
-                0.4,
+                #self.RegionNoiseScale.reshape((self.nORs, 1)) * self.ConfirmedCasesNoise,
+                0.3,
                 shape=(self.nORs, self.nODs),
                 observed=self.d.Confirmed[self.OR_indxs, :][
                          :, self.ObservedDaysIndx
@@ -588,23 +647,25 @@ class CMModelFlexibleV3(BaseCMModel):
                 plot_trace=False,
             )
 
-        if self.HeldoutDays is not None:
+        if len(self.HeldoutDays) > 0:
             if confirmed_noise_dist is not None:
                 with self.model:
-                    self.HeldoutDaysObserved = confirmed_noise_dist(name="HeldoutDaysObserved",
-                                                                    mu=transform_mean_lambda(
-                                                                        self.ExpectedConfirmed[:,
-                                                                        self.HeldoutDaysIndx]),
-                                                                    shape=(self.nORs, self.nHODs),
-                                                                    **confirmed_noise_kwargs)
+                    self.HeldoutDaysObserved = confirmed_noise_dist(
+                        name="HeldoutDaysObserved",
+                        mu=transform_mean_lambda(
+                            self.ExpectedConfirmed[:, self.HeldoutDaysIndx]),
+                        sigma=self.ConfirmedCasesNoise.reshape(self.nORs, 1) * self.RegionNoiseScale,
+                        shape=(self.nORs, self.nHODs),
+                        **confirmed_noise_kwargs)
             else:
                 self.LN(
                     "HeldoutDaysObserved",
                     pm.math.log(
                         self.ExpectedConfirmed[:, self.HeldoutDaysIndx]
                     ),
-                    0.4,
-                    shape=(self.nORs, self.nHODs),  # ugly, sadly
+                    #self.ConfirmedCasesNoise * self.RegionNoiseScale.reshape((self.nORs, 1)),
+                    0.3,
+                    shape=(self.nORs, self.nHODs),
                     plot_trace=False)
 
         # we've added observations for observed days for observed regions. need to compute observations for the heldout
@@ -623,23 +684,25 @@ class CMModelFlexibleV3(BaseCMModel):
                 np.reshape(self.DelayProb, (1, 1, 1, self.DelayProb.size)),
                 border_mode="full")[:, :, :, :self.nDs]
             # modify testpoint!
-            self.HeldoutExpectedConfirmed = ho_expected_confirmed.reshape((self.nHRs, self.nDs))
+            self.Det("HeldoutExpectedConfirmed", ho_expected_confirmed.reshape((self.nHRs, self.nDs)), plot_trace=False)
 
             # add jitter to these distributions. we need to if we want the test point to work.
             if confirmed_noise_dist is not None:
                 with self.model:
-                    self.HeldoutConfirmed = confirmed_noise_dist(name="HeldoutConfirmed",
-                                                                 mu=transform_mean_lambda(
-                                                                     self.HeldoutExpectedConfirmed + 1e-6),
-                                                                 shape=(self.nHRs, self.nDs),
-                                                                 **confirmed_noise_kwargs)
+                    self.HeldoutConfirmed = confirmed_noise_dist(
+                        name="HeldoutConfirmed",
+                        mu=transform_mean_lambda(
+                            self.HeldoutExpectedConfirmed + 1e-6),
+                        sigma=self.ConfirmedCasesNoise * self.HeldoutNoiseScale.reshape(self.nHRs, 1),
+                        shape=(self.nHRs, self.nDs),
+                        **confirmed_noise_kwargs)
             else:
                 self.LN(
                     "HeldoutConfirmed",
                     pm.math.log(
                         self.HeldoutExpectedConfirmed + 1e-6
                     ),
-                    0.4,
+                    self.ConfirmedCasesNoise * self.HeldoutNoiseScale.reshape((self.nHRs, 1)),
                     shape=(self.nHRs, self.nDs),
                     plot_trace=False,
                 )
@@ -649,6 +712,7 @@ class CMModelFlexibleV3(BaseCMModel):
     def build_all(self):
         self.build_cm_reduction_prior()
         self.build_region_growth_prior()
+        self.build_region_reliability_prior()
         self.build_rates()
         self.build_output_model()
         log.info("Checking model test point")
