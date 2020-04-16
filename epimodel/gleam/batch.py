@@ -3,6 +3,7 @@ import io
 import logging
 import time
 from pathlib import Path
+from typing import List
 
 import numpy as np
 import pandas as pd
@@ -76,7 +77,6 @@ class Batch:
     def new(cls, *, path=None, dir=None, comment=None):
         """
         Create new batch HDF5 file.
-        
         Either `path` should be a (non-existing) file, or a `dir` should
         be given - name is then auto-generated (with optional comment suffix).
         """
@@ -116,7 +116,6 @@ class Batch:
         Write simulation records.
 
         Each element of `sims_def_group_key` is `(definition, name, group, key)`.
-        
         In addiMakes the ID unique, adds the initial compartments clearing any old seeds,
         records the simulation and seeds in the HDF file.
 
@@ -233,7 +232,6 @@ class Batch:
         """
         Get a dataframe with cummulative 'Infected' and 'Recovered', and
         with 'Active' infections. All are fractions of population (i.e. per 1 person).
-        
         Both cummulative Infected and Active are offsetted by the original Infectious
         compartment (or to make Active always positive, whatever is larger).
         """
@@ -249,16 +247,18 @@ class Batch:
         df["Active"] = df["Infected"] - df["Recovered"]
         return df
 
-    def generate_sim_stats(self, cummulative_active_df, region, sim_ids):
-        cdf = cummulative_active_df
-        tot_infected = cdf.loc[
-            ([s.SimulationID for s in sim_ids], region.Code, -1), "Infected"
-        ]
-        actives = cdf.loc[
-            ([s.SimulationID for s in sim_ids], region.Code, None), "Active"
-        ]
-        max_active_infected = actives.groupby(level=0).max()
-        print(tot_infected, max_active_infected)
+    @staticmethod
+    def generate_sim_stats(cdf: pd.DataFrame, sim_ids: List[str]) -> dict:
+        # get the end date of the simulations
+        end_date = cdf.index.get_level_values("Date").max()
+        # get the infected in the end date for the latest date per simulation
+        tot_infected = cdf.loc[(sim_ids, end_date), "Infected"]
+
+        # get the maximum number of infected per simulation
+        max_active_infected = (
+            cdf.loc[(sim_ids,), "Active"].groupby(level="SimulationID").max()
+        )
+
         stats = {}
         for data, name in [
             (tot_infected, "TotalInfected"),

@@ -44,6 +44,7 @@ class WebExport:
     def new_region(
         self,
         region,
+        current_estimate: int,
         models: pd.DataFrame,
         initial: pd.DataFrame,
         simulation_spec: pd.DataFrame,
@@ -56,6 +57,7 @@ class WebExport:
     ):
         er = WebExportRegion(
             region,
+            current_estimate,
             models,
             initial,
             simulation_spec,
@@ -94,6 +96,7 @@ class WebExportRegion:
     def __init__(
         self,
         region: Region,
+        current_estimate: int,
         models: pd.DataFrame,
         initial: pd.DataFrame,
         simulations_spec: pd.DataFrame,
@@ -108,9 +111,10 @@ class WebExportRegion:
 
         assert isinstance(region, Region)
         self.region = region
+        self.current_estimate = current_estimate
         # Any per-region data. Large ones should go to data_ext.
         self.data = self.extract_smallish_data(
-            rates, hopkins, foretold, timezones, un_age_dist, traces_v3
+            rates, hopkins, foretold, timezones, un_age_dist, traces_v3,
         )
         # Extended data to be written in a separate per-region file
         self.data_ext = self.extract_models_data(models, initial, simulations_spec)
@@ -156,26 +160,44 @@ class WebExportRegion:
         return d
 
     @staticmethod
+    def get_stats(
+        cummulative_active_df: pd.DataFrame, simulation_specs: pd.DataFrame
+    ) -> Dict[str, float]:
+        stats = {}
+        for group in simulation_specs.Group.unique():
+            sim_ids = list(simulation_specs[simulation_specs.Group == group].index)
+            group_stats = Batch.generate_sim_stats(cummulative_active_df, sim_ids)
+            stats[group] = group_stats
+        return stats
+
+    @staticmethod
     def extract_models_data(
-        models: pd.DataFrame, initial: pd.DataFrame, simulation_spec: pd.DataFrame
+        models: pd.DataFrame, initial: pd.DataFrame, simulation_spec: pd.DataFrame,
     ) -> Dict[str, Any]:
         d = {
-            "date_index": [x.isoformat() for x in models.index.levels[0]],
+            "date_index": [
+                x.isoformat() for x in models.index.get_level_values("Date")
+            ],
         }
         traces = []
         for simulation_id, simulation_def in simulation_spec.iterrows():
-            trace_data = models.xs(simulation_id, level="SimulationID")
+            trace_data = models.loc[simulation_id]
             trace = {
                 "group": simulation_def["Group"],
                 "key": simulation_def["Key"],
                 "name": simulation_def["Name"],
                 "initial_infected": initial["Infectious"],
                 "initial_exposed": initial["Exposed"],
+                # note that all of these are from the cummulative DF
                 "infected": trace_data.loc[:, "Infected"].tolist(),
                 "recovered": trace_data.loc[:, "Recovered"].tolist(),
+                "active": trace_data.loc[:, "Active"].tolist(),
             }
             traces.append(trace)
         d["traces"] = traces
+
+        stats = WebExportRegion.get_stats(models, simulation_spec)
+        d["statistics"] = stats
         return {"models": d}
 
     def to_json(self):
@@ -183,6 +205,7 @@ class WebExportRegion:
             "data": self.data,
             "data_url": self.data_url,
             "Name": self.region.DisplayName,
+            "CurrentEstimate": self.current_estimate,
         }
         for n in [
             "Population",
@@ -262,7 +285,7 @@ def types_to_json(obj):
 
 
 def get_cmi(df: pd.DataFrame):
-    return df.index.levels[0].unique()
+    return df.index.get_level_values("Code").unique()
 
 
 def analyze_data_consistency(
@@ -298,6 +321,7 @@ def analyze_data_consistency(
         initial_df[(initial_df == np.inf).any(axis=1)].index
     )
     if has_inf:
+        log.error(f"The initial data for %s contains inf", has_inf)
         fatal.append(f"The initial data for {has_inf} contains inf")
 
     df = pd.DataFrame(index=sorted(union_codes))
@@ -394,8 +418,12 @@ def process_export(args) -> None:
 
     batch = Batch.open(args.BATCH_FILE)
     simulation_specs: pd.DataFrame = batch.hdf["simulations"]
-    models_df: pd.DataFrame = batch.hdf["new_fraction"]
+    # TODO: models_df_old likely not needed anymore
+    models_df_old: pd.DataFrame = batch.hdf["new_fraction"]
+    initial_df = batch.hdf["initial_compartments"]
     cummulative_active_df = batch.get_cummulative_active_df()
+
+    estimates_df = pd.read_csv(args.estimates, index_col="Name")
 
     rates_df: pd.DataFrame = pd.read_csv(rates, index_col="Code", keep_default_na=False)
     timezone_df: pd.DataFrame = pd.read_csv(
@@ -424,7 +452,8 @@ def process_export(args) -> None:
     analyze_data_consistency(
         args.debug,
         export_regions,
-        models_df,
+        # TODO: replace by cummulative version as models are not needed anymore
+        models_df_old,
         initial_df,
         rates_df,
         hopkins_df,
@@ -432,22 +461,19 @@ def process_export(args) -> None:
     )
 
     for code in export_regions:
-        reg = args.rds[code]
+        reg: Region = args.rds[code]
         m49 = int(reg["M49Code"])
         iso3 = reg["CountryCodeISOa3"]
 
-        ##### TODO: go over simulation groups (mitigations), for each get stats and plots
-        for group in set(simulation_specs.Group):
-            sim_ids = list(simulation_specs[simulation_specs.Group == group].index)
-            stats = batch.generate_sim_stats(cummulative_active_df, reg, sim_ids)
-            # TODO: do something with the stats
-            print(reg, group, stats)
-            # TODO: plot Active as a curve
-            # TODO: Add interpolated traces between seasonalities
+        # TODO clean this up
+        initial_estimate = int(
+            estimates_df[estimates_df.index.isin(reg.AllNames)]["Final"]
+        )
 
         ex.new_region(
             reg,
-            models_df.loc[code].sort_index(level="Date"),
+            initial_estimate,
+            cummulative_active_df.xs(key=code, level="Code").sort_index(level="Date"),
             get_df_else_none(initial_df, code),
             simulation_specs,
             get_df_else_none(rates_df, code),
