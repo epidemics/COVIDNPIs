@@ -44,6 +44,7 @@ class WebExport:
     def new_region(
         self,
         region,
+        current_estimate: int,
         models: pd.DataFrame,
         initial: pd.DataFrame,
         simulation_spec: pd.DataFrame,
@@ -56,6 +57,7 @@ class WebExport:
     ):
         er = WebExportRegion(
             region,
+            current_estimate,
             models,
             initial,
             simulation_spec,
@@ -94,6 +96,7 @@ class WebExportRegion:
     def __init__(
         self,
         region: Region,
+        current_estimate: int,
         models: pd.DataFrame,
         initial: pd.DataFrame,
         simulations_spec: pd.DataFrame,
@@ -108,9 +111,10 @@ class WebExportRegion:
 
         assert isinstance(region, Region)
         self.region = region
+        self.current_estimate = current_estimate
         # Any per-region data. Large ones should go to data_ext.
         self.data = self.extract_smallish_data(
-            rates, hopkins, foretold, timezones, un_age_dist, traces_v3
+            rates, hopkins, foretold, timezones, un_age_dist, traces_v3,
         )
         # Extended data to be written in a separate per-region file
         self.data_ext = self.extract_models_data(models, initial, simulations_spec)
@@ -169,11 +173,16 @@ class WebExportRegion:
                 "group": simulation_def["Group"],
                 "key": simulation_def["Key"],
                 "name": simulation_def["Name"],
-                "initial_infected": initial["Infectious"],
-                "initial_exposed": initial["Exposed"],
                 "infected": trace_data.loc[:, "Infected"].tolist(),
                 "recovered": trace_data.loc[:, "Recovered"].tolist(),
             }
+
+            if not np.isinf(initial["Infectious"]):
+                trace["initial_infected"] = initial["Infectious"]
+
+            if not np.isinf(initial["Exposed"]):
+                trace["initial_exposed"] = initial["Exposed"]
+
             traces.append(trace)
         d["traces"] = traces
         return {"models": d}
@@ -183,6 +192,7 @@ class WebExportRegion:
             "data": self.data,
             "data_url": self.data_url,
             "Name": self.region.DisplayName,
+            "CurrentEstimate": self.current_estimate,
         }
         for n in [
             "Population",
@@ -298,7 +308,8 @@ def analyze_data_consistency(
         initial_df[(initial_df == np.inf).any(axis=1)].index
     )
     if has_inf:
-        fatal.append(f"The initial data for {has_inf} contains inf")
+        log.error(f"The initial data for %s contains inf", has_inf)
+        # TODO should be fatal
 
     df = pd.DataFrame(index=sorted(union_codes))
     for source_name, ixs in codes.items():
@@ -318,7 +329,7 @@ def analyze_data_consistency(
     diff_export_and_initial = to_export.difference(codes["initial"])
     if diff_export_and_initial:
         log.error("There is no initial data for %s", diff_export_and_initial)
-        fatal.append(f"Initial data for {diff_export_and_initial} not present.")
+        # TODO fatal.append(f"Initial data for {diff_export_and_initial} not present.")
 
     diff_export_and_models = to_export.difference(codes["models"])
     if diff_export_and_models:
@@ -398,6 +409,8 @@ def process_export(args) -> None:
     initial_df = batch.hdf["initial_compartments"]
     cummulative_active_df = batch.get_cummulative_active_df()
 
+    estimates_df = pd.read_csv(args.estimates, index_col="Name")
+
     rates_df: pd.DataFrame = pd.read_csv(rates, index_col="Code", keep_default_na=False)
     timezone_df: pd.DataFrame = pd.read_csv(
         timezone, index_col="Code", keep_default_na=False
@@ -433,7 +446,7 @@ def process_export(args) -> None:
     )
 
     for code in export_regions:
-        reg = args.rds[code]
+        reg: Region = args.rds[code]
         m49 = int(reg["M49Code"])
         iso3 = reg["CountryCodeISOa3"]
 
@@ -446,8 +459,14 @@ def process_export(args) -> None:
             # TODO: plot Active as a curve
             # TODO: Add interpolated traces between seasonalities
 
+        # TODO clean this up
+        initial_estimate = int(
+            estimates_df[estimates_df.index.isin(reg.AllNames)]["Final"]
+        )
+
         ex.new_region(
             reg,
+            initial_estimate,
             models_df.loc[code].sort_index(level="Date"),
             get_df_else_none(initial_df, code),
             simulation_specs,
