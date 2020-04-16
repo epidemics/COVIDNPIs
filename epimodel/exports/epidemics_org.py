@@ -272,7 +272,7 @@ def types_to_json(obj):
 
 
 def get_cmi(df: pd.DataFrame):
-    return df.index.levels[0].unique()
+    return df.index.get_level_values("Code").unique()
 
 
 def analyze_data_consistency(
@@ -330,7 +330,6 @@ def analyze_data_consistency(
     if diff_export_and_initial:
         log.error("There is no initial data for %s", diff_export_and_initial)
         # TODO fatal.append(f"Initial data for {diff_export_and_initial} not present.")
-
     diff_export_and_models = to_export.difference(codes["models"])
     if diff_export_and_models:
         log.error(
@@ -453,9 +452,9 @@ def process_export(args) -> None:
         ##### TODO: go over simulation groups (mitigations), for each get stats and plots
         for group in set(simulation_specs.Group):
             sim_ids = list(simulation_specs[simulation_specs.Group == group].index)
-            stats = batch.generate_sim_stats(cummulative_active_df, reg, sim_ids)
+            stats = batch.generate_sim_stats(cummulative_active_df.xs(key=reg.Code, level="Code"), sim_ids)
             # TODO: do something with the stats
-            print(reg, group, stats)
+            # print(reg, group, stats)
             # TODO: plot Active as a curve
             # TODO: Add interpolated traces between seasonalities
 

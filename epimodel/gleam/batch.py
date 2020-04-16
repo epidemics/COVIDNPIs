@@ -3,6 +3,7 @@ import io
 import logging
 import time
 from pathlib import Path
+from typing import List
 
 import numpy as np
 import pandas as pd
@@ -249,15 +250,17 @@ class Batch:
         df["Active"] = df["Infected"] - df["Recovered"]
         return df
 
-    def generate_sim_stats(self, cummulative_active_df, region, sim_ids):
-        cdf = cummulative_active_df
+    def generate_sim_stats(self, cdf: pd.DataFrame, sim_ids: List[str]) -> dict:
+        # get the end date of the simulations
+        end_date = cdf.index.get_level_values("Date").max()
+        # get the infected in the end date for the latest date per simulation
         tot_infected = cdf.loc[
-            ([s.SimulationID for s in sim_ids], region.Code, -1), "Infected"
+            (sim_ids, end_date), "Infected"
         ]
-        actives = cdf.loc[
-            ([s.SimulationID for s in sim_ids], region.Code, None), "Active"
-        ]
-        max_active_infected = actives.groupby(level=0).max()
+
+        # get the maximum number of infected per simulation
+        max_active_infected = cdf.loc[(sim_ids, ), "Active"].groupby(level="SimulationID").max()
+
         print(tot_infected, max_active_infected)
         stats = {}
         for data, name in [

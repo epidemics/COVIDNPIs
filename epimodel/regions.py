@@ -193,7 +193,7 @@ class RegionDataset:
         s = cls()
         cols = dict(cls.COLUMN_TYPES, Level="U")
         for path in paths:
-            log.debug("Loading regions from {path!r} ...")
+            log.debug(f"Loading regions from {path!r} ...")
             data = pd.read_csv(
                 path,
                 dtype=cols,
