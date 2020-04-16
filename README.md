@@ -64,20 +64,46 @@ print(csse.loc[('CZ', "2020-03-28")])
 
 
 ## Running pipeline to get web export
-Assuming you've installed deps via `poetry install` and you are in the root epimodel repo.
-Also, you did `cp config.yaml config-local.yaml` and set `export_regions: [CZ, ES]`
 
-0. clone data repo: `git clone https://github.com/epidemics/epimodel-covid-data data`
-1. `./do -C config-local.yaml update_john_hopkins`
-2. add a Foretold token into `config-local.yaml` in `foretold_channel` and run `./do -C config-local.yaml update_foretold`
-3. **TODO?: Run gleamviz and get batch file? What's being fetched inside the file?** 
-4. having the Gleam Batch simulation dir results: `./do -C config-local.yaml import_gleam_batch batch_file`
-5.  `./do -C config-local.yaml web_export data/batch-2020-04-03T23-35-24.482054+02-00.hdf5`
+Assuming you've installed deps via `poetry install` and you are in the root epimodel repo.
+Also, you did `cp config.yaml config-local.yaml` (modifying it as fit) and set e.g. `export_regions: [CZ, ES]`. Prepend `-C config-local.yaml` to all commands below to use it rather than `config.yaml`.
+
+1. Clone data repo or update it.
+   `git clone https://github.com/epidemics/epimodel-covid-data data`
+
+2. Optional: Update Johns Hopkins data `./do -C config-local.yaml update_john_hopkins` (not needed if you got fresh data from the repo above).
+
+3. Generate batch file from estimates and basic Gleam XML definition.
+   `./do generate_gleam_batch default.xml estimates-2020-04-15.csv -D 2020-04-15 -c JK`
+   The batch file now contains all the scenario definitions and initial populations.
+   Note the estimate input specification may change.
+
+4. Export Gleam simulation XML files in Gleamviz (not while gleamviz is running!).
+   `./do export_gleam_batch out/batch-2020-04-16T03:54:52.910001+00:00.hdf5`
+
+5. Start gleamviz. You should see the new simulations loaded. Run all of them and "Retrieve results" (do not export manually). Exit gleamviz.
+
+6. Import the gleamviz results into the HDF batch file. 
+   `./do import_gleam_batch out/batch-2020-04-16T03:54:52.910001+00:00.hdf5`
+   (Gleamviz must be stopped before that.) After this succeeds, you may delete the simulations from gleamviz.
+
+7. Generate web export
+   `./do -C config-local.yaml web_export out/batch-2020-04-16T03:54:52.910001+00:00.hdf5`
+   Note: this part is work in progress for few more days (?).
+
+8. Export the generated folder to web! Optionally, set a channel for testing first.
+   `./do web_upload out/export-2020-04-03T02:03:28.991629+00:00 -c ttest28`
 
 ### Gleam Batch file
-Has two dataframes:
-* `simulations`: indexed by SimulationID, contains information about what simulation ID had what parameters
-* `new_fraction`: actually contains the modelled data for Infected and Recovered (values/columns). Indexed by `['Code', 'Date', 'SimulationID']`:
-    * `Code`: country code (e.g. `AE`)
-    * `Date`: a date for which we model Infected and Recovered
-    * `SimulationID`: corresponding simulation ID to be able to be able to map it to parameters in `simulations` 
+
+Has 2-3 dataframes:
+
+* `simulations`: indexed by `SimulationID`, contains information about what simulation ID had what parameters, and the XML definition file.
+
+* `initial_compartments`: Indexed by `['SimulationID', 'Code']`, has the initial sizes of set compartments (columns Exposed, Infected).
+
+* `new_fraction`: After `import_gleam_batch` actually contains the modelled data for Infected and Recovered (columns). Indexed by `['SimulationID', 'Code', 'Date']`:
+  * `SimulationID`: corresponding simulation ID to be able to be able to map it to parameters in `simulations`,
+  * `Code`: region code (ISOa2 for countries, e.g. `AE`),
+  * `Date`: a date for which we model Infected and Recovered.
+  Note that the values are *new* elements in the compartment for given day (or in case of resampled dates, in the period since last sample).
