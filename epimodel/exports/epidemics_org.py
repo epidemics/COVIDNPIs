@@ -117,9 +117,7 @@ class WebExportRegion:
             rates, hopkins, foretold, timezones, un_age_dist, traces_v3,
         )
         # Extended data to be written in a separate per-region file
-        self.data_ext = self.extract_models_data(
-            models, initial, simulations_spec
-        )
+        self.data_ext = self.extract_models_data(models, initial, simulations_spec)
         # Relative URL of the extended data file, set on write
         self.data_url = None
 
@@ -174,9 +172,7 @@ class WebExportRegion:
 
     @staticmethod
     def extract_models_data(
-        models: pd.DataFrame,
-        initial: pd.DataFrame,
-        simulation_spec: pd.DataFrame,
+        models: pd.DataFrame, initial: pd.DataFrame, simulation_spec: pd.DataFrame,
     ) -> Dict[str, Any]:
         d = {
             "date_index": [
