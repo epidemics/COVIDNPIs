@@ -283,7 +283,7 @@ def generate_simulations(
     top: int = None,
 ):
     # Estimate infections in subregions
-    s = sizes.copy()
+    s = sizes.copy().astype("f8")
     algorithms.distribute_down_with_population(s, rds)
 
     # Create compartment sizes
