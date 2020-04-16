@@ -215,7 +215,6 @@ class WebExportRegion:
 
         stats = self.get_stats(batch, cummulative_active_df, simulation_spec)
         d["statistics"] = stats
-        breakpoint()
         return {"models": d}
 
     def to_json(self):
