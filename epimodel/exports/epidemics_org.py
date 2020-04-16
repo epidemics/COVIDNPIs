@@ -164,7 +164,9 @@ class WebExportRegion:
         models: pd.DataFrame, initial: pd.DataFrame, simulation_spec: pd.DataFrame
     ) -> Dict[str, Any]:
         d = {
-            "date_index": [x.isoformat() for x in models.index.get_level_values('Date')],
+            "date_index": [
+                x.isoformat() for x in models.index.get_level_values("Date")
+            ],
         }
         traces = []
         for simulation_id, simulation_def in simulation_spec.iterrows():
@@ -455,7 +457,9 @@ def process_export(args) -> None:
         ##### TODO: go over simulation groups (mitigations), for each get stats and plots
         for group in set(simulation_specs.Group):
             sim_ids = list(simulation_specs[simulation_specs.Group == group].index)
-            stats = batch.generate_sim_stats(cummulative_active_df.xs(key=reg.Code, level="Code"), sim_ids)
+            stats = batch.generate_sim_stats(
+                cummulative_active_df.xs(key=reg.Code, level="Code"), sim_ids
+            )
             # TODO: do something with the stats
             # print(reg, group, stats)
             # TODO: plot Active as a curve

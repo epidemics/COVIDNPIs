@@ -252,12 +252,12 @@ class Batch:
         # get the end date of the simulations
         end_date = cdf.index.get_level_values("Date").max()
         # get the infected in the end date for the latest date per simulation
-        tot_infected = cdf.loc[
-            (sim_ids, end_date), "Infected"
-        ]
+        tot_infected = cdf.loc[(sim_ids, end_date), "Infected"]
 
         # get the maximum number of infected per simulation
-        max_active_infected = cdf.loc[(sim_ids, ), "Active"].groupby(level="SimulationID").max()
+        max_active_infected = (
+            cdf.loc[(sim_ids,), "Active"].groupby(level="SimulationID").max()
+        )
 
         stats = {}
         for data, name in [

@@ -94,7 +94,9 @@ def generate_batch(args):
     else:
         start_date = d.get_start_date()
     log.info(f"Generating scenarios with start_date {start_date.ctime()} ...")
-    batch.generate_simulations(b, d, est, rds=args.rds, config=args.config, start_date=start_date, top=args.top)
+    batch.generate_simulations(
+        b, d, est, rds=args.rds, config=args.config, start_date=start_date, top=args.top
+    )
     log.info(f"Generated batch {b.path!r}:\n  {b.stats()}")
     b.close()
 
@@ -138,7 +140,9 @@ def create_parser():
     gbp = sp.add_parser(
         "generate_gleam_batch", help="Create batch of definitions for GLEAM."
     )
-    gbp.add_argument("-t", "--top", default=1500, type=int, help="Upper limit for seed compartments.")
+    gbp.add_argument(
+        "-t", "--top", default=1500, type=int, help="Upper limit for seed compartments."
+    )
     gbp.add_argument("-c", "--comment", help="A short comment (to be part of path).")
     gbp.add_argument(
         "-D",
