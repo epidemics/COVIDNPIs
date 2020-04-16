@@ -261,7 +261,6 @@ class Batch:
         # get the maximum number of infected per simulation
         max_active_infected = cdf.loc[(sim_ids, ), "Active"].groupby(level="SimulationID").max()
 
-        print(tot_infected, max_active_infected)
         stats = {}
         for data, name in [
             (tot_infected, "TotalInfected"),

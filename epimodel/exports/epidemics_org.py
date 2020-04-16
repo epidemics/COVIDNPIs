@@ -164,7 +164,7 @@ class WebExportRegion:
         models: pd.DataFrame, initial: pd.DataFrame, simulation_spec: pd.DataFrame
     ) -> Dict[str, Any]:
         d = {
-            "date_index": [x.isoformat() for x in models.index.levels[0]],
+            "date_index": [x.isoformat() for x in models.index.get_level_values('Date')],
         }
         traces = []
         for simulation_id, simulation_def in simulation_spec.iterrows():
@@ -466,7 +466,7 @@ def process_export(args) -> None:
         ex.new_region(
             reg,
             initial_estimate,
-            models_df.loc[code].sort_index(level="Date"),
+            models_df.xs(key=code, level="Code").sort_index(level="Date"),
             get_df_else_none(initial_df, code),
             simulation_specs,
             get_df_else_none(rates_df, code),
