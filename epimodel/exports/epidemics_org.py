@@ -175,8 +175,8 @@ class WebExportRegion:
             stats[group] = group_stats
         return stats
 
+    @staticmethod
     def extract_models_data(
-        self,
         models: pd.DataFrame,
         cummulative_active_df: pd.DataFrame,
         initial: pd.DataFrame,
@@ -209,7 +209,7 @@ class WebExportRegion:
             traces.append(trace)
         d["traces"] = traces
 
-        stats = self.get_stats(cummulative_active_df, simulation_spec)
+        stats = WebExportRegion.get_stats(cummulative_active_df, simulation_spec)
         d["statistics"] = stats
         return {"models": d}
 
