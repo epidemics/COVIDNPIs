@@ -247,7 +247,8 @@ class Batch:
         df["Active"] = df["Infected"] - df["Recovered"]
         return df
 
-    def generate_sim_stats(self, cdf: pd.DataFrame, sim_ids: List[str]) -> dict:
+    @staticmethod
+    def generate_sim_stats(cdf: pd.DataFrame, sim_ids: List[str]) -> dict:
         # get the end date of the simulations
         end_date = cdf.index.get_level_values("Date").max()
         # get the infected in the end date for the latest date per simulation

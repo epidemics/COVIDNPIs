@@ -46,7 +46,6 @@ class WebExport:
         region,
         current_estimate: int,
         models: pd.DataFrame,
-        batch,
         cummulative_active_df: pd.DataFrame,
         initial: pd.DataFrame,
         simulation_spec: pd.DataFrame,
@@ -61,7 +60,6 @@ class WebExport:
             region,
             current_estimate,
             models,
-            batch,
             cummulative_active_df,
             initial,
             simulation_spec,
@@ -102,7 +100,6 @@ class WebExportRegion:
         region: Region,
         current_estimate: int,
         models: pd.DataFrame,
-        batch,
         cummulative_active_df: pd.DataFrame,
         initial: pd.DataFrame,
         simulations_spec: pd.DataFrame,
@@ -124,7 +121,7 @@ class WebExportRegion:
         )
         # Extended data to be written in a separate per-region file
         self.data_ext = self.extract_models_data(
-            models, batch, cummulative_active_df, initial, simulations_spec
+            models, cummulative_active_df, initial, simulations_spec
         )
         # Relative URL of the extended data file, set on write
         self.data_url = None
@@ -169,19 +166,18 @@ class WebExportRegion:
 
     @staticmethod
     def get_stats(
-        batch, cummulative_active_df: pd.DataFrame, simulation_specs: pd.DataFrame
+        cummulative_active_df: pd.DataFrame, simulation_specs: pd.DataFrame
     ) -> Dict[str, float]:
         stats = {}
         for group in simulation_specs.Group.unique():
             sim_ids = list(simulation_specs[simulation_specs.Group == group].index)
-            group_stats = batch.generate_sim_stats(cummulative_active_df, sim_ids)
+            group_stats = Batch.generate_sim_stats(cummulative_active_df, sim_ids)
             stats[group] = group_stats
         return stats
 
     def extract_models_data(
         self,
         models: pd.DataFrame,
-        batch,
         cummulative_active_df: pd.DataFrame,
         initial: pd.DataFrame,
         simulation_spec: pd.DataFrame,
@@ -213,7 +209,7 @@ class WebExportRegion:
             traces.append(trace)
         d["traces"] = traces
 
-        stats = self.get_stats(batch, cummulative_active_df, simulation_spec)
+        stats = self.get_stats(cummulative_active_df, simulation_spec)
         d["statistics"] = stats
         return {"models": d}
 
@@ -489,7 +485,6 @@ def process_export(args) -> None:
             reg,
             initial_estimate,
             models_df.xs(key=code, level="Code").sort_index(level="Date"),
-            batch,
             cummulative_active_df.xs(key=code, level="Code"),
             get_df_else_none(initial_df, code),
             simulation_specs,
