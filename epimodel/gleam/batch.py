@@ -232,7 +232,6 @@ class Batch:
         """
         Get a dataframe with cummulative 'Infected' and 'Recovered', and
         with 'Active' infections. All are fractions of population (i.e. per 1 person).
-        
         Both cummulative Infected and Active are offsetted by the original Infectious
         compartment (or to make Active always positive, whatever is larger).
         """
