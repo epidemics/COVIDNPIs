@@ -45,6 +45,7 @@ class WebExport:
         self,
         region,
         models: pd.DataFrame,
+        initial: pd.DataFrame,
         simulation_spec: pd.DataFrame,
         rates: Optional[pd.DataFrame],
         hopkins: Optional[pd.DataFrame],
@@ -56,6 +57,7 @@ class WebExport:
         er = WebExportRegion(
             region,
             models,
+            initial,
             simulation_spec,
             rates,
             hopkins,
@@ -82,7 +84,7 @@ class WebExport:
             fname = f"extdata-{rc}.json"
             er.data_url = f"{name}/{fname}"
             with open(exdir / fname, "wt") as f:
-                json.dump(er.data_ext, f, allow_nan=False)
+                json.dump(er.data_ext, f, default=types_to_json, allow_nan=False)
         with open(exdir / MAIN_DATA_FILENAME, "wt") as f:
             json.dump(self.to_json(), f, default=types_to_json, allow_nan=False)
         log.info(f"Exported {len(self.export_regions)} regions to {exdir}")
@@ -91,8 +93,9 @@ class WebExport:
 class WebExportRegion:
     def __init__(
         self,
-        region,
+        region: Region,
         models: pd.DataFrame,
+        initial: pd.DataFrame,
         simulations_spec: pd.DataFrame,
         rates: Optional[pd.DataFrame],
         hopkins: Optional[pd.DataFrame],
@@ -101,6 +104,8 @@ class WebExportRegion:
         un_age_dist: Optional[pd.DataFrame],
         traces_v3: Optional[pd.DataFrame],
     ):
+        print(f"Prepare WebExport: {region.Code}, {region.Name}")
+
         assert isinstance(region, Region)
         self.region = region
         # Any per-region data. Large ones should go to data_ext.
@@ -108,7 +113,7 @@ class WebExportRegion:
             rates, hopkins, foretold, timezones, un_age_dist, traces_v3
         )
         # Extended data to be written in a separate per-region file
-        self.data_ext = self.extract_models_data(models, simulations_spec)
+        self.data_ext = self.extract_models_data(models, initial, simulations_spec)
         # Relative URL of the extended data file, set on write
         self.data_url = None
 
@@ -117,7 +122,7 @@ class WebExportRegion:
         rates: Optional[pd.DataFrame],
         hopkins: Optional[pd.DataFrame],
         foretold: Optional[pd.DataFrame],
-        timezones: Optional[pd.DataFrame],
+        timezones: pd.DataFrame,
         un_age_dist: Optional[pd.DataFrame],
         traces_v3: Optional[pd.DataFrame],
     ) -> Dict[str, Dict[str, Any]]:
@@ -152,7 +157,7 @@ class WebExportRegion:
 
     @staticmethod
     def extract_models_data(
-        models: pd.DataFrame, simulation_spec: pd.DataFrame
+        models: pd.DataFrame, initial: pd.DataFrame, simulation_spec: pd.DataFrame
     ) -> Dict[str, Any]:
         d = {
             "date_index": [x.isoformat() for x in models.index.levels[0]],
@@ -164,6 +169,8 @@ class WebExportRegion:
                 "group": simulation_def["Group"],
                 "key": simulation_def["Key"],
                 "name": simulation_def["Name"],
+                "initial_infected": initial["Infectious"],
+                "initial_exposed": initial["Exposed"],
                 "infected": trace_data.loc[:, "Infected"].tolist(),
                 "recovered": trace_data.loc[:, "Recovered"].tolist(),
             }
@@ -262,27 +269,36 @@ def analyze_data_consistency(
     debug: Optional[None],
     export_regions: List[str],
     models,
+    initial_df,
     rates_df,
     hopkins,
     foretold,
 ) -> None:
     codes = {
         "models": get_cmi(models),
+        "initial": initial_df.index.unique(),
         "hopkins": get_cmi(hopkins),
         "foretold": get_cmi(foretold),
         "rates": rates_df.index.unique(),
     }
+
+    fatal = list()
+    to_export = set(export_regions)
 
     union_codes = set()
     any_nan = False
     for source_name, ixs in codes.items():
         if ixs.isna().sum() > 0:
             log.error("Dataset %s contains NaN in index!", source_name)
+            fatal.append("Some datasets indexed by NaNs.  Fix the source data.")
             any_nan = True
         union_codes.update(ixs)
 
-    if any_nan:
-        raise ValueError("Some datasets indexed by NaNs. Fix the source data.")
+    has_inf = to_export.intersection(
+        initial_df[(initial_df == np.inf).any(axis=1)].index
+    )
+    if has_inf:
+        fatal.append(f"The initial data for {has_inf} contains inf")
 
     df = pd.DataFrame(index=sorted(union_codes))
     for source_name, ixs in codes.items():
@@ -299,14 +315,22 @@ def analyze_data_consistency(
             "Data presence for hopkins or rates in the following countries: \n%s", res
         )
 
-    diff_export_and_models = set(export_regions).difference(codes["models"])
+    diff_export_and_initial = to_export.difference(codes["initial"])
+    if diff_export_and_initial:
+        log.error("There is no initial data for %s", diff_export_and_initial)
+        fatal.append(f"Initial data for {diff_export_and_initial} not present.")
+
+    diff_export_and_models = to_export.difference(codes["models"])
     if diff_export_and_models:
         log.error(
             "You requested to export %s but that's not modelled yet.",
             diff_export_and_models,
         )
+        fatal.append(f"Regions {diff_export_and_models} not present in modelled data.")
+
+    if fatal:
         raise ValueError(
-            f"Regions {diff_export_and_models} not present in modelled data. Remove it from config."
+            "Cannot procede for the following reasons:\n - " + ("\n - ".join(fatal))
         )
 
     log.info(
@@ -371,6 +395,7 @@ def process_export(args) -> None:
     batch = Batch.open(args.BATCH_FILE)
     simulation_specs: pd.DataFrame = batch.hdf["simulations"]
     models_df: pd.DataFrame = batch.hdf["new_fraction"]
+    initial_df = batch.hdf["initial_compartments"]
     cummulative_active_df = batch.get_cummulative_active_df()
 
     rates_df: pd.DataFrame = pd.read_csv(rates, index_col="Code", keep_default_na=False)
@@ -398,7 +423,13 @@ def process_export(args) -> None:
     )
 
     analyze_data_consistency(
-        args.debug, export_regions, models_df, rates_df, hopkins_df, foretold_df
+        args.debug,
+        export_regions,
+        models_df,
+        initial_df,
+        rates_df,
+        hopkins_df,
+        foretold_df,
     )
 
     for code in export_regions:
@@ -418,6 +449,7 @@ def process_export(args) -> None:
         ex.new_region(
             reg,
             models_df.loc[code].sort_index(level="Date"),
+            get_df_else_none(initial_df, code),
             simulation_specs,
             get_df_else_none(rates_df, code),
             get_df_else_none(hopkins_df, code),
