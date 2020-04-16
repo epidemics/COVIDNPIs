@@ -299,7 +299,7 @@ def analyze_data_consistency(
             "Data presence for hopkins or rates in the following countries: \n%s", res
         )
 
-    diff_export_and_models = set(export_regions).difference(get_cmi(models))
+    diff_export_and_models = set(export_regions).difference(codes["models"])
     if diff_export_and_models:
         log.error(
             "You requested to export %s but that's not modelled yet.",
@@ -385,10 +385,16 @@ def process_export(args) -> None:
     traces_v3_df: pd.DataFrame = pd.read_csv(traces_v3, index_col="CodeISO3")
 
     hopkins_df: pd.DataFrame = pd.read_csv(
-        hopkins, index_col=["Code", "Date"], parse_dates=["Date"], keep_default_na=False,
+        hopkins,
+        index_col=["Code", "Date"],
+        parse_dates=["Date"],
+        keep_default_na=False,
     ).pipe(aggregate_countries, args.config["state_to_country"])
     foretold_df: pd.DataFrame = pd.read_csv(
-        foretold, index_col=["Code", "Date"], parse_dates=["Date"], keep_default_na=False,
+        foretold,
+        index_col=["Code", "Date"],
+        parse_dates=["Date"],
+        keep_default_na=False,
     )
 
     analyze_data_consistency(
