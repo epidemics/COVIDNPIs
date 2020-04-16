@@ -99,7 +99,7 @@ class Batch:
         """
         self.hdf.put(
             "initial_compartments",
-            initial_df.astype("f2"),
+            initial_df.astype("f32"),
             format="table",
             complib="bzip2",
             complevel=9,
@@ -204,7 +204,7 @@ class Batch:
                             [(sid, r.Code)], names=["SimulationID", "Code"]
                         )
                         dcols[cn] = pd.DataFrame(
-                            new_fraction.astype("f2"),
+                            new_fraction.astype("f32"),
                             index=idx,
                             columns=pd.Index(days, name="Date"),
                         ).stack()
@@ -283,7 +283,7 @@ def generate_simulations(
     top: int = None,
 ):
     # Estimate infections in subregions
-    s = sizes.copy().astype("f8")
+    s = sizes.copy().astype("f32")
     algorithms.distribute_down_with_population(s, rds)
 
     # Create compartment sizes
