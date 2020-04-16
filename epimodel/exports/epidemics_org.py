@@ -193,13 +193,6 @@ class WebExportRegion:
                 "recovered": trace_data.loc[:, "Recovered"].tolist(),
                 "active": trace_data.loc[:, "Active"].tolist(),
             }
-
-            if not np.isinf(initial["Infectious"]):
-                trace["initial_infected"] = initial["Infectious"]
-
-            if not np.isinf(initial["Exposed"]):
-                trace["initial_exposed"] = initial["Exposed"]
-
             traces.append(trace)
         d["traces"] = traces
 
