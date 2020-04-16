@@ -77,7 +77,6 @@ class Batch:
     def new(cls, *, path=None, dir=None, comment=None):
         """
         Create new batch HDF5 file.
-        
         Either `path` should be a (non-existing) file, or a `dir` should
         be given - name is then auto-generated (with optional comment suffix).
         """
@@ -100,7 +99,7 @@ class Batch:
         """
         self.hdf.put(
             "initial_compartments",
-            initial_df.astype("f32"),
+            initial_df.astype("float32"),
             format="table",
             complib="bzip2",
             complevel=9,
@@ -117,7 +116,6 @@ class Batch:
         Write simulation records.
 
         Each element of `sims_def_group_key` is `(definition, name, group, key)`.
-        
         In addiMakes the ID unique, adds the initial compartments clearing any old seeds,
         records the simulation and seeds in the HDF file.
 
@@ -205,7 +203,7 @@ class Batch:
                             [(sid, r.Code)], names=["SimulationID", "Code"]
                         )
                         dcols[cn] = pd.DataFrame(
-                            new_fraction.astype("f32"),
+                            new_fraction.astype("float32"),
                             index=idx,
                             columns=pd.Index(days, name="Date"),
                         ).stack()
@@ -285,7 +283,7 @@ def generate_simulations(
     top: int = None,
 ):
     # Estimate infections in subregions
-    s = sizes.copy().astype("f32")
+    s = sizes.copy().astype("float32")
     algorithms.distribute_down_with_population(s, rds)
 
     # Create compartment sizes

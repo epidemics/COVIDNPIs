@@ -173,6 +173,8 @@ class WebExportRegion:
                 "group": simulation_def["Group"],
                 "key": simulation_def["Key"],
                 "name": simulation_def["Name"],
+                "initial_infected": initial["Infectious"],
+                "initial_exposed": initial["Exposed"],
                 "infected": trace_data.loc[:, "Infected"].tolist(),
                 "recovered": trace_data.loc[:, "Recovered"].tolist(),
             }
@@ -309,7 +311,7 @@ def analyze_data_consistency(
     )
     if has_inf:
         log.error(f"The initial data for %s contains inf", has_inf)
-        # TODO should be fatal
+        fatal.append(f"The initial data for {has_inf} contains inf")
 
     df = pd.DataFrame(index=sorted(union_codes))
     for source_name, ixs in codes.items():
@@ -329,7 +331,8 @@ def analyze_data_consistency(
     diff_export_and_initial = to_export.difference(codes["initial"])
     if diff_export_and_initial:
         log.error("There is no initial data for %s", diff_export_and_initial)
-        # TODO fatal.append(f"Initial data for {diff_export_and_initial} not present.")
+        fatal.append(f"Initial data for {diff_export_and_initial} not present.")
+
     diff_export_and_models = to_export.difference(codes["models"])
     if diff_export_and_models:
         log.error(
