@@ -242,9 +242,9 @@ class Batch:
 
         df_active = df["Infected"] - df["Recovered"]
         df_region_min = df_active.groupby(level=1).min()
-        df["Infected"] += np.maximum(
-            df_region_min, self.hdf["initial_compartments"]["Infectious"]
-        )
+        df["Infected"] += df_region_min
+        # TODO: consider using self.hdf["initial_compartments"]["Infectious"]
+        # But needs adjustment for Population!
 
         df["Active"] = df["Infected"] - df["Recovered"]
         return df
