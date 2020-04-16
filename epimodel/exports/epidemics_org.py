@@ -46,7 +46,6 @@ class WebExport:
         region,
         current_estimate: int,
         models: pd.DataFrame,
-        cummulative_active_df: pd.DataFrame,
         initial: pd.DataFrame,
         simulation_spec: pd.DataFrame,
         rates: Optional[pd.DataFrame],
@@ -60,7 +59,6 @@ class WebExport:
             region,
             current_estimate,
             models,
-            cummulative_active_df,
             initial,
             simulation_spec,
             rates,
@@ -100,7 +98,6 @@ class WebExportRegion:
         region: Region,
         current_estimate: int,
         models: pd.DataFrame,
-        cummulative_active_df: pd.DataFrame,
         initial: pd.DataFrame,
         simulations_spec: pd.DataFrame,
         rates: Optional[pd.DataFrame],
@@ -121,7 +118,7 @@ class WebExportRegion:
         )
         # Extended data to be written in a separate per-region file
         self.data_ext = self.extract_models_data(
-            models, cummulative_active_df, initial, simulations_spec
+            models, initial, simulations_spec
         )
         # Relative URL of the extended data file, set on write
         self.data_url = None
@@ -178,7 +175,6 @@ class WebExportRegion:
     @staticmethod
     def extract_models_data(
         models: pd.DataFrame,
-        cummulative_active_df: pd.DataFrame,
         initial: pd.DataFrame,
         simulation_spec: pd.DataFrame,
     ) -> Dict[str, Any]:
@@ -189,15 +185,17 @@ class WebExportRegion:
         }
         traces = []
         for simulation_id, simulation_def in simulation_spec.iterrows():
-            trace_data = models.xs(simulation_id, level="SimulationID")
+            trace_data = models.loc[simulation_id]
             trace = {
                 "group": simulation_def["Group"],
                 "key": simulation_def["Key"],
                 "name": simulation_def["Name"],
                 "initial_infected": initial["Infectious"],
                 "initial_exposed": initial["Exposed"],
+                # note that all of these are from the cummulative DF
                 "infected": trace_data.loc[:, "Infected"].tolist(),
                 "recovered": trace_data.loc[:, "Recovered"].tolist(),
+                "active": trace_data.loc[:, "Active"].tolist(),
             }
 
             if not np.isinf(initial["Infectious"]):
@@ -209,7 +207,7 @@ class WebExportRegion:
             traces.append(trace)
         d["traces"] = traces
 
-        stats = WebExportRegion.get_stats(cummulative_active_df, simulation_spec)
+        stats = WebExportRegion.get_stats(models, simulation_spec)
         d["statistics"] = stats
         return {"models": d}
 
@@ -431,7 +429,8 @@ def process_export(args) -> None:
 
     batch = Batch.open(args.BATCH_FILE)
     simulation_specs: pd.DataFrame = batch.hdf["simulations"]
-    models_df: pd.DataFrame = batch.hdf["new_fraction"]
+    # TODO: models_df_old likely not needed anymore
+    models_df_old: pd.DataFrame = batch.hdf["new_fraction"]
     initial_df = batch.hdf["initial_compartments"]
     cummulative_active_df = batch.get_cummulative_active_df()
 
@@ -464,7 +463,8 @@ def process_export(args) -> None:
     analyze_data_consistency(
         args.debug,
         export_regions,
-        models_df,
+        # TODO: replace by cummulative version as models are not needed anymore
+        models_df_old,
         initial_df,
         rates_df,
         hopkins_df,
@@ -484,8 +484,7 @@ def process_export(args) -> None:
         ex.new_region(
             reg,
             initial_estimate,
-            models_df.xs(key=code, level="Code").sort_index(level="Date"),
-            cummulative_active_df.xs(key=code, level="Code"),
+            cummulative_active_df.xs(key=code, level="Code").sort_index(level="Date"),
             get_df_else_none(initial_df, code),
             simulation_specs,
             get_df_else_none(rates_df, code),
