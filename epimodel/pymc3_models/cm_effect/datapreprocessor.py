@@ -43,7 +43,8 @@ class DataPreprocessor(object):
             "min_num_confirmed_mask": self.min_num_confirmed_mask,
         }
 
-    def preprocess_data(self, data_base_path, countries, cms01_cols):
+    def preprocess_data(self, data_base_path, countries, selected_features,
+                        selected_cm_set="countermeasures-model-0to1-split.csv"):
         # at the moment only features from the 0-1 countermeasures dataset
         Ds = pd.date_range(start=self.start_date, end=self.end_date, tz="utc")
         nDs = len(Ds)
@@ -57,6 +58,7 @@ class DataPreprocessor(object):
             "countermeasures-features.csv",
             "countermeasures-model-0to1.csv",
             "countermeasures-selected-binary.csv",
+            "countermeasures-model-0to1-split.csv"
         ]
 
         cm_sets = {
@@ -66,9 +68,9 @@ class DataPreprocessor(object):
         for n, v in cm_sets.items():
             logger.debug(f"\nCMS {n} columns:\n{v.columns!r}")
 
-        selected_CMs = cms01_cols
-        CM_dataset = cm_sets["countermeasures-model-0to1.csv"]
-        nCMs = len(cms01_cols)
+        selected_CMs = selected_features
+        CM_dataset = cm_sets[selected_cm_set]
+        nCMs = len(selected_features)
 
         filtered_countries = []
         for cc in set(countries):
@@ -92,10 +94,10 @@ class DataPreprocessor(object):
             sd["Mask wearing"] *= 0.01
 
         logger_str = (
-            "\nCountermeasures                               min   .. mean  .. max"
+            "\nCountermeasures                               min   ... mean  ... max   ... unique"
         )
         for i, cm in enumerate(selected_CMs):
-            logger_str = f"{logger_str}\n{i:2} {cm:42} {sd[cm].min().min():.3f} .. {sd[cm].mean().mean():.3f} .. {sd[cm].max().max():.3f}"
+            logger_str = f"{logger_str}\n{i+1:2} {cm:42} {sd[cm].min().min():.3f} ... {sd[cm].mean().mean():.3f} ... {sd[cm].max().max():.3f} ... {np.unique(sd[cm])[:5]}"
 
         logger.info(logger_str)
         ActiveCMs = np.stack([sd.loc[c].loc[Ds].T for c in filtered_countries])
@@ -103,13 +105,15 @@ class DataPreprocessor(object):
         # [country, CM, day] Which CMs are active, and to what extent
         ActiveCMs = ActiveCMs.astype(theano.config.floatX)
 
-        plt.figure(figsize=(4, 3), dpi=150)
+        plt.figure(figsize=(4, 3), dpi=300)
         plt.imshow(sd.corr())
         plt.colorbar()
         plt.title("Selected CM Correlation")
+        ax = plt.gca()
+        ax.tick_params(axis="both", which="major", labelsize=6)
+        plt.xticks(np.arange(len(selected_features)), [f"$\\alpha_{{{i+1}}}$" for i in range(len(selected_features))])
+        plt.yticks(np.arange(len(selected_features)), [f"$\\alpha_{{{i + 1}}}$" for i in range(len(selected_features))])
         plt.show()
-
-        dataset_size = (nCs, nCMs, nDs)
 
         Confirmed = (
             johnhop_ds["Confirmed"]
@@ -131,11 +135,12 @@ class DataPreprocessor(object):
         Active = np.ma.masked_invalid(Active.astype(theano.config.floatX))
 
         logger.info(
-            f"Data Preprocessing Complete using:\n\n{json.dumps(self.generate_params_dict(), indent=4)}"
-        )
+            f"Data Preprocessing Complete using:\n\n{json.dumps(self.generate_params_dict(), indent=4)}\n"
+            f"Selected {len(filtered_countries)} Regions: f{filtered_countries}")
+
 
         loaded_data = PreprocessedData(
-            Active, Confirmed, ActiveCMs, cms01_cols, filtered_countries, Ds
+            Active, Confirmed, ActiveCMs, selected_features, filtered_countries, Ds
         )
 
         return loaded_data
