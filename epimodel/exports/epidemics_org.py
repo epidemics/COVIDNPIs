@@ -45,6 +45,7 @@ class WebExport:
         self,
         region,
         current_estimate: int,
+        groups,
         models: pd.DataFrame,
         initial: pd.DataFrame,
         simulation_spec: pd.DataFrame,
@@ -58,6 +59,7 @@ class WebExport:
         er = WebExportRegion(
             region,
             current_estimate,
+            groups,
             models,
             initial,
             simulation_spec,
@@ -97,6 +99,7 @@ class WebExportRegion:
         self,
         region: Region,
         current_estimate: int,
+        groups,
         models: pd.DataFrame,
         initial: pd.DataFrame,
         simulations_spec: pd.DataFrame,
@@ -117,7 +120,9 @@ class WebExportRegion:
             rates, hopkins, foretold, timezones, un_age_dist, traces_v3,
         )
         # Extended data to be written in a separate per-region file
-        self.data_ext = self.extract_models_data(models, initial, simulations_spec)
+        self.data_ext = self.extract_external_data(
+            models, initial, simulations_spec, groups
+        )
         # Relative URL of the extended data file, set on write
         self.data_url = None
 
@@ -183,8 +188,11 @@ class WebExportRegion:
         return first
 
     @staticmethod
-    def extract_models_data(
-        models: pd.DataFrame, initial: pd.DataFrame, simulation_spec: pd.DataFrame,
+    def extract_external_data(
+        models: pd.DataFrame,
+        initial: pd.DataFrame,
+        simulation_spec: pd.DataFrame,
+        groups,
     ) -> Dict[str, Any]:
         d = {
             "date_index": [
@@ -219,7 +227,8 @@ class WebExportRegion:
 
         stats = WebExportRegion.get_stats(models, simulation_spec)
         d["statistics"] = stats
-        return {"models": d}
+
+        return {"scenarios": groups, "models": d}
 
     def to_json(self):
         d = {
@@ -494,6 +503,7 @@ def process_export(args) -> None:
         ex.new_region(
             reg,
             initial_estimate,
+            args.config["groups"],
             cummulative_active_df.xs(key=code, level="Code").sort_index(level="Date"),
             get_df_else_none(initial_df, code),
             simulation_specs,
