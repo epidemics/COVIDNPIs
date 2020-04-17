@@ -22,7 +22,7 @@ class GleamDefinition:
         self.tree = ET.parse(file)
         self.root = self.tree.getroot()
 
-        self.updated = datetime.datetime.now()
+        self.updated = datetime.now()
 
     def copy(self):
         return copy.deepcopy(self)

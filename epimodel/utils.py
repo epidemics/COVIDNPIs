@@ -80,13 +80,13 @@ def read_csv_smart(
     """
 
     def find(n):
-        rs = rds.find_all_by_name(n, levels=levels)
+        rs = set(rds.find_all_by_name(n, levels=levels))
         if n in rds:
-            rs.append(rds[n])
+            rs.add(rds[n])
         if len(rs) > 1:
             raise Exception(f"Found multiple matches for {n!r}: {rs!r}")
         elif len(rs) == 1:
-            return rs[0].Code
+            return rs.pop().Code
         elif skip_unknown:
             unknown.add(n)
             return ""
