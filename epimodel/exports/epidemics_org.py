@@ -488,7 +488,7 @@ def process_export(args) -> None:
 
         # TODO clean this up
         initial_estimate = int(
-            estimates_df[estimates_df.index.isin(reg.AllNames)]["Final"]
+            estimates_df[estimates_df.index.isin(reg.AllNames)]["Estimate"]
         )
 
         ex.new_region(
