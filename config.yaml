@@ -89,7 +89,7 @@ export_regions:
   - BD
   - BY
   - BE
-  - BZ
+  # - BZ
   - BJ
   - BT
   - BO
@@ -124,14 +124,14 @@ export_regions:
   - FJ
   - FI
   - FR
-  - GA
+  # - GA
   - GE
   - DE
   - GH
   - GR
-  - GU
+  # - GU
   - GT
-  - GG
+  # - GG
   - GY
   - HT
   - HN
@@ -142,7 +142,7 @@ export_regions:
   - IR
   - IQ
   - IE
-  - IM
+  # - IM
   - IL
   - IT
   - JM
@@ -158,6 +158,7 @@ export_regions:
   - LT
   - LU
   - MK
+  # - MP
   - MG
   - MY
   - MV
@@ -177,7 +178,6 @@ export_regions:
   - NI
   - NE
   - NG
-  - MP
   - "NO"
   - OM
   - PK
@@ -188,7 +188,7 @@ export_regions:
   - PH
   - PL
   - PT
-  - PR
+  #- PR
   - QA
   - RO
   - RU
