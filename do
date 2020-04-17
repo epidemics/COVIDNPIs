@@ -138,7 +138,7 @@ def create_parser():
         "generate_gleam_batch", help="Create batch of definitions for GLEAM."
     )
     gbp.add_argument(
-        "-t", "--top", default=1500, type=int, help="Upper limit for seed compartments."
+        "-t", "--top", default=2000, type=int, help="Upper limit for seed compartments."
     )
     gbp.add_argument("-c", "--comment", help="A short comment (to be part of path).")
     gbp.add_argument(

@@ -282,13 +282,14 @@ class Batch:
 def generate_simulations(
     batch: Batch,
     definition: GleamDefinition,
-    data: pd.Dataframe,
+    data: pd.DataFrame,
     rds: RegionDataset,
     config: dict,
     start_date: datetime.datetime,
     top: int = None,
     size_column="Infectious_mean",
 ):
+    now = datetime.datetime.now()
     # Estimate infections in subregions
     if size_column not in data.columns:
         raise Exception(f"Column {size_column} not found in {list(data.columns)}")
@@ -335,7 +336,10 @@ def generate_simulations(
                             f"Unsupportted type for beta in 'param_beta_exceptions': {type(exc)}"
                         )
                     d2.add_exception(
-                        [rds[rc]], {"beta": beta}, start=next_day, end=end_day
+                        [rds[rc]],
+                        {"beta": beta * beta_mult},
+                        start=next_day,
+                        end=end_day,
                     )
                 next_day = end_day
 
@@ -343,7 +347,11 @@ def generate_simulations(
             d2.set_traffic_occupancy(par["param_occupancyRate"])
             d2.set_variable("beta", par["param_beta"] * beta_mult)
             # TODO: other params or variables?
-            d2.set_default_name()
+            d2.set_name(
+                f"{batch.path.name} "
+                f"{d2.get_start_date().date().isoformat()}-{d2.get_end_date().date().isoformat()} "
+                f"{par['group']} {par['key']} beta_mult={beta_mult:.3g}"
+            )
 
             sims.append((d2, par["name"], par["group"], par["key"]))
     batch.set_simulations(sims)
