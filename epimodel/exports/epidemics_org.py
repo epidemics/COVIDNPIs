@@ -171,12 +171,24 @@ class WebExportRegion:
         return stats
 
     @staticmethod
+    def get_date_index(models: pd.DataFrame) -> None:
+        date_indexes = models.groupby(level=0).apply(
+            lambda x: x.index.get_level_values("Date")
+        )
+        first = date_indexes[0]
+        for dix in date_indexes:
+            is_equal = (dix == first).all()
+            if not is_equal:
+                raise KeyError("Date indexes of two simulations differ!")
+        return first
+
+    @staticmethod
     def extract_models_data(
         models: pd.DataFrame, initial: pd.DataFrame, simulation_spec: pd.DataFrame,
     ) -> Dict[str, Any]:
         d = {
             "date_index": [
-                x.isoformat() for x in models.index.get_level_values("Date")
+                x.isoformat() for x in WebExportRegion.get_date_index(models)
             ],
         }
         traces = []
