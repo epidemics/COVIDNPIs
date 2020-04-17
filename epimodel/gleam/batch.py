@@ -267,9 +267,15 @@ class Batch:
             m, v = norm.fit(data)
             v = max(v, 3e-5)
             dist = norm(m, v)
-            stats[f"{name}_fraction_mean"] = dist.mean()
-            stats[f"{name}_fraction_q05"] = max(dist.ppf(0.05), 0.0)
-            stats[f"{name}_fraction_q95"] = min(dist.ppf(0.95), 1.0)
+            stats[name] = {
+                "mean": dist.mean(),
+                "q05": max(dist.ppf(0.05), 0.0),
+                "q20": dist.ppf(0.20),
+                "q40": dist.ppf(0.40),
+                "q60": dist.ppf(0.60),
+                "q80": dist.ppf(0.80),
+                "q95": min(dist.ppf(0.95), 1.0),
+            }
         return stats
 
 
