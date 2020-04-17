@@ -1,6 +1,7 @@
 import copy
 import logging
 import os
+from collections import defaultdict
 from datetime import datetime
 
 import numpy as np
@@ -23,6 +24,14 @@ def save_fig_pdf(output_dir, figname):
     plt.savefig(
         f"{output_dir}/{figname}_t{datetime_str}.pdf"
     )
+
+
+def produce_CIs(data):
+    means = np.mean(data, axis=0)
+    li = np.percentile(data, 2.5, axis=0)
+    ui = np.percentile(data, 97.5, axis=0)
+    err = np.array([means - li, ui - means])
+    return means, li, ui, err
 
 
 class BaseCMModel(Model):
@@ -110,31 +119,24 @@ class BaseCMModel(Model):
     def plot_region_predictions(self, save_fig=True, output_dir="./out"):
         assert self.trace is not None
 
-        for country_indx, region in enumerate(self.d.Rs):
+        for country_indx, region in zip(self.OR_indxs, self.ORs):
             if country_indx % 10 == 0:
                 plt.figure(figsize=(8, 20), dpi=300)
 
             plt.subplot(5, 2, country_indx % 10 + 1)
 
-            # need to fix this
-            means = np.mean(self.trace.Infected[:, country_indx, :], axis=0)
-            li = np.percentile(self.trace.Infected[:, country_indx, :], 2.5, axis=0)
-            ui = np.percentile(self.trace.Infected[:, country_indx, :], 97.5, axis=0)
-            err = np.array([means - li, ui - means])
-
-            means_delayed = np.mean(self.trace.ExpectedConfirmed[:, country_indx, :], axis=0)
-            li_delayed = np.percentile(self.trace.ExpectedConfirmed[:, country_indx, :], 2.5, axis=0)
-            ui_delayed = np.percentile(self.trace.ExpectedConfirmed[:, country_indx, :], 97.5, axis=0)
-            err_delayed = np.array([means_delayed - li_delayed, ui_delayed - means_delayed])
-
+            means, li, ui, err = produce_CIs(np.exp(self.trace.Infected_log[:, country_indx, :]))
+            means_delayed, li_delayed, ui_delayed, err_delayed = produce_CIs(
+                self.trace.ExpectedConfirmed[:, country_indx, :])
             days = self.d.Ds
             days_x = np.arange(len(days))
 
+            min_x = 5
+            max_x = len(days) - 1
+
             if self.nHODs > 0:
-                means_ho = np.mean(self.trace.HeldoutDaysObserved[:, country_indx, :], axis=0)
-                li_ho = np.percentile(self.trace.HeldoutDaysObserved[:, country_indx, :], 2.5, axis=0)
-                ui_ho = np.percentile(self.trace.HeldoutDaysObserved[:, country_indx, :], 97.5, axis=0)
-                err_ho = np.array([means_ho - li_ho, ui_ho - means_ho])
+                means_ho, li_ho, ui_ho, err_ho = produce_CIs(
+                    self.trace.HeldoutDaysObserved[:, country_indx, :])
 
                 plt.errorbar(self.HeldoutDaysIndx, means_ho, yerr=err_ho, fmt="-^", linewidth=1, markersize=2,
                              label="Heldout Pred Confirmed", zorder=1)
@@ -152,10 +154,34 @@ class BaseCMModel(Model):
                         zorder=3)
 
             ax = plt.gca()
+
+            # plot countermeasures
+            CMs = self.d.ActiveCMs[country_indx, :, :]
+            nCMs, _ = CMs.shape
+            CM_changes = CMs[:, 1:] - CMs[:, :-1]
+            height = 0
+            for cm in range(nCMs):
+                changes = np.nonzero(CM_changes[cm, :])
+                for c in changes:
+                    if c.size > 0:
+                        height += 1
+                        if CM_changes[cm, c] == 1:
+                            plt.plot([c, c], [0, 10 ** 6], "--g", alpha=0.5, linewidth=1, zorder=-2)
+                            plt.text((c - min_x) / (max_x - min_x), 1 - (0.035 * (height)), f"{cm + 1}", color="g",
+                                     transform=ax.transAxes, fontsize=5, backgroundcolor="white",
+                                     horizontalalignment="center", zorder=-1,
+                                     bbox=dict(facecolor='white', edgecolor='g', boxstyle='round'))
+                        else:
+                            plt.plot([c, c], [0, 10 ** 6], "--r", alpha=0.5, linewidth=1, zorder=-2)
+                            plt.text((c - min_x) / (max_x - min_x), 1 - (0.035 * (height)), f"{cm + 1}", color="r",
+                                     transform=ax.transAxes, fontsize=5, backgroundcolor="white",
+                                     horizontalalignment="center", zorder=-1,
+                                     bbox=dict(facecolor='white', edgecolor='g', boxstyle='round'))
+
             ax.set_yscale("log")
             plt.plot([0, 10 ** 6], [0, 10 ** 6], "-r")
-            plt.xlim([10, 60]);
-            plt.ylim([10, 10 ** 6])
+            plt.xlim([min_x, max_x])
+            plt.ylim([1, 10 ** 6])
             plt.title(f"Region {region}")
 
             if country_indx % 10 == 9 or country_indx == len(self.d.Rs) - 1:
