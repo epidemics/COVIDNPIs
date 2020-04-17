@@ -10,7 +10,7 @@ def estimate_missing_populations(rds: RegionDataset, root="W"):
 
     Useful only for lower hierarchy levels, e.g. GLEAM basins.
     Redistributes at mos the unallocated population of the parent
-    between the children. 
+    between the children.
     Conservatively assumes that any missing populations are smaller than
     any known sybling population.
     """

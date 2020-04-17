@@ -133,7 +133,7 @@ def create_parser():
         "BATCH_FILE", help="The batch-*.hdf5 file with batch spec to be updated."
     )
     ibp.add_argument(
-        "-M", "--allow-missing", action="store_true", help="Skip missing sim results.",
+        "-M", "--allow-missing", action="store_true", help="Skip missing sim results."
     )
     ibp.set_defaults(func=import_batch)
 

@@ -34,7 +34,7 @@ def shift_right(t, dist, axis, pad=0.0):
 def convolution(t, weights, axis):
     """
     Computes a linear convolution of tensor by weights.
-    
+
     The result is res[.., i, ..] = w[0] * res[.., i, ..]
     """
     t = T.as_tensor(t)
@@ -47,7 +47,7 @@ def convolution(t, weights, axis):
 def geom_convolution(t, weights, axis):
     """
     Computes a linear convolution of log(tensor) by weights, returning exp(conv_res).
-    
+
     Can be also seen as geometrical convolution.
     The result is res[.., i, ..] = w[0] * res[.., i, ..]
     """

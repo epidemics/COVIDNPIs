@@ -83,7 +83,7 @@ Also, you did `cp config.yaml config-local.yaml` (modifying it as fit) and set e
 
 5. Start gleamviz. You should see the new simulations loaded. Run all of them and "Retrieve results" (do not export manually). Exit gleamviz.
 
-6. Import the gleamviz results into the HDF batch file. 
+6. Import the gleamviz results into the HDF batch file.
    `./do import_gleam_batch out/batch-2020-04-16T03:54:52.910001+00:00.hdf5`
    (Gleamviz must be stopped before that.) After this succeeds, you may delete the simulations from gleamviz.
 

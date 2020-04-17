@@ -139,7 +139,7 @@ class RegionDataset:
     # Separating names in name list and column name from date
     SEP = "|"
 
-    LEVELS = pd.CategoricalDtype(pd.Index(list(Level), dtype="O",), ordered=True,)
+    LEVELS = pd.CategoricalDtype(pd.Index(list(Level), dtype="O"), ordered=True)
 
     COLUMN_TYPES = OrderedDict(
         #        Parent="string",
@@ -254,7 +254,7 @@ class RegionDataset:
     def find_one_by_name(self, s, levels=None):
         """
         Find one region matching name (filter on levels).
-     
+
         Raises KeyError if no or multiple regions found.
         """
         rs = self.find_all_by_name(s, levels=levels)

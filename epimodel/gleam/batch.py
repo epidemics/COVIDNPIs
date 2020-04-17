@@ -144,7 +144,7 @@ class Batch:
         self.hdf.put("simulations", data, format="table", complib="bzip2", complevel=9)
 
     def export_definitions_to_gleam(
-        self, sims_dir, sim_ids=None, overwrite=False, info_level=logging.DEBUG,
+        self, sims_dir, sim_ids=None, overwrite=False, info_level=logging.DEBUG
     ):
         sims_df = self.hdf["simulations"]
         sims_dir = Path(sims_dir)
