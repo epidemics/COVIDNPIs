@@ -3,6 +3,7 @@ import pandas as pd
 import pytest
 
 import epimodel
+from epimodel.utils import utc_date
 
 
 def test_batch_new_open(tmp_path):
@@ -43,3 +44,18 @@ def test_add_seeds_add_export_sims(regions_gleam, datadir, tmp_path):
     assert len(b2.hdf["initial_compartments"]) == 3
     b2.export_definitions_to_gleam(tmp_path)
     b2.close()
+
+
+def test_gleam_def_dates(datadir):
+    d = epimodel.gleam.GleamDefinition(datadir / "test_definition.xml")
+    d.set_start_date("2020-10-11")
+    d.set_duration(11)
+    assert d.get_duration() == 11
+    assert d.get_end_date() == utc_date("2020-10-22")
+
+
+def test_gleam_def_exceptions(datadir, regions_gleam):
+    d = epimodel.gleam.GleamDefinition(datadir / "test_definition.xml")
+    d.clear_exceptions()
+    d.add_exception([regions_gleam["CZ", "G-AAA"]], {})
+    d.add_exception([regions_gleam["W-EU"]], {"beta": 1e-10})

@@ -62,13 +62,13 @@ def web_upload(args):
 
 
 def import_batch(args):
-    batch = Batch.open(args.BATCH_FILE)
+    b = Batch.open(args.BATCH_FILE)
     d = args.rds.data
     regions = d.loc[(d.Level == Level.country) & (d.GleamID != "")].Region.values
     log.info(
         f"Importing results for {len(regions)} from GLEAM into {args.BATCH_FILE} ..."
     )
-    batch.import_results_from_gleam(
+    b.import_results_from_gleam(
         Path(args.config["gleamviz_sims_dir"]).expanduser(),
         regions,
         resample=args.config["gleam_resample"],
@@ -86,9 +86,6 @@ def generate_batch(args):
     # TODO: This shuld be somewhat more versatile
     log.info(f"Reading estimates from CSV {args.COUNTRY_ESTIMATES} ...")
     est = read_csv_smart(args.COUNTRY_ESTIMATES, args.rds, levels=Level.country)
-    if len(est.columns) > 1:
-        raise Exception(f"Multiple columns found: {est.columns}")
-    est = est[est.columns[0]]
     if args.start_date:
         start_date = utils.utc_date(args.start_date)
     else:

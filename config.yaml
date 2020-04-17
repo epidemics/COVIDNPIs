@@ -60,25 +60,25 @@ groups:
     description: Current mitigation measures are completely lifted in 2 weeks without replacement.
     param_beta: 0.4
     param_beta_exceptions: [[14, "Beta1"], [999, 1.285]]
-    param_seasonalityAlphaMin: 0.85
+    param_seasonalityAlphaMin: 1.0
   - group: "4W_None"
     name: Scenario 2
     description: Current mitigation measures stay in for 4 weeks and are replaced by milder measures afterwards.
     param_beta: 0.4
     param_beta_exceptions: [[28, "Beta1"], [999, "Beta2"]]
-    param_seasonalityAlphaMin: 0.85
+    param_seasonalityAlphaMin: 1.0
   - group: "2W_Strong"
     name: Scenario 3
     description: Current mitigation measures stay in for 2 weeks and are replaced by strong mitigation afterwards.
     param_beta: 0.4
     param_beta_exceptions: [[14, "Beta1"], [999, 0.4]]
-    param_seasonalityAlphaMin: 0.85
+    param_seasonalityAlphaMin: 1.0
   - group: "2W_Moderate"
     name: Scenario 4
     description: Current mitigation measures stay in for 2 weeks and are replaced by moderate mitigation afterwards.
     param_beta: 0.4
     param_beta_exceptions: [[14, "Beta1"], [999, 0.55]]
-    param_seasonalityAlphaMin: 0.85
+    param_seasonalityAlphaMin: 1.0
 
 # How to assign estimate different compartments
 compartment_multipliers:
@@ -250,9 +250,3 @@ export_regions:
   - ZM
   - ZW
 
-### these are used to match our non-state codes (e.g. AU) for John Hopkins database
-### where they have it on state/province granularity
-state_to_country:
-  - AU
-  - CN
-  - CA
