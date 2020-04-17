@@ -31,9 +31,10 @@
       <initialCompartment compartment="Recovered" fraction="10" />
     </initialCompartments>
     <seeds>
-	<seed city="2966" compartment="Infectious" number="405970" />
-        <seed city="2518" compartment="Infectious" number="312461" />
-    </seeds><resultCompartments>
+      <seed city="2966" compartment="Infectious" number="405970" />
+      <seed city="2518" compartment="Infectious" number="312461" />
+    </seeds>
+    <resultCompartments>
       <id>Susceptible</id>
       <id>Exposed</id>
       <id>Infectious</id>

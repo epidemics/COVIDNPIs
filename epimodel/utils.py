@@ -1,6 +1,7 @@
 import datetime
 import logging
 import re
+from typing import Union
 
 import dateutil
 import pandas as pd
@@ -19,7 +20,7 @@ def read_csv(
 ) -> pd.DataFrame:
     """
     Read given CSV indexed by Code, create indexes and perform basic checks.
-    
+
     Checks that the CSV has 'Code' column and uses it as an index.
     If the CSV has 'Date' or `date_column` column, uses it as a secondary index.
     Dates are converted to datetime with UTC timezone.
@@ -59,7 +60,7 @@ def read_csv_smart(
     """
     Read given CSV indexed by name or code and optionally date, create indexes and
     perform basic checks.
-    
+
     For every row, the named region is found in the region dataset by name or code.
     Name matches must be unique within selected levels
     (see `RegionDataset.find_one_by_name`) and Codes.
@@ -67,7 +68,7 @@ def read_csv_smart(
     If not given, the name/code column is auto-detected from "Code", "code", "Name",
     "name". The date column names tried are "Date", "date", "Day", "day".
     (All in that order). If `date_coumn` name is given, it must be present in the file.
-    
+
     If the CSV has 'Date' or `date_column` column, uses it as a secondary index.
     Dates are converted to datetime with UTC timezone.
 
@@ -167,7 +168,7 @@ def normalize_name(name):
     return unidecode.unidecode(name).lower().replace("-", " ").replace("_", " ").strip()
 
 
-def utc_date(d):
+def utc_date(d: Union[str, datetime.date, datetime.datetime]) -> datetime.datetime:
     """
     Agressively convert any date spec (str, date or datetime) into UTC datetime with time 00:00:00.
 

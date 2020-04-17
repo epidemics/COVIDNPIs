@@ -1,11 +1,12 @@
 import copy
-import datetime
+from datetime import datetime, date
 import logging
 import xml.etree.ElementTree as ET
+from typing import Iterable, Union
 
 import pandas as pd
 
-from ..regions import RegionDataset, Level
+from ..regions import Level, RegionDataset, Region
 from ..utils import utc_date
 
 log = logging.getLogger(__name__)
@@ -41,6 +42,43 @@ class GleamDefinition:
         self.tree.write(file)  # , default_namespace=self.ns['gv'])
         log.debug(f"Written Gleam definition to {file!r}")
 
+    ### Exceptions
+
+    def clear_exceptions(self):
+        """Remove all exceptions from the XML."""
+        self.f1("./gv:definition/gv:exceptions").clear()
+
+    def add_exception(
+        self, regions: Iterable[Region], variables: dict, start=None, end=None
+    ):
+        """
+        Add a single exception restricted to `regions` and given dates.
+
+        `variables` is a dictionary `{variable_name: value}`.
+        Default `start` is the simulation start, default `end` is the simulation end.
+        NB: This is not changed if you change the simulation start/end later!
+        """
+        enode = self.f1("./gv:definition/gv:exceptions")
+        attrs = dict(basins="", continents="", countries="", hemispheres="", regions="")
+        attrs["from"] = utc_date(start).date().isoformat()
+        attrs["till"] = utc_date(end).date().isoformat()
+        for r in regions:
+            if pd.isnull(r.GleamID) or r.GleamID == "":
+                raise ValueError(f"{r!r} does not correspond to a Gleam region.")
+            tn = {
+                Level.gleam_basin: "basins",
+                Level.continent: "continents",
+                Level.country: "countries",
+                Level.subregion: "regions",
+            }[r.Level]
+            attrs[tn] = (attrs[tn] + f" {r.GleamID}").strip()
+        ex = ET.SubElement(enode, "exception", attrs)
+        for vn, vv in variables.items():
+            ET.SubElement(ex, "variable", dict(name=str(vn), value=str(vv)))
+        ex.tail = "\n"
+
+    ### Seed compartments
+
     def clear_seeds(self):
         self.f1("./gv:definition/gv:seeds").clear()
 
@@ -67,7 +105,7 @@ class GleamDefinition:
                 seed = ET.SubElement(
                     sroot,
                     "seed",
-                    {"number": str(int(s)), "compartment": c, "city": str(r.GleamID),},
+                    {"number": str(int(s)), "compartment": c, "city": str(r.GleamID)},
                 )
                 seed.tail = "\n"
 
@@ -87,21 +125,32 @@ class GleamDefinition:
             f"beta={self.get_variable('beta')}"
         )
 
-    def get_id(self):
+    def get_id(self) -> str:
         return self.f1("gv:definition").get("id")
 
-    def set_id(self, val):
+    def set_id(self, val: str):
         assert isinstance(val, str)
         return self.f1("gv:definition").set("id", val)
 
-    def get_start_date(self):
+    def get_start_date(self) -> datetime:
         return utc_date(self.f1("./gv:definition/gv:parameters").get("startDate"))
 
-    def set_start_date(self, date):
-        if isinstance(date, datetime.datetime):
-            date = date.date()
-        assert isinstance(date, datetime.date)
-        self.f1("./gv:definition/gv:parameters").set("startDate", date.isoformat())
+    def set_start_date(self, date: Union[str, date, datetime]):
+        self.f1("./gv:definition/gv:parameters").set(
+            "startDate", utc_date(date).date().isoformat()
+        )
+
+    def get_duration(self) -> int:
+        """Return the number of days to simulate."""
+        return int(self.f1("./gv:definition/gv:parameters").get("duration"))
+
+    def set_duration(self, duration: int):
+        """Set duration in days."""
+        assert isinstance(duration, int)
+        self.f1("./gv:definition/gv:parameters").set("duration", str(duration))
+
+    def get_end_date(self) -> datetime:
+        return self.get_start_date() + pd.DateOffset(self.get_duration())
 
     ### Parameters
 
@@ -116,12 +165,10 @@ class GleamDefinition:
             "seasonalityAlphaMin", f"{val:.2f}"
         )
 
-    def get_variable(self, name: str):
-        return float(
-            self.f1(
-                f'./gv:definition/gv:compartmentalModel/gv:variables/gv:variable[@name="{name}"]'
-            ).get("value")
-        )
+    def get_variable(self, name: str) -> str:
+        return self.f1(
+            f'./gv:definition/gv:compartmentalModel/gv:variables/gv:variable[@name="{name}"]'
+        ).get("value")
 
     def set_variable(self, name: str, val: float):
         assert isinstance(name, str)
