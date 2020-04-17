@@ -235,12 +235,12 @@ class Batch:
         Both cummulative Infected and Active are offsetted by the original Infectious
         compartment (or to make Active always positive, whatever is larger).
         """
-        df = self.hdf["new_fraction"].sort_index()
+        df = self.hdf["new_fraction"].astype("float32").sort_index()
         df = df.groupby(level=[0, 1]).cumsum()
 
         df_active = df["Infected"] - df["Recovered"]
         df_region_min = df_active.groupby(level=1).min()
-        df["Infected"] += df_region_min
+        df["Infected"] -= df_region_min
         # TODO: consider using self.hdf["initial_compartments"]["Infectious"]
         # But needs adjustment for Population!
 
