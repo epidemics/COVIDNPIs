@@ -1,11 +1,13 @@
 import datetime
 import logging
 import re
-from typing import Union
+from typing import Union, Set, Optional
 
 import dateutil
 import pandas as pd
 import unidecode
+
+import epimodel
 
 log = logging.getLogger(__name__)
 
@@ -91,7 +93,7 @@ def read_csv_smart(
         else:
             raise Exception(f"No region found for {n!r}")
 
-    unknown = set()
+    unknown: Set[str] = set()
     data = pd.read_csv(path, **kwargs)
 
     if name_column is None:
@@ -126,7 +128,7 @@ def read_csv_smart(
 def _process_loaded_table(
     data: pd.DataFrame,
     rds: "epimodel.RegionDataset",
-    date_column: str = "Date",
+    date_column: Optional[str] = "Date",
     drop_underscored: bool = True,
     skip_unknown: bool = True,
 ):

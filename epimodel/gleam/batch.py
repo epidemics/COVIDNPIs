@@ -282,14 +282,17 @@ class Batch:
 def generate_simulations(
     batch: Batch,
     definition: GleamDefinition,
-    sizes: pd.Series,
+    data: pd.Dataframe,
     rds: RegionDataset,
     config: dict,
     start_date: datetime.datetime,
     top: int = None,
+    size_column="Infectious_mean",
 ):
     # Estimate infections in subregions
-    s = sizes.copy().astype("float32")
+    if size_column not in data.columns:
+        raise Exception(f"Column {size_column} not found in {list(data.columns)}")
+    s = data[size_column].copy().astype("float32")
     algorithms.distribute_down_with_population(s, rds)
 
     # Create compartment sizes
@@ -316,9 +319,29 @@ def generate_simulations(
             par.update(sce)
             d2 = d.copy()
 
+            beta_mult = par.get("param_beta_multiplier", 1.0)
+
+            d2.clear_exceptions()
+            next_day = d2.get_start_date()
+            for days, exc in par.get("param_beta_exceptions", ()):
+                for rc, row in data.iterrows():
+                    end_day = next_day + pd.DateOffset(days)
+                    if isinstance(exc, float):
+                        beta = float(exc)
+                    elif isinstance(exc, str):
+                        beta = row[exc]
+                    else:
+                        raise TypeError(
+                            f"Unsupportted type for beta in 'param_beta_exceptions': {type(exc)}"
+                        )
+                    d2.add_exception(
+                        [rds[rc]], {"beta": beta}, start=next_day, end=end_day
+                    )
+                next_day = end_day
+
             d2.set_seasonality(par["param_seasonalityAlphaMin"])
             d2.set_traffic_occupancy(par["param_occupancyRate"])
-            d2.set_variable("beta", par["param_beta"])
+            d2.set_variable("beta", par["param_beta"] * beta_mult)
             # TODO: other params or variables?
             d2.set_default_name()
 

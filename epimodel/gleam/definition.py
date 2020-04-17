@@ -60,6 +60,10 @@ class GleamDefinition:
         """
         enode = self.f1("./gv:definition/gv:exceptions")
         attrs = dict(basins="", continents="", countries="", hemispheres="", regions="")
+        if start is None:
+            start = self.get_start_date()
+        if end is None:
+            end = self.get_end_date()
         attrs["from"] = utc_date(start).date().isoformat()
         attrs["till"] = utc_date(end).date().isoformat()
         for r in regions:
