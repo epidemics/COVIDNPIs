@@ -98,155 +98,155 @@ output_dir: out/
 
 ### List of exported regions code
 export_regions:
-  - AF
-  - AL
-  - DZ
-  - AO
-  - AG
-  - AR
-  - AM
-  - AU
-  - AT
-  - AZ
-  - BD
-  - BY
-  - BE
-  # - BZ
-  - BJ
-  - BT
-  - BO
-  - BA
-  - BR
-  - BN
-  - BG
-  - BF
-  - KH
-  - CM
-  - CA
-  - TD
-  - CL
-  - CN
-  - CO
-  - CD
-  - CG
-  - CR
-  - CI
-  - HR
-  - CU
-  - CY
-  - CZ
-  - DK
-  - DO
-  - EC
-  - EG
-  - GQ
-  - ER
-  - EE
-  - ET
-  - FJ
-  - FI
-  - FR
-  # - GA
-  - GE
-  - DE
-  - GH
-  - GR
-  # - GU
-  - GT
-  # - GG
-  - GY
-  - HT
-  - HN
-  - HU
-  - IS
-  - IN
-  - ID
-  - IR
-  - IQ
-  - IE
-  # - IM
-  - IL
-  - IT
-  - JM
-  - JP
-  - JO
-  - KZ
-  - KE
-  - KW
-  - KG
-  - LV
-  - LB
-  - LR
-  - LT
-  - LU
-  - MK
-  # - MP
-  - MG
-  - MY
-  - MV
-  - MT
-  - MR
-  - MU
-  - MX
-  - MD
-  - MC
-  - MN
-  - ME
-  - MA
-  - NA
-  - NP
-  - NL
-  - NZ
-  - NI
-  - NE
-  - NG
-  - "NO"
-  - OM
-  - PK
-  - PA
-  - PG
-  - PY
-  - PE
-  - PH
-  - PL
-  - PT
-  #- PR
-  - QA
-  - RO
-  - RU
-  - RW
-  - SA
-  - SN
-  - RS
-  - SC
-  - SG
-  - SK
-  - SI
-  - SO
-  - ZA
-  - KR
-  - ES
-  - LK
-  - SD
-  - SR
-  - SV
-  - SE
-  - CH
-  - TZ
-  - TH
-  - TG
-  - TT
-  - TN
-  - TR
-  - UG
-  - UA
-  - AE
-  - GB
-  - US
-  - UY
-  - UZ
-  - VE
-  - VN
-  - ZM
-  - ZW
-
+  [
+    "AE",
+    "AF",
+    "AG",
+    "AL",
+    "AM",
+    "AO",
+    "AR",
+    "AT",
+    "AU",
+    "AZ",
+    "BA",
+    "BB",
+    "BD",
+    "BE",
+    "BF",
+    "BG",
+    "BH",
+    "BJ",
+    "BN",
+    "BO",
+    "BR",
+    "BT",
+    "BY",
+    "CA",
+    "CF",
+    "CH",
+    "CI",
+    "CL",
+    "CM",
+    "CN",
+    "CO",
+    "CR",
+    "CU",
+    "CY",
+    "CZ",
+    "DE",
+    "DJ",
+    "DK",
+    "DO",
+    "DZ",
+    "EC",
+    "EE",
+    "EG",
+    "ER",
+    "ES",
+    "ET",
+    "FI",
+    "FJ",
+    "FR",
+    "GB",
+    "GE",
+    "GH",
+    "GN",
+    "GQ",
+    "GR",
+    "GT",
+    "GY",
+    "HN",
+    "HR",
+    "HT",
+    "HU",
+    "ID",
+    "IE",
+    "IL",
+    "IN",
+    "IQ",
+    "IR",
+    "IS",
+    "IT",
+    "JM",
+    "JO",
+    "JP",
+    "KE",
+    "KG",
+    "KH",
+    "KR",
+    "KW",
+    "KZ",
+    "LB",
+    "LC",
+    "LK",
+    "LR",
+    "LT",
+    "LU",
+    "LV",
+    "MA",
+    "MC",
+    "MD",
+    "ME",
+    "MG",
+    "MK",
+    "MN",
+    "MR",
+    "MT",
+    "MU",
+    "MV",
+    "MX",
+    "MY",
+    "NA",
+    "NE",
+    "NG",
+    "NI",
+    "NL",
+    "NO",
+    "NP",
+    "NZ",
+    "OM",
+    "PA",
+    "PE",
+    "PG",
+    "PH",
+    "PK",
+    "PL",
+    "PT",
+    "PY",
+    "QA",
+    "RO",
+    "RS",
+    "RU",
+    "RW",
+    "SA",
+    "SC",
+    "SD",
+    "SE",
+    "SG",
+    "SI",
+    "SK",
+    "SN",
+    "SO",
+    "SR",
+    "SV",
+    "SZ",
+    "TD",
+    "TG",
+    "TH",
+    "TN",
+    "TR",
+    "TT",
+    "TZ",
+    "UA",
+    "UG",
+    "US",
+    "UY",
+    "UZ",
+    "VC",
+    "VE",
+    "VN",
+    "ZA",
+    "ZM",
+    "ZW",
+  ]
