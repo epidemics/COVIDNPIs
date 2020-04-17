@@ -10,17 +10,9 @@ from urllib.error import HTTPError
 log = logging.getLogger(__name__)
 
 
-SKIP_NAMES = {
-    "Diamond Princess",
-    "Grand Princess",
-    "MS Zaandam",
-    "Recovered",
-}
+SKIP_NAMES = {"Diamond Princess", "Grand Princess", "MS Zaandam", "Recovered"}
 
-SUBSTITUTE_COUNTRY = {
-    "Taiwan*": "Taiwan",
-    "US": "United States",
-}
+SUBSTITUTE_COUNTRY = {"Taiwan*": "Taiwan", "US": "United States"}
 
 SUBSTITUTE_PROVINCE = {}
 
@@ -56,7 +48,7 @@ GITHUB_PREFIX = "https://raw.githubusercontent.com/CSSEGISandData/COVID-19/maste
 def import_johns_hopkins(rds: RegionDataset, prefix=None):
     """
     Read a DataFrame of John Hopkins data from given directory or URL.
-    
+
     By default loads data from CSSE github.
     """
     if prefix is None:

@@ -182,7 +182,7 @@ class CMModelV2(BaseCMModel):
 
         # [region, day] Multiplicative noise applied to predicted growth rate
         RealGrowthNoise = self.Det(
-            "RealGrowthNoise", RealGrowth / PredictedGrowth, plot_trace=False,
+            "RealGrowthNoise", RealGrowth / PredictedGrowth, plot_trace=False
         )
 
         # [region] Initial size of epidemic (the day before the start, only those detected; wide prior OK)
@@ -209,7 +209,7 @@ class CMModelV2(BaseCMModel):
 
         # [region, day] Multiplicative noise applied to predicted growth rate
         # Note: computed backwards, since self.Observed needs to be a distribution
-        ObservedNoise = self.Det("ObservedNoise", Observed / Size, plot_trace=False,)
+        ObservedNoise = self.Det("ObservedNoise", Observed / Size, plot_trace=False)
 
 
 class CMModelV2g(CMModelV2):

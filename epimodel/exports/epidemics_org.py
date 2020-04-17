@@ -117,7 +117,7 @@ class WebExportRegion:
         self.current_estimate = current_estimate
         # Any per-region data. Large ones should go to data_ext.
         self.data = self.extract_smallish_data(
-            rates, hopkins, foretold, timezones, un_age_dist, traces_v3,
+            rates, hopkins, foretold, timezones, un_age_dist, traces_v3
         )
         # Extended data to be written in a separate per-region file
         self.data_ext = self.extract_external_data(
@@ -205,7 +205,7 @@ class WebExportRegion:
         d = {
             "date_index": [
                 x.isoformat() for x in WebExportRegion.get_date_index(models)
-            ],
+            ]
         }
         traces = []
         for simulation_id, simulation_def in simulation_spec.iterrows():
