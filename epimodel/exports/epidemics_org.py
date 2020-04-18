@@ -55,6 +55,7 @@ class WebExport:
         timezones: Optional[pd.DataFrame],
         un_age_dist: Optional[pd.DataFrame],
         traces_v3: Optional[pd.DataFrame],
+        countermeasures: Optional[pd.DataFrame],
     ):
         er = WebExportRegion(
             region,
@@ -69,6 +70,7 @@ class WebExport:
             timezones,
             un_age_dist,
             traces_v3,
+            countermeasures,
         )
         self.export_regions[region.Code] = er
         return er
@@ -109,6 +111,7 @@ class WebExportRegion:
         timezones: Optional[pd.DataFrame],
         un_age_dist: Optional[pd.DataFrame],
         traces_v3: Optional[pd.DataFrame],
+        countermeasures: Optional[pd.DataFrame],
     ):
         log.debug(f"Prepare WebExport: {region.Code}, {region.Name}")
 
@@ -117,7 +120,7 @@ class WebExportRegion:
         self.current_estimate = current_estimate
         # Any per-region data. Large ones should go to data_ext.
         self.data = self.extract_smallish_data(
-            rates, hopkins, foretold, timezones, un_age_dist, traces_v3
+            rates, hopkins, foretold, timezones, un_age_dist, traces_v3, countermeasures
         )
         # Extended data to be written in a separate per-region file
         self.data_ext = self.extract_external_data(
@@ -134,6 +137,7 @@ class WebExportRegion:
         timezones: pd.DataFrame,
         un_age_dist: Optional[pd.DataFrame],
         traces_v3: Optional[pd.DataFrame],
+        countermeasures: Optional[pd.DataFrame],
     ) -> Dict[str, Dict[str, Any]]:
         d = {}
 
@@ -164,6 +168,9 @@ class WebExportRegion:
 
         if traces_v3 is not None:
             d["TracesV3"] = traces_v3["TracesV3"]
+
+        if countermeasures is not None:
+            d["Countermeasures"] = countermeasures
 
         d["Timezones"] = timezones["Timezone"].tolist()
 
@@ -453,6 +460,7 @@ def process_export(args) -> None:
     timezone = get_extra_path(args, "timezones")
     un_age_dist = get_extra_path(args, "un_age_dist")
     traces_v3 = get_extra_path(args, "traces_v3")
+    countermeasures = get_extra_path(args, "countermeasures")
 
     export_regions = sorted(args.config["export_regions"])
 
@@ -477,6 +485,8 @@ def process_export(args) -> None:
     )
 
     traces_v3_df: pd.DataFrame = pd.read_csv(traces_v3, index_col="CodeISO3")
+
+    countermeasures_df: pd.DataFrame = pd.read_csv(countermeasures, index_col="country")
 
     foretold_df: pd.DataFrame = pd.read_csv(
         foretold,
@@ -518,6 +528,8 @@ def process_export(args) -> None:
             log.error("No estimate found for country code: %s. Skipping", code)
             continue
         initial_estimate = int(initial_estimate)
+        countermeasures_df['country'] = countermeasures_df.country.apply(
+            lambda name: reg.find_one_by_name(name).Code).set_index('country')
 
         ex.new_region(
             reg,
@@ -532,6 +544,7 @@ def process_export(args) -> None:
             get_df_list(timezone_df, code),
             get_df_else_none(un_age_dist_df, m49),
             get_df_else_none(traces_v3_df, iso3),
+            get_df_else_none(countermeasures_df, code),
         )
 
     ex.write(args.config["output_dir"])
