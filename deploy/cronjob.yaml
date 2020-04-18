@@ -1,0 +1,22 @@
+apiVersion: batch/v1beta1
+kind: CronJob
+metadata:
+  name: auto-covid-loader
+spec:
+  schedule: "0 * */1 * *"
+  concurrencyPolicy: Forbid
+  startingDeadlineSeconds: 300
+  jobTemplate:
+    spec:
+      activeDeadlineSeconds: 7200
+      template:
+        metadata:
+          name: auto-covid-loader
+        spec:
+          restartPolicy: Never
+          containers:
+            - name: auto-covid-loader
+              image: gcr.io/epidemics-270907/epimodel:master 
+              imagePullPolicy: Always
+              command: ["/bin/sh"]
+              args: ["pipeline.sh"]
