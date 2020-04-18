@@ -952,7 +952,7 @@ six = ">=1.7.0"
 category = "main"
 description = "SciPy: Scientific Library for Python"
 name = "scipy"
-optional = true
+optional = false
 python-versions = ">=3.5"
 version = "1.4.1"
 
@@ -1179,7 +1179,7 @@ pymc3 = ["pymc3", "jupyter", "seaborn"]
 pyro = ["pyro-ppl", "jupyter", "seaborn"]
 
 [metadata]
-content-hash = "e737ac088688df77989c2897c74bf1ef4e15acf446ad28036a193bbba47f9591"
+content-hash = "c2605d91812378d10f3b2e4e9b94de788510cba978072ac9fba09ee1a7dcce0f"
 python-versions = ">=3.6.9"
 
 [metadata.files]
