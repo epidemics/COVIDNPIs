@@ -14,49 +14,71 @@ gleam_resample: 1D
 
 ### Extra data for web_export, relative to data_dir
 web_export:
- john_hopkins: johns-hopkins.csv
- foretold: foretold.csv
- rates: rates.csv
- timezones: timezones.csv
- un_age_dist: various/age_dist_un.csv
- traces_v3: various/traces_v3.csv
+  john_hopkins: johns-hopkins.csv
+  foretold: foretold.csv
+  rates: rates.csv
+  timezones: timezones.csv
+  un_age_dist: various/age_dist_un.csv
+  traces_v3: various/traces_v3.csv
 
 ### Generating GLEAM scenarios
+# All combinations of groups and scenarios are created,
+# unifying the attributes. Semantics:
+# - param_beta_multiplier is applied to all beta (incl. exceptions)
+# - param_beta_exceptions is list of [[days, vaue], [days, value], ...],
+#   where value is eother a number, os region column name
+# - param_beta is the global parameter setting
 scenarios:
-  - param_seasonalityAlphaMin: 0.85
-    param_occupancyRate: 70  # Note this is in percent!
-    name: WEAK seasonality<br>WEAK reduction in air travel 
-    key: "WEAK_WEAK"
-  - param_seasonalityAlphaMin: 0.7
-    param_occupancyRate: 70  # Note this is in percent!
-    name: MEDIUM seasonality<br>WEAK reduction in air travel 
-    key: "MEDIUM_WEAK"
-  - param_seasonalityAlphaMin: 0.5
-    param_occupancyRate: 70  # Note this is in percent!
-    name: STRONG seasonality<br>WEAK reduction in air travel 
-    key: "STRONG_WEAK"
-  - param_seasonalityAlphaMin: 0.85
-    param_occupancyRate: 20  # Note this is in percent!
-    name: WEAK seasonality<br>STRONG reduction in air travel 
-    key: "WEAK_STRONG"
-  - param_seasonalityAlphaMin: 0.7
-    param_occupancyRate: 20  # Note this is in percent!
-    name: MEDIUM seasonality<br>STRONG reduction in air travel 
-    key: "MEDIUM_STRONG"
-  - param_seasonalityAlphaMin: 0.5
-    param_occupancyRate: 20  # Note this is in percent!
-    name: STRONG seasonality<br>STRONG reduction in air travel 
-    key: "STRONG_STRONG"
-  
+  - param_occupancyRate: 70 # Note this is in percent!
+    param_beta_multiplier: 1.1
+    name: 10% HIGHER spread<br>WEAK reduction in air travel
+    key: "HIGHER_WEAK"
+  - param_occupancyRate: 70 # Note this is in percent!
+    param_beta_multiplier: 1.0
+    name: EXPECTED spread<br>WEAK reduction in air travel
+    key: "EXPECTED_WEAK"
+  - param_occupancyRate: 70 # Note this is in percent!
+    param_beta_multiplier: 0.9
+    name: 10% LOWER spread<br>WEAK reduction in air travel
+    key: "LOWER_WEAK"
+  - param_occupancyRate: 20 # Note this is in percent!
+    param_beta_multiplier: 1.1
+    name: 10% HIGHER spread<br>STRONG reduction in air travel
+    key: "HIGHER_STRONG"
+  - param_occupancyRate: 20 # Note this is in percent!
+    param_beta_multiplier: 1.0
+    name: EXPECTED spread<br>STRONG reduction in air travel
+    key: "EXPECTED_STRONG"
+  - param_occupancyRate: 20 # Note this is in percent!
+    param_beta_multiplier: 0.9
+    name: 10% LOWER spread<br>STRONG reduction in air travel
+    key: "LOWER_STRONG"
+
 groups:
-  - param_beta: 1.285
-    group: "None"
-  - param_beta: 1.0064 # 80%
-    group: "Low"
-  - param_beta: 0.629 # 50%
-    group: "Medium"
-  - param_beta: 0.2516 # 20%
-    group: "High"
+  - group: "2W_None"
+    name: Scenario 1
+    description: Current mitigation measures are completely lifted in 2 weeks without replacement.
+    param_beta: 0.4
+    param_beta_exceptions: [[14, "Beta1"], [999, 1.285]]
+    param_seasonalityAlphaMin: 0.85
+  - group: "4W_None"
+    name: Scenario 2
+    description: Current mitigation measures stay in for 4 weeks and are replaced by milder measures afterwards.
+    param_beta: 0.4
+    param_beta_exceptions: [[28, "Beta1"], [999, "Beta2"]]
+    param_seasonalityAlphaMin: 0.85
+  - group: "2W_Strong"
+    name: Scenario 3
+    description: Current mitigation measures stay in for 2 weeks and are replaced by strong mitigation afterwards.
+    param_beta: 0.4
+    param_beta_exceptions: [[14, "Beta1"], [999, 0.4]]
+    param_seasonalityAlphaMin: 0.85
+  - group: "2W_Moderate"
+    name: Scenario 4
+    description: Current mitigation measures stay in for 2 weeks and are replaced by moderate mitigation afterwards.
+    param_beta: 0.4
+    param_beta_exceptions: [[14, "Beta1"], [999, 0.55]]
+    param_seasonalityAlphaMin: 0.85
 
 # How to assign estimate different compartments
 compartment_multipliers:
@@ -231,12 +253,54 @@ export_regions:
 ### these are used to match our non-state codes (e.g. AU) for John Hopkins database
 ### where they have it on state/province granularity
 state_to_country:
-  AU: ['AU-ACT', 'AU-NSW', 'AU-NT', 'AU-QLD', 'AU-SA', 'AU-TAS', 'AU-VIC', 'AU-WA']
-  CN: ['CN-AH', 'CN-BJ', 'CN-CQ', 'CN-FJ', 'CN-GD', 'CN-GS', 'CN-GX', 'CN-GZ', 'CN-HA',
-       'CN-HB', 'CN-HE', 'CN-HI', 'CN-HK', 'CN-HL', 'CN-HN', 'CN-JL', 'CN-JS', 'CN-JX',
-       'CN-LN', 'CN-MO', 'CN-NM', 'CN-NX', 'CN-QH', 'CN-SC', 'CN-SD', 'CN-SH', 'CN-SN',
-       'CN-SX', 'CN-TJ', 'CN-XJ', 'CN-XZ', 'CN-YN', 'CN-ZJ']
+  AU:
+    [
+      "AU-ACT",
+      "AU-NSW",
+      "AU-NT",
+      "AU-QLD",
+      "AU-SA",
+      "AU-TAS",
+      "AU-VIC",
+      "AU-WA",
+    ]
+  CN:
+    [
+      "CN-AH",
+      "CN-BJ",
+      "CN-CQ",
+      "CN-FJ",
+      "CN-GD",
+      "CN-GS",
+      "CN-GX",
+      "CN-GZ",
+      "CN-HA",
+      "CN-HB",
+      "CN-HE",
+      "CN-HI",
+      "CN-HK",
+      "CN-HL",
+      "CN-HN",
+      "CN-JL",
+      "CN-JS",
+      "CN-JX",
+      "CN-LN",
+      "CN-MO",
+      "CN-NM",
+      "CN-NX",
+      "CN-QH",
+      "CN-SC",
+      "CN-SD",
+      "CN-SH",
+      "CN-SN",
+      "CN-SX",
+      "CN-TJ",
+      "CN-XJ",
+      "CN-XZ",
+      "CN-YN",
+      "CN-ZJ",
+    ]
   #CA: ['CA-AB','CA-BC','CA-MB','CA-NB','CA-NL','CA-NS','CA-NT','CA-ON','CA-PE','CA-QC','CA-SK','CA-YT']
-  GU: ['US-GU']
-  MP: ['US-MP']
-  PR: ['US-PR']
+  GU: ["US-GU"]
+  MP: ["US-MP"]
+  PR: ["US-PR"]
