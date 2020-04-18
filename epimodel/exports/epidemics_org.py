@@ -126,8 +126,8 @@ class WebExportRegion:
         # Relative URL of the extended data file, set on write
         self.data_url = None
 
-    @staticmethod
     def extract_smallish_data(
+        self,
         rates: Optional[pd.DataFrame],
         hopkins: Optional[pd.DataFrame],
         foretold: Optional[pd.DataFrame],
@@ -141,6 +141,14 @@ class WebExportRegion:
             d["Rates"] = rates.replace({np.nan: None}).to_dict()
 
         if hopkins is not None:
+            nulls = hopkins.isna().sum()
+            if (nulls != 0).any():
+                # this happens e.g. for countries with provinces and not in config
+                log.warning(
+                    "Some hopkins data for %s contains empty values: %s.",
+                    self.region.Code,
+                    nulls.to_dict(),
+                )
             d["JohnsHopkins"] = {
                 "Date": [x.date().isoformat() for x in hopkins.index],
                 **hopkins.replace({np.nan: None}).to_dict(orient="list"),
@@ -408,18 +416,22 @@ def get_extra_path(args, name: str) -> Path:
 
 
 def aggregate_countries(
-    hopkins: pd.DataFrame, mapping: Dict[str, List[str]]
+    hopkins: pd.DataFrame, countries_with_provinces: List[str], region_dataset,
 ) -> pd.DataFrame:
     to_append = []
     all_state_codes = []
-    for country_code, state_codes in mapping.items():
+    for country_code in countries_with_provinces:
+        _state_codes = [x.Code for x in region_dataset.get(country_code).children]
+        present_state_codes = list(
+            set(_state_codes).intersection(hopkins.index.get_level_values("Code"))
+        )
         log.info(
             "Aggregating hopkins data for %s into a single code %s",
-            state_codes,
+            present_state_codes,
             country_code,
         )
         aggregated = (
-            hopkins.loc[state_codes]
+            hopkins.loc[present_state_codes]
             .reset_index("Date")
             .groupby("Date")
             .sum()
@@ -428,7 +440,7 @@ def aggregate_countries(
             .set_index(["Code", "Date"])
         )
         to_append.append(aggregated)
-        all_state_codes.extend(state_codes)
+        all_state_codes.extend(present_state_codes)
     return hopkins.drop(index=all_state_codes).append(pd.concat(to_append))
 
 
@@ -453,9 +465,11 @@ def process_export(args) -> None:
 
     estimates_df = pd.read_csv(args.estimates, index_col="Name")
 
-    rates_df: pd.DataFrame = pd.read_csv(rates, index_col="Code", keep_default_na=False)
+    rates_df: pd.DataFrame = pd.read_csv(
+        rates, index_col="Code", keep_default_na=False, na_values=[""]
+    )
     timezone_df: pd.DataFrame = pd.read_csv(
-        timezone, index_col="Code", keep_default_na=False
+        timezone, index_col="Code", keep_default_na=False, na_values=[""],
     )
 
     un_age_dist_df: pd.DataFrame = pd.read_csv(un_age_dist, index_col="Code M49").drop(
@@ -464,18 +478,21 @@ def process_export(args) -> None:
 
     traces_v3_df: pd.DataFrame = pd.read_csv(traces_v3, index_col="CodeISO3")
 
-    hopkins_df: pd.DataFrame = pd.read_csv(
-        hopkins,
-        index_col=["Code", "Date"],
-        parse_dates=["Date"],
-        keep_default_na=False,
-    ).pipe(aggregate_countries, args.config["state_to_country"])
     foretold_df: pd.DataFrame = pd.read_csv(
         foretold,
         index_col=["Code", "Date"],
         parse_dates=["Date"],
         keep_default_na=False,
+        na_values=[""],
     )
+
+    hopkins_df: pd.DataFrame = pd.read_csv(
+        hopkins,
+        index_col=["Code", "Date"],
+        parse_dates=["Date"],
+        keep_default_na=False,
+        na_values=[""],
+    ).pipe(aggregate_countries, args.config["state_to_country"], args.rds)
 
     analyze_data_consistency(
         args.debug,
@@ -494,7 +511,9 @@ def process_export(args) -> None:
         iso3 = reg["CountryCodeISOa3"]
 
         # TODO clean this up
-        initial_estimate = estimates_df[estimates_df.index.isin(reg.AllNames)]["Infectious_mean"]
+        initial_estimate = estimates_df[estimates_df.index.isin(reg.AllNames)][
+            "Infectious_mean"
+        ]
         if initial_estimate.empty:
             log.error("No estimate found for country code: %s. Skipping", code)
             continue
