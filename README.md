@@ -68,8 +68,8 @@ print(csse.loc[('CZ', "2020-03-28")])
 Assuming you've installed deps via `poetry install` and you are in the root epimodel repo.
 Also, you did `cp config.yaml config-local.yaml` (modifying it as fit) and set e.g. `export_regions: [CZ, ES]`. Prepend `-C config-local.yaml` to all commands below to use it rather than `config.yaml`.
 
-1. Clone data repo or update it.
-   `git clone https://github.com/epidemics/epimodel-covid-data data`
+1. If you haven't cloned this repo with `--recurse-submodules`, pull them now via:
+   `git pull --recurse-submodules`
 
 2. Optional: Update Johns Hopkins data `./do -C config-local.yaml update_john_hopkins` (not needed if you got fresh data from the repo above).
 
