@@ -4,7 +4,6 @@
 .idea
 /*.egg-info
 .ipynb_checkpoints
-/data
 /epimodel/data
 /out
 config-local.yaml
