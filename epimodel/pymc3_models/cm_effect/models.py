@@ -153,6 +153,15 @@ class BaseCMModel(Model):
                         s=6, color="tab:purple",
                         zorder=3)
 
+            plt.scatter(days_x, self.d.Deaths[country_indx, :], label="deaths", marker="+",
+                        s=6, color="black",
+                        zorder=3)
+
+            plt.scatter(days_x[1:], self.d.Deaths[country_indx, 1:] - self.d.Deaths[country_indx, 0:-1],
+                        label="new deaths", marker="*",
+                        s=6, color="tab:gray",
+                        zorder=3)
+
             ax = plt.gca()
 
             # plot countermeasures
@@ -181,8 +190,16 @@ class BaseCMModel(Model):
             ax.set_yscale("log")
             plt.plot([0, 10 ** 6], [0, 10 ** 6], "-r")
             plt.xlim([min_x, max_x])
-            plt.ylim([1, 10 ** 6])
+            plt.ylim([10**-2, 10 ** 6])
             plt.title(f"Region {region}")
+
+            ax2 = ax.twinx()
+            plt.scatter(days_x[1:], self.d.Deaths[country_indx, 1:] - self.d.Deaths[country_indx, 0:-1],
+                        label="new deaths", marker="*",
+                        s=6, color="tab:red",
+                        zorder=3)
+            plt.xlim([min_x, max_x])
+
 
             if country_indx % 10 == 9 or country_indx == len(self.d.Rs) - 1:
                 plt.tight_layout()
@@ -190,7 +207,7 @@ class BaseCMModel(Model):
                     save_fig_pdf(output_dir, f"CountryPredictionPlot{((country_indx + 1) / 10):.1f}")
 
             elif country_indx % 10 == 0:
-                plt.legend(prop={'size': 6})
+                ax.legend(prop={'size': 6})
 
     def plot_effect(self, save_fig=True, output_dir="./out", x_min=0.5, x_max=1.5):
         assert self.trace is not None
