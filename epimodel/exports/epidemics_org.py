@@ -110,7 +110,7 @@ class WebExportRegion:
         un_age_dist: Optional[pd.DataFrame],
         traces_v3: Optional[pd.DataFrame],
     ):
-        print(f"Prepare WebExport: {region.Code}, {region.Name}")
+        log.debug(f"Prepare WebExport: {region.Code}, {region.Name}")
 
         assert isinstance(region, Region)
         self.region = region
@@ -351,8 +351,7 @@ def analyze_data_consistency(
         initial_df[(initial_df == np.inf).any(axis=1)].index
     )
     if has_inf:
-        log.error(f"The initial data for %s contains inf", has_inf)
-        # fatal.append(f"The initial data for {has_inf} contains inf")
+        log.error(f"The initial data from the batch file for %s contains inf", has_inf)
 
     df = pd.DataFrame(index=sorted(union_codes))
     for source_name, ixs in codes.items():
@@ -372,7 +371,6 @@ def analyze_data_consistency(
     diff_export_and_initial = to_export.difference(codes["initial"])
     if diff_export_and_initial:
         log.error("There is no initial data for %s", diff_export_and_initial)
-        # fatal.append(f"Initial data for {diff_export_and_initial} not present.")
 
     diff_export_and_models = to_export.difference(codes["models"])
     if diff_export_and_models:
@@ -496,9 +494,11 @@ def process_export(args) -> None:
         iso3 = reg["CountryCodeISOa3"]
 
         # TODO clean this up
-        initial_estimate = int(
-            estimates_df[estimates_df.index.isin(reg.AllNames)]["Estimate"]
-        )
+        initial_estimate = estimates_df[estimates_df.index.isin(reg.AllNames)]["Infectious_mean"]
+        if initial_estimate.empty:
+            log.error("No estimate found for country code: %s. Skipping", code)
+            continue
+        initial_estimate = int(initial_estimate)
 
         ex.new_region(
             reg,

@@ -88,7 +88,7 @@ Also, you did `cp config.yaml config-local.yaml` (modifying it as fit) and set e
    (Gleamviz must be stopped before that.) After this succeeds, you may delete the simulations from gleamviz.
 
 7. Generate web export
-   `./do -C config-local.yaml web_export out/batch-2020-04-16T03:54:52.910001+00:00.hdf5`
+   `./do -C config-local.yaml web_export out/batch-2020-04-16T03:54:52.910001+00:00.hdf5 data/source/estimates-JK-2020-04-15.csv`
    Note: this part is work in progress for few more days (?).
 
 8. Export the generated folder to web! Optionally, set a channel for testing first.
