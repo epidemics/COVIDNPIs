@@ -142,9 +142,9 @@ class DataPreprocessor(object):
             johnhop_ds["Deaths"].loc[(tuple(filtered_countries), Ds)].unstack(1).values
         )
         assert Active.shape == (nCs, nDs)
-        # Deaths[Deaths < 10] = np.nan
-        # # [country, day]
-        # Deaths = np.ma.masked_invalid(Deaths.astype(theano.config.floatX))
+        Deaths[Deaths < 10] = np.nan
+        # [country, day]
+        Deaths = np.ma.masked_invalid(Deaths.astype(theano.config.floatX))
 
         loaded_data = PreprocessedData(
             Active, Confirmed, ActiveCMs, selected_features, filtered_countries, Ds, Deaths
