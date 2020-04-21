@@ -120,11 +120,12 @@ class BaseCMModel(Model):
         assert self.trace is not None
 
         for country_indx, region in zip(self.OR_indxs, self.ORs):
-            if country_indx % 10 == 0:
-                plt.figure(figsize=(8, 20), dpi=300)
+            if country_indx % 5 == 0:
+                plt.figure(figsize=(12, 20), dpi=300)
 
-            plt.subplot(5, 2, country_indx % 10 + 1)
+            plt.subplot(5, 3, 3 * (country_indx % 5) + 1)
 
+            ax = plt.gca()
             means, li, ui, err = produce_CIs(np.exp(self.trace.Infected_log[:, country_indx, :]))
             means_delayed, li_delayed, ui_delayed, err_delayed = produce_CIs(
                 self.trace.ExpectedConfirmed[:, country_indx, :])
@@ -162,8 +163,6 @@ class BaseCMModel(Model):
                         s=6, color="tab:gray",
                         zorder=3)
 
-            ax = plt.gca()
-
             # plot countermeasures
             CMs = self.d.ActiveCMs[country_indx, :, :]
             nCMs, _ = CMs.shape
@@ -190,24 +189,68 @@ class BaseCMModel(Model):
             ax.set_yscale("log")
             plt.plot([0, 10 ** 6], [0, 10 ** 6], "-r")
             plt.xlim([min_x, max_x])
-            plt.ylim([10**-2, 10 ** 6])
+            plt.ylim([10 ** -2, 10 ** 6])
             plt.title(f"Region {region}")
 
-            ax2 = ax.twinx()
-            plt.scatter(days_x[1:], self.d.Deaths[country_indx, 1:] - self.d.Deaths[country_indx, 0:-1],
-                        label="new deaths", marker="*",
-                        s=6, color="tab:red",
-                        zorder=3)
-            plt.xlim([min_x, max_x])
+            plt.subplot(5, 3, 3 * (country_indx % 5) + 2)
 
+            ax1 = plt.gca()
+            means_growth, _, _, err = produce_CIs(self.trace.ExpectedGrowth[:, country_indx, :])
+            actual_growth, _, _, err_act = produce_CIs(self.trace.Growth[:, country_indx, :])
 
-            if country_indx % 10 == 9 or country_indx == len(self.d.Rs) - 1:
+            first_day = np.min(self.ObservedDaysIndx)
+            plt.errorbar(days_x, np.exp(actual_growth), yerr=err_act, fmt="-x", linewidth=1, markersize=2,
+                         label="Predicted Growth",
+                         zorder=1, color="tab:orange")
+            plt.errorbar(days_x, np.exp(means_growth), yerr=err, fmt="-D", linewidth=1, markersize=2,
+                         label="Expected Growth",
+                         zorder=2, color="tab:blue")
+
+            CMs = self.d.ActiveCMs[country_indx, :, :]
+            nCMs, _ = CMs.shape
+            CM_changes = CMs[:, 1:] - CMs[:, :-1]
+            height = 0
+            for cm in range(nCMs):
+                changes = np.nonzero(CM_changes[cm, :])
+                for c in changes:
+                    if c.size > 0:
+                        height += 1
+                        if CM_changes[cm, c] == 1:
+                            plt.plot([c, c], [0, 2], "--g", alpha=0.5, linewidth=1, zorder=-2)
+                            plt.text(c, 2 - (0.05 * (height)), f"{cm + 1}", color="g",
+                                     fontsize=5, backgroundcolor="white",
+                                     horizontalalignment="center", zorder=-1,
+                                     bbox=dict(facecolor='white', edgecolor='g', boxstyle='round'))
+                        else:
+                            plt.plot([c, c], [0, 2], "--r", alpha=0.5, linewidth=1, zorder=-2)
+                            plt.text(c, 2 - (0.05 * (height)), f"{cm + 1}", color="r",
+                                     fontsize=5, backgroundcolor="white",
+                                     horizontalalignment="center", zorder=-1,
+                                     bbox=dict(facecolor='white', edgecolor='g', boxstyle='round'))
+            plt.ylim([0.8, 2])
+            plt.xlim([first_day, 66])
+
+            plt.subplot(5, 3, 3 * (country_indx % 5) + 3)
+            ax2 = plt.gca()
+            z1_mean, _, _, err_1 = produce_CIs(self.trace.Z1[:, country_indx, :])
+            z2_mean, _, _, err_2 = produce_CIs(self.trace.Z2[:, country_indx, :])
+            plt.errorbar(days_x, z1_mean, yerr=err_1, fmt="-x", linewidth=1, markersize=2,
+                         label="Growth Noise",
+                         zorder=1, color="tab:blue")
+            plt.errorbar(self.ObservedDaysIndx, z2_mean, yerr=err_2, fmt="-x", linewidth=1, markersize=2,
+                         label="Confirmation Noise",
+                         zorder=1, color="tab:orange")
+            plt.xlim([first_day, 66])
+
+            if country_indx % 5 == 4 or country_indx == len(self.d.Rs) - 1:
                 plt.tight_layout()
                 if save_fig:
-                    save_fig_pdf(output_dir, f"CountryPredictionPlot{((country_indx + 1) / 10):.1f}")
+                    save_fig_pdf(output_dir, f"CountryPredictionPlot{((country_indx + 1) / 5):.1f}")
 
-            elif country_indx % 10 == 0:
+            elif country_indx % 5 == 0:
                 ax.legend(prop={'size': 6})
+                ax1.legend(prop={'size': 6})
+                ax2.legend(prop={'size': 6})
 
     def plot_effect(self, save_fig=True, output_dir="./out", x_min=0.5, x_max=1.5):
         assert self.trace is not None
@@ -1192,12 +1235,24 @@ class CMModelFlexibleV3p1(BaseCMModel):
             "GrowthReduction", T.sum(self.ActiveCMReduction, axis=1), plot_trace=False
         )
 
+        self.Det(
+            "ExpectedGrowth",
+            T.reshape(self.RegionGrowthRate_log, (self.nORs, 1)) - self.GrowthReduction,
+            plot_trace=False,
+        )
+
         self.Normal(
             "Growth",
-            T.reshape(self.RegionGrowthRate_log, (self.nORs, 1)) - self.GrowthReduction,
+            self.ExpectedGrowth,
             self.DailyGrowthNoise,
             shape=(self.nORs, self.nDs),
-            plot_trace=False,
+            plot_trace=False
+        )
+
+        self.Det(
+            "Z1",
+            self.Growth - self.ExpectedGrowth,
+            plot_trace=False
         )
 
         # we already have the rates for heldout days, we just need to sort out heldout regions
@@ -1248,12 +1303,273 @@ class CMModelFlexibleV3p1(BaseCMModel):
                                                           ]))
 
         self.Det("Observed", pm.math.exp(self.Observed_log), plot_trace=False)
+        self.Det(
+            "Z2",
+            self.Observed_log - self.ExpectedConfirmed_log[:, self.ObservedDaysIndx],
+            plot_trace=False
+        )
 
         if len(self.HeldoutDays) > 0:
             self.Normal(
                 "HeldoutDaysObserved_log",
                 self.ExpectedConfirmed_log[:, self.HeldoutDaysIndx],
                 self.ConfirmationNoise * T.reshape(self.RegionNoiseScale, (self.nORs, 1)),
+                shape=(self.nORs, self.nHODs),
+                plot_trace=False)
+
+            self.Det("HeldoutDaysObserved", pm.math.exp(self.HeldoutDaysObserved_log))
+
+        # we've added observations for observed days for observed regions. need to compute observations for the heldout
+        # regions
+        if self.nHRs > 0:
+            self.Det(
+                "HeldoutInfected_log",
+                T.reshape(self.HeldoutInitialSize_log, (self.nHRs, 1))
+                + self.HeldoutGrowth_log.cumsum(axis=1),
+                plot_trace=False
+            )
+
+            self.Det("HeldoutInfected", pm.math.exp(self.HeldoutInfected_log), plot_trace=False)
+
+            # use the theano convolution function, reshaping as required
+            ho_expected_confirmed_log = T.nnet.conv2d(
+                self.HeldoutInfected_log.reshape((1, 1, self.nHRs, self.nDs)),
+                np.reshape(self.DelayProb, (1, 1, 1, self.DelayProb.size)),
+                border_mode="full")[:, :, :, :self.nDs]
+            self.Det("HeldoutExpectedConfirmed_log", ho_expected_confirmed_log.reshape((self.nHRs, self.nDs)),
+                     plot_trace=False)
+
+            self.Det("HeldoutExpectedConfirmed", pm.math.exp(self.HeldoutExpectedConfirmed_log))
+
+            self.Normal(
+                "HeldoutConfirmed_log",
+                self.HeldoutExpectedConfirmed_log,
+                self.ConfirmationNoise * T.reshape(self.HeldoutNoiseScale, (self.nHRs, 1)),
+                shape=(self.nHRs, self.nDs),
+                plot_trace=False,
+            )
+
+            self.Det("HeldoutConfirmed", pm.math.exp(self.HeldoutConfirmed_log))
+
+    def build_all(self):
+        self.build_cm_reduction_prior()
+        self.build_region_growth_prior()
+        self.build_region_reliability_prior()
+        self.build_rates()
+        self.build_output_model()
+        log.info("Checking model test point")
+        log.info(f"\n{self.check_test_point()}\n")
+
+
+class CMModelFlexibleV3p2(BaseCMModel):
+    def __init__(
+            self, data, heldout_days=None, heldout_regions=None, name="", model=None
+    ):
+        super().__init__(data, name=name, model=model)
+
+        self.CMDelayCut = 10
+        self.DelayProb = np.array(
+            [
+                0.00,
+                0.01,
+                0.02,
+                0.06,
+                0.10,
+                0.13,
+                0.15,
+                0.15,
+                0.13,
+                0.10,
+                0.07,
+                0.05,
+                0.03,
+            ]
+        )
+        self.DailyGrowthNoise = 0.05
+        self.ConfirmationNoise = 0.2
+
+        self.ObservedDaysIndx = np.arange(self.CMDelayCut, len(self.d.Ds))
+
+        if heldout_regions is not None:
+            self.HeldoutRegions = copy.deepcopy(heldout_regions)
+        else:
+            self.HeldoutRegions = []
+
+        if heldout_days is not None:
+            self.HeldoutDays = copy.deepcopy(heldout_days)
+            self.ObservedDaysIndx = np.delete(
+                self.ObservedDaysIndx, np.array(self.HeldoutDays) - self.CMDelayCut
+            )
+            self.HeldoutDaysIndx = np.array(self.HeldoutDays)
+        else:
+            self.HeldoutDays = []
+            self.HeldoutDaysIndx = np.array([])
+
+        # useful things for heldout stuff
+        self.nORs = self.nRs - len(self.HeldoutRegions)
+        self.nHRs = len(self.HeldoutRegions)
+        # note that this model will always predict ALL days but heldout ones, setting the other ones to observe only
+        self.nHODs = len(self.HeldoutDays)
+
+        self.nODs = len(self.ObservedDaysIndx)
+        self.ORs = copy.deepcopy(self.d.Rs)
+        self.HR_indxs = [self.ORs.index(r) for r in self.HeldoutRegions]
+        self.OR_indxs = list(range(self.nRs))
+        [self.ORs.remove(hr) for hr in self.HeldoutRegions]
+        [self.OR_indxs.pop(hr_indx) for hr_indx in self.HR_indxs]
+
+        # this model predicts but masks early days
+        self.predict_all_days = True
+
+    def build_cm_reduction_prior(self, dist=None, dist_kwarg=None, plot_trace=True):
+        if dist is not None:
+            with self.model:
+                self.CMReduction = dist(name="CMReduction", **dist_kwarg, shape=(self.nCMs,))
+        else:
+            # default to log norm prior
+            # log(1) = 0
+            # this dist has mean 1
+            self.LN("CMReduction", 0, 0.5, shape=(self.nCMs,))
+
+        if plot_trace:
+            self.plot_trace_vars.add("CMReduction")
+
+    def build_cm_reduction_exp_gamma_prior(self, alpha=0.5, beta=1.0):
+        with self.model:
+            self.CM_Alpha = pm.Gamma(
+                "CM_Alpha", alpha, beta, shape=(self.nCMs,)
+            )
+
+        self.Det("CMReduction", T.exp((-1.0) * self.CM_Alpha))
+
+    def build_region_growth_prior(self, dist=None, dist_kwargs=None, plot_trace=True):
+        if dist is not None:
+            with self.model:
+                self.RegionGrowthRate = dist(name="RegionGrowthRate", **dist_kwargs, shape=(self.nORs,))
+        else:
+            self.Normal("RegionGrowthRate_log", np.log(1.2), 0.3, shape=(self.nORs,))
+
+    def build_region_reliability_prior(self, dist=None, dist_kwargs=None, plot_trace=True):
+        if dist is not None:
+            with self.model:
+                self.RegionNoiseScale = dist(name="RegionNoiseScale", shape=(self.nORs,), **dist_kwargs)
+        else:
+            self.Normal("RegionNoiseScale", 1.0, 0.05, shape=(self.nORs,))
+
+        if plot_trace:
+            self.plot_trace_vars.add("RegionNoiseScale")
+
+    def build_heldout_region_priors(
+            self,
+            init_size_dist,
+            init_size_kwargs,
+            growth_rate_dist,
+            growth_rate_kwargs,
+            noise_scale_dist,
+            noise_scale_kwargs,
+    ):
+        self.HeldoutInitialSize = init_size_dist(
+            name="HeldoutInitialSize_log", shape=(self.nHRs), **init_size_kwargs
+        )
+        self.HeldoutGrowthRate = growth_rate_dist(
+            name="HeldoutGrowthRate_log", shape=(self.nHRs), **growth_rate_kwargs
+        )
+
+        self.HeldoutNoiseScale = noise_scale_dist(
+            name="HeldoutNoiseScale", shape=(self.nHRs), **noise_scale_kwargs
+        )
+
+    def build_rates(self):
+        with self.model:
+            self.ActiveCMs = pm.Data("ActiveCMs", self.d.ActiveCMs)
+
+        self.ActiveCMReduction = (
+                T.reshape(self.CM_Alpha, (1, self.nCMs, 1))
+                * self.ActiveCMs[self.OR_indxs, :]
+        )
+        self.Det(
+            "GrowthReduction", T.nnet.sigmoid(T.sum(self.ActiveCMReduction, axis=1)), plot_trace=False
+        )
+
+        self.Det(
+            "ExpectedGrowth",
+            T.reshape(self.RegionGrowthRate_log, (self.nORs, 1)) - self.GrowthReduction,
+            plot_trace=False,
+        )
+
+        self.Normal(
+            "Growth",
+            self.ExpectedGrowth,
+            self.DailyGrowthNoise,
+            shape=(self.nORs, self.nDs),
+            plot_trace=False
+        )
+
+        self.Det(
+            "Z1",
+            self.Growth - self.ExpectedGrowth,
+            plot_trace=False
+        )
+
+        # we already have the rates for heldout days, we just need to sort out heldout regions
+        if self.nHRs > 0:
+            self.HeldoutActiveCMReduction = (
+                    T.reshape(self.CM_Alpha, (1, self.nCMs, 1))
+                    * self.ActiveCMs[self.HR_indxs, :]
+            )
+
+            self.Det(
+                "HeldoutGrowthReduction",
+                T.sum(self.HeldoutActiveCMReduction, axis=1),
+                plot_trace=False,
+            )
+
+            self.Normal(
+                "HeldoutGrowth_log",
+                T.reshape(self.HeldoutGrowthRate_log, (self.nHRs, 1)) - self.HeldoutGrowthReduction,
+                self.DailyGrowthNoise,
+                shape=(self.nHRs, self.nDs),
+                plot_trace=False,
+            )
+
+    def build_output_model(self):
+        self.Normal("InitialSize_log", 1, 10, shape=(self.nORs,))
+        self.Det(
+            "Infected_log",
+            T.reshape(self.InitialSize_log, (self.nORs, 1))
+            + self.Growth.cumsum(axis=1),
+            plot_trace=False
+        )
+
+        self.Det("Infected", pm.math.exp(self.Infected_log), plot_trace=False)
+
+        # use the theano convolution function, reshaping as required
+        expected_confirmed_log = T.nnet.conv2d(self.Infected_log.reshape((1, 1, self.nORs, self.nDs)),
+                                               np.reshape(self.DelayProb, newshape=(1, 1, 1, self.DelayProb.size)),
+                                               border_mode="full")[:, :, :, :self.nDs]
+        self.Det("ExpectedConfirmed_log", expected_confirmed_log.reshape((self.nORs, self.nDs)), plot_trace=False)
+        self.Det("ExpectedConfirmed", pm.math.exp(self.ExpectedConfirmed_log), plot_trace=False)
+
+        with self.model:
+            self.Observed_log = pm.Normal("Observed_log", self.ExpectedConfirmed_log[:, self.ObservedDaysIndx],
+                                          self.ConfirmationNoise,
+                                          shape=(self.nORs, self.nODs),
+                                          observed=np.log(self.d.Active[self.OR_indxs, :][
+                                                          :, self.ObservedDaysIndx
+                                                          ]))
+
+        self.Det("Observed", pm.math.exp(self.Observed_log), plot_trace=False)
+        self.Det(
+            "Z2",
+            self.Observed_log - self.ExpectedConfirmed_log[:, self.ObservedDaysIndx],
+            plot_trace=False
+        )
+
+        if len(self.HeldoutDays) > 0:
+            self.Normal(
+                "HeldoutDaysObserved_log",
+                self.ExpectedConfirmed_log[:, self.HeldoutDaysIndx],
+                self.ConfirmationNoise,
                 shape=(self.nORs, self.nHODs),
                 plot_trace=False)
 
@@ -1284,6 +1600,1164 @@ class CMModelFlexibleV3p1(BaseCMModel):
             self.Normal(
                 "HeldoutConfirmed_log",
                 self.HeldoutExpectedConfirmed,
+                self.ConfirmationNoise * T.reshape(self.HeldoutNoiseScale, (self.nHRs, 1)),
+                shape=(self.nHRs, self.nDs),
+                plot_trace=False,
+            )
+
+            self.Det("HeldoutConfirmed", pm.math.exp(self.HeldoutConfirmed_log))
+
+    def build_all(self):
+        self.build_cm_reduction_prior()
+        self.build_region_growth_prior()
+        self.build_region_reliability_prior()
+        self.build_rates()
+        self.build_output_model()
+        log.info("Checking model test point")
+        log.info(f"\n{self.check_test_point()}\n")
+
+
+class CMModelFlexibleV3p3(BaseCMModel):
+    def __init__(
+            self, data, heldout_days=None, heldout_regions=None, name="", model=None
+    ):
+        super().__init__(data, name=name, model=model)
+
+        self.CMDelayCut = 10
+        self.DelayProb = np.array([0,
+                                   2.10204045e-06, 3.22312869e-05, 1.84979560e-04, 6.31412913e-04,
+                                   1.53949439e-03, 3.07378372e-03, 5.32847235e-03, 8.32057678e-03,
+                                   1.19864352e-02, 1.59626950e-02, 2.02752812e-02, 2.47013776e-02,
+                                   2.90892369e-02, 3.30827134e-02, 3.66035310e-02, 3.95327745e-02,
+                                   4.19039762e-02, 4.35677913e-02, 4.45407357e-02, 4.49607434e-02,
+                                   4.47581467e-02, 4.40800885e-02, 4.28367817e-02, 4.10649618e-02,
+                                   3.93901360e-02, 3.71499615e-02, 3.48922699e-02, 3.24149652e-02,
+                                   3.00269472e-02, 2.76836725e-02, 2.52794388e-02, 2.29349630e-02,
+                                   2.07959867e-02, 1.86809336e-02, 1.67279378e-02, 1.50166767e-02,
+                                   1.33057159e-02, 1.17490048e-02, 1.03030011e-02, 9.10633952e-03,
+                                   7.97333972e-03, 6.95565185e-03, 6.05717970e-03, 5.25950540e-03,
+                                   4.61137626e-03, 3.94442886e-03, 3.37948046e-03, 2.91402865e-03,
+                                   2.48911619e-03, 2.14007737e-03, 1.81005702e-03, 1.54339818e-03,
+                                   1.32068199e-03, 1.11358095e-03, 9.53425490e-04, 7.99876440e-04,
+                                   6.76156345e-04, 5.68752088e-04, 4.93278826e-04, 4.08596625e-04,
+                                   3.37127249e-04, 2.92283720e-04, 2.41934846e-04, 1.98392580e-04])
+        self.DailyGrowthNoise = 0.3
+        self.ConfirmationNoise = 0.1
+
+        self.ObservedDaysIndx = np.arange(self.CMDelayCut, len(self.d.Ds))
+
+        if heldout_regions is not None:
+            self.HeldoutRegions = copy.deepcopy(heldout_regions)
+        else:
+            self.HeldoutRegions = []
+
+        if heldout_days is not None:
+            self.HeldoutDays = copy.deepcopy(heldout_days)
+            self.ObservedDaysIndx = np.delete(
+                self.ObservedDaysIndx, np.array(self.HeldoutDays) - self.CMDelayCut
+            )
+            self.HeldoutDaysIndx = np.array(self.HeldoutDays)
+        else:
+            self.HeldoutDays = []
+            self.HeldoutDaysIndx = np.array([])
+
+        # useful things for heldout stuff
+        self.nORs = self.nRs - len(self.HeldoutRegions)
+        self.nHRs = len(self.HeldoutRegions)
+        # note that this model will always predict ALL days but heldout ones, setting the other ones to observe only
+        self.nHODs = len(self.HeldoutDays)
+
+        self.nODs = len(self.ObservedDaysIndx)
+        self.ORs = copy.deepcopy(self.d.Rs)
+        self.HR_indxs = [self.ORs.index(r) for r in self.HeldoutRegions]
+        self.OR_indxs = list(range(self.nRs))
+        [self.ORs.remove(hr) for hr in self.HeldoutRegions]
+        [self.OR_indxs.pop(hr_indx) for hr_indx in self.HR_indxs]
+
+        # this model predicts but masks early days
+        self.predict_all_days = True
+
+    def build_cm_reduction_prior(self, dist=None, dist_kwarg=None, plot_trace=True):
+        if dist is not None:
+            with self.model:
+                self.CMReduction = dist(name="CMReduction", **dist_kwarg, shape=(self.nCMs,))
+        else:
+            # default to log norm prior
+            # log(1) = 0
+            # this dist has mean 1
+            self.LN("CMReduction", 0, 0.5, shape=(self.nCMs,))
+
+        if plot_trace:
+            self.plot_trace_vars.add("CMReduction")
+
+    def build_cm_reduction_exp_gamma_prior(self, alpha=0.5, beta=1.0):
+        with self.model:
+            self.CM_Alpha = pm.Gamma(
+                "CM_Alpha", alpha, beta, shape=(self.nCMs,)
+            )
+
+        self.Det("CMReduction", T.exp((-1.0) * self.CM_Alpha))
+
+    def build_region_growth_prior(self, dist=None, dist_kwargs=None, plot_trace=True):
+        if dist is not None:
+            with self.model:
+                self.RegionGrowthRate = dist(name="RegionGrowthRate", **dist_kwargs, shape=(self.nORs,))
+        else:
+            self.Normal("RegionGrowthRate_log", np.log(1.2), 0.3, shape=(self.nORs,))
+
+    def build_region_reliability_prior(self, dist=None, dist_kwargs=None, plot_trace=True):
+        if dist is not None:
+            with self.model:
+                self.RegionNoiseScale = dist(name="RegionNoiseScale", shape=(self.nORs,), **dist_kwargs)
+        else:
+            self.Normal("RegionNoiseScale", 1.0, 0.05, shape=(self.nORs,))
+
+        if plot_trace:
+            self.plot_trace_vars.add("RegionNoiseScale")
+
+    def build_heldout_region_priors(
+            self,
+            init_size_dist,
+            init_size_kwargs,
+            growth_rate_dist,
+            growth_rate_kwargs,
+            noise_scale_dist,
+            noise_scale_kwargs,
+    ):
+        self.HeldoutInitialSize = init_size_dist(
+            name="HeldoutInitialSize_log", shape=(self.nHRs), **init_size_kwargs
+        )
+        self.HeldoutGrowthRate = growth_rate_dist(
+            name="HeldoutGrowthRate_log", shape=(self.nHRs), **growth_rate_kwargs
+        )
+
+        self.HeldoutNoiseScale = noise_scale_dist(
+            name="HeldoutNoiseScale", shape=(self.nHRs), **noise_scale_kwargs
+        )
+
+    def build_rates(self):
+        with self.model:
+            self.ActiveCMs = pm.Data("ActiveCMs", self.d.ActiveCMs)
+
+        self.ActiveCMReduction = (
+                T.reshape(self.CM_Alpha, (1, self.nCMs, 1))
+                * self.ActiveCMs[self.OR_indxs, :]
+        )
+        self.Det(
+            "GrowthReduction", T.sum(self.ActiveCMReduction, axis=1), plot_trace=False
+        )
+
+        self.Det(
+            "ExpectedGrowth",
+            T.reshape(self.RegionGrowthRate_log, (self.nORs, 1)) - self.GrowthReduction,
+            plot_trace=False,
+        )
+
+        self.Normal(
+            "Growth",
+            self.ExpectedGrowth,
+            self.DailyGrowthNoise,
+            shape=(self.nORs, self.nDs),
+            plot_trace=False
+        )
+
+        self.Det(
+            "Z1",
+            self.Growth - self.ExpectedGrowth,
+            plot_trace=False
+        )
+
+        # we already have the rates for heldout days, we just need to sort out heldout regions
+        if self.nHRs > 0:
+            self.HeldoutActiveCMReduction = (
+                    T.reshape(self.CM_Alpha, (1, self.nCMs, 1))
+                    * self.ActiveCMs[self.HR_indxs, :]
+            )
+
+            self.Det(
+                "HeldoutGrowthReduction",
+                T.sum(self.HeldoutActiveCMReduction, axis=1),
+                plot_trace=False,
+            )
+
+            self.Normal(
+                "HeldoutGrowth_log",
+                T.reshape(self.HeldoutGrowthRate_log, (self.nHRs, 1)) - self.HeldoutGrowthReduction,
+                self.DailyGrowthNoise,
+                shape=(self.nHRs, self.nDs),
+                plot_trace=False,
+            )
+
+    def build_output_model(self):
+        self.Normal("InitialSize_log", 1, 10, shape=(self.nORs,))
+        self.Det(
+            "Infected_log",
+            T.reshape(self.InitialSize_log, (self.nORs, 1))
+            + self.Growth.cumsum(axis=1),
+            plot_trace=False
+        )
+
+        self.Det("Infected", pm.math.exp(self.Infected_log), plot_trace=False)
+
+        # use the theano convolution function, reshaping as required
+        expected_confirmed = T.nnet.conv2d(self.Infected.reshape((1, 1, self.nORs, self.nDs)),
+                                           np.reshape(self.DelayProb,
+                                                      newshape=(1, 1, 1, self.DelayProb.size)),
+                                           border_mode="full")[:, :, :, :self.nDs]
+
+        self.Det("ExpectedConfirmed", expected_confirmed.reshape((self.nORs, self.nDs)), plot_trace=False)
+        self.Det("ExpectedConfirmed_log", pm.math.log(self.ExpectedConfirmed),
+                 plot_trace=False)
+
+        with self.model:
+            self.Observed = pm.Lognormal("Observed", pm.math.log(self.ExpectedConfirmed[:, self.ObservedDaysIndx]),
+                                         self.ConfirmationNoise * T.reshape(self.RegionNoiseScale,
+                                                                            (self.nORs, 1)),
+                                         shape=(self.nORs, self.nODs),
+                                         observed=self.d.Deaths[self.OR_indxs, :][
+                                                  :, self.ObservedDaysIndx]
+                                         )
+
+        # self.Det("Observed", pm.math.exp(self.Observed_log), plot_trace=False)
+        # self.Det(
+        #     "Z2",
+        #     self.Observed_log - self.ExpectedConfirmed_log[:, self.ObservedDaysIndx],
+        #     plot_trace=False
+        # )
+
+        if len(self.HeldoutDays) > 0:
+            self.Normal(
+                "HeldoutDaysObserved_log",
+                self.ExpectedConfirmed_log[:, self.HeldoutDaysIndx],
+                self.ConfirmationNoise * T.reshape(self.RegionNoiseScale, (self.nORs, 1)),
+                shape=(self.nORs, self.nHODs),
+                plot_trace=False)
+
+            self.Det("HeldoutDaysObserved", pm.math.exp(self.HeldoutDaysObserved_log))
+
+        # we've added observations for observed days for observed regions. need to compute observations for the heldout
+        # regions
+        if self.nHRs > 0:
+            self.Det(
+                "HeldoutInfected_log",
+                T.reshape(self.HeldoutInitialSize_log, (self.nHRs, 1))
+                + self.HeldoutGrowth_log.cumsum(axis=1),
+                plot_trace=False
+            )
+
+            self.Det("HeldoutInfected", pm.math.exp(self.HeldoutInfected_log), plot_trace=False)
+
+            # use the theano convolution function, reshaping as required
+            ho_expected_confirmed_log = T.nnet.conv2d(
+                self.HeldoutInfected_log.reshape((1, 1, self.nHRs, self.nDs)),
+                np.reshape(self.DelayProb, (1, 1, 1, self.DelayProb.size)),
+                border_mode="full")[:, :, :, :self.nDs]
+            self.Det("HeldoutExpectedConfirmed_log", ho_expected_confirmed_log.reshape((self.nHRs, self.nDs)),
+                     plot_trace=False)
+
+            self.Det("HeldoutExpectedConfirmed", pm.math.exp(self.HeldoutExpectedConfirmed_log))
+
+            self.Normal(
+                "HeldoutConfirmed_log",
+                self.HeldoutExpectedConfirmed_log,
+                self.ConfirmationNoise * T.reshape(self.HeldoutNoiseScale, (self.nHRs, 1)),
+                shape=(self.nHRs, self.nDs),
+                plot_trace=False,
+            )
+
+            self.Det("HeldoutConfirmed", pm.math.exp(self.HeldoutConfirmed_log))
+
+    def build_all(self):
+        self.build_cm_reduction_prior()
+        self.build_region_growth_prior()
+        self.build_region_reliability_prior()
+        self.build_rates()
+        self.build_output_model()
+        log.info("Checking model test point")
+        log.info(f"\n{self.check_test_point()}\n")
+
+    def plot_region_predictions(self, save_fig=True, output_dir="./out"):
+        assert self.trace is not None
+
+        for country_indx, region in zip(self.OR_indxs, self.ORs):
+            if country_indx % 5 == 0:
+                plt.figure(figsize=(12, 20), dpi=300)
+
+            plt.subplot(5, 3, 3 * (country_indx % 5) + 1)
+
+            ax = plt.gca()
+            means, li, ui, err = produce_CIs(np.exp(self.trace.Infected_log[:, country_indx, :]))
+            means_delayed, li_delayed, ui_delayed, err_delayed = produce_CIs(
+                self.trace.ExpectedConfirmed[:, country_indx, :])
+            days = self.d.Ds
+            days_x = np.arange(len(days))
+
+            min_x = 5
+            max_x = len(days) - 1
+
+            if self.nHODs > 0:
+                means_ho, li_ho, ui_ho, err_ho = produce_CIs(
+                    self.trace.HeldoutDaysObserved[:, country_indx, :])
+
+                plt.errorbar(self.HeldoutDaysIndx, means_ho, yerr=err_ho, fmt="-^", linewidth=1, markersize=2,
+                             label="Heldout Pred Confirmed", zorder=1)
+                plt.scatter(self.HeldoutDaysIndx, labels[self.HeldoutDaysIndx], label="Heldout Confirmed", marker="*",
+                            color="tab:red", zorder=3)
+
+            labels = self.d.Deaths[country_indx, :]
+
+            plt.errorbar(days_x, means, yerr=err, fmt="-D", linewidth=1, markersize=2, label="Infected",
+                         zorder=1)
+            plt.errorbar(days_x, means_delayed, yerr=err_delayed, fmt="-o", linewidth=1, markersize=2,
+                         label="Mean Pred Confirmed", zorder=2)
+            plt.scatter(self.ObservedDaysIndx, labels[self.ObservedDaysIndx], label="Observed Confirmed", marker="o",
+                        s=6, color="tab:purple",
+                        zorder=3)
+
+            # plot countermeasures
+            CMs = self.d.ActiveCMs[country_indx, :, :]
+            nCMs, _ = CMs.shape
+            CM_changes = CMs[:, 1:] - CMs[:, :-1]
+            height = 0
+            for cm in range(nCMs):
+                changes = np.nonzero(CM_changes[cm, :])
+                for c in changes:
+                    if c.size > 0:
+                        height += 1
+                        if CM_changes[cm, c] == 1:
+                            plt.plot([c, c], [0, 10 ** 6], "--g", alpha=0.5, linewidth=1, zorder=-2)
+                            plt.text((c - min_x) / (max_x - min_x), 1 - (0.035 * (height)), f"{cm + 1}", color="g",
+                                     transform=ax.transAxes, fontsize=5, backgroundcolor="white",
+                                     horizontalalignment="center", zorder=-1,
+                                     bbox=dict(facecolor='white', edgecolor='g', boxstyle='round'))
+                        else:
+                            plt.plot([c, c], [0, 10 ** 6], "--r", alpha=0.5, linewidth=1, zorder=-2)
+                            plt.text((c - min_x) / (max_x - min_x), 1 - (0.035 * (height)), f"{cm + 1}", color="r",
+                                     transform=ax.transAxes, fontsize=5, backgroundcolor="white",
+                                     horizontalalignment="center", zorder=-1,
+                                     bbox=dict(facecolor='white', edgecolor='g', boxstyle='round'))
+
+            ax.set_yscale("log")
+            plt.plot([0, 10 ** 6], [0, 10 ** 6], "-r")
+            plt.xlim([min_x, max_x])
+            plt.ylim([10 ** -2, 10 ** 6])
+            plt.title(f"Region {region}")
+
+            plt.subplot(5, 3, 3 * (country_indx % 5) + 2)
+
+            ax1 = plt.gca()
+            means_growth, _, _, err = produce_CIs(self.trace.ExpectedGrowth[:, country_indx, :])
+            actual_growth, _, _, err_act = produce_CIs(self.trace.Growth[:, country_indx, :])
+
+            first_day = np.min(self.ObservedDaysIndx)
+            plt.errorbar(days_x, np.exp(actual_growth), yerr=err_act, fmt="-x", linewidth=1, markersize=2,
+                         label="Predicted Growth",
+                         zorder=1, color="tab:orange")
+            plt.errorbar(days_x, np.exp(means_growth), yerr=err, fmt="-D", linewidth=1, markersize=2,
+                         label="Expected Growth",
+                         zorder=2, color="tab:blue")
+
+            CMs = self.d.ActiveCMs[country_indx, :, :]
+            nCMs, _ = CMs.shape
+            CM_changes = CMs[:, 1:] - CMs[:, :-1]
+            height = 0
+            for cm in range(nCMs):
+                changes = np.nonzero(CM_changes[cm, :])
+                for c in changes:
+                    if c.size > 0:
+                        height += 1
+                        if CM_changes[cm, c] == 1:
+                            plt.plot([c, c], [0, 2], "--g", alpha=0.5, linewidth=1, zorder=-2)
+                            plt.text(c, 2 - (0.05 * (height)), f"{cm + 1}", color="g",
+                                     fontsize=5, backgroundcolor="white",
+                                     horizontalalignment="center", zorder=-1,
+                                     bbox=dict(facecolor='white', edgecolor='g', boxstyle='round'))
+                        else:
+                            plt.plot([c, c], [0, 2], "--r", alpha=0.5, linewidth=1, zorder=-2)
+                            plt.text(c, 2 - (0.05 * (height)), f"{cm + 1}", color="r",
+                                     fontsize=5, backgroundcolor="white",
+                                     horizontalalignment="center", zorder=-1,
+                                     bbox=dict(facecolor='white', edgecolor='g', boxstyle='round'))
+            plt.ylim([0.8, 2])
+            plt.xlim([first_day, 66])
+
+            plt.subplot(5, 3, 3 * (country_indx % 5) + 3)
+            ax2 = plt.gca()
+            z1_mean, _, _, err_1 = produce_CIs(self.trace.Z1[:, country_indx, :])
+            plt.errorbar(days_x, z1_mean, yerr=err_1, fmt="-x", linewidth=1, markersize=2,
+                         label="Growth Noise",
+                         zorder=1, color="tab:blue")
+            plt.xlim([first_day, 66])
+
+            if country_indx % 5 == 4 or country_indx == len(self.d.Rs) - 1:
+                plt.tight_layout()
+                if save_fig:
+                    save_fig_pdf(output_dir, f"CountryPredictionPlot{((country_indx + 1) / 5):.1f}")
+
+            elif country_indx % 5 == 0:
+                ax.legend(prop={'size': 6})
+                ax1.legend(prop={'size': 6})
+                ax2.legend(prop={'size': 6})
+
+
+class CMModelFlexibleV3p4(BaseCMModel):
+    def __init__(
+            self, data, heldout_days=None, heldout_regions=None, name="", model=None
+    ):
+        super().__init__(data, name=name, model=model)
+
+        self.CMDelayCut = 10
+        self.DelayProb = np.array(
+            [
+                0.00,
+                0.01,
+                0.02,
+                0.06,
+                0.10,
+                0.13,
+                0.15,
+                0.15,
+                0.13,
+                0.10,
+                0.07,
+                0.05,
+                0.03,
+            ]
+        )
+        self.DailyGrowthNoise = 0.3
+        self.ConfirmationNoise = 0.1
+
+        self.ObservedDaysIndx = np.arange(self.CMDelayCut, len(self.d.Ds))
+
+        if heldout_regions is not None:
+            self.HeldoutRegions = copy.deepcopy(heldout_regions)
+        else:
+            self.HeldoutRegions = []
+
+        if heldout_days is not None:
+            self.HeldoutDays = copy.deepcopy(heldout_days)
+            self.ObservedDaysIndx = np.delete(
+                self.ObservedDaysIndx, np.array(self.HeldoutDays) - self.CMDelayCut
+            )
+            self.HeldoutDaysIndx = np.array(self.HeldoutDays)
+        else:
+            self.HeldoutDays = []
+            self.HeldoutDaysIndx = np.array([])
+
+        # useful things for heldout stuff
+        self.nORs = self.nRs - len(self.HeldoutRegions)
+        self.nHRs = len(self.HeldoutRegions)
+        # note that this model will always predict ALL days but heldout ones, setting the other ones to observe only
+        self.nHODs = len(self.HeldoutDays)
+
+        self.nODs = len(self.ObservedDaysIndx)
+        self.ORs = copy.deepcopy(self.d.Rs)
+        self.HR_indxs = [self.ORs.index(r) for r in self.HeldoutRegions]
+        self.OR_indxs = list(range(self.nRs))
+        [self.ORs.remove(hr) for hr in self.HeldoutRegions]
+        [self.OR_indxs.pop(hr_indx) for hr_indx in self.HR_indxs]
+
+        # this model predicts but masks early days
+        self.predict_all_days = True
+
+    def build_cm_reduction_prior(self, dist=None, dist_kwarg=None, plot_trace=True):
+        if dist is not None:
+            with self.model:
+                self.CMReduction = dist(name="CMReduction", **dist_kwarg, shape=(self.nCMs,))
+        else:
+            # default to log norm prior
+            # log(1) = 0
+            # this dist has mean 1
+            self.LN("CMReduction", 0, 0.5, shape=(self.nCMs,))
+
+        if plot_trace:
+            self.plot_trace_vars.add("CMReduction")
+
+    def build_cm_reduction_exp_gamma_prior(self, alpha=0.5, beta=1.0):
+        with self.model:
+            self.CM_Alpha = pm.Gamma(
+                "CM_Alpha", alpha, beta, shape=(self.nCMs,)
+            )
+
+        self.Det("CMReduction", T.exp((-1.0) * self.CM_Alpha))
+
+    def build_region_growth_prior(self, dist=None, dist_kwargs=None, plot_trace=True):
+        if dist is not None:
+            with self.model:
+                self.RegionGrowthRate = dist(name="RegionGrowthRate", **dist_kwargs, shape=(self.nORs,))
+        else:
+            self.Normal("RegionGrowthRate_log", np.log(1.2), 0.3, shape=(self.nORs,))
+
+    def build_region_reliability_prior(self, dist=None, dist_kwargs=None, plot_trace=True):
+        if dist is not None:
+            with self.model:
+                self.RegionNoiseScale = dist(name="RegionNoiseScale", shape=(self.nORs,), **dist_kwargs)
+        else:
+            self.Normal("RegionNoiseScale", 1.0, 0.05, shape=(self.nORs,))
+
+        if plot_trace:
+            self.plot_trace_vars.add("RegionNoiseScale")
+
+    def build_heldout_region_priors(
+            self,
+            init_size_dist,
+            init_size_kwargs,
+            growth_rate_dist,
+            growth_rate_kwargs,
+            noise_scale_dist,
+            noise_scale_kwargs,
+    ):
+        self.HeldoutInitialSize = init_size_dist(
+            name="HeldoutInitialSize_log", shape=(self.nHRs), **init_size_kwargs
+        )
+        self.HeldoutGrowthRate = growth_rate_dist(
+            name="HeldoutGrowthRate_log", shape=(self.nHRs), **growth_rate_kwargs
+        )
+
+        self.HeldoutNoiseScale = noise_scale_dist(
+            name="HeldoutNoiseScale", shape=(self.nHRs), **noise_scale_kwargs
+        )
+
+    def build_rates(self):
+        with self.model:
+            self.ActiveCMs = pm.Data("ActiveCMs", self.d.ActiveCMs)
+
+        self.ActiveCMReduction = (
+                T.reshape(self.CM_Alpha, (1, self.nCMs, 1))
+                * self.ActiveCMs[self.OR_indxs, :]
+        )
+        self.Det(
+            "GrowthReduction", T.sum(self.ActiveCMReduction, axis=1), plot_trace=False
+        )
+
+        self.Det(
+            "ExpectedGrowth",
+            T.reshape(self.RegionGrowthRate_log, (self.nORs, 1)) - self.GrowthReduction,
+            plot_trace=False,
+        )
+
+        self.Normal(
+            "Growth",
+            self.ExpectedGrowth,
+            self.DailyGrowthNoise,
+            shape=(self.nORs, self.nDs),
+            plot_trace=False
+        )
+
+        self.Det(
+            "Z1",
+            self.Growth - self.ExpectedGrowth,
+            plot_trace=False
+        )
+
+        # we already have the rates for heldout days, we just need to sort out heldout regions
+        if self.nHRs > 0:
+            self.HeldoutActiveCMReduction = (
+                    T.reshape(self.CM_Alpha, (1, self.nCMs, 1))
+                    * self.ActiveCMs[self.HR_indxs, :]
+            )
+
+            self.Det(
+                "HeldoutGrowthReduction",
+                T.sum(self.HeldoutActiveCMReduction, axis=1),
+                plot_trace=False,
+            )
+
+            self.Normal(
+                "HeldoutGrowth_log",
+                T.reshape(self.HeldoutGrowthRate_log, (self.nHRs, 1)) - self.HeldoutGrowthReduction,
+                self.DailyGrowthNoise,
+                shape=(self.nHRs, self.nDs),
+                plot_trace=False,
+            )
+
+    def build_output_model(self):
+        self.Normal("InitialSize_log", 1, 10, shape=(self.nORs,))
+        self.Det(
+            "Infected_log",
+            T.reshape(self.InitialSize_log, (self.nORs, 1))
+            + self.Growth.cumsum(axis=1),
+            plot_trace=False
+        )
+
+        self.Det("Infected", pm.math.exp(self.Infected_log), plot_trace=False)
+
+        # use the theano convolution function, reshaping as required
+        expected_confirmed_log = T.nnet.conv2d(self.Infected_log.reshape((1, 1, self.nORs, self.nDs)),
+                                               np.reshape(self.DelayProb, newshape=(1, 1, 1, self.DelayProb.size)),
+                                               border_mode="full")[:, :, :, :self.nDs]
+        self.Det("ExpectedConfirmed_log", expected_confirmed_log.reshape((self.nORs, self.nDs)), plot_trace=False)
+        self.Det("ExpectedConfirmed", pm.math.exp(self.ExpectedConfirmed_log), plot_trace=False)
+
+        with self.model:
+            self.Observed_log = pm.Normal("Observed_log", self.ExpectedConfirmed_log[:, self.ObservedDaysIndx],
+                                          self.ConfirmationNoise * T.reshape(self.RegionNoiseScale, (self.nORs, 1)),
+                                          shape=(self.nORs, self.nODs),
+                                          observed=np.log(self.d.Active[self.OR_indxs, :][
+                                                          :, self.ObservedDaysIndx
+                                                          ]))
+
+        self.Det("Observed", pm.math.exp(self.Observed_log), plot_trace=False)
+        self.Det(
+            "Z2",
+            self.Observed_log - self.ExpectedConfirmed_log[:, self.ObservedDaysIndx],
+            plot_trace=False
+        )
+
+        if len(self.HeldoutDays) > 0:
+            self.Normal(
+                "HeldoutDaysObserved_log",
+                self.ExpectedConfirmed_log[:, self.HeldoutDaysIndx],
+                self.ConfirmationNoise * T.reshape(self.RegionNoiseScale, (self.nORs, 1)),
+                shape=(self.nORs, self.nHODs),
+                plot_trace=False)
+
+            self.Det("HeldoutDaysObserved", pm.math.exp(self.HeldoutDaysObserved_log))
+
+        # we've added observations for observed days for observed regions. need to compute observations for the heldout
+        # regions
+        if self.nHRs > 0:
+            self.Det(
+                "HeldoutInfected_log",
+                T.reshape(self.HeldoutInitialSize_log, (self.nHRs, 1))
+                + self.HeldoutGrowth_log.cumsum(axis=1),
+                plot_trace=False
+            )
+
+            self.Det("HeldoutInfected", pm.math.exp(self.HeldoutInfected_log), plot_trace=False)
+
+            # use the theano convolution function, reshaping as required
+            ho_expected_confirmed_log = T.nnet.conv2d(
+                self.HeldoutInfected_log.reshape((1, 1, self.nHRs, self.nDs)),
+                np.reshape(self.DelayProb, (1, 1, 1, self.DelayProb.size)),
+                border_mode="full")[:, :, :, :self.nDs]
+            self.Det("HeldoutExpectedConfirmed_log", ho_expected_confirmed_log.reshape((self.nHRs, self.nDs)),
+                     plot_trace=False)
+
+            self.Det("HeldoutExpectedConfirmed", pm.math.exp(self.HeldoutExpectedConfirmed_log))
+
+            self.Normal(
+                "HeldoutConfirmed_log",
+                self.HeldoutExpectedConfirmed_log,
+                self.ConfirmationNoise * T.reshape(self.HeldoutNoiseScale, (self.nHRs, 1)),
+                shape=(self.nHRs, self.nDs),
+                plot_trace=False,
+            )
+
+            self.Det("HeldoutConfirmed", pm.math.exp(self.HeldoutConfirmed_log))
+
+    def build_all(self):
+        self.build_cm_reduction_prior()
+        self.build_region_growth_prior()
+        self.build_region_reliability_prior()
+        self.build_rates()
+        self.build_output_model()
+        log.info("Checking model test point")
+        log.info(f"\n{self.check_test_point()}\n")
+
+
+class CMModelFlexibleV3p5(BaseCMModel):
+    "convolution change"
+
+    def __init__(
+            self, data, heldout_days=None, heldout_regions=None, name="", model=None
+    ):
+        super().__init__(data, name=name, model=model)
+
+        self.CMDelayCut = 10
+        self.DelayProb = np.array(
+            [
+                0.00,
+                0.01,
+                0.02,
+                0.06,
+                0.10,
+                0.13,
+                0.15,
+                0.15,
+                0.13,
+                0.10,
+                0.07,
+                0.05,
+                0.03,
+            ]
+        )
+        self.DailyGrowthNoise = 0.1
+        self.ConfirmationNoise = 0.4
+
+        self.ObservedDaysIndx = np.arange(self.CMDelayCut, len(self.d.Ds))
+
+        if heldout_regions is not None:
+            self.HeldoutRegions = copy.deepcopy(heldout_regions)
+        else:
+            self.HeldoutRegions = []
+
+        if heldout_days is not None:
+            self.HeldoutDays = copy.deepcopy(heldout_days)
+            self.ObservedDaysIndx = np.delete(
+                self.ObservedDaysIndx, np.array(self.HeldoutDays) - self.CMDelayCut
+            )
+            self.HeldoutDaysIndx = np.array(self.HeldoutDays)
+        else:
+            self.HeldoutDays = []
+            self.HeldoutDaysIndx = np.array([])
+
+        # useful things for heldout stuff
+        self.nORs = self.nRs - len(self.HeldoutRegions)
+        self.nHRs = len(self.HeldoutRegions)
+        # note that this model will always predict ALL days but heldout ones, setting the other ones to observe only
+        self.nHODs = len(self.HeldoutDays)
+
+        self.nODs = len(self.ObservedDaysIndx)
+        self.ORs = copy.deepcopy(self.d.Rs)
+        self.HR_indxs = [self.ORs.index(r) for r in self.HeldoutRegions]
+        self.OR_indxs = list(range(self.nRs))
+        [self.ORs.remove(hr) for hr in self.HeldoutRegions]
+        [self.OR_indxs.pop(hr_indx) for hr_indx in self.HR_indxs]
+
+        # this model predicts but masks early days
+        self.predict_all_days = True
+
+    def build_cm_reduction_prior(self, dist=None, dist_kwarg=None, plot_trace=True):
+        if dist is not None:
+            with self.model:
+                self.CMReduction = dist(name="CMReduction", **dist_kwarg, shape=(self.nCMs,))
+        else:
+            # default to log norm prior
+            # log(1) = 0
+            # this dist has mean 1
+            self.LN("CMReduction", 0, 0.5, shape=(self.nCMs,))
+
+        if plot_trace:
+            self.plot_trace_vars.add("CMReduction")
+
+    def build_cm_reduction_exp_gamma_prior(self, alpha=0.5, beta=1.0):
+        with self.model:
+            self.CM_Alpha = pm.Gamma(
+                "CM_Alpha", alpha, beta, shape=(self.nCMs,)
+            )
+
+        self.Det("CMReduction", T.exp((-1.0) * self.CM_Alpha))
+
+    def build_region_growth_prior(self, dist=None, dist_kwargs=None, plot_trace=True):
+        if dist is not None:
+            with self.model:
+                self.RegionGrowthRate = dist(name="RegionGrowthRate", **dist_kwargs, shape=(self.nORs,))
+        else:
+            self.Normal("RegionGrowthRate_log", np.log(1.2), 0.3, shape=(self.nORs,))
+
+    def build_region_reliability_prior(self, dist=None, dist_kwargs=None, plot_trace=True):
+        if dist is not None:
+            with self.model:
+                self.RegionNoiseScale = dist(name="RegionNoiseScale", shape=(self.nORs,), **dist_kwargs)
+        else:
+            self.Normal("RegionNoiseScale", 1.0, 0.05, shape=(self.nORs,))
+
+        if plot_trace:
+            self.plot_trace_vars.add("RegionNoiseScale")
+
+    def build_heldout_region_priors(
+            self,
+            init_size_dist,
+            init_size_kwargs,
+            growth_rate_dist,
+            growth_rate_kwargs,
+            noise_scale_dist,
+            noise_scale_kwargs,
+    ):
+        self.HeldoutInitialSize = init_size_dist(
+            name="HeldoutInitialSize_log", shape=(self.nHRs), **init_size_kwargs
+        )
+        self.HeldoutGrowthRate = growth_rate_dist(
+            name="HeldoutGrowthRate_log", shape=(self.nHRs), **growth_rate_kwargs
+        )
+
+        self.HeldoutNoiseScale = noise_scale_dist(
+            name="HeldoutNoiseScale", shape=(self.nHRs), **noise_scale_kwargs
+        )
+
+    def build_rates(self):
+        with self.model:
+            self.ActiveCMs = pm.Data("ActiveCMs", self.d.ActiveCMs)
+
+        self.ActiveCMReduction = (
+                T.reshape(self.CM_Alpha, (1, self.nCMs, 1))
+                * self.ActiveCMs[self.OR_indxs, :]
+        )
+        self.Det(
+            "GrowthReduction", T.sum(self.ActiveCMReduction, axis=1), plot_trace=False
+        )
+
+        self.Det(
+            "ExpectedGrowth",
+            T.reshape(self.RegionGrowthRate_log, (self.nORs, 1)) - self.GrowthReduction,
+            plot_trace=False,
+        )
+
+        self.Normal(
+            "Growth",
+            self.ExpectedGrowth,
+            self.DailyGrowthNoise,
+            shape=(self.nORs, self.nDs),
+            plot_trace=False
+        )
+
+        self.Det(
+            "Z1",
+            self.Growth - self.ExpectedGrowth,
+            plot_trace=False
+        )
+
+        # we already have the rates for heldout days, we just need to sort out heldout regions
+        if self.nHRs > 0:
+            self.HeldoutActiveCMReduction = (
+                    T.reshape(self.CM_Alpha, (1, self.nCMs, 1))
+                    * self.ActiveCMs[self.HR_indxs, :]
+            )
+
+            self.Det(
+                "HeldoutGrowthReduction",
+                T.sum(self.HeldoutActiveCMReduction, axis=1),
+                plot_trace=False,
+            )
+
+            self.Normal(
+                "HeldoutGrowth_log",
+                T.reshape(self.HeldoutGrowthRate_log, (self.nHRs, 1)) - self.HeldoutGrowthReduction,
+                self.DailyGrowthNoise,
+                shape=(self.nHRs, self.nDs),
+                plot_trace=False,
+            )
+
+    def build_output_model(self):
+        self.Normal("InitialSize_log", 1, 10, shape=(self.nORs,))
+        self.Det(
+            "Infected_log",
+            T.reshape(self.InitialSize_log, (self.nORs, 1))
+            + self.Growth.cumsum(axis=1),
+            plot_trace=False
+        )
+
+        self.Det("Infected", pm.math.exp(self.Infected_log), plot_trace=False)
+
+        # use the theano convolution function, reshaping as required
+        expected_confirmed_log = T.nnet.conv2d(self.Infected_log.reshape((1, 1, self.nORs, self.nDs)),
+                                               np.reshape(self.DelayProb, newshape=(1, 1, 1, self.DelayProb.size)),
+                                               border_mode="full")[:, :, :, :self.nDs]
+
+        self.Det("ExpectedConfirmed_log", expected_confirmed_log.reshape((self.nORs, self.nDs)), plot_trace=False)
+        self.Det("ExpectedConfirmed", T.nnet.conv2d(np.exp(self.Infected_log.reshape((1, 1, self.nORs, self.nDs))),
+                                                    np.reshape(self.DelayProb, newshape=(1, 1, 1, self.DelayProb.size)),
+                                                    border_mode="full")[:, :, :, :self.nDs], plot_trace=False)
+
+        with self.model:
+            self.Observed_log = pm.Normal("Observed_log", self.ExpectedConfirmed_log[:, self.ObservedDaysIndx],
+                                          self.ConfirmationNoise * T.reshape(self.RegionNoiseScale, (self.nORs, 1)),
+                                          shape=(self.nORs, self.nODs),
+                                          observed=np.log(self.d.Active[self.OR_indxs, :][
+                                                          :, self.ObservedDaysIndx
+                                                          ]))
+
+        self.Det("Observed", pm.math.exp(self.Observed_log), plot_trace=False)
+        self.Det(
+            "Z2",
+            self.Observed_log - self.ExpectedConfirmed_log[:, self.ObservedDaysIndx],
+            plot_trace=False
+        )
+
+        if len(self.HeldoutDays) > 0:
+            self.Normal(
+                "HeldoutDaysObserved_log",
+                self.ExpectedConfirmed_log[:, self.HeldoutDaysIndx],
+                self.ConfirmationNoise * T.reshape(self.RegionNoiseScale, (self.nORs, 1)),
+                shape=(self.nORs, self.nHODs),
+                plot_trace=False)
+
+            self.Det("HeldoutDaysObserved", pm.math.exp(self.HeldoutDaysObserved_log))
+
+        # we've added observations for observed days for observed regions. need to compute observations for the heldout
+        # regions
+        if self.nHRs > 0:
+            self.Det(
+                "HeldoutInfected_log",
+                T.reshape(self.HeldoutInitialSize_log, (self.nHRs, 1))
+                + self.HeldoutGrowth_log.cumsum(axis=1),
+                plot_trace=False
+            )
+
+            self.Det("HeldoutInfected", pm.math.exp(self.HeldoutInfected_log), plot_trace=False)
+
+            # use the theano convolution function, reshaping as required
+            ho_expected_confirmed_log = T.nnet.conv2d(
+                self.HeldoutInfected_log.reshape((1, 1, self.nHRs, self.nDs)),
+                np.reshape(self.DelayProb, (1, 1, 1, self.DelayProb.size)),
+                border_mode="full")[:, :, :, :self.nDs]
+            self.Det("HeldoutExpectedConfirmed_log", ho_expected_confirmed_log.reshape((self.nHRs, self.nDs)),
+                     plot_trace=False)
+
+            self.Det("HeldoutExpectedConfirmed", pm.math.exp(self.HeldoutExpectedConfirmed_log))
+
+            self.Normal(
+                "HeldoutConfirmed_log",
+                self.HeldoutExpectedConfirmed_log,
+                self.ConfirmationNoise * T.reshape(self.HeldoutNoiseScale, (self.nHRs, 1)),
+                shape=(self.nHRs, self.nDs),
+                plot_trace=False,
+            )
+
+            self.Det("HeldoutConfirmed", pm.math.exp(self.HeldoutConfirmed_log))
+
+    def build_all(self):
+        self.build_cm_reduction_prior()
+        self.build_region_growth_prior()
+        self.build_region_reliability_prior()
+        self.build_rates()
+        self.build_output_model()
+        log.info("Checking model test point")
+        log.info(f"\n{self.check_test_point()}\n")
+
+
+class CMModelFlexibleV4(BaseCMModel):
+    def __init__(
+            self, data, heldout_days=None, heldout_regions=None, name="", model=None
+    ):
+        super().__init__(data, name=name, model=model)
+
+        self.CMDelayCut = 10
+
+        self.ObservedDaysIndx = np.arange(self.CMDelayCut, len(self.d.Ds))
+
+        if heldout_regions is not None:
+            self.HeldoutRegions = copy.deepcopy(heldout_regions)
+        else:
+            self.HeldoutRegions = []
+
+        if heldout_days is not None:
+            self.HeldoutDays = copy.deepcopy(heldout_days)
+            self.ObservedDaysIndx = np.delete(
+                self.ObservedDaysIndx, np.array(self.HeldoutDays) - self.CMDelayCut
+            )
+            self.HeldoutDaysIndx = np.array(self.HeldoutDays)
+        else:
+            self.HeldoutDays = []
+            self.HeldoutDaysIndx = np.array([])
+
+        # useful things for heldout stuff
+        self.nORs = self.nRs - len(self.HeldoutRegions)
+        self.nHRs = len(self.HeldoutRegions)
+        # note that this model will always predict ALL days but heldout ones, setting the other ones to observe only
+        self.nHODs = len(self.HeldoutDays)
+
+        self.nODs = len(self.ObservedDaysIndx)
+        self.ORs = copy.deepcopy(self.d.Rs)
+        self.HR_indxs = [self.ORs.index(r) for r in self.HeldoutRegions]
+        self.OR_indxs = list(range(self.nRs))
+        [self.ORs.remove(hr) for hr in self.HeldoutRegions]
+        [self.OR_indxs.pop(hr_indx) for hr_indx in self.HR_indxs]
+
+        # this model predicts but masks early days
+        self.predict_all_days = True
+
+    def build_cm_reduction_prior(self, dist=None, dist_kwarg=None, plot_trace=True):
+        if dist is not None:
+            with self.model:
+                self.CMReduction = dist(name="CMReduction", **dist_kwarg, shape=(self.nCMs,))
+        else:
+            # default to log norm prior
+            # log(1) = 0
+            # this dist has mean 1
+            self.LN("CMReduction", 0, 0.5, shape=(self.nCMs,))
+
+        if plot_trace:
+            self.plot_trace_vars.add("CMReduction")
+
+    def build_cm_reduction_exp_gamma_prior(self, alpha=0.5, beta=1.0):
+        with self.model:
+            self.CM_Alpha = pm.Gamma(
+                "CM_Alpha", alpha, beta, shape=(self.nCMs,)
+            )
+
+        self.Det("CMReduction", T.exp((-1.0) * self.CM_Alpha))
+
+    def build_region_growth_prior(self, dist=None, dist_kwargs=None, plot_trace=True):
+        if dist is not None:
+            with self.model:
+                self.RegionGrowthRate = dist(name="RegionGrowthRate", **dist_kwargs, shape=(self.nORs,))
+        else:
+            self.HyperGrowthRateMean_log = pm.HalfStudentT("HyperGrowthRateMean_log", nu=10, sigma=np.log(1.2))
+            self.HyperGrowthRateVar = pm.HalfStudentT("HyperGrowthRateVar", nu=10, sigma=.3)
+
+            self.Normal("RegionGrowthRate_log", self.HyperGrowthRateMean_log, self.HyperGrowthRateVar,
+                        shape=(self.nORs,))
+
+    def build_region_reliability_prior(self, dist=None, dist_kwargs=None, plot_trace=True):
+        if dist is not None:
+            with self.model:
+                self.RegionNoiseScale = dist(name="RegionNoiseScale", shape=(self.nORs,), **dist_kwargs)
+        else:
+            self.Normal("RegionNoiseScale", 1.0, 0.05, shape=(self.nORs,))
+
+        if plot_trace:
+            self.plot_trace_vars.add("RegionNoiseScale")
+
+    def build_noise_scale_prior(self):
+        with self.model:
+            # self.DailyGrowthNoise = pm.Gamma("DailyGrowthNoise", mu=0.2, sigma=0.1)
+            # self.ConfirmationNoise = pm.Gamma("ConfirmationNoise", mu=0.2, sigma=0.1)
+            self.DailyGrowthNoise = 0.2
+            self.ConfirmationNoise = 0.4
+
+    def build_delay_prior(self):
+        with self.model:
+            self.HyperDelayPriorMean = pm.Normal("HyperDelayPriorMean", sigma=1.5, mu=6.5)
+            self.HyperGrowthRateAlpha = pm.Normal("HyperDelayPriorAlpha", sigma=1.5, mu=6.5)
+            self.DelayDist = pm.NegativeBinomial.dist(mu=self.HyperDelayPriorMean, alpha=self.HyperGrowthRateAlpha)
+
+    def build_heldout_region_priors(
+            self,
+            init_size_dist,
+            init_size_kwargs,
+            growth_rate_dist,
+            growth_rate_kwargs,
+            noise_scale_dist,
+            noise_scale_kwargs,
+    ):
+        self.HeldoutInitialSize = init_size_dist(
+            name="HeldoutInitialSize_log", shape=(self.nHRs), **init_size_kwargs
+        )
+        self.HeldoutGrowthRate = growth_rate_dist(
+            name="HeldoutGrowthRate_log", shape=(self.nHRs), **growth_rate_kwargs
+        )
+
+        self.HeldoutNoiseScale = noise_scale_dist(
+            name="HeldoutNoiseScale", shape=(self.nHRs), **noise_scale_kwargs
+        )
+
+    def build_rates(self):
+        with self.model:
+            self.ActiveCMs = pm.Data("ActiveCMs", self.d.ActiveCMs)
+
+        self.ActiveCMReduction = (
+                T.reshape(self.CM_Alpha, (1, self.nCMs, 1))
+                * self.ActiveCMs[self.OR_indxs, :]
+        )
+        self.Det(
+            "GrowthReduction", T.sum(self.ActiveCMReduction, axis=1), plot_trace=False
+        )
+
+        self.Det(
+            "ExpectedGrowth",
+            T.reshape(self.RegionGrowthRate_log, (self.nORs, 1)) - self.GrowthReduction,
+            plot_trace=False,
+        )
+
+        self.Normal(
+            "Growth",
+            self.ExpectedGrowth,
+            self.DailyGrowthNoise,
+            shape=(self.nORs, self.nDs),
+            plot_trace=False
+        )
+
+        self.Det(
+            "Z1",
+            self.Growth - self.ExpectedGrowth,
+            plot_trace=False
+        )
+
+        # we already have the rates for heldout days, we just need to sort out heldout regions
+        if self.nHRs > 0:
+            self.HeldoutActiveCMReduction = (
+                    T.reshape(self.CM_Alpha, (1, self.nCMs, 1))
+                    * self.ActiveCMs[self.HR_indxs, :]
+            )
+
+            self.Det(
+                "HeldoutGrowthReduction",
+                T.sum(self.HeldoutActiveCMReduction, axis=1),
+                plot_trace=False,
+            )
+
+            self.Normal(
+                "HeldoutGrowth_log",
+                T.reshape(self.HeldoutGrowthRate_log, (self.nHRs, 1)) - self.HeldoutGrowthReduction,
+                self.DailyGrowthNoise,
+                shape=(self.nHRs, self.nDs),
+                plot_trace=False,
+            )
+
+    def build_output_model(self):
+        self.Normal("InitialSize_log", 1, 10, shape=(self.nORs,))
+        self.Det(
+            "Infected_log",
+            T.reshape(self.InitialSize_log, (self.nORs, 1))
+            + self.Growth.cumsum(axis=1),
+            plot_trace=False
+        )
+
+        x = np.arange(0, 21)
+        delay_prob = pm.math.exp(self.DelayDist.logp(x))
+        delay_prob = delay_prob / T.sum(delay_prob)
+
+        self.Det("Infected", pm.math.exp(self.Infected_log), plot_trace=False)
+
+        # use the theano convolution function, reshaping as required
+        expected_confirmed_log = T.nnet.conv2d(self.Infected_log.reshape((1, 1, self.nORs, self.nDs)),
+                                               T.reshape(delay_prob, newshape=(1, 1, 1, delay_prob.size)),
+                                               border_mode="full")[:, :, :, :self.nDs]
+        self.Det("ExpectedConfirmed_log", expected_confirmed_log.reshape((self.nORs, self.nDs)), plot_trace=False)
+        self.Det("ExpectedConfirmed", pm.math.exp(self.ExpectedConfirmed_log), plot_trace=False)
+
+        with self.model:
+            self.Observed_log = pm.Normal("Observed_log", self.ExpectedConfirmed_log[:, self.ObservedDaysIndx],
+                                          self.ConfirmationNoise * T.reshape(self.RegionNoiseScale, (self.nORs, 1)),
+                                          shape=(self.nORs, self.nODs),
+                                          observed=np.log(self.d.Active[self.OR_indxs, :][
+                                                          :, self.ObservedDaysIndx
+                                                          ]))
+
+        self.Det("Observed", pm.math.exp(self.Observed_log), plot_trace=False)
+        self.Det(
+            "Z2",
+            self.Observed_log - self.ExpectedConfirmed_log[:, self.ObservedDaysIndx],
+            plot_trace=False
+        )
+
+        if len(self.HeldoutDays) > 0:
+            self.Normal(
+                "HeldoutDaysObserved_log",
+                self.ExpectedConfirmed_log[:, self.HeldoutDaysIndx],
+                self.ConfirmationNoise * T.reshape(self.RegionNoiseScale, (self.nORs, 1)),
+                shape=(self.nORs, self.nHODs),
+                plot_trace=False)
+
+            self.Det("HeldoutDaysObserved", pm.math.exp(self.HeldoutDaysObserved_log))
+
+        # we've added observations for observed days for observed regions. need to compute observations for the heldout
+        # regions
+        if self.nHRs > 0:
+            self.Det(
+                "HeldoutInfected_log",
+                T.reshape(self.HeldoutInitialSize_log, (self.nHRs, 1))
+                + self.HeldoutGrowth_log.cumsum(axis=1),
+                plot_trace=False
+            )
+
+            self.Det("HeldoutInfected", pm.math.exp(self.HeldoutInfected_log), plot_trace=False)
+
+            # use the theano convolution function, reshaping as required
+            ho_expected_confirmed_log = T.nnet.conv2d(
+                self.HeldoutInfected_log.reshape((1, 1, self.nHRs, self.nDs)),
+                np.reshape(self.DelayProb, (1, 1, 1, self.DelayProb.size)),
+                border_mode="full")[:, :, :, :self.nDs]
+            self.Det("HeldoutExpectedConfirmed_log", ho_expected_confirmed_log.reshape((self.nHRs, self.nDs)),
+                     plot_trace=False)
+
+            self.Det("HeldoutExpectedConfirmed", pm.math.exp(self.HeldoutExpectedConfirmed_log))
+
+            self.Normal(
+                "HeldoutConfirmed_log",
+                self.HeldoutExpectedConfirmed_log,
                 self.ConfirmationNoise * T.reshape(self.HeldoutNoiseScale, (self.nHRs, 1)),
                 shape=(self.nHRs, self.nDs),
                 plot_trace=False,
