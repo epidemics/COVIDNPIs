@@ -14,6 +14,7 @@ from tqdm import tqdm
 
 from ..gleam import Batch
 from ..regions import Region
+import epimodel
 
 log = logging.getLogger(__name__)
 
@@ -44,7 +45,7 @@ class WebExport:
     def new_region(
         self,
         region,
-        current_estimate: int,
+        current_estimate: Optional[pd.DataFrame],
         groups,
         models: pd.DataFrame,
         simulation_spec: pd.DataFrame,
@@ -96,7 +97,7 @@ class WebExportRegion:
     def __init__(
         self,
         region: Region,
-        current_estimate: int,
+        current_estimate: Optional[pd.DataFrame],
         groups,
         models: pd.DataFrame,
         simulations_spec: pd.DataFrame,
@@ -241,7 +242,12 @@ class WebExportRegion:
             "CountryCodeISOa3",
             "SubdivisionCode",
         ]:
-            d[n] = None if pd.isnull(self.region[n]) else self.region[n]
+            if not pd.isnull(self.region[n]):
+                d[n] = self.region[n]
+
+        if self.current_estimate is not None:
+            d["CurrentEstimate"] = self.current_estimate.to_dict()
+
         return d
 
 
@@ -341,6 +347,8 @@ def analyze_data_consistency(
         df[source_name] = pd.Series(True, index=ixs)
     df = df.fillna(False)
 
+    log.info("Modelled %s", set(codes["models"]).difference(export_regions))
+
     log.info("Total data availability, number of locations: %s", df.sum().to_dict())
     log.info("Export requested for %s regions: %s", len(export_regions), export_regions)
 
@@ -433,7 +441,7 @@ def process_export(args) -> None:
     models_df_old: pd.DataFrame = batch.hdf["new_fraction"]
     cummulative_active_df = batch.get_cummulative_active_df()
 
-    estimates_df = pd.read_csv(args.estimates, index_col="Name")
+    estimates_df = epimodel.read_csv_smart(args.estimates, args.rds)
 
     rates_df: pd.DataFrame = pd.read_csv(
         rates, index_col="Code", keep_default_na=False, na_values=[""]
@@ -479,18 +487,9 @@ def process_export(args) -> None:
         m49 = int(reg["M49Code"])
         iso3 = reg["CountryCodeISOa3"]
 
-        # TODO clean this up
-        initial_estimate = estimates_df[estimates_df.index.isin(reg.AllNames)][
-            "Infectious_mean"
-        ]
-        if initial_estimate.empty:
-            log.error("No estimate found for country code: %s. Skipping", code)
-            continue
-        initial_estimate = int(initial_estimate)
-
         ex.new_region(
             reg,
-            initial_estimate,
+            get_df_else_none(estimates_df, code),
             args.config["groups"],
             cummulative_active_df.xs(key=code, level="Code").sort_index(level="Date"),
             simulation_specs,

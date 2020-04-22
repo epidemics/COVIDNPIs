@@ -84,7 +84,11 @@ def read_csv_smart(
         if n in rds:
             rs.add(rds[n])
         if len(rs) > 1:
-            raise Exception(f"Found multiple matches for {n!r}: {rs!r}")
+            log.warning(f"Found multiple matches for {n!r}: {rs!r}")
+            region = max(rs, key=lambda region: region.Level)
+            log.info(f"Picking the largest: {region!r}")
+            return region.Code
+            # raise Exception(f"Found multiple matches for {n!r}: {rs!r}")
         elif len(rs) == 1:
             return rs.pop().Code
         elif skip_unknown:
