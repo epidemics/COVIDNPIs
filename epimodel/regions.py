@@ -59,12 +59,22 @@ class Region:
         rds.data.at[code, "AllNames"] = list(set(names))
         rds.data.at[code, "Region"] = self
         rds.data.at[code, "DisplayName"] = self.get_display_name()
+        # Cache for safe debugging
+        self._repr_str = self._gen_repr_str()
+
+    def _gen_repr_str(self):
+        return (
+            f"<{self.__class__.__name__} {self._code} {self.Name} ({self.Level.name})>"
+        )
 
     def get_display_name(self):
         if self.Level == Level.subdivision:
             return f"{self.Name}, {self.CountryCode}"
         if self.Level == Level.gleam_basin:
-            return f"{self.Name}, {self.SubdivisionCode}"
+            if pd.notnull(self.SubdivisionCode) and self.SubdivisionCode != "":
+                return f"{self.Name}, {self.SubdivisionCode}"
+            else:
+                return f"{self.Name}, {self.CountryCode}"
         return self.Name
 
     def __getattr__(self, name):
@@ -74,7 +84,7 @@ class Region:
         return self._rds().data.at[self._code, name]
 
     def __repr__(self):
-        return f"<{self.__class__.__name__} {self._code} {self.Name} ({self.Level})>"
+        return self._repr_str
 
     def __setattr__(self, name, val):
         """Forbid direct writes to anything but _variables."""
