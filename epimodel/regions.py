@@ -78,7 +78,10 @@ class Region:
         return self.Name
 
     def __getattr__(self, name):
-        return self.__getitem__(name)
+        if name.startswith("_"):
+            return super().__getattr__(name)
+        else:
+            return self.__getitem__(name)
 
     def __getitem__(self, name):
         return self._rds().data.at[self._code, name]
