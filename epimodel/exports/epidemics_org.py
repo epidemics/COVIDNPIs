@@ -14,6 +14,7 @@ from tqdm import tqdm
 
 from ..gleam import Batch
 from ..regions import Region
+import epimodel
 
 log = logging.getLogger(__name__)
 
@@ -44,10 +45,9 @@ class WebExport:
     def new_region(
         self,
         region,
-        current_estimate: int,
+        current_estimate: Optional[pd.DataFrame],
         groups,
         models: pd.DataFrame,
-        initial: pd.DataFrame,
         simulation_spec: pd.DataFrame,
         rates: Optional[pd.DataFrame],
         hopkins: Optional[pd.DataFrame],
@@ -61,7 +61,6 @@ class WebExport:
             current_estimate,
             groups,
             models,
-            initial,
             simulation_spec,
             rates,
             hopkins,
@@ -98,10 +97,9 @@ class WebExportRegion:
     def __init__(
         self,
         region: Region,
-        current_estimate: int,
+        current_estimate: Optional[pd.DataFrame],
         groups,
         models: pd.DataFrame,
-        initial: pd.DataFrame,
         simulations_spec: pd.DataFrame,
         rates: Optional[pd.DataFrame],
         hopkins: Optional[pd.DataFrame],
@@ -120,9 +118,7 @@ class WebExportRegion:
             rates, hopkins, foretold, timezones, un_age_dist, traces_v3
         )
         # Extended data to be written in a separate per-region file
-        self.data_ext = self.extract_external_data(
-            models, initial, simulations_spec, groups
-        )
+        self.data_ext = self.extract_external_data(models, simulations_spec, groups)
         # Relative URL of the extended data file, set on write
         self.data_url = None
 
@@ -197,10 +193,7 @@ class WebExportRegion:
 
     @staticmethod
     def extract_external_data(
-        models: pd.DataFrame,
-        initial: pd.DataFrame,
-        simulation_spec: pd.DataFrame,
-        groups,
+        models: pd.DataFrame, simulation_spec: pd.DataFrame, groups,
     ) -> Dict[str, Any]:
         d = {
             "date_index": [
@@ -219,15 +212,6 @@ class WebExportRegion:
                 "recovered": trace_data.loc[:, "Recovered"].tolist(),
                 "active": trace_data.loc[:, "Active"].tolist(),
             }
-
-            if initial is not None:
-                for name, key in [
-                    ("initial_infected", "Infectious"),
-                    ("initial_exposed", "Exposed"),
-                ]:
-                    value = initial[key]
-                    if not np.isinf(value):
-                        trace[name] = value
 
             traces.append(trace)
 
@@ -258,7 +242,12 @@ class WebExportRegion:
             "CountryCodeISOa3",
             "SubdivisionCode",
         ]:
-            d[n] = None if pd.isnull(self.region[n]) else self.region[n]
+            if not pd.isnull(self.region[n]):
+                d[n] = self.region[n]
+
+        if self.current_estimate is not None:
+            d["CurrentEstimate"] = self.current_estimate.to_dict()
+
         return d
 
 
@@ -330,14 +319,12 @@ def analyze_data_consistency(
     debug: Optional[None],
     export_regions: List[str],
     models,
-    initial_df,
     rates_df,
     hopkins,
     foretold,
 ) -> None:
     codes = {
         "models": get_cmi(models),
-        "initial": initial_df.index.unique(),
         "hopkins": get_cmi(hopkins),
         "foretold": get_cmi(foretold),
         "rates": rates_df.index.unique(),
@@ -355,16 +342,12 @@ def analyze_data_consistency(
             any_nan = True
         union_codes.update(ixs)
 
-    has_inf = to_export.intersection(
-        initial_df[(initial_df == np.inf).any(axis=1)].index
-    )
-    if has_inf:
-        log.error(f"The initial data from the batch file for %s contains inf", has_inf)
-
     df = pd.DataFrame(index=sorted(union_codes))
     for source_name, ixs in codes.items():
         df[source_name] = pd.Series(True, index=ixs)
     df = df.fillna(False)
+
+    log.info("Modelled %s", set(codes["models"]).difference(export_regions))
 
     log.info("Total data availability, number of locations: %s", df.sum().to_dict())
     log.info("Export requested for %s regions: %s", len(export_regions), export_regions)
@@ -375,10 +358,6 @@ def analyze_data_consistency(
         log.debug(
             "Data presence for hopkins or rates in the following countries: \n%s", res
         )
-
-    diff_export_and_initial = to_export.difference(codes["initial"])
-    if diff_export_and_initial:
-        log.error("There is no initial data for %s", diff_export_and_initial)
 
     diff_export_and_models = to_export.difference(codes["models"])
     if diff_export_and_models:
@@ -460,10 +439,9 @@ def process_export(args) -> None:
     simulation_specs: pd.DataFrame = batch.hdf["simulations"]
     # TODO: models_df_old likely not needed anymore
     models_df_old: pd.DataFrame = batch.hdf["new_fraction"]
-    initial_df = batch.hdf["initial_compartments"]
     cummulative_active_df = batch.get_cummulative_active_df()
 
-    estimates_df = pd.read_csv(args.estimates, index_col="Name")
+    estimates_df = epimodel.read_csv_smart(args.estimates, args.rds)
 
     rates_df: pd.DataFrame = pd.read_csv(
         rates, index_col="Code", keep_default_na=False, na_values=[""]
@@ -499,7 +477,6 @@ def process_export(args) -> None:
         export_regions,
         # TODO: replace by cummulative version as models are not needed anymore
         models_df_old,
-        initial_df,
         rates_df,
         hopkins_df,
         foretold_df,
@@ -510,21 +487,11 @@ def process_export(args) -> None:
         m49 = int(reg["M49Code"])
         iso3 = reg["CountryCodeISOa3"]
 
-        # TODO clean this up
-        initial_estimate = estimates_df[estimates_df.index.isin(reg.AllNames)][
-            "Infectious_mean"
-        ]
-        if initial_estimate.empty:
-            log.error("No estimate found for country code: %s. Skipping", code)
-            continue
-        initial_estimate = int(initial_estimate)
-
         ex.new_region(
             reg,
-            initial_estimate,
+            get_df_else_none(estimates_df, code),
             args.config["groups"],
             cummulative_active_df.xs(key=code, level="Code").sort_index(level="Date"),
-            get_df_else_none(initial_df, code),
             simulation_specs,
             get_df_else_none(rates_df, code),
             get_df_else_none(hopkins_df, code),
