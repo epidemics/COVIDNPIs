@@ -98,6 +98,8 @@ gs_url_prefix: "https://storage.googleapis.com/static-covid/static/"
 output_dir: out/
 
 ### List of exported regions code
+# We also ensure all of these are imported to the batch file from GLEAM
+# (in addition to all countries and continents)
 export_regions:
   [
     "AE",
