@@ -64,7 +64,18 @@ def web_upload(args):
 def import_batch(args):
     b = Batch.open(args.BATCH_FILE)
     d = args.rds.data
-    regions = d.loc[(d.Level == Level.country) & (d.GleamID != "")].Region.values
+    regions = set(
+        d.loc[
+            ((d.Level == Level.country) | (d.Level == Level.continent))
+            & (d.GleamID != "")
+        ].Region.values
+    )
+    # Add all configured regions
+    for rc in args.config["export_regions"]:
+        r = args.rds[rc]
+        if r.GleamID != "":
+            regions.add(r)
+
     log.info(
         f"Importing results for {len(regions)} from GLEAM into {args.BATCH_FILE} ..."
     )
@@ -73,7 +84,7 @@ def import_batch(args):
         regions,
         resample=args.config["gleam_resample"],
         allow_unfinished=args.allow_missing,
-        # overwrite=True, ## Possible option
+        overwrite=args.overwrite,
         info_level=logging.INFO,
     )
 
@@ -131,6 +142,11 @@ def create_parser():
     )
     ibp.add_argument(
         "-M", "--allow-missing", action="store_true", help="Skip missing sim results."
+    )
+    ibp.add_argument(
+        "--overwrite",
+        action="store_true",
+        help="Overwrite existing `new_fraction` imported table.",
     )
     ibp.set_defaults(func=import_batch)
 

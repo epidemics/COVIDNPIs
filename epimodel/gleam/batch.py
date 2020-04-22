@@ -289,7 +289,6 @@ def generate_simulations(
     top: int = None,
     size_column="Infectious_mean",
 ):
-    now = datetime.datetime.now()
     # Estimate infections in subregions
     if size_column not in data.columns:
         raise Exception(f"Column {size_column} not found in {list(data.columns)}")
