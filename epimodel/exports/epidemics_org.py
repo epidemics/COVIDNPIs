@@ -169,8 +169,12 @@ class WebExportRegion:
         if traces_v3 is not None:
             d["TracesV3"] = traces_v3["TracesV3"]
 
-        if countermeasures is not None:
-            d["Countermeasures"] = countermeasures
+        if isinstance(countermeasures, pd.DataFrame):
+            d["Countermeasures"] = countermeasures.replace(
+                {np.nan: None}).to_dict(orient='records')
+        elif isinstance(countermeasures, pd.Series):
+            d["Countermeasures"] = [countermeasures.replace(
+                {np.nan: None}).to_dict()]
 
         d["Timezones"] = timezones["Timezone"].tolist()
 
@@ -486,7 +490,15 @@ def process_export(args) -> None:
 
     traces_v3_df: pd.DataFrame = pd.read_csv(traces_v3, index_col="CodeISO3")
 
-    countermeasures_df: pd.DataFrame = pd.read_csv(countermeasures, index_col="country")
+    countermeasures_df: pd.DataFrame = pd.read_csv(countermeasures)
+
+    def get_region_code_from_name(name):
+        regions = args.rds.find_all_by_name(name, ['country', 'subdivision'])
+        return regions[0].Code if regions else None
+
+    countermeasures_df['country'] = countermeasures_df.country.apply(
+        get_region_code_from_name)
+    countermeasures_df.set_index('country', inplace=True)
 
     foretold_df: pd.DataFrame = pd.read_csv(
         foretold,
@@ -519,6 +531,7 @@ def process_export(args) -> None:
         reg: Region = args.rds[code]
         m49 = int(reg["M49Code"])
         iso3 = reg["CountryCodeISOa3"]
+        name = reg.Name
 
         # TODO clean this up
         initial_estimate = estimates_df[estimates_df.index.isin(reg.AllNames)][
@@ -528,8 +541,6 @@ def process_export(args) -> None:
             log.error("No estimate found for country code: %s. Skipping", code)
             continue
         initial_estimate = int(initial_estimate)
-        countermeasures_df['country'] = countermeasures_df.country.apply(
-            lambda name: reg.find_one_by_name(name).Code).set_index('country')
 
         ex.new_region(
             reg,
