@@ -387,6 +387,8 @@ def get_df_else_none(df: pd.DataFrame, code) -> Optional[pd.DataFrame]:
 
 
 def get_df_list(df: pd.DataFrame, code) -> pd.DataFrame:
+    if code not in df.index:
+        return df.loc[[]]
     return df.loc[[code]].sort_index()
 
 
@@ -441,7 +443,7 @@ def process_export(args) -> None:
     models_df_old: pd.DataFrame = batch.hdf["new_fraction"]
     cummulative_active_df = batch.get_cummulative_active_df()
 
-    estimates_df = epimodel.read_csv_smart(args.estimates, args.rds)
+    estimates_df = epimodel.read_csv_smart(args.estimates, args.rds, prefer_higher=True)
 
     rates_df: pd.DataFrame = pd.read_csv(
         rates, index_col="Code", keep_default_na=False, na_values=[""]
@@ -484,7 +486,7 @@ def process_export(args) -> None:
 
     for code in export_regions:
         reg: Region = args.rds[code]
-        m49 = int(reg["M49Code"])
+        m49 = int(reg["M49Code"]) if pd.notnull(reg["M49Code"]) else -1
         iso3 = reg["CountryCodeISOa3"]
 
         ex.new_region(
