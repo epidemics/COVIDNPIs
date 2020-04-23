@@ -167,6 +167,20 @@ class BaseCMModel(Model):
             CMs = self.d.ActiveCMs[country_indx, :, :]
             nCMs, _ = CMs.shape
             CM_changes = CMs[:, 1:] - CMs[:, :-1]
+
+            features = [
+                'Mask wearing over 70%',
+                'Gatherings limited to 10',
+                'Gatherings limited to 100',
+                'Gatherings limited to 1000',
+                'Business suspended - some',
+                'Business suspended - many',
+                'Schools and universities closed',
+                'General curfew',
+                'Healthcare specialisation']
+
+            colors = ["tab:blue", "black", "gray", "lightgray", "tomato", "darkred", "tab:orange", "tab:green",
+                      "tab:purple"]
             height = 0
             for cm in range(nCMs):
                 changes = np.nonzero(CM_changes[cm, :])
@@ -175,16 +189,18 @@ class BaseCMModel(Model):
                         height += 1
                         if CM_changes[cm, c] == 1:
                             plt.plot([c, c], [0, 10 ** 6], "--g", alpha=0.5, linewidth=1, zorder=-2)
-                            plt.text((c - min_x) / (max_x - min_x), 1 - (0.035 * (height)), f"{cm + 1}", color="g",
+                            plt.text((c - min_x) / (max_x - min_x), 1 - (0.035 * (height)), f"{cm + 1}",
+                                     color=colors[cm],
                                      transform=ax.transAxes, fontsize=5, backgroundcolor="white",
                                      horizontalalignment="center", zorder=-1,
-                                     bbox=dict(facecolor='white', edgecolor='g', boxstyle='round'))
+                                     bbox=dict(facecolor='white', edgecolor=colors[cm], boxstyle='round'))
                         else:
                             plt.plot([c, c], [0, 10 ** 6], "--r", alpha=0.5, linewidth=1, zorder=-2)
-                            plt.text((c - min_x) / (max_x - min_x), 1 - (0.035 * (height)), f"{cm + 1}", color="r",
+                            plt.text((c - min_x) / (max_x - min_x), 1 - (0.035 * (height)), f"{cm + 1}",
+                                     color=colors[cm],
                                      transform=ax.transAxes, fontsize=5, backgroundcolor="white",
                                      horizontalalignment="center", zorder=-1,
-                                     bbox=dict(facecolor='white', edgecolor='g', boxstyle='round'))
+                                     bbox=dict(facecolor='white', edgecolor=colors[cm], boxstyle='round'))
 
             ax.set_yscale("log")
             plt.plot([0, 10 ** 6], [0, 10 ** 6], "-r")
@@ -2604,12 +2620,12 @@ class CMModelFlexibleV4(BaseCMModel):
         with self.model:
             # self.DailyGrowthNoise = pm.Gamma("DailyGrowthNoise", mu=0.2, sigma=0.1)
             # self.ConfirmationNoise = pm.Gamma("ConfirmationNoise", mu=0.2, sigma=0.1)
-            self.DailyGrowthNoise = 0.2
-            self.ConfirmationNoise = 0.4
+            self.DailyGrowthNoise = 0.3
+            self.ConfirmationNoise = 0.3
 
     def build_delay_prior(self):
         with self.model:
-            self.HyperDelayPriorMean = pm.Normal("HyperDelayPriorMean", sigma=1.5, mu=6.5)
+            self.HyperDelayPriorMean = pm.Normal("HyperDelayPriorMean", sigma=0.5, mu=12.5)
             self.HyperGrowthRateAlpha = pm.Normal("HyperDelayPriorAlpha", sigma=1.5, mu=6.5)
             self.DelayDist = pm.NegativeBinomial.dist(mu=self.HyperDelayPriorMean, alpha=self.HyperGrowthRateAlpha)
 
@@ -2702,21 +2718,21 @@ class CMModelFlexibleV4(BaseCMModel):
         self.Det("Infected", pm.math.exp(self.Infected_log), plot_trace=False)
 
         # use the theano convolution function, reshaping as required
-        expected_confirmed_log = T.nnet.conv2d(self.Infected_log.reshape((1, 1, self.nORs, self.nDs)),
-                                               T.reshape(delay_prob, newshape=(1, 1, 1, delay_prob.size)),
-                                               border_mode="full")[:, :, :, :self.nDs]
-        self.Det("ExpectedConfirmed_log", expected_confirmed_log.reshape((self.nORs, self.nDs)), plot_trace=False)
-        self.Det("ExpectedConfirmed", pm.math.exp(self.ExpectedConfirmed_log), plot_trace=False)
+        expected_confirmed = T.nnet.conv2d(self.Infected.reshape((1, 1, self.nORs, self.nDs)),
+                                           T.reshape(delay_prob, newshape=(1, 1, 1, delay_prob.size)),
+                                           border_mode="full")[:, :, :, :self.nDs].reshape((self.nORs, self.nDs))
+        self.Det("ExpectedConfirmed_log", pm.math.log(expected_confirmed), plot_trace=False)
+        self.Det("ExpectedConfirmed", expected_confirmed, plot_trace=False)
 
         with self.model:
-            self.Observed_log = pm.Normal("Observed_log", self.ExpectedConfirmed_log[:, self.ObservedDaysIndx],
-                                          self.ConfirmationNoise * T.reshape(self.RegionNoiseScale, (self.nORs, 1)),
-                                          shape=(self.nORs, self.nODs),
-                                          observed=np.log(self.d.Active[self.OR_indxs, :][
-                                                          :, self.ObservedDaysIndx
-                                                          ]))
+            self.Observed = pm.Lognormal("Observed", pm.math.log(self.ExpectedConfirmed[:, self.ObservedDaysIndx]),
+                                         self.ConfirmationNoise * T.reshape(self.RegionNoiseScale, (self.nORs, 1)),
+                                         shape=(self.nORs, self.nODs),
+                                         observed=np.log(self.d.Active[self.OR_indxs, :][
+                                                         :, self.ObservedDaysIndx
+                                                         ]))
 
-        self.Det("Observed", pm.math.exp(self.Observed_log), plot_trace=False)
+        self.Det("Observed_log", pm.math.log(self.Observed), plot_trace=False)
         self.Det(
             "Z2",
             self.Observed_log - self.ExpectedConfirmed_log[:, self.ObservedDaysIndx],
