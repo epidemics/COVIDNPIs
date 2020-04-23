@@ -72,6 +72,8 @@ class DataPreprocessor(object):
         CM_dataset = cm_sets[selected_cm_set]
         nCMs = len(selected_features)
 
+        self.CM_dataset = CM_dataset
+
         filtered_countries = []
         for cc in set(countries):
             c = region_ds[cc]

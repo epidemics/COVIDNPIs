@@ -4,6 +4,8 @@ import os
 from collections import defaultdict
 from datetime import datetime
 
+import seaborn as sns
+
 import numpy as np
 import pymc3 as pm
 import theano.tensor as T
@@ -12,6 +14,7 @@ from pymc3 import Model
 from epimodel.pymc3_models.utils import geom_convolution, convolution
 
 log = logging.getLogger(__name__)
+sns.set_style("ticks")
 
 import matplotlib.pyplot as plt
 
@@ -183,24 +186,23 @@ class BaseCMModel(Model):
                       "tab:purple"]
             height = 0
             for cm in range(nCMs):
-                changes = np.nonzero(CM_changes[cm, :])
+                changes = np.nonzero(CM_changes[cm, :])[0].tolist()
                 for c in changes:
-                    if c.size > 0:
-                        height += 1
-                        if CM_changes[cm, c] == 1:
-                            plt.plot([c, c], [0, 10 ** 6], "--g", alpha=0.5, linewidth=1, zorder=-2)
-                            plt.text((c - min_x) / (max_x - min_x), 1 - (0.035 * (height)), f"{cm + 1}",
-                                     color=colors[cm],
-                                     transform=ax.transAxes, fontsize=5, backgroundcolor="white",
-                                     horizontalalignment="center", zorder=-1,
-                                     bbox=dict(facecolor='white', edgecolor=colors[cm], boxstyle='round'))
-                        else:
-                            plt.plot([c, c], [0, 10 ** 6], "--r", alpha=0.5, linewidth=1, zorder=-2)
-                            plt.text((c - min_x) / (max_x - min_x), 1 - (0.035 * (height)), f"{cm + 1}",
-                                     color=colors[cm],
-                                     transform=ax.transAxes, fontsize=5, backgroundcolor="white",
-                                     horizontalalignment="center", zorder=-1,
-                                     bbox=dict(facecolor='white', edgecolor=colors[cm], boxstyle='round'))
+                    height += 1
+                    if CM_changes[cm, c] == 1:
+                        plt.plot([c, c], [0, 10 ** 6], "--g", alpha=0.5, linewidth=1, zorder=-2)
+                        plt.text((c - min_x) / (max_x - min_x), 1 - (0.035 * (height)), f"{cm + 1}",
+                                 color=colors[cm],
+                                 transform=ax.transAxes, fontsize=5, backgroundcolor="white",
+                                 horizontalalignment="center", zorder=-1,
+                                 bbox=dict(facecolor='white', edgecolor=colors[cm], boxstyle='round'))
+                    else:
+                        plt.plot([c, c], [0, 10 ** 6], "--r", alpha=0.5, linewidth=1, zorder=-2)
+                        plt.text((c - min_x) / (max_x - min_x), 1 - (0.035 * (height)), f"{cm + 1}",
+                                 color=colors[cm],
+                                 transform=ax.transAxes, fontsize=5, backgroundcolor="white",
+                                 horizontalalignment="center", zorder=-1,
+                                 bbox=dict(facecolor='white', edgecolor=colors[cm], boxstyle='round'))
 
             ax.set_yscale("log")
             plt.plot([0, 10 ** 6], [0, 10 ** 6], "-r")
@@ -227,22 +229,21 @@ class BaseCMModel(Model):
             CM_changes = CMs[:, 1:] - CMs[:, :-1]
             height = 0
             for cm in range(nCMs):
-                changes = np.nonzero(CM_changes[cm, :])
+                changes = np.nonzero(CM_changes[cm, :])[0].tolist()
                 for c in changes:
-                    if c.size > 0:
-                        height += 1
-                        if CM_changes[cm, c] == 1:
-                            plt.plot([c, c], [0, 2], "--g", alpha=0.5, linewidth=1, zorder=-2)
-                            plt.text(c, 2 - (0.05 * (height)), f"{cm + 1}", color="g",
-                                     fontsize=5, backgroundcolor="white",
-                                     horizontalalignment="center", zorder=-1,
-                                     bbox=dict(facecolor='white', edgecolor='g', boxstyle='round'))
-                        else:
-                            plt.plot([c, c], [0, 2], "--r", alpha=0.5, linewidth=1, zorder=-2)
-                            plt.text(c, 2 - (0.05 * (height)), f"{cm + 1}", color="r",
-                                     fontsize=5, backgroundcolor="white",
-                                     horizontalalignment="center", zorder=-1,
-                                     bbox=dict(facecolor='white', edgecolor='g', boxstyle='round'))
+                    height += 1
+                    if CM_changes[cm, c] == 1:
+                        plt.plot([c, c], [0, 2], "--g", alpha=0.5, linewidth=1, zorder=-2)
+                        plt.text(c, 2 - (0.05 * (height)), f"{cm + 1}", color=colors[cm],
+                                 fontsize=5, backgroundcolor="white",
+                                 horizontalalignment="center", zorder=-1,
+                                 bbox=dict(facecolor='white', edgecolor=colors[cm], boxstyle='round'))
+                    else:
+                        plt.plot([c, c], [0, 2], "-xr", alpha=0.5, linewidth=1, zorder=-2)
+                        plt.text(c, 2 - (0.05 * (height)), f"{cm + 1}", color=colors[cm],
+                                 fontsize=5, backgroundcolor="white",
+                                 horizontalalignment="center", zorder=-1,
+                                 bbox=dict(facecolor='white', edgecolor=colors[cm], boxstyle='round'))
             plt.ylim([0.8, 2])
             plt.xlim([first_day, 66])
 
@@ -260,6 +261,7 @@ class BaseCMModel(Model):
 
             if country_indx % 5 == 4 or country_indx == len(self.d.Rs) - 1:
                 plt.tight_layout()
+                sns.despine()
                 if save_fig:
                     save_fig_pdf(output_dir, f"CountryPredictionPlot{((country_indx + 1) / 5):.1f}")
 
@@ -302,6 +304,7 @@ class BaseCMModel(Model):
         plt.title("Correlation")
 
         plt.tight_layout()
+        sns.despine()
         if save_fig:
             save_fig_pdf(output_dir, f"CMEffect")
 
@@ -2625,7 +2628,7 @@ class CMModelFlexibleV4(BaseCMModel):
 
     def build_delay_prior(self):
         with self.model:
-            self.HyperDelayPriorMean = pm.Normal("HyperDelayPriorMean", sigma=0.5, mu=12.5)
+            self.HyperDelayPriorMean = pm.Normal("HyperDelayPriorMean", sigma=3, mu=12.5)
             self.HyperGrowthRateAlpha = pm.Normal("HyperDelayPriorAlpha", sigma=1.5, mu=6.5)
             self.DelayDist = pm.NegativeBinomial.dist(mu=self.HyperDelayPriorMean, alpha=self.HyperGrowthRateAlpha)
 
@@ -2728,9 +2731,9 @@ class CMModelFlexibleV4(BaseCMModel):
             self.Observed = pm.Lognormal("Observed", pm.math.log(self.ExpectedConfirmed[:, self.ObservedDaysIndx]),
                                          self.ConfirmationNoise * T.reshape(self.RegionNoiseScale, (self.nORs, 1)),
                                          shape=(self.nORs, self.nODs),
-                                         observed=np.log(self.d.Active[self.OR_indxs, :][
+                                         observed=self.d.Active[self.OR_indxs, :][
                                                          :, self.ObservedDaysIndx
-                                                         ]))
+                                                         ])
 
         self.Det("Observed_log", pm.math.log(self.Observed), plot_trace=False)
         self.Det(
