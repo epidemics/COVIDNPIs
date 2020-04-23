@@ -2,6 +2,7 @@ import pandas as pd
 import numpy as np
 import theano
 import matplotlib.pyplot as plt
+from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 from epimodel import read_csv, RegionDataset
 
@@ -56,9 +57,8 @@ class DataPreprocessor(object):
 
         cm_set_dirs = [
             "countermeasures-features.csv",
-            "countermeasures-model-0to1.csv",
             "countermeasures-selected-binary.csv",
-            "countermeasures-model-0to1-split.csv"
+            "countermeasures-model-boolean_Gat3Bus2SchCurHespMa.csv"
         ]
 
         cm_sets = {
@@ -88,7 +88,6 @@ class DataPreprocessor(object):
         nCs = len(filtered_countries)
         # note that it is essential to sort these values to get the correct corresponances from the john hopkins dataset
         filtered_countries.sort()
-
         sd = CM_dataset.loc[filtered_countries, selected_CMs]
         if "Mask wearing" in selected_CMs:
             sd["Mask wearing"] *= 0.01
@@ -105,15 +104,52 @@ class DataPreprocessor(object):
         # [country, CM, day] Which CMs are active, and to what extent
         ActiveCMs = ActiveCMs.astype(theano.config.floatX)
 
-        plt.figure(figsize=(4, 3), dpi=300)
-        plt.imshow(sd.corr())
-        plt.colorbar()
-        plt.title("Selected CM Correlation")
+        plt.figure(figsize=(10, 3), dpi=300)
+        plt.subplot(1, 3, 1)
+        im = plt.imshow(sd.corr(), aspect="auto")
+        plt.title("Correlation")
         ax = plt.gca()
-        ax.tick_params(axis="both", which="major", labelsize=6)
+        ax.tick_params(axis="both", which="major", labelsize=10)
         plt.xticks(np.arange(len(selected_features)), [f"$\\alpha_{{{i+1}}}$" for i in range(len(selected_features))])
         plt.yticks(np.arange(len(selected_features)), [f"$\\alpha_{{{i + 1}}}$" for i in range(len(selected_features))])
-        plt.show()
+        plt.xlabel("Countermeasure")
+        divider = make_axes_locatable(ax)
+        cax = divider.append_axes("right", size="5%", pad=0.05)
+        plt.colorbar(im, cax=cax)
+
+        plt.subplot(1,3,2)
+        plt.title("Co-activation")
+        ax = plt.gca()
+        mat = np.zeros((nCMs, nCMs))
+        for cm in range(nCMs):
+            mask = ActiveCMs[:, cm, :]
+            for cm2 in range(nCMs):
+                mat[cm, cm2] = np.sum(mask * ActiveCMs[:, cm2, :]) / np.sum(mask)
+        im = plt.imshow(mat * 100, vmin = 0, vmax=100, cmap="inferno", aspect="auto")
+        ax.tick_params(axis="both", which="major", labelsize=10)
+        plt.xticks(np.arange(len(selected_features)), [f"$\\alpha_{{{i + 1}}}$" for i in range(len(selected_features))])
+        plt.yticks(np.arange(len(selected_features)), [f"$\\alpha_{{{i + 1}}}$" for i in range(len(selected_features))])
+        plt.xlabel("Countermeasure")
+        divider = make_axes_locatable(ax)
+        cax = divider.append_axes("right", size="5%", pad=0.05)
+        plt.colorbar(im, cax=cax)
+
+        plt.subplot(1, 3, 3)
+        days_active = np.sum(np.sum(ActiveCMs, axis=0), axis=1)
+        plt.bar(np.arange(nCMs), days_active)
+        ax.tick_params(axis="both", which="major", labelsize=10)
+        plt.xticks(np.arange(len(selected_features)), [f"$\\alpha_{{{i + 1}}}$" for i in range(len(selected_features))])
+        plt.xlabel("Countermeasure")
+        plt.ylabel("Country-days")
+        plt.title("Activation")
+
+        plt.tight_layout()
+
+        # plt.figure(figsize=(4, 3), dpi=300)
+        #         # for n in nCMs:
+        #         #
+        #         #
+        #         # plt.show()
 
         Confirmed = (
             johnhop_ds["Confirmed"]
