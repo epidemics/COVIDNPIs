@@ -2,6 +2,8 @@ import pandas as pd
 import numpy as np
 import theano
 import matplotlib.pyplot as plt
+import seaborn as sns
+
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 from epimodel import read_csv, RegionDataset
@@ -45,11 +47,11 @@ class DataPreprocessor(object):
         }
 
     def preprocess_data(
-        self,
-        data_base_path,
-        countries,
-        selected_features,
-        selected_cm_set="countermeasures-model-0to1-split.csv",
+            self,
+            data_base_path,
+            countries,
+            selected_features,
+            selected_cm_set="countermeasures-model-0to1-split.csv",
     ):
         # at the moment only features from the 0-1 countermeasures dataset
         Ds = pd.date_range(start=self.start_date, end=self.end_date, tz="utc")
@@ -82,13 +84,13 @@ class DataPreprocessor(object):
         for cc in set(countries):
             c = region_ds[cc]
             if (
-                c.Level == Level.country
-                and c.Code in johnhop_ds.index
-                and c.Code in CM_dataset.index
+                    c.Level == Level.country
+                    and c.Code in johnhop_ds.index
+                    and c.Code in CM_dataset.index
             ):
                 if (
-                    johnhop_ds.loc[(c.Code, Ds[-1]), "Active"]
-                    > self.min_final_num_active_cases
+                        johnhop_ds.loc[(c.Code, Ds[-1]), "Active"]
+                        > self.min_final_num_active_cases
                 ):
                     filtered_countries.append(c.Code)
         nCs = len(filtered_countries)
@@ -100,7 +102,7 @@ class DataPreprocessor(object):
 
         logger_str = "\nCountermeasures                               min   ... mean  ... max   ... unique"
         for i, cm in enumerate(selected_CMs):
-            logger_str = f"{logger_str}\n{i+1:2} {cm:42} {sd[cm].min().min():.3f} ... {sd[cm].mean().mean():.3f} ... {sd[cm].max().max():.3f} ... {np.unique(sd[cm])[:5]}"
+            logger_str = f"{logger_str}\n{i + 1:2} {cm:42} {sd[cm].min().min():.3f} ... {sd[cm].mean().mean():.3f} ... {sd[cm].max().max():.3f} ... {np.unique(sd[cm])[:5]}"
 
         logger.info(logger_str)
         ActiveCMs = np.stack([sd.loc[c].loc[Ds].T for c in filtered_countries])
@@ -116,7 +118,7 @@ class DataPreprocessor(object):
         ax.tick_params(axis="both", which="major", labelsize=10)
         plt.xticks(
             np.arange(len(selected_features)),
-            [f"$\\alpha_{{{i+1}}}$" for i in range(len(selected_features))],
+            [f"$\\alpha_{{{i + 1}}}$" for i in range(len(selected_features))],
         )
         plt.yticks(
             np.arange(len(selected_features)),
@@ -163,18 +165,13 @@ class DataPreprocessor(object):
         plt.title("Activation")
 
         plt.tight_layout()
-
-        # plt.figure(figsize=(4, 3), dpi=300)
-        #         # for n in nCMs:
-        #         #
-        #         #
-        #         # plt.show()
+        sns.despine()
 
         Confirmed = (
             johnhop_ds["Confirmed"]
-            .loc[(tuple(filtered_countries), Ds)]
-            .unstack(1)
-            .values
+                .loc[(tuple(filtered_countries), Ds)]
+                .unstack(1)
+                .values
         )
         assert Confirmed.shape == (nCs, nDs)
         Confirmed[Confirmed < self.min_num_confirmed_mask] = np.nan
@@ -202,6 +199,13 @@ class DataPreprocessor(object):
         # [country, day]
         Deaths = np.ma.masked_invalid(Deaths.astype(theano.config.floatX))
 
+        NewDeaths = np.zeros(shape=Deaths.shape)
+        NewDeaths[:, 1:] = Deaths[:, 1:] - Deaths[:, :-1]
+        NewDeaths[np.isnan(NewDeaths)] = 0
+        NewDeaths[NewDeaths < 0] = np.nan
+        NewDeaths = np.ma.masked_invalid(NewDeaths.astype(theano.config.floatX))
+        NewDeaths = NewDeaths.astype(int)
+
         loaded_data = PreprocessedData(
             Active,
             Confirmed,
@@ -210,13 +214,14 @@ class DataPreprocessor(object):
             filtered_countries,
             Ds,
             Deaths,
+            NewDeaths
         )
 
         return loaded_data
 
 
 class PreprocessedData(object):
-    def __init__(self, Active, Confirmed, ActiveCMs, CMs, Rs, Ds, Deaths):
+    def __init__(self, Active, Confirmed, ActiveCMs, CMs, Rs, Ds, Deaths, NewDeaths):
         super().__init__()
         self.Active = Active
         self.Confirmed = Confirmed
@@ -225,3 +230,4 @@ class PreprocessedData(object):
         self.Rs = Rs
         self.CMs = CMs
         self.Ds = Ds
+        self.NewDeaths = NewDeaths
