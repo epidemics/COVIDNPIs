@@ -3640,12 +3640,11 @@ class CMDeathModelFlexibleV2(BaseCMModel):
         with self.model:
             self.Observed = pm.NegativeBinomial(
                 "Observed",
-                mu = self.ExpectedConfirmed[:, self.ObservedDaysIndx],
-                alpha = self.ExpectedConfirmed[:, self.ObservedDaysIndx] + self.Phi,
+                mu=self.ExpectedConfirmed[:, self.ObservedDaysIndx],
+                alpha=self.ExpectedConfirmed[:, self.ObservedDaysIndx] + self.Phi,
                 shape=(self.nORs, self.nODs),
                 observed=self.d.NewDeaths[self.OR_indxs, :][:, self.ObservedDaysIndx]
             )
-
 
         # self.Det("Observed", pm.math.exp(self.Observed_log), plot_trace=False)
         self.Det(
@@ -3741,6 +3740,8 @@ class CMDeathModelFlexibleV2(BaseCMModel):
             min_x = 5
             max_x = len(days) - 1
 
+            labels = self.d.NewDeaths[country_indx, :]
+
             if self.nHODs > 0:
                 means_ho, li_ho, ui_ho, err_ho = produce_CIs(
                     self.trace.HeldoutDaysObserved[:, country_indx, :]
@@ -3765,8 +3766,6 @@ class CMDeathModelFlexibleV2(BaseCMModel):
                     zorder=3,
                 )
 
-            labels = self.d.Deaths[country_indx, :]
-
             plt.errorbar(
                 days_x,
                 means,
@@ -3790,14 +3789,24 @@ class CMDeathModelFlexibleV2(BaseCMModel):
             plt.scatter(
                 self.ObservedDaysIndx,
                 labels[self.ObservedDaysIndx],
-                label="Observed Confirmed",
+                label="Observed Dead",
                 marker="o",
-                s=6,
+                s=8,
                 color="tab:purple",
                 zorder=3,
             )
 
             # plot countermeasures
+            colors = ["tab:purple",
+                      "tab:blue",
+                      "silver",
+                      "gray",
+                      "black",
+                      "tomato",
+                      "tab:red",
+                      "hotpink",
+                      "tab:green"]
+
             CMs = self.d.ActiveCMs[country_indx, :, :]
             nCMs, _ = CMs.shape
             CM_changes = CMs[:, 1:] - CMs[:, :-1]
@@ -3819,14 +3828,14 @@ class CMDeathModelFlexibleV2(BaseCMModel):
                             (c - min_x) / (max_x - min_x),
                             1 - (0.035 * (height)),
                             f"{cm + 1}",
-                            color="g",
+                            color=colors[cm],
                             transform=ax.transAxes,
                             fontsize=5,
                             backgroundcolor="white",
                             horizontalalignment="center",
                             zorder=-1,
                             bbox=dict(
-                                facecolor="white", edgecolor="g", boxstyle="round"
+                                facecolor="white", edgecolor=colors[cm], boxstyle="round"
                             ),
                         )
                     else:
@@ -3842,22 +3851,25 @@ class CMDeathModelFlexibleV2(BaseCMModel):
                             (c - min_x) / (max_x - min_x),
                             1 - (0.035 * (height)),
                             f"{cm + 1}",
-                            color="r",
+                            color=colors[cm],
                             transform=ax.transAxes,
                             fontsize=5,
                             backgroundcolor="white",
                             horizontalalignment="center",
                             zorder=-1,
                             bbox=dict(
-                                facecolor="white", edgecolor="g", boxstyle="round"
+                                facecolor="white", edgecolor=colors[cm], boxstyle="round"
                             ),
                         )
 
             ax.set_yscale("log")
             plt.plot([0, 10 ** 6], [0, 10 ** 6], "-r")
             plt.xlim([min_x, max_x])
-            plt.ylim([10 ** -2, 10 ** 6])
-            plt.title(f"Region {region}")
+            plt.ylim([10 ** 0, 10 ** 4])
+
+            locs = np.arange(min_x, max_x, 7)
+            xlabels = [f"{days[ts].day}-{days[ts].month}" for ts in locs]
+            plt.xticks(locs, xlabels, rotation=-30)
 
             plt.subplot(5, 3, 3 * (country_indx % 5) + 2)
 
@@ -3869,7 +3881,6 @@ class CMDeathModelFlexibleV2(BaseCMModel):
                 self.trace.Growth[:, country_indx, :]
             )
 
-            first_day = np.min(self.ObservedDaysIndx)
             plt.errorbar(
                 days_x,
                 np.exp(actual_growth),
@@ -3909,13 +3920,13 @@ class CMDeathModelFlexibleV2(BaseCMModel):
                             c,
                             2 - (0.05 * (height)),
                             f"{cm + 1}",
-                            color="g",
+                            color=colors[cm],
                             fontsize=5,
                             backgroundcolor="white",
                             horizontalalignment="center",
                             zorder=-1,
                             bbox=dict(
-                                facecolor="white", edgecolor="g", boxstyle="round"
+                                facecolor="white", edgecolor=colors[cm], boxstyle="round"
                             ),
                         )
                     else:
@@ -3926,22 +3937,29 @@ class CMDeathModelFlexibleV2(BaseCMModel):
                             c,
                             2 - (0.05 * (height)),
                             f"{cm + 1}",
-                            color="r",
+                            color=colors[cm],
                             fontsize=5,
                             backgroundcolor="white",
                             horizontalalignment="center",
                             zorder=-1,
                             bbox=dict(
-                                facecolor="white", edgecolor="g", boxstyle="round"
+                                facecolor="white", edgecolor=colors[cm], boxstyle="round"
                             ),
                         )
-            plt.ylim([0.8, 2])
-            plt.xlim([first_day, 66])
+            plt.ylim([0.7, 2])
+            plt.xlim([min_x, max_x])
+            plt.ylabel("Growth")
+            locs = np.arange(min_x, max_x, 5)
+            xlabels = [f"{days[ts].day}-{days[ts].month}" for ts in locs]
+            plt.xticks(locs, xlabels, rotation=-30)
+            plt.title(f"Region {region}")
 
             plt.subplot(5, 3, 3 * (country_indx % 5) + 3)
+            axis_scale = 1.5
             ax2 = plt.gca()
             z1_mean, _, _, err_1 = produce_CIs(self.trace.Z1[:, country_indx, :])
-            plt.errorbar(
+            z2_mean, _, _, err_2 = produce_CIs(self.trace.Z2[:, country_indx, :])
+            ln1 = plt.errorbar(
                 days_x,
                 z1_mean,
                 yerr=err_1,
@@ -3952,7 +3970,34 @@ class CMDeathModelFlexibleV2(BaseCMModel):
                 zorder=1,
                 color="tab:blue",
             )
-            plt.xlim([first_day, 66])
+            plt.xlim([min_x, max_x])
+            plt.ylim([-axis_scale*(np.max(err_1)+np.max(z1_mean)), axis_scale*np.max(err_1)+np.max(z1_mean)])
+            locs = np.arange(min_x, max_x, 7)
+            xlabels = [f"{days[ts].day}-{days[ts].month}" for ts in locs]
+            plt.xticks(locs, xlabels, rotation=-30)
+            plt.ylabel("Growth Noise")
+            ax3 = plt.twinx()
+            ln2 = plt.errorbar(
+                self.ObservedDaysIndx,
+                z2_mean,
+                yerr=err_2,
+                fmt="-x",
+                linewidth=1,
+                markersize=2,
+                label="Death Noise",
+                zorder=1,
+                color="tab:orange",
+            )
+            plt.ylabel("Output Noise")
+
+            plt.ylim([-axis_scale*np.max(err_2+np.max(z2_mean)), axis_scale*(np.max(err_2)+np.max(z2_mean))])
+            lines, labels = ax2.get_legend_handles_labels()
+            lines2, labels2 = ax3.get_legend_handles_labels()
+
+
+
+            sns.despine(ax=ax)
+            sns.despine(ax=ax1)
 
             if country_indx % 5 == 4 or country_indx == len(self.d.Rs) - 1:
                 plt.tight_layout()
@@ -3963,6 +4008,6 @@ class CMDeathModelFlexibleV2(BaseCMModel):
                     )
 
             elif country_indx % 5 == 0:
-                ax.legend(prop={"size": 6})
-                ax1.legend(prop={"size": 6})
-                ax2.legend(prop={"size": 6})
+                ax.legend(prop={"size": 8})
+                ax1.legend(prop={"size": 8})
+                ax2.legend(lines+lines2, labels + labels2, prop={"size": 8})
