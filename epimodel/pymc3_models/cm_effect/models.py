@@ -2001,7 +2001,7 @@ class CMModelFlexibleV3p3(BaseCMModel):
                 1.98392580e-04,
             ]
         )
-        self.DailyGrowthNoise = 0.3
+        self.DailyGrowthNoise = 0.01
         self.ConfirmationNoise = 0.1
 
         self.ObservedDaysIndx = np.arange(self.CMDelayCut, len(self.d.Ds))
@@ -2152,7 +2152,7 @@ class CMModelFlexibleV3p3(BaseCMModel):
             )
 
     def build_output_model(self):
-        self.Normal("InitialSize_log", 1, 10, shape=(self.nORs,))
+        self.Normal("InitialSize_log", -3, 1, shape=(self.nORs,))
         self.Det(
             "Infected_log",
             T.reshape(self.InitialSize_log, (self.nORs, 1))
@@ -2163,17 +2163,20 @@ class CMModelFlexibleV3p3(BaseCMModel):
         self.Det("Infected", pm.math.exp(self.Infected_log), plot_trace=False)
 
         # use the theano convolution function, reshaping as required
-        expected_confirmed = T.nnet.conv2d(
-            self.Infected.reshape((1, 1, self.nORs, self.nDs)),
-            np.reshape(self.DelayProb, newshape=(1, 1, 1, self.DelayProb.size)),
-            border_mode="full",
-        )[:, :, :, : self.nDs]
+        # expected_confirmed = T.nnet.conv2d(
+        #     self.Infected.reshape((1, 1, self.nORs, self.nDs)),
+        #     np.reshape(self.DelayProb, newshape=(1, 1, 1, self.DelayProb.size)),
+        #     border_mode="full",
+        # )[:, :, :, : self.nDs]
+
+        expected_confirmed = convolution(self.Infected, self.DelayProb, axis=1)
 
         self.Det(
             "ExpectedConfirmed",
             expected_confirmed.reshape((self.nORs, self.nDs)),
             plot_trace=False,
         )
+
         self.Det(
             "ExpectedConfirmed_log",
             pm.math.log(self.ExpectedConfirmed),
@@ -2187,7 +2190,7 @@ class CMModelFlexibleV3p3(BaseCMModel):
                 self.ConfirmationNoise
                 * T.reshape(self.RegionNoiseScale, (self.nORs, 1)),
                 shape=(self.nORs, self.nODs),
-                observed=self.d.Deaths[self.OR_indxs, :][:, self.ObservedDaysIndx],
+                observed=self.d.Deaths[self.OR_indxs, :][:, self.ObservedDaysIndx] - self.d.Deaths[self.OR_indxs, :][:, (self.ObservedDaysIndx - 1)],
             )
 
         # self.Det("Observed", pm.math.exp(self.Observed_log), plot_trace=False)
@@ -2346,56 +2349,55 @@ class CMModelFlexibleV3p3(BaseCMModel):
             CM_changes = CMs[:, 1:] - CMs[:, :-1]
             height = 0
             for cm in range(nCMs):
-                changes = np.nonzero(CM_changes[cm, :])
+                changes = np.nonzero(CM_changes[cm, :])[0].tolist()
                 for c in changes:
-                    if c.size > 0:
-                        height += 1
-                        if CM_changes[cm, c] == 1:
-                            plt.plot(
-                                [c, c],
-                                [0, 10 ** 6],
-                                "--g",
-                                alpha=0.5,
-                                linewidth=1,
-                                zorder=-2,
-                            )
-                            plt.text(
-                                (c - min_x) / (max_x - min_x),
-                                1 - (0.035 * (height)),
-                                f"{cm + 1}",
-                                color="g",
-                                transform=ax.transAxes,
-                                fontsize=5,
-                                backgroundcolor="white",
-                                horizontalalignment="center",
-                                zorder=-1,
-                                bbox=dict(
-                                    facecolor="white", edgecolor="g", boxstyle="round"
-                                ),
-                            )
-                        else:
-                            plt.plot(
-                                [c, c],
-                                [0, 10 ** 6],
-                                "--r",
-                                alpha=0.5,
-                                linewidth=1,
-                                zorder=-2,
-                            )
-                            plt.text(
-                                (c - min_x) / (max_x - min_x),
-                                1 - (0.035 * (height)),
-                                f"{cm + 1}",
-                                color="r",
-                                transform=ax.transAxes,
-                                fontsize=5,
-                                backgroundcolor="white",
-                                horizontalalignment="center",
-                                zorder=-1,
-                                bbox=dict(
-                                    facecolor="white", edgecolor="g", boxstyle="round"
-                                ),
-                            )
+                    height += 1
+                    if CM_changes[cm, c] == 1:
+                        plt.plot(
+                            [c, c],
+                            [0, 10 ** 6],
+                            "--g",
+                            alpha=0.5,
+                            linewidth=1,
+                            zorder=-2,
+                        )
+                        plt.text(
+                            (c - min_x) / (max_x - min_x),
+                            1 - (0.035 * (height)),
+                            f"{cm + 1}",
+                            color="g",
+                            transform=ax.transAxes,
+                            fontsize=5,
+                            backgroundcolor="white",
+                            horizontalalignment="center",
+                            zorder=-1,
+                            bbox=dict(
+                                facecolor="white", edgecolor="g", boxstyle="round"
+                            ),
+                        )
+                    else:
+                        plt.plot(
+                            [c, c],
+                            [0, 10 ** 6],
+                            "--r",
+                            alpha=0.5,
+                            linewidth=1,
+                            zorder=-2,
+                        )
+                        plt.text(
+                            (c - min_x) / (max_x - min_x),
+                            1 - (0.035 * (height)),
+                            f"{cm + 1}",
+                            color="r",
+                            transform=ax.transAxes,
+                            fontsize=5,
+                            backgroundcolor="white",
+                            horizontalalignment="center",
+                            zorder=-1,
+                            bbox=dict(
+                                facecolor="white", edgecolor="g", boxstyle="round"
+                            ),
+                        )
 
             ax.set_yscale("log")
             plt.plot([0, 10 ** 6], [0, 10 ** 6], "-r")
@@ -2442,44 +2444,43 @@ class CMModelFlexibleV3p3(BaseCMModel):
             CM_changes = CMs[:, 1:] - CMs[:, :-1]
             height = 0
             for cm in range(nCMs):
-                changes = np.nonzero(CM_changes[cm, :])
+                changes = np.nonzero(CM_changes[cm, :])[0].tolist()
                 for c in changes:
-                    if c.size > 0:
-                        height += 1
-                        if CM_changes[cm, c] == 1:
-                            plt.plot(
-                                [c, c], [0, 2], "--g", alpha=0.5, linewidth=1, zorder=-2
-                            )
-                            plt.text(
-                                c,
-                                2 - (0.05 * (height)),
-                                f"{cm + 1}",
-                                color="g",
-                                fontsize=5,
-                                backgroundcolor="white",
-                                horizontalalignment="center",
-                                zorder=-1,
-                                bbox=dict(
-                                    facecolor="white", edgecolor="g", boxstyle="round"
-                                ),
-                            )
-                        else:
-                            plt.plot(
-                                [c, c], [0, 2], "--r", alpha=0.5, linewidth=1, zorder=-2
-                            )
-                            plt.text(
-                                c,
-                                2 - (0.05 * (height)),
-                                f"{cm + 1}",
-                                color="r",
-                                fontsize=5,
-                                backgroundcolor="white",
-                                horizontalalignment="center",
-                                zorder=-1,
-                                bbox=dict(
-                                    facecolor="white", edgecolor="g", boxstyle="round"
-                                ),
-                            )
+                    height += 1
+                    if CM_changes[cm, c] == 1:
+                        plt.plot(
+                            [c, c], [0, 2], "--g", alpha=0.5, linewidth=1, zorder=-2
+                        )
+                        plt.text(
+                            c,
+                            2 - (0.05 * (height)),
+                            f"{cm + 1}",
+                            color="g",
+                            fontsize=5,
+                            backgroundcolor="white",
+                            horizontalalignment="center",
+                            zorder=-1,
+                            bbox=dict(
+                                facecolor="white", edgecolor="g", boxstyle="round"
+                            ),
+                        )
+                    else:
+                        plt.plot(
+                            [c, c], [0, 2], "--r", alpha=0.5, linewidth=1, zorder=-2
+                        )
+                        plt.text(
+                            c,
+                            2 - (0.05 * (height)),
+                            f"{cm + 1}",
+                            color="r",
+                            fontsize=5,
+                            backgroundcolor="white",
+                            horizontalalignment="center",
+                            zorder=-1,
+                            bbox=dict(
+                                facecolor="white", edgecolor="g", boxstyle="round"
+                            ),
+                        )
             plt.ylim([0.8, 2])
             plt.xlim([first_day, 66])
 

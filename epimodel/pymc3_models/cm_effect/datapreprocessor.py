@@ -62,7 +62,6 @@ class DataPreprocessor(object):
 
         cm_set_dirs = [
             "countermeasures-features.csv",
-            "countermeasures-selected-binary.csv",
             "countermeasures-model-boolean_Gat3Bus2SchCurHespMa.csv",
         ]
 
