@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-import argparse
+import click
 import logging
 from pathlib import Path
 
@@ -14,56 +14,77 @@ from epimodel.gleam import Batch, batch
 
 log = logging.getLogger("do")
 
+# Global arguments
 
-def import_countermeasures(args):
-    log.info(f"Importing countermeasures from {args.SRC} into {args.DEST} ...")
-    cms = epimodel.imports.import_countermeasures_csv(args.rds, args.SRC)
-    cms.to_csv(args.DEST)
-    log.info(
-        f"Saved countermeasures to {args.DEST}, {len(cms.columns)} features, "
-        f"last day is {cms.index.get_level_values(1).max()}"
+@click.group()
+@click.option("-d", "--debug", is_flag=True, help="Debugging logs.")
+@click.option("-C", "--config", type=click.Path(exists=True), default="config.yaml", help="Config file.")
+@click.pass_context
+def cli(ctx, debug, config):
+    """
+    Epimodel pipeline runner
+    """
+    #TODO: add environment variable for config
+    ctx.ensure_object(dict)
+    ctx.obj["DEBUG"] = debug
+    
+    logging.basicConfig(level=logging.INFO)
+    if debug:
+        logging.root.setLevel(logging.DEBUG)
+    
+    with open(config, "rt") as f:
+        ctx.obj["CONFIG"] = yaml.safe_load(f)
+
+    data_dir = Path(ctx.obj["CONFIG"]["data_dir"])
+    ctx.obj["RDS"] = RegionDataset.load(
+        data_dir / "regions.csv", data_dir / "regions-gleam.csv"
     )
+    epimodel.algorithms.estimate_missing_populations(ctx.obj["RDS"])
 
+# Commands
 
-def update_johns_hopkins(args):
+@cli.command()
+@click.pass_context
+def update_johns_hopkins(ctx):
+    """Fetch data from Johns Hopkins CSSE."""
     log.info("Downloading and parsing CSSE ...")
-    csse = epimodel.imports.import_johns_hopkins(args.rds)
-    dest = Path(args.config["data_dir"]) / "johns-hopkins.csv"
+    csse = epimodel.imports.import_johns_hopkins(ctx.obj["RDS"])
+    dest = Path(ctx.obj["CONFIG"]["data_dir"]) / "johns-hopkins.csv"
     csse.to_csv(dest)
     log.info(
         f"Saved CSSE to {dest}, last day is {csse.index.get_level_values(1).max()}"
     )
 
-
-def update_foretold(args):
-    if args.config["foretold_channel"] == "SECRET":
+@cli.command()
+@click.pass_context
+def update_foretold(ctx):
+    """Fetch data from Foretold."""
+    if ctx.obj["CONFIG"]["foretold_channel"] == "SECRET":
         log.warning(
             "`foretold_channel` in the config file is not set to non-default value."
         )
     else:
         log.info("Downloading and parsing foretold")
         foretold = epimodel.imports.import_foretold(
-            args.rds, args.config["foretold_channel"]
+            ctx.obj["RDS"], ctx.obj["CONFIG"]["foretold_channel"]
         )
-        dest = Path(args.config["data_dir"]) / "foretold.csv"
+        dest = Path(ctx.obj["CONFIG"]["data_dir"]) / "foretold.csv"
         foretold.to_csv(dest, float_format="%.7g")
         log.info(f"Saved Foretold to {dest}")
 
+@cli.command()
+@click.argument("batch_file", type=click.Path(exists=True))
+@click.option("-M", "--allow-missing", is_flag=True, help="Skip missing sim results.")
+@click.option("--overwrite", is_flag=True, help="Overwrite existing `new_fraction` imported table.")
+@click.pass_context
+def gleam_import(ctx, batch_file, allow_missing, overwrite):
+    """
+    Load batch results from GLEAM.
 
-def web_export(args):
-    process_export(args)
-
-
-def web_upload(args):
-    c = args.config
-    upload_export(
-        args.EXPORTED_DIR, c["gs_prefix"], c["gs_url_prefix"], channel=args.channel
-    )
-
-
-def import_batch(args):
-    b = Batch.open(args.BATCH_FILE)
-    d = args.rds.data
+    BATCH_FILE: The batch-*.hdf5 file with batch spec to be updated.
+    """
+    b = Batch.open(batch_file)
+    d = ctx.obj["RDS"].data
     regions = set(
         d.loc[
             ((d.Level == Level.country) | (d.Level == Level.continent))
@@ -71,155 +92,143 @@ def import_batch(args):
         ].Region.values
     )
     # Add all configured regions
-    for rc in args.config["export_regions"]:
-        r = args.rds[rc]
+    for rc in ctx.obj["CONFIG"]["export_regions"]:
+        r = ctx.obj["RDS"][rc]
         if r.GleamID != "":
             regions.add(r)
 
     log.info(
-        f"Importing results for {len(regions)} from GLEAM into {args.BATCH_FILE} ..."
+        f"Importing results for {len(regions)} from GLEAM into {batch_file} ..."
     )
     b.import_results_from_gleam(
-        Path(args.config["gleamviz_sims_dir"]).expanduser(),
+        Path(ctx.obj["CONFIG"]["gleamviz_sims_dir"]).expanduser(),
         regions,
-        resample=args.config["gleam_resample"],
-        allow_unfinished=args.allow_missing,
-        overwrite=args.overwrite,
+        resample=ctx.obj["CONFIG"]["gleam_resample"],
+        allow_unfinished=allow_missing,
+        overwrite=overwrite,
         info_level=logging.INFO,
     )
 
+@cli.command()
+@click.argument("base_def", type=click.Path(exists=True))
+@click.argument("country_estimates", type=click.Path(exists=True))
+@click.option("-t", "--top", default=2000, type=int, help="Upper limit for seed compartments.")
+@click.option("-c", "--comment", type=str, help="A short comment (to be part of path).")
+@click.option("-D", "--start-date", type=click.DateTime(), help="Set a sim start date (default: from the simulation def).")
+@click.pass_context
+def gleam_generate(ctx, base_def, country_estimates, top, comment, start_date):
+    """
+    Create batch of definitions for GLEAM.
+    
+    BASE_DEF: Basic definition file to use.
 
-def generate_batch(args):
-    b = Batch.new(dir=args.config["output_dir"], comment=args.comment)
+    COUNTRY_ESTIMATES: The country-level estimate source CSV file.
+    """
+    b = Batch.new(dir=ctx.obj["CONFIG"]["output_dir"], comment=comment)
     log.info(f"New batch file {b.path}")
-    log.info(f"Reading base GLEAM definition {args.BASE_DEF} ...")
-    d = epimodel.gleam.GleamDefinition(args.BASE_DEF)
-    # TODO: This shuld be somewhat more versatile
-    log.info(f"Reading estimates from CSV {args.COUNTRY_ESTIMATES} ...")
-    est = read_csv_smart(args.COUNTRY_ESTIMATES, args.rds, levels=Level.country)
-    if args.start_date:
-        start_date = utils.utc_date(args.start_date)
+    log.info(f"Reading base GLEAM definition {base_def} ...")
+    d = epimodel.gleam.GleamDefinition(base_def)
+    # TODO: This should be somewhat more versatile
+    log.info(f"Reading estimates from CSV {country_estimates} ...")
+    est = read_csv_smart(country_estimates, ctx.obj["RDS"], levels=Level.country)
+    if start_date:
+        start_date = utils.utc_date(start_date)
     else:
         start_date = d.get_start_date()
     log.info(f"Generating scenarios with start_date {start_date.ctime()} ...")
     batch.generate_simulations(
-        b, d, est, rds=args.rds, config=args.config, start_date=start_date, top=args.top
+        b, d, est, rds=ctx.obj["RDS"], config=ctx.obj["CONFIG"], start_date=start_date, top=top
     )
     log.info(f"Generated batch {b.path!r}:\n  {b.stats()}")
     b.close()
 
+@cli.command()
+@click.argument("batch_file", type=click.Path(exists=True))
+@click.option("-o", "--out_dir", type=click.Path(exists=True), help="Override output dir (must exist).")
+@click.option("-f", "--overwrite", is_flag=True, help="Overwrite existing files.")
+@click.pass_context
+def gleam_export(ctx, batch_file, out_dir, overwrite):
+    """Create batch of definitions for GLEAM.
 
-def export_batch(args):
-    batch = Batch.open(args.BATCH_FILE)
-    gdir = args.config["gleamviz_sims_dir"]
-    if args.out_dir is not None:
-        gdir = args.out_dir
+    BATCH_FILE: The batch-*.hdf5 file with batch spec to be updated.
+    """
+    batch = Batch.open(batch_file)
+    gdir = ctx.obj["CONFIG"]["gleamviz_sims_dir"]
+    if out_dir is not None:
+        gdir = out_dir
     log.info(
-        f"Creating GLEAM XML definitions for batch {args.BATCH_FILE} in dir {gdir} ..."
+        f"Creating GLEAM XML definitions for batch {batch_file} in dir {gdir} ..."
     )
     batch.export_definitions_to_gleam(
-        Path(gdir).expanduser(), overwrite=args.overwrite, info_level=logging.INFO
+        Path(gdir).expanduser(), overwrite=overwrite, info_level=logging.INFO
     )
 
+@cli.command()
+@click.argument("batch_file", type=click.Path(exists=True))
+@click.argument("estimates", type=click.Path(exists=True))
+@click.option("-c", "--comment", type=str, help="A short comment (to be part of path).")
+@click.pass_context
+def web_export(ctx, batch_file, estimates, comment):
+    """
+    Create data export for web.
 
-def create_parser():
-    ap = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    ap.add_argument("-d", "--debug", action="store_true", help="Debugging logs.")
-    ap.add_argument("-C", "--config", default="config.yaml", help="Config file.")
-    sp = ap.add_subparsers(title="subcommands", required=True, dest="cmd")
+    BATCH_FILE: A result HDF file from the import-gleam-batch step
 
-    upp = sp.add_parser(
-        "update_johns_hopkins", help="Fetch data from Johns Hopkins CSSE."
-    )
-    upp.set_defaults(func=update_johns_hopkins)
+    ESTIMATES: CSV file containing the current estimates
+    """
+    process_export(ctx.obj["CONFIG"], ctx.obj["RDS"], ctx.obj["DEBUG"], comment, batch_file, estimates)
 
-    upf = sp.add_parser("update_foretold", help="Fetch data from Foretold.")
-    upf.set_defaults(func=update_foretold)
+@cli.command()
+@click.argument("exported_dir", type=click.Path(exists=True))
+@click.option("-c", "--channel", type=str, default="staging", help="Channel to upload to ('main' for main site).")
+@click.pass_context
+def web_upload(ctx, exported_dir, channel):
+    """
+    Upload data to the configured GCS bucket.
 
-    ibp = sp.add_parser("import_gleam_batch", help="Load batch results from GLEAM.")
-    ibp.add_argument(
-        "BATCH_FILE", help="The batch-*.hdf5 file with batch spec to be updated."
+    EXPORTED_DIR: The generated export directory.
+    """
+    c = ctx.obj["CONFIG"]
+    upload_export(
+        exported_dir, c["gs_prefix"], c["gs_url_prefix"], channel=channel
     )
-    ibp.add_argument(
-        "-M", "--allow-missing", action="store_true", help="Skip missing sim results."
-    )
-    ibp.add_argument(
-        "--overwrite",
-        action="store_true",
-        help="Overwrite existing `new_fraction` imported table.",
-    )
-    ibp.set_defaults(func=import_batch)
 
-    gbp = sp.add_parser(
-        "generate_gleam_batch", help="Create batch of definitions for GLEAM."
-    )
-    gbp.add_argument(
-        "-t", "--top", default=2000, type=int, help="Upper limit for seed compartments."
-    )
-    gbp.add_argument("-c", "--comment", help="A short comment (to be part of path).")
-    gbp.add_argument(
-        "-D",
-        "--start_date",
-        help="Set a sim start date (default: from the simulation def).",
-    )
-    gbp.add_argument("BASE_DEF", help="Basic definition file to use.")
-    gbp.add_argument(
-        "COUNTRY_ESTIMATES", help="The country-level estimate source CSV file."
-    )
-    gbp.set_defaults(func=generate_batch)
+@cli.command()
+@click.argument("SRC", type=click.Path(exists=True))
+@click.argument("DEST", type=click.Path(exists=True))
+@click.pass_context
+def countermeasures_import(ctx, src, dest):
+    """
+    Import one CSV file from countermeasures DB.
 
-    ebp = sp.add_parser(
-        "export_gleam_batch", help="Create batch of definitions for GLEAM."
+    SRC: Input CSV.
+
+    DEST: Output CSV.
+    """
+    log.info(f"Importing countermeasures from {src} into {dest} ...")
+    cms = epimodel.imports.import_countermeasures_csv(ctx.obj["RDS"], src)
+    cms.to_csv(dest)
+    log.info(
+        f"Saved countermeasures to {dest}, {len(cms.columns)} features, "
+        f"last day is {cms.index.get_level_values(1).max()}"
     )
-    ebp.add_argument("-o", "--out_dir", help="Override output dir (must exist).")
-    ebp.add_argument(
-        "-f", "--overwrite", action="store_true", help="Overwrite existing files."
-    )
-    ebp.add_argument(
-        "BATCH_FILE", help="The batch-*.hdf5 file with batch spec to be updated."
-    )
-    ebp.set_defaults(func=export_batch)
 
-    exp = sp.add_parser("web_export", help="Create data export for web.")
-    exp.add_argument("-c", "--comment", help="A short comment (to be part of path).")
-    exp.add_argument("BATCH_FILE", help="A result HDF file of import_gleam_batch step")
-    exp.add_argument("estimates", help="CSV file containing the current estimates")
-    exp.set_defaults(func=web_export)
+# Workflows
 
-    uplp = sp.add_parser("web_upload", help="Upload data to the configured GCS bucket")
-    uplp.add_argument("EXPORTED_DIR", help="The generated export directory.")
-    uplp.add_argument(
-        "-c",
-        "--channel",
-        default="staging",
-        help="Channel to upload to ('main' for main site).",
-    )
-    uplp.set_defaults(func=web_upload)
+@cli.group()
+@click.pass_context
+def workflow(ctx):
+    """
+    Workflows to run stages of the pipeline.
+    """
 
-    iftp = sp.add_parser(
-        "import_countermeasures", help="Import one CSV file from countermeasures DB."
-    )
-    iftp.add_argument("SRC", help="Input CSV.")
-    iftp.add_argument("DEST", help="Output CSV.")
-    iftp.set_defaults(func=import_countermeasures)
-
-    return ap
-
-
-def main():
-    logging.basicConfig(level=logging.INFO)
-    args = create_parser().parse_args()
-    if args.debug:
-        logging.root.setLevel(logging.DEBUG)
-    with open(args.config, "rt") as f:
-        args.config = yaml.safe_load(f)
-    data_dir = Path(args.config["data_dir"])
-    args.rds = RegionDataset.load(
-        data_dir / "regions.csv", data_dir / "regions-gleam.csv"
-    )
-    epimodel.algorithms.estimate_missing_populations(args.rds)
-    args.func(args)
-
+@workflow.command()
+@click.pass_context
+def gleam_to_web(ctx):
+    """
+    Runs import-gleam-batch, web-export and web-upload. 
+    TODO
+    """
 
 if __name__ == "__main__":
-    main()
+    cli(obj={})

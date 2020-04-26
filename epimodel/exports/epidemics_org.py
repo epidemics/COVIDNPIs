@@ -392,8 +392,8 @@ def get_df_list(df: pd.DataFrame, code) -> pd.DataFrame:
     return df.loc[[code]].sort_index()
 
 
-def get_extra_path(args, name: str) -> Path:
-    return Path(args.config["data_dir"]) / args.config["web_export"][name]
+def get_extra_path(config, name: str) -> Path:
+    return Path(config["data_dir"]) / config["web_export"][name]
 
 
 def aggregate_countries(
@@ -425,25 +425,25 @@ def aggregate_countries(
     return hopkins.drop(index=all_state_codes).append(pd.concat(to_append))
 
 
-def process_export(args) -> None:
-    ex = WebExport(args.config["gleam_resample"], comment=args.comment)
+def process_export(config, rds, debug, comment, batch_file, estimates) -> None:
+    ex = WebExport(config["gleam_resample"], comment=comment)
 
-    hopkins = get_extra_path(args, "john_hopkins")
-    foretold = get_extra_path(args, "foretold")
-    rates = get_extra_path(args, "rates")
-    timezone = get_extra_path(args, "timezones")
-    un_age_dist = get_extra_path(args, "un_age_dist")
-    traces_v3 = get_extra_path(args, "traces_v3")
+    hopkins = get_extra_path(config, "john_hopkins")
+    foretold = get_extra_path(config, "foretold")
+    rates = get_extra_path(config, "rates")
+    timezone = get_extra_path(config, "timezones")
+    un_age_dist = get_extra_path(config, "un_age_dist")
+    traces_v3 = get_extra_path(config, "traces_v3")
 
-    export_regions = sorted(args.config["export_regions"])
+    export_regions = sorted(config["export_regions"])
 
-    batch = Batch.open(args.BATCH_FILE)
+    batch = Batch.open(batch_file)
     simulation_specs: pd.DataFrame = batch.hdf["simulations"]
     # TODO: models_df_old likely not needed anymore
     models_df_old: pd.DataFrame = batch.hdf["new_fraction"]
     cummulative_active_df = batch.get_cummulative_active_df()
 
-    estimates_df = epimodel.read_csv_smart(args.estimates, args.rds, prefer_higher=True)
+    estimates_df = epimodel.read_csv_smart(estimates, rds, prefer_higher=True)
 
     rates_df: pd.DataFrame = pd.read_csv(
         rates, index_col="Code", keep_default_na=False, na_values=[""]
@@ -472,10 +472,10 @@ def process_export(args) -> None:
         parse_dates=["Date"],
         keep_default_na=False,
         na_values=[""],
-    ).pipe(aggregate_countries, args.config["state_to_country"], args.rds)
+    ).pipe(aggregate_countries, config["state_to_country"], rds)
 
     analyze_data_consistency(
-        args.debug,
+        debug,
         export_regions,
         # TODO: replace by cummulative version as models are not needed anymore
         models_df_old,
@@ -485,14 +485,14 @@ def process_export(args) -> None:
     )
 
     for code in export_regions:
-        reg: Region = args.rds[code]
+        reg: Region = rds[code]
         m49 = int(reg["M49Code"]) if pd.notnull(reg["M49Code"]) else -1
         iso3 = reg["CountryCodeISOa3"]
 
         ex.new_region(
             reg,
             get_df_else_none(estimates_df, code),
-            args.config["groups"],
+            config["groups"],
             cummulative_active_df.xs(key=code, level="Code").sort_index(level="Date"),
             simulation_specs,
             get_df_else_none(rates_df, code),
@@ -503,4 +503,4 @@ def process_export(args) -> None:
             get_df_else_none(traces_v3_df, iso3),
         )
 
-    ex.write(args.config["output_dir"])
+    ex.write(config["output_dir"])
