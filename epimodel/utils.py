@@ -56,7 +56,7 @@ def read_csv_smart(
     skip_unknown: bool = False,
     levels=None,
     drop_underscored: bool = True,
-    skip=(),
+    prefer_higher=False,
     **kwargs,
 ) -> pd.DataFrame:
     """
@@ -64,8 +64,9 @@ def read_csv_smart(
     perform basic checks.
 
     For every row, the named region is found in the region dataset by name or code.
-    Name matches must be unique within selected levels
-    (see `RegionDataset.find_one_by_name`) and Codes.
+    Without `prefer_higher`, name matches must be unique within selected levels (see
+    `RegionDataset.find_one_by_name`). With `prefer_higher` the highest level is
+    preferred (but still must be unique).
 
     If not given, the name/code column is auto-detected from "Code", "code", "Name",
     "name". The date column names tried are "Date", "date", "Day", "day".
@@ -83,6 +84,9 @@ def read_csv_smart(
         rs = set(rds.find_all_by_name(n, levels=levels))
         if n in rds:
             rs.add(rds[n])
+        if prefer_higher:
+            max_level = max(r.Level for r in rs)
+            rs = set(r for r in rs if r.Level == max_level)
         if len(rs) > 1:
             raise Exception(f"Found multiple matches for {n!r}: {rs!r}")
         elif len(rs) == 1:

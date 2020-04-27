@@ -66,7 +66,7 @@ print(csse.loc[('CZ', "2020-03-28")])
 ## Running pipeline to get web export
 
 Assuming you've installed deps via `poetry install` and you are in the root epimodel repo.
-Also, you did `cp config-default.yaml config.yaml` (modifying it as fit) and set e.g. `export_regions: [CZ, ES]`. Prepend `-C YOUR_CONFIG.yaml` to all commands below to use it rather than `config.yaml`.
+Also, you did `cp config.yaml config-local.yaml` (modifying it as fit) and set e.g. `export_regions: [CZ, ES]`. Prepend `-C config_local.yaml` to all commands below to use it rather than `config.yaml` (changing `config.yaml` may later conflict with git update).
 
 1. Clone data repo or update it.
    `git clone https://github.com/epidemics/epimodel-covid-data data`

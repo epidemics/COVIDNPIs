@@ -21,7 +21,7 @@ SIMULATION_COLUMNS = ["Name", "Group", "Key", "StartDate", "DefinitionXML"]
 LEVEL_TO_GTYPE = {
     Level.country: "country",
     Level.continent: "continent",
-    Level.gleam_basin: "city",
+    Level.gleam_basin: "basin",
 }
 COMPARTMENTS = {2: "Infected", 3: "Recovered"}
 
