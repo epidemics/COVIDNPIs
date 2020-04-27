@@ -32,9 +32,10 @@ class WebExport:
         self.comment = comment
         self.date_resample = date_resample
         self.export_regions = {}
+        self.countermeasure_tags = None
 
-    def add_countermeasures(self, countermeasures):
-        self.countermeasures = countermeasures
+    def add_countermeasure_tags(self, countermeasure_tags):
+        self.countermeasure_tags = countermeasure_tags
 
     def to_json(self):
         out = {
@@ -45,8 +46,10 @@ class WebExport:
             "regions": {k: a.to_json() for k, a in self.export_regions.items()},
         }
 
-        if self.countermeasures is not None:
-            out["countermeasures"] = self.countermeasures
+        if self.countermeasure_tags is not None:
+            out["countermeasure_tags"] = (self.countermeasure_tags
+                                          .replace({np.nan: None})
+                                          .to_dict(orient='records'))
 
         return out
 
@@ -173,13 +176,8 @@ class WebExportRegion:
         if traces_v3 is not None:
             d["TracesV3"] = traces_v3["TracesV3"]
 
-        if isinstance(countermeasures, pd.DataFrame):
-            d["Countermeasures"] = countermeasures.replace({np.nan: None}).to_dict(
-                orient="records"
-            )
-        elif isinstance(countermeasures, pd.Series):
-            d["Countermeasures"] = [countermeasures.replace({np.nan: None}).to_dict()]
-
+        d["Countermeasures"] = (countermeasures.replace({np.nan: None})
+                                .to_dict(orient="records"))
         d["Timezones"] = timezones["Timezone"].tolist()
 
         if un_age_dist is not None:
@@ -447,12 +445,6 @@ def aggregate_countries(
 def process_export(args) -> None:
     ex = WebExport(args.config["gleam_resample"], comment=args.comment)
 
-    try:
-        with open(get_extra_path(args, "countermeasure-tags")) as fp:
-            ex.add_countermeasures(json.load(fp)["data"]["containment_tags"])
-    except:
-        log.warning("Could not load containment-tags")
-
     hopkins = get_extra_path(args, "john_hopkins")
     foretold = get_extra_path(args, "foretold")
     rates = get_extra_path(args, "rates")
@@ -460,6 +452,9 @@ def process_export(args) -> None:
     un_age_dist = get_extra_path(args, "un_age_dist")
     traces_v3 = get_extra_path(args, "traces_v3")
     countermeasures = get_extra_path(args, "countermeasures-by-tag")
+    countermeasure_tags = get_extra_path(args, "countermeasure-tags")
+
+    ex.add_countermeasure_tags(pd.read_csv(countermeasure_tags))
 
     export_regions = sorted(args.config["export_regions"])
 
@@ -539,7 +534,7 @@ def process_export(args) -> None:
             get_df_list(timezone_df, code),
             get_df_else_none(un_age_dist_df, m49),
             get_df_else_none(traces_v3_df, iso3),
-            get_df_else_none(countermeasures_df, code),
+            get_df_list(countermeasures_df, code),
         )
 
     ex.write(args.config["output_dir"])
