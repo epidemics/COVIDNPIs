@@ -110,7 +110,6 @@ def read_csv_smart(
     )
 
     data = pd.read_csv(path, na_values=na_values, keep_default_na=False, **kwargs)
-    print(data)
 
     if name_column is None:
         for n in NAME_COLUMNS:
