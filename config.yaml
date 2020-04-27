@@ -20,7 +20,8 @@ web_export:
   timezones: timezones.csv
   un_age_dist: various/age_dist_un.csv
   traces_v3: various/traces_v3.csv
-  countermeasures: countermeasures-by-tag.csv
+  countermeasures-by-tag: countermeasures-by-tag.csv
+  countermeasure-tags: countermeasure-tags.json
 
 ### Generating GLEAM scenarios
 # All combinations of groups and scenarios are created,
@@ -267,3 +268,4 @@ state_to_country:
   GU: ['US-GU']
   MP: ['US-MP']
   PR: ['US-PR']
+  
