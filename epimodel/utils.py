@@ -81,6 +81,8 @@ def read_csv_smart(
     """
 
     def find(n):
+        if not isinstance(n, str):
+            n = str(n)
         rs = set(rds.find_all_by_name(n, levels=levels))
         if n in rds:
             rs.add(rds[n])
@@ -111,7 +113,8 @@ def read_csv_smart(
         raise ValueError(f"CSV file does not have column {name_column}")
     data["Code"] = data[name_column].map(find)
     data = data[data.Code != ""]
-    del data[name_column]
+    if name_column != "Code":
+        del data[name_column]
 
     if date_column is None:
         for n in DATE_COLUMNS:
@@ -140,7 +143,9 @@ def _process_loaded_table(
     if date_column in data.columns:
         dti = pd.DatetimeIndex(pd.to_datetime(data[date_column], utc=True))
         del data[date_column]
-        data.index = pd.MultiIndex.from_arrays([data.index, dti])
+        data.index = pd.MultiIndex.from_arrays(
+            [data.index, dti], names=["Code", "Date"]
+        )
     if drop_underscored:
         for n in list(data.columns):
             if n.startswith("_"):
