@@ -78,11 +78,15 @@ def read_csv_smart(
     By default drops any "_Undersored" columns (including e.g. the informative "_Name").
 
     Any other keyword args are passed to `pd.read_csv`.
+
+    The list of recognized NaNs defaults to `["", "#N/A", "#N/A", "N/A", "#NA",
+    "-NaN", "-nan", "1.#IND", "1.#QNAN", "<NA>", "N/A", "NULL", "NaN", "n/a", "nan"]`.
     """
 
+    unknown: Set[str] = set()
+
     def find(n):
-        if not isinstance(n, str):
-            n = str(n)
+        assert isinstance(n, str)
         rs = set(rds.find_all_by_name(n, levels=levels))
         if n in rds:
             rs.add(rds[n])
@@ -99,8 +103,14 @@ def read_csv_smart(
         else:
             raise Exception(f"No region found for {n!r}")
 
-    unknown: Set[str] = set()
-    data = pd.read_csv(path, **kwargs)
+    na_values = kwargs.pop(
+        "na_values",
+        ["", "#N/A", "#N/A", "N/A", "#NA", "-NaN", "-nan"]
+        + ["1.#IND", "1.#QNAN", "<NA>", "N/A", "NULL", "NaN", "n/a", "nan",],
+    )
+
+    data = pd.read_csv(path, na_values=na_values, keep_default_na=False, **kwargs)
+    print(data)
 
     if name_column is None:
         for n in NAME_COLUMNS:
