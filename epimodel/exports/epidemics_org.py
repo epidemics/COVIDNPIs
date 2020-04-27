@@ -47,9 +47,9 @@ class WebExport:
         }
 
         if self.countermeasure_tags is not None:
-            out["countermeasure_tags"] = (self.countermeasure_tags
-                                          .replace({np.nan: None})
-                                          .to_dict(orient='records'))
+            out["countermeasure_tags"] = self.countermeasure_tags.replace(
+                {np.nan: None}
+            ).to_dict(orient="records")
 
         return out
 
@@ -176,8 +176,9 @@ class WebExportRegion:
         if traces_v3 is not None:
             d["TracesV3"] = traces_v3["TracesV3"]
 
-        d["Countermeasures"] = (countermeasures.replace({np.nan: None})
-                                .to_dict(orient="records"))
+        d["Countermeasures"] = countermeasures.replace({np.nan: None}).to_dict(
+            orient="records"
+        )
         d["Timezones"] = timezones["Timezone"].tolist()
 
         if un_age_dist is not None:
