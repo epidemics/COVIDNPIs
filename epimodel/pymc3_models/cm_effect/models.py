@@ -4217,7 +4217,7 @@ class CMCombined(BaseCMModel):
                 + self.Growth.cumsum(axis=1),
             )
 
-            x = np.arange(0, 21)
+            x = np.arange(0, 64)
             delay_prob = pm.math.exp(self.ActiveDelayDist.logp(x))
             delay_prob = delay_prob / T.sum(delay_prob)
 
