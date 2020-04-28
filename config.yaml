@@ -70,7 +70,7 @@ output_dir: out/
 
 ### List of exported regions code
 export_regions:
-  [ 
+  [
     "G-SDT",
     "G-PEW",
     "G-ISB",
@@ -104,12 +104,6 @@ export_regions:
 ### these are used to match our non-state codes (e.g. AU) for John Hopkins database
 ### where they have it on state/province granularity
 state_to_country:
-  AU: ['AU-ACT', 'AU-NSW', 'AU-NT', 'AU-QLD', 'AU-SA', 'AU-TAS', 'AU-VIC', 'AU-WA']
-  CN: ['CN-AH', 'CN-BJ', 'CN-CQ', 'CN-FJ', 'CN-GD', 'CN-GS', 'CN-GX', 'CN-GZ', 'CN-HA',
-       'CN-HB', 'CN-HE', 'CN-HI', 'CN-HK', 'CN-HL', 'CN-HN', 'CN-JL', 'CN-JS', 'CN-JX',
-       'CN-LN', 'CN-MO', 'CN-NM', 'CN-NX', 'CN-QH', 'CN-SC', 'CN-SD', 'CN-SH', 'CN-SN',
-       'CN-SX', 'CN-TJ', 'CN-XJ', 'CN-XZ', 'CN-YN', 'CN-ZJ']
-  #CA: ['CA-AB','CA-BC','CA-MB','CA-NB','CA-NL','CA-NS','CA-NT','CA-ON','CA-PE','CA-QC','CA-SK','CA-YT']
-  GU: ['US-GU']
-  MP: ['US-MP']
-  PR: ['US-PR']
+  - AU
+  - CN
+  - CA
