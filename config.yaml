@@ -107,3 +107,58 @@ state_to_country:
   - AU
   - CN
   - CA
+
+### Define extra regions that are composed of arbitrary other regions.
+### Region info not specified here will either be aggregated from the
+### composing regions if possible or left blank.
+composed_regions:
+  PK-AJK:
+    Name: 'Azad Jammu & Kashmir'
+    Regions:
+      - G-IXJ
+  PK-BA:
+    Name: 'Balochistan'
+    Regions:
+      - G-PZH
+      - G-UET
+      - G-SUL
+      - G-DBA
+      - G-PJG
+      - G-TUK
+      - G-GWD
+  PK-GB:
+    Name: 'Gilgit-Baltistan'
+    Regions:
+      - G-GIL
+      - G-KDU
+  PK-ICT:
+    Name: 'Islamabad Capital Territory'
+    Regions:
+      - G-ISB
+  PK-KP:
+    Name: 'Khyber Pakhtunkhwa'
+    Regions:
+      - G-CJL
+      - G-SDT
+      - G-PEW
+      - G-DSK
+  PK-PB:
+    Name: 'Punjab'
+    Regions:
+      - G-SKT
+      - G-LHE
+      - G-LYP
+      - G-MUX
+      - G-DEA
+      - G-BHV
+      - G-RYK
+  PK-SD:
+    Name: 'Sindh'
+    Regions:
+      - G-SKZ
+      - G-KCF
+      - G-MJD
+      - G-DDU
+      - G-KHI
+      - G-WNS
+      - G-HDD
