@@ -23,6 +23,7 @@ class Level(enum.Enum):
     subregion = 4
     continent = 5
     world = 6
+    custom = None
 
     def __ge__(self, other):
         if self.__class__ is other.__class__:
@@ -219,6 +220,46 @@ class RegionDataset:
             s.data = s.data.append(data, verify_integrity=True)
         s._rebuild_index()
         return s
+
+    def load_composed_regions(self, composed_regions):
+        """Adds regions composed of existing regions from a config dict"""
+        fields = tuple("children", self.data.columns)
+        region_fields = (
+            "M49Code",
+            "ContinentCode",
+            "SubregionCode",
+            "CountryCode",
+            "CountryCodeISOa3",
+            "SubdivisionCode")
+
+        for code, data in composed_regions.items():
+            children = [self[child_code] for child_code in data["children"]]
+
+            data = {k: v for k, v in data if k in fields}
+            data["Level"] = data["Level"] or Level["custom"]
+
+            # set superregion fields if not otherwise set
+            # and value is same for all children
+            for region_field in region_fields:
+                if region_field not in data:
+                    value = child[region_field]
+                    for child in children[1:]:
+                        if child[region_field] != value:
+                            continue
+                    data[region_field] = value
+
+            # average lat/lng
+            data["Lat"] = (
+                data["Lat"] or sum(child.Lat for child in children) / len(children))
+            data["Lon"] = (
+                data["Lon"] or sum(child.Lon for child in children) / len(children))
+
+            # sum population
+            data["Population"] = (
+                data["Population"] or sum(child.Population for child in children))
+
+        self.data = self.data.append(data, verify_integrity=True)
+        self._rebuild_index()
 
     @property
     def regions(self):

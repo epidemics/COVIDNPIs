@@ -119,11 +119,11 @@ state_to_country:
 composed_regions:
   PK-AJK:
     Name: 'Azad Jammu & Kashmir'
-    Regions:
+    children:
       - G-IXJ
   PK-BA:
     Name: 'Balochistan'
-    Regions:
+    children:
       - G-PZH
       - G-UET
       - G-SUL
@@ -133,23 +133,23 @@ composed_regions:
       - G-GWD
   PK-GB:
     Name: 'Gilgit-Baltistan'
-    Regions:
+    children:
       - G-GIL
       - G-KDU
   PK-ICT:
     Name: 'Islamabad Capital Territory'
-    Regions:
+    children:
       - G-ISB
   PK-KP:
     Name: 'Khyber Pakhtunkhwa'
-    Regions:
+    children:
       - G-CJL
       - G-SDT
       - G-PEW
       - G-DSK
   PK-PB:
     Name: 'Punjab'
-    Regions:
+    children:
       - G-SKT
       - G-LHE
       - G-LYP
@@ -159,7 +159,7 @@ composed_regions:
       - G-RYK
   PK-SD:
     Name: 'Sindh'
-    Regions:
+    children:
       - G-SKZ
       - G-KCF
       - G-MJD
