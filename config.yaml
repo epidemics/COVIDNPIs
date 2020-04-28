@@ -31,27 +31,27 @@ web_export:
 scenarios:
   - param_occupancyRate: 70 # Note this is in percent!
     param_beta_multiplier: 1.1
-    name: 10% HIGHER spread<br>WEAK reduction in air travel
+    name: Faster spread (110%)<br>Less air travel
     key: "HIGHER_WEAK"
   - param_occupancyRate: 70 # Note this is in percent!
     param_beta_multiplier: 1.0
-    name: EXPECTED spread<br>WEAK reduction in air travel
+    name: Expected spread (100%)<br>Less air travel
     key: "EXPECTED_WEAK"
   - param_occupancyRate: 70 # Note this is in percent!
     param_beta_multiplier: 0.9
-    name: 10% LOWER spread<br>WEAK reduction in air travel
+    name: Slower spread (90%)<br>Less air travel
     key: "LOWER_WEAK"
   - param_occupancyRate: 20 # Note this is in percent!
     param_beta_multiplier: 1.1
-    name: 10% HIGHER spread<br>STRONG reduction in air travel
+    name: Faster spread (110%)<br>Much less air travel
     key: "HIGHER_STRONG"
   - param_occupancyRate: 20 # Note this is in percent!
     param_beta_multiplier: 1.0
-    name: EXPECTED spread<br>STRONG reduction in air travel
+    name: Expected spread (100%)<br>Much less air travel
     key: "EXPECTED_STRONG"
   - param_occupancyRate: 20 # Note this is in percent!
     param_beta_multiplier: 0.9
-    name: 10% LOWER spread<br>STRONG reduction in air travel
+    name: Slower spread (90%)<br>Much less air travel
     key: "LOWER_STRONG"
 
 groups:
@@ -252,7 +252,6 @@ export_regions:
     "ZM",
     "ZW",
   ]
-
 
 ### these are used to match our non-state codes (e.g. AU) for John Hopkins database
 ### where they have it on state/province granularity
