@@ -70,36 +70,41 @@ output_dir: out/
 
 ### List of exported regions code
 export_regions:
-  [
-    "G-SDT",
-    "G-PEW",
-    "G-ISB",
-    "G-GIL",
-    "G-KDU",
-    "G-SKT",
-    "G-LHE",
-    "G-LYP",
-    "G-DSK",
-    "G-MUX",
-    "G-DEA",
-    "G-BHV",
-    "G-RYK",
-    "G-PZH",
-    "G-UET",
-    "G-SUL",
-    "G-SKZ",
-    "G-KCF",
-    "G-MJD",
-    "G-DBA",
-    "G-PJG",
-    "G-TUK",
-    "G-GWD",
-    "G-DDU",
-    "G-KHI",
-    "G-WNS",
-    "G-HDD",
-    "PK"
-    ]
+  - G-SDT
+  - G-PEW
+  - G-ISB
+  - G-GIL
+  - G-KDU
+  - G-SKT
+  - G-LHE
+  - G-LYP
+  - G-DSK
+  - G-MUX
+  - G-DEA
+  - G-BHV
+  - G-RYK
+  - G-PZH
+  - G-UET
+  - G-SUL
+  - G-SKZ
+  - G-KCF
+  - G-MJD
+  - G-DBA
+  - G-PJG
+  - G-TUK
+  - G-GWD
+  - G-DDU
+  - G-KHI
+  - G-WNS
+  - G-HDD
+  - PK
+  - PK-AJK
+  - PK-BA
+  - PK-GB
+  - PK-ICT
+  - PK-KP
+  - PK-PB
+  - PK-SD
 
 ### these are used to match our non-state codes (e.g. AU) for John Hopkins database
 ### where they have it on state/province granularity
