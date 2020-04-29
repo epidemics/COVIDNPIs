@@ -78,9 +78,15 @@ def read_csv_smart(
     By default drops any "_Undersored" columns (including e.g. the informative "_Name").
 
     Any other keyword args are passed to `pd.read_csv`.
+
+    The list of recognized NaNs defaults to `["", "#N/A", "#N/A", "N/A", "#NA",
+    "-NaN", "-nan", "1.#IND", "1.#QNAN", "<NA>", "N/A", "NULL", "NaN", "n/a", "nan"]`.
     """
 
+    unknown: Set[str] = set()
+
     def find(n):
+        assert isinstance(n, str)
         rs = set(rds.find_all_by_name(n, levels=levels))
         if n in rds:
             rs.add(rds[n])
@@ -97,8 +103,13 @@ def read_csv_smart(
         else:
             raise Exception(f"No region found for {n!r}")
 
-    unknown: Set[str] = set()
-    data = pd.read_csv(path, **kwargs)
+    na_values = kwargs.pop(
+        "na_values",
+        ["", "#N/A", "#N/A", "N/A", "#NA", "-NaN", "-nan"]
+        + ["1.#IND", "1.#QNAN", "<NA>", "N/A", "NULL", "NaN", "n/a", "nan",],
+    )
+
+    data = pd.read_csv(path, na_values=na_values, keep_default_na=False, **kwargs)
 
     if name_column is None:
         for n in NAME_COLUMNS:
@@ -111,7 +122,8 @@ def read_csv_smart(
         raise ValueError(f"CSV file does not have column {name_column}")
     data["Code"] = data[name_column].map(find)
     data = data[data.Code != ""]
-    del data[name_column]
+    if name_column != "Code":
+        del data[name_column]
 
     if date_column is None:
         for n in DATE_COLUMNS:
@@ -140,7 +152,9 @@ def _process_loaded_table(
     if date_column in data.columns:
         dti = pd.DatetimeIndex(pd.to_datetime(data[date_column], utc=True))
         del data[date_column]
-        data.index = pd.MultiIndex.from_arrays([data.index, dti])
+        data.index = pd.MultiIndex.from_arrays(
+            [data.index, dti], names=["Code", "Date"]
+        )
     if drop_underscored:
         for n in list(data.columns):
             if n.startswith("_"):

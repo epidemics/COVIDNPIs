@@ -87,9 +87,21 @@ class WebExport:
             fname = f"extdata-{rc}.json"
             er.data_url = f"{name}/{fname}"
             with open(exdir / fname, "wt") as f:
-                json.dump(er.data_ext, f, default=types_to_json, allow_nan=False)
+                json.dump(
+                    er.data_ext,
+                    f,
+                    default=types_to_json,
+                    allow_nan=False,
+                    separators=(",", ":"),
+                )
         with open(exdir / MAIN_DATA_FILENAME, "wt") as f:
-            json.dump(self.to_json(), f, default=types_to_json, allow_nan=False)
+            json.dump(
+                self.to_json(),
+                f,
+                default=types_to_json,
+                allow_nan=False,
+                separators=(",", ":"),
+            )
         log.info(f"Exported {len(self.export_regions)} regions to {exdir}")
 
 
