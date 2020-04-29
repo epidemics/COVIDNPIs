@@ -13,7 +13,7 @@ import pandas as pd
 from tqdm import tqdm
 
 from ..gleam import Batch
-from ..regions import Region
+from ..regions import Region, RegionDataset, Level
 import epimodel
 
 log = logging.getLogger(__name__)
@@ -448,11 +448,11 @@ def process_export(args) -> None:
     traces_v3 = get_extra_path(args, "traces_v3")
 
     export_regions = sorted(args.config["export_regions"])
+    custom_regions = [args.rds[code] for code in export_regions
+                      if args.rds[code].Level == Level.custom]
 
     batch = Batch.open(args.BATCH_FILE)
     simulation_specs: pd.DataFrame = batch.hdf["simulations"]
-    # TODO: models_df_old likely not needed anymore
-    models_df_old: pd.DataFrame = batch.hdf["new_fraction"]
     cummulative_active_df = batch.get_cummulative_active_df()
 
     estimates_df = epimodel.read_csv_smart(args.estimates, args.rds, prefer_higher=True)
@@ -486,11 +486,27 @@ def process_export(args) -> None:
         na_values=[""],
     ).pipe(aggregate_countries, args.config["state_to_country"], args.rds)
 
+
+    for reg in custom_regions:
+        child_codes = [child.Code for child in reg.children]
+
+        # add region to Gleam traces
+        cad = cummulative_active_df.reorder_levels(
+            ['Code', 'SimulationID', 'Date']).loc[child_codes].copy()
+        for child in reg.children:
+            for sim_id in cad.loc[child.Code].index.get_level_values('SimulationID'):
+                cad.loc[(child.Code, sim_id)] *= (child.Population / reg.Population)
+        reg_cad = cad.groupby(level=['SimulationID', 'Date']).sum()
+        # add custom region code to index
+        reg_cad = pd.concat([reg_cad], keys=[reg.Code], names=['Code'])
+        cummulative_active_df.append(reg_cad.reorder_levels(['SimulationID', 'Code', 'Date']))
+
+    import pdb; pdb.set_trace()
+
     analyze_data_consistency(
         args.debug,
         export_regions,
-        # TODO: replace by cummulative version as models are not needed anymore
-        models_df_old,
+        cummulative_active_df,
         rates_df,
         hopkins_df,
         foretold_df,
