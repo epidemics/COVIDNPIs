@@ -223,7 +223,6 @@ class RegionDataset:
 
     def load_composed_regions(self, composed_regions):
         """Adds regions composed of existing regions from a config dict"""
-        fields = tuple("children", self.data.columns)
         region_fields = (
             "M49Code",
             "ContinentCode",
@@ -232,32 +231,37 @@ class RegionDataset:
             "CountryCodeISOa3",
             "SubdivisionCode")
 
+        data = []
         for code, data in composed_regions.items():
             children = [self[child_code] for child_code in data["children"]]
 
-            data = {k: v for k, v in data if k in fields}
-            data["Level"] = data["Level"] or Level["custom"]
+            row = {k: v for k, v in row if k in self.COLUMN_TYPES or k == "children"}
+            row["Level"] = row["Level"] or Level.custom
 
             # set superregion fields if not otherwise set
             # and value is same for all children
             for region_field in region_fields:
-                if region_field not in data:
+                if region_field not in row:
                     value = child[region_field]
                     for child in children[1:]:
                         if child[region_field] != value:
                             continue
-                    data[region_field] = value
+                    row[region_field] = value
 
             # average lat/lng
-            data["Lat"] = (
-                data["Lat"] or sum(child.Lat for child in children) / len(children))
-            data["Lon"] = (
-                data["Lon"] or sum(child.Lon for child in children) / len(children))
+            row["Lat"] = (
+                row["Lat"] or sum(child.Lat for child in children) / len(children))
+            row["Lon"] = (
+                row["Lon"] or sum(child.Lon for child in children) / len(children))
 
             # sum population
-            data["Population"] = (
-                data["Population"] or sum(child.Population for child in children))
+            row["Population"] = (
+                row["Population"] or sum(child.Population for child in children))
 
+            data.append(row)
+
+        if "children" not in self.data:
+            self.data["children"] = None
         self.data = self.data.append(data, verify_integrity=True)
         self._rebuild_index()
 
@@ -322,6 +326,9 @@ class RegionDataset:
     def write_csv(self, path):
         # Reconstruct the OtherNames column
         for r in self.regions:
+            # don't include custom regions
+            if r.Level == Level.custom:
+                continue
             names = set(r.AllNames)
             if r.Name in names:
                 names.remove(r.Name)
@@ -365,6 +372,10 @@ class RegionDataset:
 
         # Add parent/children relations
         for r in self.regions:
+            if r.Level == Level.custom:
+                child_codes = self._code_index[r.Code]["children"]
+                r._children = set(self[code] for code in child_codes)
+                continue
             parent = None
             if parent is None and r.Level <= Level.gleam_basin:
                 parent = r.subdivision
