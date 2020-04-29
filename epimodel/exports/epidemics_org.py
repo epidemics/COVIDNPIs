@@ -437,6 +437,31 @@ def aggregate_countries(
     return hopkins.drop(index=all_state_codes).append(pd.concat(to_append))
 
 
+def add_custom_regions_to_traces(custom_regions, cummulative_active_df):
+    additions = []
+
+    for reg in custom_regions:
+        child_codes = [child.Code for child in reg.children]
+
+        # weight totals for each child region
+        reg_cad = cummulative_active_df.loc[pd.IndexSlice[:, child_codes], :].copy()
+        for child in reg.children:
+            reg_cad.loc[pd.IndexSlice[:, child.Code], :] *= child.Population / reg.Population
+
+        # combine weighted values and add to output
+        additions.append(reg_cad.groupby(level=['SimulationID', 'Date']).sum())
+
+    import pdb; pdb.set_trace()
+    # re-add Code index & combine results
+    additions_df = pd.concat(
+        additions,
+        keys=[reg.Code for reg in custom_regions],
+        names=['Code']
+    ).reorder_levels(['SimulationID', 'Code', 'Date'])
+
+    return cummulative_active_df.append(additions_df)
+
+
 def process_export(args) -> None:
     ex = WebExport(args.config["gleam_resample"], comment=args.comment)
 
@@ -486,20 +511,8 @@ def process_export(args) -> None:
         na_values=[""],
     ).pipe(aggregate_countries, args.config["state_to_country"], args.rds)
 
-
-    for reg in custom_regions:
-        child_codes = [child.Code for child in reg.children]
-
-        # add region to Gleam traces
-        cad = cummulative_active_df.reorder_levels(
-            ['Code', 'SimulationID', 'Date']).loc[child_codes].copy()
-        for child in reg.children:
-            for sim_id in cad.loc[child.Code].index.get_level_values('SimulationID'):
-                cad.loc[(child.Code, sim_id)] *= (child.Population / reg.Population)
-        reg_cad = cad.groupby(level=['SimulationID', 'Date']).sum()
-        # add custom region code to index
-        reg_cad = pd.concat([reg_cad], keys=[reg.Code], names=['Code'])
-        cummulative_active_df.append(reg_cad.reorder_levels(['SimulationID', 'Code', 'Date']))
+    cummulative_active_df = add_custom_regions_to_traces(
+        custom_regions, cummulative_active_df)
 
     import pdb; pdb.set_trace()
 

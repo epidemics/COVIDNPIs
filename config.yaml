@@ -143,7 +143,7 @@ custom_regions:
   PK-KP:
     Name: 'Khyber Pakhtunkhwa'
     children:
-      - G-CJL
+      # - G-CJL
       - G-SDT
       - G-PEW
       - G-DSK
