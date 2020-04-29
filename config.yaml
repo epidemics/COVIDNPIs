@@ -116,7 +116,7 @@ state_to_country:
 ### Define extra regions that are composed of arbitrary other regions.
 ### Region info not specified here will either be aggregated from the
 ### composing regions if possible or left blank.
-composed_regions:
+custom_regions:
   PK-AJK:
     Name: 'Azad Jammu & Kashmir'
     children:

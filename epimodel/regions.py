@@ -221,8 +221,8 @@ class RegionDataset:
         s._rebuild_index()
         return s
 
-    def load_composed_regions(self, composed_regions):
-        """Adds regions composed of existing regions from a config dict"""
+    def add_custom_regions(self, custom_regions):
+        """Adds custom regions composed of existing regions from a config dict"""
         region_fields = (
             "M49Code",
             "ContinentCode",
@@ -231,18 +231,20 @@ class RegionDataset:
             "CountryCodeISOa3",
             "SubdivisionCode")
 
-        data = []
-        for code, data in composed_regions.items():
+        rows = []
+        for code, data in custom_regions.items():
             children = [self[child_code] for child_code in data["children"]]
 
-            row = {k: v for k, v in row if k in self.COLUMN_TYPES or k == "children"}
-            row["Level"] = row["Level"] or Level.custom
+            row = {k: v for k, v in data.items()
+                   if k in self.COLUMN_TYPES or k == "children"}
+            row["Code"] = code
+            row["Level"] = row.get("Level") or Level.custom
 
             # set superregion fields if not otherwise set
             # and value is same for all children
             for region_field in region_fields:
                 if region_field not in row:
-                    value = child[region_field]
+                    value = children[0][region_field]
                     for child in children[1:]:
                         if child[region_field] != value:
                             continue
@@ -250,16 +252,20 @@ class RegionDataset:
 
             # average lat/lng
             row["Lat"] = (
-                row["Lat"] or sum(child.Lat for child in children) / len(children))
+                row.get("Lat")
+                or sum(child.Lat for child in children) / len(children))
             row["Lon"] = (
-                row["Lon"] or sum(child.Lon for child in children) / len(children))
+                row.get("Lon")
+                or sum(child.Lon for child in children) / len(children))
 
             # sum population
             row["Population"] = (
-                row["Population"] or sum(child.Population for child in children))
+                row.get("Population")
+                or sum(child.Population for child in children))
 
-            data.append(row)
+            rows.append(row)
 
+        data = pd.DataFrame(rows).set_index('Code')
         if "children" not in self.data:
             self.data["children"] = None
         self.data = self.data.append(data, verify_integrity=True)

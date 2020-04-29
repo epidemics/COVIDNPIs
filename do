@@ -217,6 +217,10 @@ def main():
     args.rds = RegionDataset.load(
         data_dir / "regions.csv", data_dir / "regions-gleam.csv"
     )
+    if 'custom_regions' in args.config:
+        args.rds.add_custom_regions(args.config['custom_regions'])
+    rds = args.rds
+    config = args.config
     epimodel.algorithms.estimate_missing_populations(args.rds)
     args.func(args)
 
