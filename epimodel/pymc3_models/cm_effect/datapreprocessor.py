@@ -227,7 +227,9 @@ class DataPreprocessorV2(DataPreprocessor):
             oxcgrt_feature_info,
             selected_features_oxcgrt,
             selected_features_epi,
-            ordered_features
+            ordered_features,
+            oxford_to_epi_features,
+            epifor_end_date="2020-04-21"
     ):
         # at the moment only features from the 0-1 countermeasures dataset
         Ds = pd.date_range(start=self.start_date, end=self.end_date, tz="utc")
@@ -295,8 +297,7 @@ class DataPreprocessorV2(DataPreprocessor):
 
         data_oxcgrt.sort_index()
 
-        data_oxcgrt_filtered = data_oxcgrt.loc[regions_epi, selected_features_oxcgrt]
-
+        data_oxcgrt_filtered = data_oxcgrt.loc[regions_epi, selected_features_oxcgrt]   
         ActiveCMs_temp = np.stack([data_oxcgrt_filtered.loc[c].loc[Ds].T for c in regions_epi])
 
         nRs, _, nDs = ActiveCMs_temp.shape
@@ -304,6 +305,7 @@ class DataPreprocessorV2(DataPreprocessor):
 
         ActiveCMs_oxcgrt = np.zeros((nRs, nCMs, nDs))
         oxcgrt_derived_cm_names = [n for n, _ in oxcgrt_feature_info]
+
 
         for r_indx in range(nRs):
             for feature_indx, (_, feature_filter) in enumerate(oxcgrt_feature_info):
@@ -324,8 +326,14 @@ class DataPreprocessorV2(DataPreprocessor):
         nCMs = len(ordered_features)
         ActiveCMs = np.zeros((nRs, nCMs, nDs))
 
+        epi_date_range = np.arange((pd.Timestamp(epifor_end_date) - pd.Timestamp(self.start_date)).days)
+
         for r in range(nRs):
-            for f_indx, f in enumerate(ordered_features):
+            for k, v in oxford_to_epi_features.items():
+                ActiveCMs_oxcgrt[r,oxcgrt_derived_cm_names.index(k),epi_date_range] = ActiveCMs_epi[r,selected_features_epi.index(v),epi_date_range]
+
+        for r in range(nRs):
+            for f_indx, f in enumerate(ordered_features):            
                 if f in selected_features_epi:
                     ActiveCMs[r, f_indx, :] = ActiveCMs_epi[r, selected_features_epi.index(f), :]
                 else:
