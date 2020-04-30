@@ -136,6 +136,10 @@ class Region:
     def subdivision(self):
         return self._region_prop("SubdivisionCode")
 
+    @property
+    def model_weights(self):
+        return self._region_prop("model_weights")
+
 
 class RegionDataset:
     """
@@ -236,7 +240,7 @@ class RegionDataset:
             children = [self[child_code] for child_code in data["children"]]
 
             row = {k: v for k, v in data.items()
-                   if k in self.COLUMN_TYPES or k == "children"}
+                   if k in ("children", "model_weights", *self.COLUMN_TYPES)}
             row["Code"] = code
             row["Level"] = row.get("Level") or Level.custom
 
@@ -263,11 +267,18 @@ class RegionDataset:
                 row.get("Population")
                 or sum(child.Population for child in children))
 
+            # use population as default weight
+            if "model_weights" not in row:
+                row["model_weights"] = {
+                    child.Code: child.Population for child in children}
+
             rows.append(row)
 
         data = pd.DataFrame(rows).set_index('Code')
         if "children" not in self.data:
             self.data["children"] = None
+        if "model_weights" not in self.data:
+            self.data["model_weights"] = None
         self.data = self.data.append(data, verify_integrity=True)
         self._rebuild_index()
 

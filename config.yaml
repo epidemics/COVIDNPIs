@@ -117,8 +117,9 @@ state_to_country:
 ### Region info not specified here will either be aggregated from the
 ### composing regions if possible or left blank.
 ### model_weights dictates which regions should be averaged into the
-### forecasting model and what their weights are. If missing, it
-### defaults to the chilren with Population as the weight.
+### forecasting model and what their weights are. Weights will be
+### scaled, so they do not have to add up to one. If model_weights is
+### missing, it defaults to the chilren with Population as the weight.
 custom_regions:
   PK-AJK:
     Name: 'Azad Jammu & Kashmir'
