@@ -116,11 +116,18 @@ state_to_country:
 ### Define extra regions that are composed of arbitrary other regions.
 ### Region info not specified here will either be aggregated from the
 ### composing regions if possible or left blank.
+### model_weights dictates which regions should be averaged into the
+### forecasting model and what their weights are. If missing, it
+### defaults to the chilren with Population as the weight.
 custom_regions:
   PK-AJK:
     Name: 'Azad Jammu & Kashmir'
     children:
       - G-IXJ
+    model_weights:
+      G-SDT: 0.02
+      G-ISB: 0.08
+      G-IXJ: 1
   PK-BA:
     Name: 'Balochistan'
     children:
@@ -131,15 +138,34 @@ custom_regions:
       - G-PJG
       - G-TUK
       - G-GWD
+    model_weights:
+      G-DEA: 0.05
+      G-PZH: 0.9
+      G-UET: 1
+      G-SUL: 0.8
+      G-SKZ: 0.06
+      G-MJD: 0.3
+      G-DBA: 1
+      G-PJG: 1
+      G-TUK: 1
+      G-GWD: 1
+      G-DDU: 0.7
+      G-KHI: 0.02
   PK-GB:
     Name: 'Gilgit-Baltistan'
     children:
       - G-GIL
       - G-KDU
+    model_weights:
+      # G-CJL: 0.25
+      G-GIL: 1
+      G-KDU: 1
   PK-ICT:
     Name: 'Islamabad Capital Territory'
     children:
       - G-ISB
+    model_weights:
+      G-ISB: 0.21
   PK-KP:
     Name: 'Khyber Pakhtunkhwa'
     children:
@@ -147,6 +173,13 @@ custom_regions:
       - G-SDT
       - G-PEW
       - G-DSK
+    model_weights:
+      # G-CJL: 0.75
+      G-SDT: 0.98
+      G-PEW: 1
+      G-ISB: 0.15
+      G-DSK: 0.6
+      G-PZH: 0.1
   PK-PB:
     Name: 'Punjab'
     children:
@@ -157,6 +190,16 @@ custom_regions:
       - G-DEA
       - G-BHV
       - G-RYK
+    model_weights:
+      G-ISB: 0.56
+      G-SKT: 1
+      G-LHE: 1
+      G-LYP: 1
+      G-DSK: 0.4
+      G-MUX: 1
+      G-DEA: 0.95
+      G-BHV: 1
+      G-RYK: 1
   PK-SD:
     Name: 'Sindh'
     children:
@@ -167,3 +210,12 @@ custom_regions:
       - G-KHI
       - G-WNS
       - G-HDD
+    model_weights:
+      G-SUL: 0.2
+      G-SKZ: 0.94
+      G-KCF: 1
+      G-MJD: 0.7
+      G-DDU: 0.3
+      G-KHI: 0.98
+      G-WNS: 1
+      G-HDD: 1
