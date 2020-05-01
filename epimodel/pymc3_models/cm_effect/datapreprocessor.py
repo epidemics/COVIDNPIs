@@ -219,6 +219,7 @@ class DataPreprocessorV2(DataPreprocessor):
         super().__init__(params_dict, *args, **kwargs)
         self.episet_fname = "countermeasures-model-boolean_Gat3Bus2SchCurHespMa.csv"
         self.oxcgrt_fname = "OxCGRT_latest.csv"
+        self.epicheck_fname = "Hspec_Bus_Sah_Gath_doublecheck.csv"
 
     def preprocess_data(
             self,
@@ -266,6 +267,52 @@ class DataPreprocessorV2(DataPreprocessor):
 
         # epidemic forecasting.org dataset
         sd = epi_cmset.loc[filtered_countries, selected_features_epi]
+
+        # overwrite epidemic forecasting data with dataset checks if they exist
+
+        check_cols= ['Country',
+            'Code',
+            'Code 3 digit',
+            'Events 10-1',
+            'Events 10-2',
+            'Events 10-A',
+            'Events 100-1',
+            'Events 1000-1',
+            'Nothing',
+            'SAH-1',
+            'SAH-2',
+            'SAH-A',
+            'Limited business-1',
+            'Limited business-2',
+            'Limited business-3',
+            'Lb12-A',
+            'Lb23-A',
+            'Nothing2',
+            'All business-1',
+            'All business-2',
+            'All business-3',
+            'Ab12-A',
+            'Ab23-A',
+            'Nothing3',
+            'Healthcare specialisation - minor',
+            'Healthcare specialisation',
+            'Hspec notes',
+            'Hspec DJ-check']
+
+        epicheck = pd.read_csv(os.path.join(data_base_path,self.epicheck_fname),skiprows=[0,1],names=check_cols).set_index('Code')
+
+        epicheck = epicheck.loc[epicheck.index.isin(filtered_countries)]
+        replace_cols = ['Healthcare specialisation']
+
+        for col in replace_cols:
+            epicheck[col] = pd.to_datetime(epicheck[col].str.replace('.','-'))
+            for ccode in epicheck.index:
+                switch_date = epicheck.loc[ccode,col]
+                if not pd.isna(switch_date):
+                    dates_off = pd.date_range(self.start_date,switch_date)
+                    dates_on = pd.date_range(switch_date,self.end_date)
+                    sd.loc[(ccode,dates_off),col] = 0
+                    sd.loc[(ccode,dates_on),col] = 1
 
         logger_str = "\nCountermeasures: Epidemic Forecasting              min   ... mean  ... max   ... unique"
         for i, cm in enumerate(selected_features_epi):
