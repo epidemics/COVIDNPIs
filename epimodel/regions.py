@@ -240,7 +240,7 @@ class RegionDataset:
             children = [self[child_code] for child_code in data["children"]]
 
             row = {k: v for k, v in data.items()
-                   if k in ("children", "model_weights", *self.COLUMN_TYPES)}
+                   if k in ("children", *self.COLUMN_TYPES)}
             row["Code"] = code
             row["Level"] = row.get("Level") or Level.custom
 
@@ -267,10 +267,17 @@ class RegionDataset:
                 row.get("Population")
                 or sum(child.Population for child in children))
 
-            # use population as default weight
-            if "model_weights" not in row:
+            if "model_weights" in data:
+                # normalize weights
+                total_weight = sum(data["model_weights"].values())
                 row["model_weights"] = {
-                    child.Code: child.Population for child in children}
+                    code: weight / total_weight
+                    for code, weight in data["model_weights"].items()}
+            else:
+                #use population as default weight
+                row["model_weights"] = {
+                    child.Code: child.Population / float(row["Population"])
+                    for child in children}
 
             rows.append(row)
 
