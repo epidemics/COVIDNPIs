@@ -270,42 +270,21 @@ class DataPreprocessorV2(DataPreprocessor):
 
         # overwrite epidemic forecasting data with dataset checks if they exist
 
-        check_cols= ['Country',
-            'Code',
-            'Code 3 digit',
-            'Events 10-1',
-            'Events 10-2',
-            'Events 10-A',
-            'Events 100-1',
-            'Events 1000-1',
-            'Nothing',
-            'SAH-1',
-            'SAH-2',
-            'SAH-A',
-            'Limited business-1',
-            'Limited business-2',
-            'Limited business-3',
-            'Lb12-A',
-            'Lb23-A',
-            'Nothing2',
-            'All business-1',
-            'All business-2',
-            'All business-3',
-            'Ab12-A',
-            'Ab23-A',
-            'Nothing3',
-            'Healthcare specialisation - minor',
-            'Healthcare specialisation',
-            'Hspec notes',
-            'Hspec DJ-check']
+        check_cols= {'Events above 10 people banned authoritative':'Gatherings limited to 10',
+                     'Events above 100 people banned authoritative':'Gatherings limited to 100',
+                     'Events above 1000 people banned authoritative':'Gatherings limited to 1000',
+                     'Stay at home authoritative':'General curfew',
+                     'Risky businesses closed authoritative':'Business suspended - some',
+                     'All non-essential businesses closed authoritative':'Business suspended - many',
+                     'Hospital specialization level 2 authoritative':'Healthcare specialisation'}
 
-        epicheck = pd.read_csv(os.path.join(data_base_path,self.epicheck_fname),skiprows=[0,1],names=check_cols).set_index('Code')
+        epicheck = pd.read_csv(os.path.join(data_base_path,self.epicheck_fname),skiprows=[1]).rename(columns=check_cols).set_index('Code')
 
         epicheck = epicheck.loc[epicheck.index.isin(filtered_countries)]
-        replace_cols = ['Healthcare specialisation']
 
-        for col in replace_cols:
-            epicheck[col] = pd.to_datetime(epicheck[col].str.replace('.','-'))
+        for col in check_cols.values():
+            epicheck[col] = epicheck[col].replace("no",'2021-01-01')
+            epicheck[col] = epicheck[col].str.replace('.','-')
             for ccode in epicheck.index:
                 switch_date = epicheck.loc[ccode,col]
                 if not pd.isna(switch_date):
