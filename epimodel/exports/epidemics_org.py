@@ -441,6 +441,11 @@ def add_custom_regions_to_traces(custom_regions, cummulative_active_df):
     additions = []
 
     for reg in custom_regions:
+        log.info(
+            "Aggregating model traces for custom region %s using weights %r",
+            reg.Code,
+            reg.model_weights,
+        )
         # weight totals for each factor region
         factors = reg.model_weights.keys()
         reg_cad = cummulative_active_df.loc[pd.IndexSlice[:, factors], :].copy()
