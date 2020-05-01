@@ -233,14 +233,16 @@ class RegionDataset:
             "SubregionCode",
             "CountryCode",
             "CountryCodeISOa3",
-            "SubdivisionCode")
+            "SubdivisionCode",
+        )
 
         rows = []
         for code, data in custom_regions.items():
             children = [self[child_code] for child_code in data["children"]]
 
-            row = {k: v for k, v in data.items()
-                   if k in ("children", *self.COLUMN_TYPES)}
+            row = {
+                k: v for k, v in data.items() if k in ("children", *self.COLUMN_TYPES)
+            }
             row["Code"] = code
             row["Level"] = row.get("Level") or Level.custom
 
@@ -255,33 +257,35 @@ class RegionDataset:
                     row[region_field] = value
 
             # average lat/lng
-            row["Lat"] = (
-                row.get("Lat")
-                or sum(child.Lat for child in children) / len(children))
-            row["Lon"] = (
-                row.get("Lon")
-                or sum(child.Lon for child in children) / len(children))
+            row["Lat"] = row.get("Lat") or sum(child.Lat for child in children) / len(
+                children
+            )
+            row["Lon"] = row.get("Lon") or sum(child.Lon for child in children) / len(
+                children
+            )
 
             # sum population
-            row["Population"] = (
-                row.get("Population")
-                or sum(child.Population for child in children))
+            row["Population"] = row.get("Population") or sum(
+                child.Population for child in children
+            )
 
             if "model_weights" in data:
                 # normalize weights
                 total_weight = float(sum(data["model_weights"].values()))
                 row["model_weights"] = {
                     code: weight / total_weight
-                    for code, weight in data["model_weights"].items()}
+                    for code, weight in data["model_weights"].items()
+                }
             else:
-                #use population as default weight
+                # use population as default weight
                 row["model_weights"] = {
                     child.Code: child.Population / float(row["Population"])
-                    for child in children}
+                    for child in children
+                }
 
             rows.append(row)
 
-        data = pd.DataFrame(rows).set_index('Code')
+        data = pd.DataFrame(rows).set_index("Code")
         if "children" not in self.data:
             self.data["children"] = None
         if "model_weights" not in self.data:

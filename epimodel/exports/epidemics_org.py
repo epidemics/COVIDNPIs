@@ -448,14 +448,12 @@ def add_custom_regions_to_traces(custom_regions, cummulative_active_df):
             reg_cad.loc[pd.IndexSlice[:, factor], :] *= weight
 
         # combine weighted values and add to output
-        additions.append(reg_cad.groupby(level=['SimulationID', 'Date']).sum())
+        additions.append(reg_cad.groupby(level=["SimulationID", "Date"]).sum())
 
     # re-add Code index & combine results
     additions_df = pd.concat(
-        additions,
-        keys=[reg.Code for reg in custom_regions],
-        names=['Code']
-    ).reorder_levels(['SimulationID', 'Code', 'Date'])
+        additions, keys=[reg.Code for reg in custom_regions], names=["Code"]
+    ).reorder_levels(["SimulationID", "Code", "Date"])
 
     return cummulative_active_df.append(additions_df)
 
@@ -471,8 +469,11 @@ def process_export(args) -> None:
     traces_v3 = get_extra_path(args, "traces_v3")
 
     export_regions = sorted(args.config["export_regions"])
-    custom_regions = [args.rds[code] for code in export_regions
-                      if args.rds[code].Level == Level.custom]
+    custom_regions = [
+        args.rds[code]
+        for code in export_regions
+        if args.rds[code].Level == Level.custom
+    ]
 
     batch = Batch.open(args.BATCH_FILE)
     simulation_specs: pd.DataFrame = batch.hdf["simulations"]
@@ -510,7 +511,8 @@ def process_export(args) -> None:
     ).pipe(aggregate_countries, args.config["state_to_country"], args.rds)
 
     cummulative_active_df = add_custom_regions_to_traces(
-        custom_regions, cummulative_active_df)
+        custom_regions, cummulative_active_df
+    )
 
     analyze_data_consistency(
         args.debug,
