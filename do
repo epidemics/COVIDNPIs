@@ -23,6 +23,8 @@ log = logging.getLogger("do")
 def cli(ctx, debug, config):
     """
     Epimodel pipeline runner
+
+    See https://github.com/epidemics/epimodel for more details
     """
     #TODO: add environment variable for config
     ctx.ensure_object(dict)
@@ -77,7 +79,7 @@ def update_foretold(ctx):
 @click.option("-M", "--allow-missing", is_flag=True, help="Skip missing sim results.")
 @click.option("--overwrite", is_flag=True, help="Overwrite existing `new_fraction` imported table.")
 @click.pass_context
-def gleam_import(ctx, batch_file, allow_missing, overwrite):
+def import_gleam_batch(ctx, batch_file, allow_missing, overwrite):
     """
     Load batch results from GLEAM.
 
@@ -116,7 +118,7 @@ def gleam_import(ctx, batch_file, allow_missing, overwrite):
 @click.option("-c", "--comment", type=str, help="A short comment (to be part of path).")
 @click.option("-D", "--start-date", type=click.DateTime(), help="Set a sim start date (default: from the simulation def).")
 @click.pass_context
-def gleam_generate(ctx, base_def, country_estimates, top, comment, start_date):
+def generate_gleam_batch(ctx, base_def, country_estimates, top, comment, start_date):
     """
     Create batch of definitions for GLEAM.
     
@@ -147,7 +149,7 @@ def gleam_generate(ctx, base_def, country_estimates, top, comment, start_date):
 @click.option("-o", "--out_dir", type=click.Path(exists=True), help="Override output dir (must exist).")
 @click.option("-f", "--overwrite", is_flag=True, help="Overwrite existing files.")
 @click.pass_context
-def gleam_export(ctx, batch_file, out_dir, overwrite):
+def export_gleam_batch(ctx, batch_file, out_dir, overwrite):
     """Create batch of definitions for GLEAM.
 
     BATCH_FILE: The batch-*.hdf5 file with batch spec to be updated.
@@ -167,37 +169,42 @@ def gleam_export(ctx, batch_file, out_dir, overwrite):
 @click.argument("batch_file", type=click.Path(exists=True))
 @click.argument("estimates", type=click.Path(exists=True))
 @click.option("-c", "--comment", type=str, help="A short comment (to be part of path).")
+@click.option("-p", "--pretty-print", is_flag=True, help="Pretty-print exported JSON files.")
 @click.pass_context
-def web_export(ctx, batch_file, estimates, comment):
+def web_export(ctx, batch_file, estimates, comment, pretty_print):
     """
     Create data export for web.
 
-    BATCH_FILE: A result HDF file from the import-gleam-batch step
+    BATCH_FILE: A result HDF file of import-gleam-batch step
 
     ESTIMATES: CSV file containing the current estimates
     """
-    process_export(ctx.obj["CONFIG"], ctx.obj["RDS"], ctx.obj["DEBUG"], comment, batch_file, estimates)
+    process_export(ctx.obj["CONFIG"], ctx.obj["RDS"], ctx.obj["DEBUG"], comment, batch_file, estimates, pretty_print)
 
 @cli.command()
-@click.argument("exported_dir", type=click.Path(exists=True))
-@click.option("-c", "--channel", type=str, default="staging", help="Channel to upload to ('main' for main site).")
+@click.option("-d", "--dir", "dir_", type=click.Path(exists=True), help="The generated export directory to upload from.")
+@click.option("-c", "--channel", type=str, default="staging", help="Channel to upload to ('main' for main site). Default is 'staging'.")
 @click.pass_context
-def web_upload(ctx, exported_dir, channel):
+def web_upload(ctx, dir_, channel):
     """
     Upload data to the configured GCS bucket.
 
-    EXPORTED_DIR: The generated export directory.
+    By default, uploads from the output_latest directory specified in config.yaml (out/latest).
     """
     c = ctx.obj["CONFIG"]
+
+    if dir_ == None:
+        dir_ = Path(c["output_dir"]) / c["output_latest"]
+
     upload_export(
-        exported_dir, c["gs_prefix"], c["gs_url_prefix"], channel=channel
+        dir_, c, channel=channel
     )
 
 @cli.command()
 @click.argument("SRC", type=click.Path(exists=True))
 @click.argument("DEST", type=click.Path(exists=True))
 @click.pass_context
-def countermeasures_import(ctx, src, dest):
+def import_countermeasures(ctx, src, dest):
     """
     Import one CSV file from countermeasures DB.
 
@@ -223,12 +230,28 @@ def workflow(ctx):
     """
 
 @workflow.command()
+# import-gleam-batch
+@click.argument("batch_file", type=click.Path(exists=True))
+@click.option("-M", "--allow-missing", is_flag=True, help="Skip missing sim results.")
+@click.option("--overwrite", is_flag=True, help="Overwrite existing `new_fraction` imported table.")
+# web-export
+@click.argument("estimates", type=click.Path(exists=True))
+@click.option("-c", "--comment", type=str, help="A short comment (to be part of path).")
+@click.option("-p", "--pretty-print", is_flag=True, help="Pretty-print exported JSON files.")
+# web-upload
+@click.option("-C", "--channel", type=str, default="staging", help="Channel to upload to ('main' for main site). Default is 'staging'.")
 @click.pass_context
-def gleam_to_web(ctx):
+def gleam_to_web(ctx, batch_file, allow_missing, overwrite, estimates, comment, pretty_print, channel):
     """
-    Runs import-gleam-batch, web-export and web-upload. 
-    TODO
+    Runs import-gleam-batch, web-export and web-upload.
+
+    BATCH_FILE: The batch-*.hdf5 file with batch spec to be updated.
+
+    ESTIMATES: CSV file containing the current estimates
     """
+    #ctx.invoke(import_gleam_batch, batch_file=batch_file, allow_missing=allow_missing, overwrite=overwrite)
+    ctx.invoke(web_export, batch_file=batch_file, estimates=estimates, comment=comment, pretty_print=pretty_print)
+    ctx.invoke(web_upload, channel=channel)
 
 if __name__ == "__main__":
     cli(obj={})

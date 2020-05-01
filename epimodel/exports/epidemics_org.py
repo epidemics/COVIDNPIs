@@ -2,6 +2,7 @@ import datetime
 import getpass
 import json
 import logging
+import shutil
 import socket
 import subprocess
 from enum import Enum
@@ -18,7 +19,6 @@ import epimodel
 
 log = logging.getLogger(__name__)
 
-MAIN_DATA_FILENAME = "data-CHANNEL-v4.json"
 
 
 class WebExport:
@@ -72,11 +72,14 @@ class WebExport:
         self.export_regions[region.Code] = er
         return er
 
-    def write(self, path, name=None):
+    def write(self, path, main_data_filename, name=None, latest=None, pretty_print=False):
         if name is None:
             name = f"export-{self.created.isoformat()}"
             if self.comment:
                 name += self.comment
+        indent = None
+        if pretty_print:
+            indent = 4
         name = name.replace(" ", "_").replace(":", "-")
         outdir = Path(path)
         assert (not outdir.exists()) or outdir.is_dir()
@@ -93,17 +96,24 @@ class WebExport:
                     default=types_to_json,
                     allow_nan=False,
                     separators=(",", ":"),
+                    indent=indent,
                 )
-        with open(exdir / MAIN_DATA_FILENAME, "wt") as f:
+        with open(exdir / main_data_filename, "wt") as f:
             json.dump(
                 self.to_json(),
                 f,
                 default=types_to_json,
                 allow_nan=False,
                 separators=(",", ":"),
+                indent=indent,
             )
         log.info(f"Exported {len(self.export_regions)} regions to {exdir}")
-
+        if latest is not None:
+            latestdir = outdir / latest
+            if latestdir.exists():
+                shutil.rmtree(latestdir)
+            shutil.copytree(exdir, latestdir)
+            log.info(f"Copied export to {latestdir}")
 
 class WebExportRegion:
     def __init__(
@@ -267,15 +277,24 @@ def raise_(msg):
     raise Exception(msg)
 
 
-def assert_valid_json(file):
+def assert_valid_json(file, minify=False):
     with open(file, "r") as blob:
-        json.load(
+        data = json.load(
             blob,
             parse_constant=(lambda x: raise_("Not valid JSON: detected `" + x + "'")),
         )
+    if minify:
+        with open(file, "wt") as f:
+            json.dump(
+                data,
+                f,
+                default=types_to_json,
+                allow_nan=False,
+                separators=(",", ":"),
+            )
 
 
-def upload_export(dir_to_export, gs_prefix, gs_url, channel="test"):
+def upload_export(dir_to_export, config, channel="test"):
     """The 'upload' subcommand"""
     CMD = [
         "gsutil",
@@ -286,22 +305,45 @@ def upload_export(dir_to_export, gs_prefix, gs_url, channel="test"):
         "-a",
         "public-read",
     ]
-    gs_prefix = gs_prefix.rstrip("/")
-    gs_url = gs_url.rstrip("/")
+    gs_prefix = config["gs_prefix"].rstrip("/")
+    gs_url = config["gs_url_prefix"].rstrip("/")
     exdir = Path(dir_to_export)
     assert exdir.is_dir()
 
-    assert_valid_json(exdir / MAIN_DATA_FILENAME)
+    uploaddir = Path(config["output_dir"]) / config["output_uploads"]
+    if not uploaddir.exists():
+        uploaddir.mkdir()
+    channeldir = uploaddir / channel
 
-    log.info(f"Uploading data folder {exdir} to {gs_prefix}/{exdir.parts[-1]} ...")
-    cmd = CMD + ["-Z", "-R", exdir, gs_prefix]
+    if channeldir.exists():
+        shutil.rmtree(channeldir)
+
+    shutil.copytree(exdir, channeldir)
+    log.info(f"Copied export to {channeldir} for uploading")
+
+    # Backwards compatibility
+    old_filename = "data-CHANNEL-v4.json"
+    old_path = channeldir / old_filename
+    if old_path.exists():
+        old_path.rename(channeldir / config["gs_datafile_name"])
+
+    for json_file in channeldir.iterdir():
+        if json_file.suffix != '.json':
+            continue
+        try:
+            assert_valid_json(json_file, minify=True)
+        except Exception as e:
+            log.error(f"Error in JSON file {json_file}")
+            raise e
+
+    log.info(f"Uploading data folder {channeldir} to {gs_prefix}/{channeldir.parts[-1]} ...")
+    cmd = CMD + ["-Z", "-R", channeldir, gs_prefix]
     log.debug(f"Running {cmd!r}")
     subprocess.run(cmd, check=True)
 
-    datafile = MAIN_DATA_FILENAME.replace("CHANNEL", channel)
     gs_tgt = f"{gs_prefix}/{datafile}"
     log.info(f"Uploading main data file to {gs_tgt} ...")
-    cmd = CMD + ["-Z", exdir / MAIN_DATA_FILENAME, gs_tgt]
+    cmd = CMD + ["-Z", channeldir / config["gs_datafile_name"], gs_tgt]
     log.debug(f"Running {cmd!r}")
     subprocess.run(cmd, check=True)
     log.info(f"File URL: {gs_url}/{datafile}")
@@ -437,7 +479,7 @@ def aggregate_countries(
     return hopkins.drop(index=all_state_codes).append(pd.concat(to_append))
 
 
-def process_export(config, rds, debug, comment, batch_file, estimates) -> None:
+def process_export(config, rds, debug, comment, batch_file, estimates, pretty_print) -> None:
     ex = WebExport(config["gleam_resample"], comment=comment)
 
     hopkins = get_extra_path(config, "john_hopkins")
@@ -515,4 +557,4 @@ def process_export(config, rds, debug, comment, batch_file, estimates) -> None:
             get_df_else_none(traces_v3_df, iso3),
         )
 
-    ex.write(config["output_dir"])
+    ex.write(config["output_dir"], config["gs_datafile_name"], latest=config["output_latest"], pretty_print=pretty_print)
