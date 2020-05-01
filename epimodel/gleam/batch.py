@@ -329,7 +329,13 @@ def generate_simulations(
                     if isinstance(exc, float):
                         beta = float(exc)
                     elif isinstance(exc, str):
+                        if exc not in row:
+                            raise ValueError(f"Beta-value column {exc!r} not present")
                         beta = row[exc]
+                        if not np.isfinite(beta):
+                            raise ValueError(
+                                f"Beta {exc!r} is NaN or Inf for region {rc!r}"
+                            )
                     else:
                         raise TypeError(
                             f"Unsupportted type for beta in 'param_beta_exceptions': {type(exc)}"
