@@ -229,7 +229,8 @@ class DataPreprocessorV2(DataPreprocessor):
             selected_features_epi,
             ordered_features,
             oxford_to_epi_features,
-            epifor_end_date="2020-04-21"
+            epifor_end_date="2020-04-21",
+            mask_zero_deaths=True,
     ):
         # at the moment only features from the 0-1 countermeasures dataset
         Ds = pd.date_range(start=self.start_date, end=self.end_date, tz="utc")
@@ -297,7 +298,7 @@ class DataPreprocessorV2(DataPreprocessor):
 
         data_oxcgrt.sort_index()
 
-        data_oxcgrt_filtered = data_oxcgrt.loc[regions_epi, selected_features_oxcgrt]   
+        data_oxcgrt_filtered = data_oxcgrt.loc[regions_epi, selected_features_oxcgrt]
         ActiveCMs_temp = np.stack([data_oxcgrt_filtered.loc[c].loc[Ds].T for c in regions_epi])
 
         nRs, _, nDs = ActiveCMs_temp.shape
@@ -305,7 +306,6 @@ class DataPreprocessorV2(DataPreprocessor):
 
         ActiveCMs_oxcgrt = np.zeros((nRs, nCMs, nDs))
         oxcgrt_derived_cm_names = [n for n, _ in oxcgrt_feature_info]
-
 
         for r_indx in range(nRs):
             for feature_indx, (_, feature_filter) in enumerate(oxcgrt_feature_info):
@@ -330,10 +330,11 @@ class DataPreprocessorV2(DataPreprocessor):
 
         for r in range(nRs):
             for k, v in oxford_to_epi_features.items():
-                ActiveCMs_oxcgrt[r,oxcgrt_derived_cm_names.index(k),epi_date_range] = ActiveCMs_epi[r,selected_features_epi.index(v),epi_date_range]
+                ActiveCMs_oxcgrt[r, oxcgrt_derived_cm_names.index(k), epi_date_range] = ActiveCMs_epi[
+                    r, selected_features_epi.index(v), epi_date_range]
 
         for r in range(nRs):
-            for f_indx, f in enumerate(ordered_features):            
+            for f_indx, f in enumerate(ordered_features):
                 if f in selected_features_epi:
                     ActiveCMs[r, f_indx, :] = ActiveCMs_epi[r, selected_features_epi.index(f), :]
                 else:
@@ -379,9 +380,11 @@ class DataPreprocessorV2(DataPreprocessor):
         NewDeaths = np.zeros(shape=Deaths.shape)
         NewDeaths[:, 1:] = Deaths[:, 1:] - Deaths[:, :-1]
         NewDeaths[np.isnan(NewDeaths)] = 0
-        NewDeaths[NewDeaths < 0] = np.nan
+
+        if mask_zero_deaths:
+            NewDeaths[NewDeaths < 1] = np.nan
+
         NewDeaths = np.ma.masked_invalid(NewDeaths.astype(theano.config.floatX))
-        NewDeaths = NewDeaths.astype(int)
 
         loaded_data = PreprocessedData(
             Active,
