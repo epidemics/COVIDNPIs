@@ -269,7 +269,7 @@ class RegionDataset:
 
             if "model_weights" in data:
                 # normalize weights
-                total_weight = sum(data["model_weights"].values())
+                total_weight = float(sum(data["model_weights"].values()))
                 row["model_weights"] = {
                     code: weight / total_weight
                     for code, weight in data["model_weights"].items()}

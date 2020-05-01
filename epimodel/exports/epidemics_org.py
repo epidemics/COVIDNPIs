@@ -450,7 +450,6 @@ def add_custom_regions_to_traces(custom_regions, cummulative_active_df):
         # combine weighted values and add to output
         additions.append(reg_cad.groupby(level=['SimulationID', 'Date']).sum())
 
-    import pdb; pdb.set_trace()
     # re-add Code index & combine results
     additions_df = pd.concat(
         additions,
@@ -512,8 +511,6 @@ def process_export(args) -> None:
 
     cummulative_active_df = add_custom_regions_to_traces(
         custom_regions, cummulative_active_df)
-
-    import pdb; pdb.set_trace()
 
     analyze_data_consistency(
         args.debug,
