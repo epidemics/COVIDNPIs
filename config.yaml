@@ -158,7 +158,7 @@ custom_regions:
       - G-GIL
       - G-KDU
     model_weights:
-      # G-CJL: 0.25
+      G-CJL: 0.25
       G-GIL: 1
       G-KDU: 1
   PK-ICT:
@@ -170,12 +170,12 @@ custom_regions:
   PK-KP:
     Name: 'Khyber Pakhtunkhwa'
     children:
-      # - G-CJL
+      - G-CJL
       - G-SDT
       - G-PEW
       - G-DSK
     model_weights:
-      # G-CJL: 0.75
+      G-CJL: 0.75
       G-SDT: 0.98
       G-PEW: 1
       G-ISB: 0.15
