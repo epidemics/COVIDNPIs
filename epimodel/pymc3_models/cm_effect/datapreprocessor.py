@@ -262,10 +262,14 @@ class DataPreprocessorV2(DataPreprocessor):
                 ):
                     filtered_countries.append(c.Code)
         nCs = len(filtered_countries)
+
         # note that it is essential to sort these values to get the correct corresponances from the john hopkins dataset
         filtered_countries.sort()
 
         # epidemic forecasting.org dataset
+        for feat in selected_features_epi:
+            if not feat in epi_cmset:
+                epi_cmset[feat] = 0
         sd = epi_cmset.loc[filtered_countries, selected_features_epi]
 
         # overwrite epidemic forecasting data with dataset checks if they exist
@@ -276,15 +280,16 @@ class DataPreprocessorV2(DataPreprocessor):
                      'Stay at home authoritative':'General curfew',
                      'Risky businesses closed authoritative':'Business suspended - some',
                      'All non-essential businesses closed authoritative':'Business suspended - many',
-                     'Hospital specialization level 2 authoritative':'Healthcare specialisation'}
+                     'Hospital specialization level 2 authoritative':'Healthcare specialisation',
+                     'Hospital specialization level 1 authoritative':'Healthcare specialisation - limited'}
 
         epicheck = pd.read_csv(os.path.join(data_base_path,self.epicheck_fname),skiprows=[1]).rename(columns=check_cols).set_index('Code')
 
         epicheck = epicheck.loc[epicheck.index.isin(filtered_countries)]
 
         for col in check_cols.values():
-            epicheck[col] = epicheck[col].replace("no",'2021-01-01')
-            epicheck[col] = epicheck[col].str.replace('.','-')
+            epicheck[col] = epicheck[col].str.lower().replace("no",'01-01-2021')
+            epicheck[col] = pd.to_datetime(epicheck[col].str.replace('.','-'),format="%d-%m-%Y")
             for ccode in epicheck.index:
                 switch_date = epicheck.loc[ccode,col]
                 if not pd.isna(switch_date):
@@ -292,6 +297,7 @@ class DataPreprocessorV2(DataPreprocessor):
                     dates_on = pd.date_range(switch_date,self.end_date)
                     sd.loc[(ccode,dates_off),col] = 0
                     sd.loc[(ccode,dates_on),col] = 1
+
 
         logger_str = "\nCountermeasures: Epidemic Forecasting              min   ... mean  ... max   ... unique"
         for i, cm in enumerate(selected_features_epi):
@@ -356,7 +362,11 @@ class DataPreprocessorV2(DataPreprocessor):
 
         for r in range(nRs):
             for k, v in oxford_to_epi_features.items():
-                ActiveCMs_oxcgrt[r,oxcgrt_derived_cm_names.index(k),epi_date_range] = ActiveCMs_epi[r,selected_features_epi.index(v),epi_date_range]
+                edr_feat = epi_date_range
+                ox_revert_index = np.where(ActiveCMs_oxcgrt[r,oxcgrt_derived_cm_names.index(k),:]<0)[0]
+                if len(ox_revert_index):
+                    edr_feat = epi_date_range[:ox_revert_index[0]]
+                ActiveCMs_oxcgrt[r,oxcgrt_derived_cm_names.index(k),edr_feat] = ActiveCMs_epi[r,selected_features_epi.index(v),edr_feat]
 
         for r in range(nRs):
             for f_indx, f in enumerate(ordered_features):            
