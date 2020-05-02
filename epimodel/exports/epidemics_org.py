@@ -479,7 +479,9 @@ def aggregate_countries(
     return hopkins.drop(index=all_state_codes).append(pd.concat(to_append))
 
 
-def process_export(config, rds, debug, comment, batch_file, estimates, pretty_print) -> None:
+def process_export(
+    config, rds, debug, comment, batch_file, estimates, pretty_print
+) -> None:
     ex = WebExport(config["gleam_resample"], comment=comment)
 
     hopkins = get_extra_path(config, "john_hopkins")
