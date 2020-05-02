@@ -115,31 +115,24 @@ state_to_country:
 
 ### Define extra regions that are composed of arbitrary other regions.
 ### Region info not specified here will either be aggregated from the
-### composing regions if possible or left blank.
-### model_weights dictates which regions should be averaged into the
-### forecasting model and what their weights are. Weights will be
-### scaled, so they do not have to add up to one. If model_weights is
-### missing, it defaults to the chilren with Population as the weight.
+### specified children if possible or left blank.
+### children can be a list or a dict. If a list, the forecasting model
+### for each child will be weighted according to population. If a dict,
+### the values specify additional weights that will be multiplied by
+### population before being applied to the model traces.
+
 custom_regions:
   PK-AJK:
     Name: 'Azad Jammu & Kashmir'
+    Population: 4100000
     children:
-      - G-IXJ
-    model_weights:
       G-SDT: 0.02
       G-ISB: 0.08
       G-IXJ: 1
   PK-BA:
     Name: 'Balochistan'
+    Population: 10728000
     children:
-      - G-PZH
-      - G-UET
-      - G-SUL
-      - G-DBA
-      - G-PJG
-      - G-TUK
-      - G-GWD
-    model_weights:
       G-DEA: 0.05
       G-PZH: 0.9
       G-UET: 1
@@ -154,27 +147,20 @@ custom_regions:
       G-KHI: 0.02
   PK-GB:
     Name: 'Gilgit-Baltistan'
+    Population: 5400000
     children:
-      - G-GIL
-      - G-KDU
-    model_weights:
       G-CJL: 0.25
       G-GIL: 1
       G-KDU: 1
   PK-ICT:
     Name: 'Islamabad Capital Territory'
+    Population: 15300000
     children:
-      - G-ISB
-    model_weights:
       G-ISB: 0.21
   PK-KP:
     Name: 'Khyber Pakhtunkhwa'
+    Population: 31900000
     children:
-      - G-CJL
-      - G-SDT
-      - G-PEW
-      - G-DSK
-    model_weights:
       G-CJL: 0.75
       G-SDT: 0.98
       G-PEW: 1
@@ -183,15 +169,8 @@ custom_regions:
       G-PZH: 0.1
   PK-PB:
     Name: 'Punjab'
+    Population: 96200000
     children:
-      - G-SKT
-      - G-LHE
-      - G-LYP
-      - G-MUX
-      - G-DEA
-      - G-BHV
-      - G-RYK
-    model_weights:
       G-ISB: 0.56
       G-SKT: 1
       G-LHE: 1
@@ -203,15 +182,8 @@ custom_regions:
       G-RYK: 1
   PK-SD:
     Name: 'Sindh'
+    Population: 45900000
     children:
-      - G-SKZ
-      - G-KCF
-      - G-MJD
-      - G-DDU
-      - G-KHI
-      - G-WNS
-      - G-HDD
-    model_weights:
       G-SUL: 0.2
       G-SKZ: 0.94
       G-KCF: 1
