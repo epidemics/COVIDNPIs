@@ -1,7 +1,6 @@
 import copy
 import logging
 import os
-from collections import defaultdict
 from datetime import datetime
 
 import seaborn as sns
@@ -11,12 +10,13 @@ import pymc3 as pm
 import theano.tensor as T
 from pymc3 import Model
 
-from epimodel.pymc3_models.utils import geom_convolution, convolution
-
 log = logging.getLogger(__name__)
 sns.set_style("ticks")
 
+from matplotlib.font_manager import FontProperties
 import matplotlib.pyplot as plt
+
+fp2 = FontProperties(fname=r"/Users/mrinank/workspace/fonts/Font Awesome 5 Free-Solid-900.otf")
 
 
 def save_fig_pdf(output_dir, figname):
@@ -44,15 +44,16 @@ def add_cms_to_plot(ax, ActiveCMs, country_indx, min_x, max_x, days, plot_style)
     CM_changes = np.zeros((nCMs, len(days)))
     CM_changes[:, 1:] = CMs[:, 1:] - CMs[:, :-1]
     all_CM_changes = np.sum(CM_changes, axis=0)
-    cum_changes = np.zeros(all_CM_changes.shape)
+    all_heights = np.zeros(all_CM_changes.shape)
 
     for cm in range(nCMs):
         changes = np.nonzero(CM_changes[cm, :])[0].tolist()
         height = 1
         for c in changes:
-            if all_CM_changes[c] > 1:
-                height = cum_changes[c] + 1
-                cum_changes[c] += 1
+            close_heights = all_heights[c - 3:c + 4]
+            if len(close_heights) == 7:
+                height = np.max(close_heights) + 1
+                all_heights[c] = height
 
             plt.plot(
                 [c, c],
@@ -66,15 +67,16 @@ def add_cms_to_plot(ax, ActiveCMs, country_indx, min_x, max_x, days, plot_style)
             plot_height = 1 - (0.04 * height)
 
             if CM_changes[cm, c] == 1:
-                plt.scatter(c, plot_height, marker=plot_style[cm][0], s=25,
-                            color=plot_style[cm][1])
+                plt.text(c, plot_height, plot_style[cm][0], fontproperties=fp2, color=plot_style[cm][1], size=8,
+                         va='center', ha='center', clip_on=True, zorder=1)
             else:
-                plt.scatter(c, plot_height, marker=plot_style[cm][0], s=25,
-                            color=plot_style[cm][1])
-                plt.plot([c - 0.75, c + 0.75], [plot_height - 0.005, plot_height + 0.005], color="black")
+                plt.text(c, plot_height, plot_style[cm][0], fontproperties=fp2, color=plot_style[cm][1], size=8,
+                         va='center', ha='center', clip_on=True, zorder=1)
+                plt.plot([c - 1.5, c + 1.5], [plot_height - 0.005, plot_height + 0.005], color="black", zorder=2)
 
     plt.yticks([])
     return ax2
+
 
 class BaseCMModel(Model):
     def __init__(
@@ -1047,28 +1049,14 @@ class CMDeath(BaseCMModel):
                 plot_trace=False
             )
 
-    def plot_region_predictions(self, save_fig=True, output_dir="./out"):
+    def plot_region_predictions(self, plot_style, save_fig=True, output_dir="./out"):
         assert self.trace is not None
 
-        plot_style = [
-            ("P", "tab:red"),
-            ("P", "lightskyblue"),
-            ("P", "tab:blue"),
-            (">", "lawngreen"),
-            (">", "green"),
-            ("*", "tab:pink"),
-            ("*", "silver"),
-            ("*", "gray"),
-            ("*", "black"),
-            ("x", "cornflowerblue"),
-            ("x", "darkblue"),
-            ("x", "gold"),
-            ("x", "darkorange"),
-            ("*", "salmon"),
-            ("*", "tab:red")
-        ]
-
         for country_indx, region in zip(self.OR_indxs, self.ORs):
+
+            if country_indx == 3:
+                break
+
             if country_indx % 5 == 0:
                 plt.figure(figsize=(12, 20), dpi=300)
 
@@ -1220,7 +1208,6 @@ class CMDeath(BaseCMModel):
                         output_dir,
                         f"CountryPredictionPlot{((country_indx + 1) / 5):.1f}",
                     )
-                break
 
             elif country_indx % 5 == 0:
                 ax.legend(prop={"size": 8}, loc="upper left")
