@@ -442,15 +442,27 @@ def add_custom_regions_to_traces(custom_regions, cummulative_active_df):
 
     for reg in custom_regions:
         log.info(
-            "Aggregating model traces for custom region %s using weights %r",
+            "Aggregating model traces for custom region %s using weights %r and populations %r",
             reg.Code,
             reg.model_weights,
+            {child.Code: child.Population for child in reg.children},
         )
-        # weight totals for each factor region
-        factors = reg.model_weights.keys()
-        reg_cad = cummulative_active_df.loc[pd.IndexSlice[:, factors], :].copy()
-        for factor, weight in reg.model_weights.items():
-            reg_cad.loc[pd.IndexSlice[:, factor], :] *= weight
+
+        # compute aggregate weights
+        child_codes = [child.Code for child in reg.children]
+        weights = pd.Series(
+            [
+                reg.model_weights[child.Code] * child.Population
+                for child in reg.children
+            ],
+            index=child_codes,
+        )
+        weights /= weights.sum()
+
+        # weight totals for each child region
+        reg_cad = cummulative_active_df.loc[pd.IndexSlice[:, child_codes], :].copy()
+        for child, weight in weights.items():
+            reg_cad.loc[pd.IndexSlice[:, child], :] *= weight
 
         # combine weighted values and add to output
         additions.append(reg_cad.groupby(level=["SimulationID", "Date"]).sum())

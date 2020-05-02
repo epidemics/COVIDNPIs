@@ -111,6 +111,10 @@ class Region:
     def children(self):
         return self._children
 
+    @property
+    def model_weights(self):
+        return self["model_weights"]
+
     def _region_prop(self, name):
         """Return the Region corresponding to code in `self[name]` (None if that is None)."""
         rds = self._rds()
@@ -135,10 +139,6 @@ class Region:
     @property
     def subdivision(self):
         return self._region_prop("SubdivisionCode")
-
-    @property
-    def model_weights(self):
-        return self._region_prop("model_weights")
 
 
 class RegionDataset:
@@ -238,11 +238,15 @@ class RegionDataset:
 
         rows = []
         for code, data in custom_regions.items():
-            children = [self[child_code] for child_code in data["children"]]
+            child_codes = data.get("children", [])
+            if isinstance(child_codes, list):
+                weights = [1 for _ in child_codes]
+            else:
+                weights = list(child_codes.values())
+                child_codes = list(child_codes.keys())
+            children = [self[code] for code in child_codes]
 
-            row = {
-                k: v for k, v in data.items() if k in ("children", *self.COLUMN_TYPES)
-            }
+            row = {k: v for k, v in data.items() if k in self.COLUMN_TYPES}
             row["Code"] = code
             row["Level"] = row.get("Level") or Level.custom
 
@@ -269,19 +273,9 @@ class RegionDataset:
                 child.Population for child in children
             )
 
-            if "model_weights" in data:
-                # normalize weights
-                total_weight = float(sum(data["model_weights"].values()))
-                row["model_weights"] = {
-                    code: weight / total_weight
-                    for code, weight in data["model_weights"].items()
-                }
-            else:
-                # use population as default weight
-                row["model_weights"] = {
-                    child.Code: child.Population / float(row["Population"])
-                    for child in children
-                }
+            # add extra data
+            row["children"] = child_codes
+            row["model_weights"] = dict(zip(child_codes, weights))
 
             rows.append(row)
 
