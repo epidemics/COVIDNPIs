@@ -20,7 +20,6 @@ import epimodel
 log = logging.getLogger(__name__)
 
 
-
 class WebExport:
     """
     Document holding one data export to web. Contains a subset of Regions.
@@ -72,7 +71,9 @@ class WebExport:
         self.export_regions[region.Code] = er
         return er
 
-    def write(self, path, main_data_filename, name=None, latest=None, pretty_print=False):
+    def write(
+        self, path, main_data_filename, name=None, latest=None, pretty_print=False
+    ):
         if name is None:
             name = f"export-{self.created.isoformat()}"
             if self.comment:
@@ -114,6 +115,7 @@ class WebExport:
                 shutil.rmtree(latestdir)
             shutil.copytree(exdir, latestdir)
             log.info(f"Copied export to {latestdir}")
+
 
 class WebExportRegion:
     def __init__(
@@ -286,11 +288,7 @@ def assert_valid_json(file, minify=False):
     if minify:
         with open(file, "wt") as f:
             json.dump(
-                data,
-                f,
-                default=types_to_json,
-                allow_nan=False,
-                separators=(",", ":"),
+                data, f, default=types_to_json, allow_nan=False, separators=(",", ":"),
             )
 
 
@@ -328,7 +326,7 @@ def upload_export(dir_to_export, config, channel="test"):
         old_path.rename(channeldir / config["gs_datafile_name"])
 
     for json_file in channeldir.iterdir():
-        if json_file.suffix != '.json':
+        if json_file.suffix != ".json":
             continue
         try:
             assert_valid_json(json_file, minify=True)
@@ -336,7 +334,9 @@ def upload_export(dir_to_export, config, channel="test"):
             log.error(f"Error in JSON file {json_file}")
             raise e
 
-    log.info(f"Uploading data folder {channeldir} to {gs_prefix}/{channeldir.parts[-1]} ...")
+    log.info(
+        f"Uploading data folder {channeldir} to {gs_prefix}/{channeldir.parts[-1]} ..."
+    )
     cmd = CMD + ["-Z", "-R", channeldir, gs_prefix]
     log.debug(f"Running {cmd!r}")
     subprocess.run(cmd, check=True)
@@ -557,4 +557,9 @@ def process_export(config, rds, debug, comment, batch_file, estimates, pretty_pr
             get_df_else_none(traces_v3_df, iso3),
         )
 
-    ex.write(config["output_dir"], config["gs_datafile_name"], latest=config["output_latest"], pretty_print=pretty_print)
+    ex.write(
+        config["output_dir"],
+        config["gs_datafile_name"],
+        latest=config["output_latest"],
+        pretty_print=pretty_print,
+    )
