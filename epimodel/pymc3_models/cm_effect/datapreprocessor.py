@@ -419,6 +419,9 @@ class DataPreprocessorV2(DataPreprocessor):
 
         if mask_zero_deaths:
             NewDeaths[NewDeaths < 1] = np.nan
+        else:
+            # annoyingly negative deaths do appear!
+            NewDeaths[NewDeaths < 0] = np.nan
 
         NewDeaths = np.ma.masked_invalid(NewDeaths.astype(theano.config.floatX))
 
