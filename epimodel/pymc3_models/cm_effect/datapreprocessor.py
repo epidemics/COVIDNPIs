@@ -240,8 +240,6 @@ class DataPreprocessorV2(DataPreprocessor):
         region_ds = RegionDataset.load(os.path.join(data_base_path, "regions.csv"))
         johnhop_ds = read_csv(os.path.join(data_base_path, "johns-hopkins.csv"))
 
-        self.johnhop_ds = johnhop_ds
-
         epi_cmset = read_csv(os.path.join(data_base_path, self.episet_fname))
 
         region_names = list([x for x, _, _ in region_info])
@@ -377,6 +375,7 @@ class DataPreprocessorV2(DataPreprocessor):
 
         # [country, CM, day] Which CMs are active, and to what extent
         ActiveCMs = ActiveCMs.astype(theano.config.floatX)
+        print(ActiveCMs.shape)
 
         dataset_summary_plot(ordered_features, ActiveCMs)
 
@@ -386,6 +385,7 @@ class DataPreprocessorV2(DataPreprocessor):
                 .unstack(1)
                 .values
         )
+
         assert Confirmed.shape == (nCs, nDs)
         Confirmed[Confirmed < self.min_num_confirmed_mask] = np.nan
         Confirmed = np.ma.masked_invalid(Confirmed.astype(theano.config.floatX))
@@ -394,6 +394,7 @@ class DataPreprocessorV2(DataPreprocessor):
         Active = (
             johnhop_ds["Active"].loc[(tuple(filtered_countries), Ds)].unstack(1).values
         )
+
         assert Active.shape == (nCs, nDs)
         Active[Active < self.min_num_active_mask] = np.nan
         # [country, day]
