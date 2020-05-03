@@ -94,6 +94,9 @@ Also, you did `cp config.yaml config-local.yaml` (modifying it as fit) and set e
 8. Export the generated folder to web! Optionally, set a channel for testing first.
    `./do action web-upload -c ttest28 out/export-2020-04-03T02:03:28.991629+00:00`
 
+n.b. commands can be 'chained' as follows:
+`./do action web-export out/batch-2020-04-16T03:54:52.910001+00:00.hdf5 data/sources/estimates-JK-2020-04-15.csv web-upload -c ttest28`
+
 ### Running pipeline with workflow commands
 
 An alternative way to run the pipeline is as follows:
