@@ -1834,7 +1834,7 @@ class CMDeath_NB(BaseCMModel):
                 plot_trace=False,
             )
 
-            self.DailyGrowthNoise = pm.HalfStudentT("DeathsNoise", nu=10, sigma=.4)
+            self.DailyGrowthNoise = 0.1
 
             self.Normal(
                 "Growth",
@@ -1890,17 +1890,17 @@ class CMDeath_NB(BaseCMModel):
 
             plt.subplot(5, 3, 3 * (country_indx % 5) + 1)
 
-            ax = plt.gca()
             means_d, lu_id, up_id, err_d = produce_CIs(
                 self.trace.Infected[:, country_indx, :]
             )
 
-            nS, nD = self.trace.ExpectedDeaths[:, country_indx, :].shape
+            ed = self.trace.ExpectedDeaths[:, country_indx, :]
+            nS, nDs = ed.shape
+            dist = pm.NegativeBinomial.dist(mu=ed + 1e-3, alpha=np.repeat(np.array([self.trace.Phi]), nDs, axis=0).T)
+            ed_output = dist.random()
 
             means_expected_deaths, lu_ed, up_ed, err_expected_deaths = produce_CIs(
-                self.trace.ExpectedDeaths[:, country_indx, :] * np.exp(
-                    np.repeat(self.trace.DeathsNoise.reshape((nS, 1)), nD, axis=1) * np.random.normal(
-                        size=(self.trace.Infected[:, country_indx, :].shape)))
+                ed_output
             )
 
             days = self.d.Ds
@@ -2011,20 +2011,25 @@ class CMDeath_NB(BaseCMModel):
             plt.fill_between(
                 days_x, lu_z1, up_z1, alpha=0.25, color="tab:blue", linewidth=0
             )
+            plt.xlim([min_x, max_x])
+            plt.ylim([-2, 2])
+            plt.xticks(locs, xlabels, rotation=-30)
+            plt.ylabel("$Z$")
 
+            ax4.twinx()
+            ax5 = plt.gca()
             plt.plot(self.ObservedDaysIndx, z2_mean, color="tab:orange", label="Death Noise")
             plt.fill_between(
                 self.ObservedDaysIndx, lu_z2, up_z2, alpha=0.25, color="tab:orange", linewidth=0
             )
+            y_lim = max(np.max(np.abs(up_z2)), np.max(np.abs(lu_z2)))
+            plt.ylim([-1.5 * y_lim, 1.5 * y_lim])
 
             plt.xlim([min_x, max_x])
-            plt.ylim([-2, 2])
             locs = np.arange(min_x, max_x, 7)
             xlabels = [f"{days[ts].day}-{days[ts].month}" for ts in locs]
-            plt.xticks(locs, xlabels, rotation=-30)
-            plt.ylabel("$Z$")
-
             lines, labels = ax4.get_legend_handles_labels()
+            lines2, labels2 = ax5.get_legend_handles_labels()
 
             sns.despine(ax=ax)
             sns.despine(ax=ax1)
@@ -2042,8 +2047,8 @@ class CMDeath_NB(BaseCMModel):
             elif country_indx == 0:
                 ax.legend(prop={"size": 8}, loc="center left")
                 ax2.legend(prop={"size": 8}, loc="lower left")
-                # ax2.legend(lines + lines2, labels + labels2, prop={"size": 8})
-                ax4.legend(lines, labels, prop={"size": 8})
+                ax4.legend(lines + lines2, labels + labels2, prop={"size": 8})
+
 
 class CMDeath_R(BaseCMModel):
     def __init__(
