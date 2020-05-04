@@ -235,20 +235,20 @@ class DataPreprocessorV2(DataPreprocessor):
     ):
         # at the moment only features from the 0-1 countermeasures dataset
         Ds = pd.date_range(start=self.start_date, end=self.end_date, tz="utc")
-        nDs = len(Ds)
+        self.Ds = Ds
 
         region_ds = RegionDataset.load(os.path.join(data_base_path, "regions.csv"))
         johnhop_ds = read_csv(os.path.join(data_base_path, "johns-hopkins.csv"))
+        self.johnhop_ds = johnhop_ds
 
         epi_cmset = read_csv(os.path.join(data_base_path, self.episet_fname))
 
-        region_names = list([x for x, _, _ in region_info])
         regions_epi = list([x for _, x, _ in region_info])
         regions_oxcgrt = list([x for _, _, x in region_info])
 
         # country filtering
         filtered_countries = []
-        for cc in set(regions_epi):
+        for cc in regions_epi:
             c = region_ds[cc]
             if (
                     c.Level == Level.country
@@ -263,7 +263,7 @@ class DataPreprocessorV2(DataPreprocessor):
         nCs = len(filtered_countries)
 
         # note that it is essential to sort these values to get the correct corresponances from the john hopkins dataset
-        filtered_countries.sort()
+        # filtered_countries.sort()
 
         # epidemic forecasting.org dataset
         for feat in selected_features_epi:
@@ -375,25 +375,16 @@ class DataPreprocessorV2(DataPreprocessor):
 
         # [country, CM, day] Which CMs are active, and to what extent
         ActiveCMs = ActiveCMs.astype(theano.config.floatX)
-        print(ActiveCMs.shape)
 
         dataset_summary_plot(ordered_features, ActiveCMs)
 
-        Confirmed = (
-            johnhop_ds["Confirmed"]
-                .loc[(tuple(filtered_countries), Ds)]
-                .unstack(1)
-                .values
-        )
+        Confirmed = np.stack([johnhop_ds["Confirmed"].loc[(fc, Ds)] for fc in filtered_countries])
 
         assert Confirmed.shape == (nCs, nDs)
         Confirmed[Confirmed < self.min_num_confirmed_mask] = np.nan
         Confirmed = np.ma.masked_invalid(Confirmed.astype(theano.config.floatX))
 
-        # Active cases, masking values smaller than 10
-        Active = (
-            johnhop_ds["Active"].loc[(tuple(filtered_countries), Ds)].unstack(1).values
-        )
+        Active = np.stack([johnhop_ds["Active"].loc[(fc, Ds)] for fc in filtered_countries])
 
         assert Active.shape == (nCs, nDs)
         Active[Active < self.min_num_active_mask] = np.nan
@@ -402,13 +393,11 @@ class DataPreprocessorV2(DataPreprocessor):
 
         logger.info(
             f"Data Preprocessing Complete using:\n\n{json.dumps(self.generate_params_dict(), indent=4)}\n"
-            f"Selected {len(filtered_countries)} Regions: f{filtered_countries}"
+            f"Selected {filtered_countries} Regions: f{filtered_countries}"
         )
 
-        Deaths = (
-            johnhop_ds["Deaths"].loc[(tuple(filtered_countries), Ds)].unstack(1).values
-        )
-        assert Active.shape == (nCs, nDs)
+        Deaths = np.stack([johnhop_ds["Deaths"].loc[(fc, Ds)] for fc in filtered_countries])
+        assert Deaths.shape == (nCs, nDs)
         Deaths[Deaths < 10] = np.nan
         # [country, day]
         Deaths = np.ma.masked_invalid(Deaths.astype(theano.config.floatX))
