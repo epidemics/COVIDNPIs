@@ -310,7 +310,7 @@ def web_upload(ctx, dir_, channel):
 
 @action.command()
 @click.argument("SRC", type=click.Path(exists=True))
-@click.argument("DEST", type=click.Path(exists=True))
+@click.argument("DEST", type=click.Path())
 @click.pass_context
 def import_countermeasures(ctx, src, dest):
     """
