@@ -30,7 +30,8 @@ poetry install  # Best run it outside virtualenv - poetry will create its own
 poetry install -E pymc3
 poetry install -E pyro
 
-## Or, if using conda, install (a likely list): pandas pymc3 unidecode jupyter ...
+## Or, if using conda:
+pip install -r requirements.txt
 
 poetry shell # One way to enter the virtualenv (if not active already)
 poetry run jupyter notebook  # For example
