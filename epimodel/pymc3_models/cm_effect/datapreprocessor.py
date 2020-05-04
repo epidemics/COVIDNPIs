@@ -280,8 +280,8 @@ class DataPreprocessorV2(DataPreprocessor):
                      'Stay at home authoritative':'General curfew',
                      'Risky businesses closed authoritative':'Business suspended - some',
                      'All non-essential businesses closed authoritative':'Business suspended - many',
-                     'Hospital specialization level 2 authoritative':'Healthcare specialisation',
-                     'Hospital specialization level 1 authoritative':'Healthcare specialisation - limited'}
+                     'Infection control in healthcare system - strong authoritative':'Healthcare infection control - strong',
+                     'Infection control in healthcare system - weak authoritative':'Healthcare infection control - basic'}
 
         epicheck = pd.read_csv(os.path.join(data_base_path,self.epicheck_fname),skiprows=[1]).rename(columns=check_cols).set_index('Code')
 
