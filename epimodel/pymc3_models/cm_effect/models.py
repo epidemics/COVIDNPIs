@@ -16,7 +16,7 @@ sns.set_style("ticks")
 from matplotlib.font_manager import FontProperties
 import matplotlib.pyplot as plt
 
-fp2 = FontProperties(fname=r"/Users/mrinank/workspace/fonts/Font Awesome 5 Free-Solid-900.otf")
+fp2 = FontProperties(fname=r"../../fonts/Font Awesome 5 Free-Solid-900.otf")
 
 
 def save_fig_pdf(output_dir, figname):
