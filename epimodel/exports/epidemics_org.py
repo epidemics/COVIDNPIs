@@ -6,7 +6,7 @@ import socket
 import subprocess
 from enum import Enum
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Iterable
 
 import numpy as np
 import pandas as pd
@@ -31,7 +31,7 @@ class WebExport:
         self.created_by = f"{getpass.getuser()}@{socket.gethostname()}"
         self.comment = comment
         self.date_resample = date_resample
-        self.export_regions = {}
+        self.export_regions: Dict[str, WebExportRegion] = {}
 
     def to_json(self):
         return {
@@ -176,7 +176,7 @@ class WebExportRegion:
     @staticmethod
     def get_stats(
         cummulative_active_df: pd.DataFrame, simulation_specs: pd.DataFrame
-    ) -> Dict[str, float]:
+    ) -> Dict[str, Dict[str, float]]:
         stats = {}
         for group in simulation_specs.Group.unique():
             sim_ids = list(simulation_specs[simulation_specs.Group == group].index)
@@ -185,7 +185,7 @@ class WebExportRegion:
         return stats
 
     @staticmethod
-    def get_date_index(models: pd.DataFrame) -> None:
+    def get_date_index(models: pd.DataFrame) -> Iterable[datetime.datetime]:
         date_indexes = models.groupby(level=0).apply(
             lambda x: x.index.get_level_values("Date")
         )
@@ -200,7 +200,7 @@ class WebExportRegion:
     def extract_external_data(
         models: pd.DataFrame, simulation_spec: pd.DataFrame, groups,
     ) -> Dict[str, Any]:
-        d = {
+        d: Dict[str, Any] = {
             "date_index": [
                 x.isoformat() for x in WebExportRegion.get_date_index(models)
             ]
