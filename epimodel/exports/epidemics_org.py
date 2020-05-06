@@ -202,7 +202,7 @@ class WebExportRegion:
     ) -> Dict[str, Any]:
         d: Dict[str, Any] = {
             "date_index": [
-                x.isoformat() for x in WebExportRegion.get_date_index(models)
+                x.date().isoformat() for x in WebExportRegion.get_date_index(models)
             ]
         }
         traces = []
