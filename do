@@ -17,8 +17,7 @@ log = logging.getLogger("do")
 
 # Global arguments
 
-
-@click.group()
+@click.group(chain=True)
 @click.option("-d", "--debug", is_flag=True, help="Enable debugging logs.")
 @click.option(
     "-C",
@@ -26,7 +25,8 @@ log = logging.getLogger("do")
     type=click.Path(exists=True),
     default="config.yaml",
     envvar="EPI_CONFIG",
-    help="Path to config file (default config.yaml; alternatively set EPI_CONFIG environment variable).",
+    help="Path to config file (default config.yaml; alternatively set EPI_CONFIG "\
+         "environment variable).",
 )
 @click.pass_context
 def cli(ctx, debug, config):
@@ -37,38 +37,65 @@ def cli(ctx, debug, config):
 
     1. Update Johns Hopkins data:
     
-    ./do action update-johns-hopkins (not needed if you got fresh data from the repo)
+    ./do update-johns-hopkins (not needed if you got fresh data from the repo)
 
-    2. Generate batch file from estimates and basic Gleam XML definition. 
+    2. Generate batch file from estimates and basic Gleam XML definition.
     
-    ./do action generate-gleam-batch -D 2020-04-15 -c JK default.xml estimates-2020-04-15.csv
+    ./do generate-gleam-batch -D 2020-04-15 -c JK default.xml
+    estimates-2020-04-15.csv
 
-    The batch file now contains all the scenario definitions and initial populations. Note the estimate input specification may change.
+    The batch file now contains all the scenario definitions and initial
+    populations. Note the estimate input specification may change.
 
-    3. Export Gleam simulation XML files in Gleamviz (not while gleamviz is running!). 
+    3. Export Gleam simulation XML files in Gleamviz (not while gleamviz is
+       running!).
 
-    ./do action export-gleam-batch out/batch-2020-04-16T03:54:52.910001+00:00.hdf5
+    ./do export-gleam-batch out/batch-2020-04-16T03:54:52.910001+00:00.hdf5
 
-    4. Start gleamviz. You should see the new simulations loaded. Run all of them and "Retrieve results" (do not export manually). Exit gleamviz.
+    4. Start gleamviz. You should see the new simulations loaded. Run all of
+       them and "Retrieve results" (do not export manually). Exit gleamviz.
 
-    5. Import the gleamviz results into the HDF batch file (Gleamviz must be stopped before that). After this succeeds, you may delete the simulations from gleamviz.
+    5. Import the gleamviz results into the HDF batch file (Gleamviz must be
+       stopped before that). After this succeeds, you may delete the
+       simulations from gleamviz.
 
-    ./do action import-gleam-batch out/batch-2020-04-16T03:54:52.910001+00:00.hdf5 
+    ./do import-gleam-batch out/batch-2020-04-16T03:54:52.910001+00:00.hdf5
 
     6. Generate web export (additional data are fetched from config.yml)
 
-    ./do action web-export out/batch-2020-04-16T03:54:52.910001+00:00.hdf5 data/sources/estimates-JK-2020-04-15.csv
+    ./do web-export out/batch-2020-04-16T03:54:52.910001+00:00.hdf5
+    data/sources/estimates-JK-2020-04-15.csv
 
-    7. Export the generated folder to web! Optionally, set a channel for testing first. 
+    7. Export the generated folder to web! Optionally, set a channel for
+       testing first.
 
-    ./do action web-upload out/export-2020-04-03T02:03:28.991629+00:00 -c ttest28
+    ./do web-upload out/export-2020-04-03T02:03:28.991629+00:00 -c ttest28
+
+    Workflow macros:
+
+    1. Update Johns Hopkins and Foretold data, generate batch file from
+       estimates and basic Gleam XML definition and export Gleam simulation
+       XML files to Gleamviz (not while gleamviz is running!):
+   
+    ./do workflow-prepare-gleam -D 2020-04-15 -c JK default.xml
+    estimates-2020-04-15.csv
+
+    2. Start gleamviz. You should see the new simulations loaded. Run all of
+       them and "Retrieve results" (do not export manually). Exit gleamviz.
+
+    3. Import the gleamviz results into the HDF batch file, generate web
+       export and export the generated folder to web (Gleamviz must be stopped
+       before that.) After this succeeds, you may delete the simulations from
+       gleamviz.
+    
+    ./do workflow-gleam-to-web -C ttest28
+    out/batch-2020-04-16T03:54:52.910001+00:00.hdf5
+    data/sources/estimates-JK-2020-04-15.csv
     """
     ctx.ensure_object(dict)
     ctx.obj["DEBUG"] = debug
 
-    logging.basicConfig(level=logging.INFO)
-    if debug:
-        logging.root.setLevel(logging.DEBUG)
+    logging.basicConfig(level=logging.DEBUG if debug else logging.INFO)
 
     with open(config, "rt") as f:
         ctx.obj["CONFIG"] = yaml.safe_load(f)
@@ -81,15 +108,8 @@ def cli(ctx, debug, config):
 
 
 # Actions
-@cli.group(chain=True)
-@click.pass_context
-def action(ctx):
-    """
-    Pipeline actions to perform.
-    """
 
-
-@action.command()
+@cli.command()
 @click.pass_context
 def update_johns_hopkins(ctx):
     """
@@ -106,13 +126,14 @@ def update_johns_hopkins(ctx):
     )
 
 
-@action.command()
+@cli.command()
 @click.pass_context
 def update_foretold(ctx):
     """
     Fetch data from Foretold.
 
-    Data stored in the directory specified by 'data_dir' in config.yml. Channel specified by 'foretold_channel' in config.yml.
+    Data stored in the directory specified by 'data_dir' in config.yml.
+    Channel specified by 'foretold_channel' in config.yml.
     """
     if ctx.obj["CONFIG"]["foretold_channel"] == "SECRET":
         log.warning(
@@ -128,7 +149,7 @@ def update_foretold(ctx):
         log.info(f"Saved Foretold to {dest}")
 
 
-@action.command()
+@cli.command()
 @click.argument("batch_file", type=click.Path(exists=True))
 @click.option("-M", "--allow-missing", is_flag=True, help="Skip missing sim results.")
 @click.option(
@@ -170,7 +191,7 @@ def import_gleam_batch(ctx, batch_file, allow_missing, overwrite):
     )
 
 
-@action.command()
+@cli.command()
 @click.argument("base_def", type=click.Path(exists=True))
 @click.argument("country_estimates", type=click.Path(exists=True))
 @click.option(
@@ -201,10 +222,7 @@ def generate_gleam_batch(ctx, base_def, country_estimates, top, comment, start_d
     # TODO: This should be somewhat more versatile
     log.info(f"Reading estimates from CSV {country_estimates} ...")
     est = read_csv_smart(country_estimates, ctx.obj["RDS"], levels=Level.country)
-    if start_date:
-        start_date = utils.utc_date(start_date)
-    else:
-        start_date = d.get_start_date()
+    start_date = utils.utc_date(start_date) if start_date else d.get_start_date()
     log.info(f"Generating scenarios with start_date {start_date.ctime()} ...")
     batch.generate_simulations(
         b,
@@ -221,7 +239,7 @@ def generate_gleam_batch(ctx, base_def, country_estimates, top, comment, start_d
         ctx.parent.batch_file = b.path
 
 
-@action.command()
+@cli.command()
 @click.argument("batch_file", type=click.Path(exists=True))
 @click.option(
     "-o",
@@ -249,7 +267,7 @@ def export_gleam_batch(ctx, batch_file, out_dir, overwrite):
     )
 
 
-@action.command()
+@cli.command()
 @click.argument("batch_file", type=click.Path(exists=True))
 @click.argument("estimates", type=click.Path(exists=True))
 @click.option("-c", "--comment", type=str, help="A short comment (to be part of path).")
@@ -278,7 +296,8 @@ def web_export(ctx, batch_file, estimates, comment, pretty_print):
     )
 
 
-@action.command()
+@cli.command()
+@click.argument("channel", type=str)
 @click.option(
     "-d",
     "--dir",
@@ -286,19 +305,15 @@ def web_export(ctx, batch_file, estimates, comment, pretty_print):
     type=click.Path(exists=True),
     help="The generated export directory to upload from.",
 )
-@click.option(
-    "-c",
-    "--channel",
-    type=str,
-    default="staging",
-    help="Channel to upload to ('main' for main site). Default is 'staging'.",
-)
 @click.pass_context
 def web_upload(ctx, dir_, channel):
     """
     Upload data to the configured GCS bucket.
 
-    By default, uploads from the output_latest directory specified in config.yaml (out/latest).
+    By default, uploads from the output_latest directory specified in
+    config.yaml (out/latest).
+    
+    CHANNEL: Channel to upload to (main, staging, testing or custom channels).
     """
     c = ctx.obj["CONFIG"]
 
@@ -308,7 +323,7 @@ def web_upload(ctx, dir_, channel):
     upload_export(dir_, c, channel=channel)
 
 
-@action.command()
+@cli.command()
 @click.argument("SRC", type=click.Path(exists=True))
 @click.argument("DEST", type=click.Path())
 @click.pass_context
@@ -331,28 +346,8 @@ def import_countermeasures(ctx, src, dest):
 
 # Workflows
 
-
-@cli.group(chain=True)
-@click.pass_context
-def workflow(ctx):
-    """
-    Workflows to run stages of the pipeline.
-
-    1. Update Johns Hopkins and Foretold data, generate batch file from estimates and basic Gleam XML definition and export Gleam simulation XML files to Gleamviz (not while gleamviz is running!):
-   
-    ./do workflow prepare-gleam -D 2020-04-15 -c JK default.xml estimates-2020-04-15.csv
-
-    2. Start gleamviz. You should see the new simulations loaded. Run all of them and "Retrieve results" (do not export manually). Exit gleamviz.
-
-    3. Import the gleamviz results into the HDF batch file, generate web export and export the generated folder to web (Gleamviz must be stopped before that.) After this succeeds, you may delete the simulations from gleamviz.
-    
-    ./do workflow gleam-to-web -C ttest28 out/batch-2020-04-16T03:54:52.910001+00:00.hdf5 data/sources/estimates-JK-2020-04-15.csv
-    """
-
-
-@workflow.command()
+@cli.command()
 # update-johns-hopkins
-# update-foretold
 # generate-gleam-batch
 @click.argument("base_def", type=click.Path(exists=True))
 @click.argument("country_estimates", type=click.Path(exists=True))
@@ -375,13 +370,14 @@ def workflow(ctx):
 )
 @click.option("-f", "--overwrite", is_flag=True, help="Overwrite existing files.")
 @click.pass_context
-def prepare_gleam(
+def workflow_prepare_gleam(
     ctx, base_def, country_estimates, top, comment, start_date, out_dir, overwrite
 ):
     """
     Creates and exports a batch of definitions for GLEAM. 
 
-    Runs update-johns-hopkins, update-foretold, generate-gleam-batch and export-gleam-batch.
+    Runs update-johns-hopkins, generate-gleam-batch and
+    export-gleam-batch.
 
     By default exports to 'gleamviz_sims_dir' as specified in config.yml.
 
@@ -391,7 +387,6 @@ def prepare_gleam(
     """
     ctx.invoked_by_subcommand = True
     ctx.invoke(update_johns_hopkins)
-    ctx.invoke(update_foretold)
     ctx.invoke(
         generate_gleam_batch,
         base_def=base_def,
@@ -408,7 +403,7 @@ def prepare_gleam(
     )
 
 
-@workflow.command()
+@cli.command()
 # import-gleam-batch
 @click.argument("batch_file", type=click.Path(exists=True))
 @click.option("-M", "--allow-missing", is_flag=True, help="Skip missing sim results.")
@@ -424,15 +419,9 @@ def prepare_gleam(
     "-p", "--pretty-print", is_flag=True, help="Pretty-print exported JSON files."
 )
 # web-upload
-@click.option(
-    "-C",
-    "--channel",
-    type=str,
-    default="staging",
-    help="Channel to upload to ('main' for main site). Default is 'staging'.",
-)
+@click.argument("channel", type=str)
 @click.pass_context
-def gleam_to_web(
+def workflow_gleam_to_web(
     ctx, batch_file, allow_missing, overwrite, estimates, comment, pretty_print, channel
 ):
     """
@@ -443,6 +432,8 @@ def gleam_to_web(
     BATCH_FILE: The batch-*.hdf5 file with batch spec to be updated.
 
     ESTIMATES: CSV file containing the current estimates
+
+    CHANNEL: Channel to upload to (main, staging, testing or custom channels).
     """
     ctx.invoke(
         import_gleam_batch,

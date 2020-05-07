@@ -319,11 +319,12 @@ def upload_export(dir_to_export, config, channel="test"):
     shutil.copytree(exdir, channeldir)
     log.info(f"Copied export to {channeldir} for uploading")
 
+    datafile = config["gs_datafile_name"]
     # Backwards compatibility
     old_filename = "data-CHANNEL-v4.json"
     old_path = channeldir / old_filename
     if old_path.exists():
-        old_path.rename(channeldir / config["gs_datafile_name"])
+        old_path.rename(channeldir / datafile)
 
     for json_file in channeldir.iterdir():
         if json_file.suffix != ".json":
@@ -343,7 +344,7 @@ def upload_export(dir_to_export, config, channel="test"):
 
     gs_tgt = f"{gs_prefix}/{datafile}"
     log.info(f"Uploading main data file to {gs_tgt} ...")
-    cmd = CMD + ["-Z", channeldir / config["gs_datafile_name"], gs_tgt]
+    cmd = CMD + ["-Z", channeldir / datafile, gs_tgt]
     log.debug(f"Running {cmd!r}")
     subprocess.run(cmd, check=True)
     log.info(f"File URL: {gs_url}/{datafile}")
