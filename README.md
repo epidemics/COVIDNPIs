@@ -72,7 +72,7 @@ Also, you did `cp config.yaml config-local.yaml` (modifying it as fit) and set e
 1. Clone data repo or update it.
    `git clone https://github.com/epidemics/epimodel-covid-data data`
 
-2. Optional: Update Johns Hopkins data `./do action update_john_hopkins` (not needed if you got fresh data from the repo above).
+2. Optional: Update Johns Hopkins data `./do update-johns-hopkins` (not needed if you got fresh data from the repo above).
 
 3. Generate batch file from estimates and basic Gleam XML definition.
    `./do generate-gleam-batch -D 2020-04-15 -c JK default.xml estimates-2020-04-15.csv`
