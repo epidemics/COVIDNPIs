@@ -118,7 +118,7 @@ Has 2-3 dataframes:
 
 * `initial_compartments`: Indexed by `['SimulationID', 'Code']`, has the initial sizes of set compartments (columns Exposed, Infected).
 
-* `new_fraction`: After `import_gleam_batch` actually contains the modelled data for Infected and Recovered (columns). Indexed by `['SimulationID', 'Code', 'Date']`:
+* `new_fraction`: After `import-gleam-batch` actually contains the modelled data for Infected and Recovered (columns). Indexed by `['SimulationID', 'Code', 'Date']`:
   * `SimulationID`: corresponding simulation ID to be able to be able to map it to parameters in `simulations`,
   * `Code`: region code (ISOa2 for countries, e.g. `AE`),
   * `Date`: a date for which we model Infected and Recovered.
