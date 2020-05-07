@@ -93,10 +93,10 @@ Also, you did `cp config.yaml config-local.yaml` (modifying it as fit) and set e
    `./do web-export out/batch-2020-04-16T03:54:52.910001+00:00.hdf5 data/sources/estimates-JK-2020-04-15.csv`
 
 8. Export the generated folder to web! Optionally, set a channel for testing first.
-   `./do web-upload -c ttest28 out/export-2020-04-03T02:03:28.991629+00:00`
+   `./do web-upload -d out/export-2020-04-03T02:03:28.991629+00:00 ttest28`
 
 n.b. commands can be 'chained' as follows:
-`./do web-export out/batch-2020-04-16T03:54:52.910001+00:00.hdf5 data/sources/estimates-JK-2020-04-15.csv web-upload -c ttest28`
+`./do web-export out/batch-2020-04-16T03:54:52.910001+00:00.hdf5 data/sources/estimates-JK-2020-04-15.csv web-upload ttest28`
 
 ### Running pipeline with workflow commands
 
@@ -108,7 +108,7 @@ An alternative way to run the pipeline is as follows:
 2. Start gleamviz. You should see the new simulations loaded. Run all of them and "Retrieve results" (do not export manually). Exit gleamviz.
 
 3. Import the gleamviz results into the HDF batch file, generate web export and export the generated folder to web (Gleamviz must be stopped before that.) After this succeeds, you may delete the simulations from gleamviz.
-   `./do workflow-gleam-to-web -C ttest28 out/batch-2020-04-16T03:54:52.910001+00:00.hdf5 data/sources/estimates-JK-2020-04-15.csv`
+   `./do workflow-gleam-to-web out/batch-2020-04-16T03:54:52.910001+00:00.hdf5 data/sources/estimates-JK-2020-04-15.csv ttest28`
 
 ### Gleam Batch file
 
