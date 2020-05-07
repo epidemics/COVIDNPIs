@@ -155,7 +155,7 @@ class WebExportRegion:
                 )
             d["JohnsHopkins"] = {
                 "Date": [x.date().isoformat() for x in hopkins.index],
-                **hopkins.replace({np.nan: None}).to_dict(orient="list"),
+                **hopkins.astype("Int64").replace({pd.NA: None}).to_dict(orient="list"),
             }
 
         if foretold is not None:
@@ -235,7 +235,6 @@ class WebExportRegion:
             "CurrentEstimate": self.current_estimate,
         }
         for n in [
-            "Population",
             "Lat",
             "Lon",
             "OfficialName",
@@ -249,6 +248,9 @@ class WebExportRegion:
         ]:
             if not pd.isnull(self.region[n]):
                 d[n] = self.region[n]
+
+        if not pd.isnull(self.region["Population"]):
+            d["Population"] = int(self.region["Population"])
 
         if self.current_estimate is not None:
             d["CurrentEstimate"] = self.current_estimate.to_dict()
