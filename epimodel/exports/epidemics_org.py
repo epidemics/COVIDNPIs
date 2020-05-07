@@ -445,8 +445,6 @@ def process_export(args) -> None:
 
     batch = Batch.open(args.BATCH_FILE)
     simulation_specs: pd.DataFrame = batch.hdf["simulations"]
-    # TODO: models_df_old likely not needed anymore
-    models_df_old: pd.DataFrame = batch.hdf["new_fraction"]
     cummulative_active_df = batch.get_cummulative_active_df()
 
     estimates_df = epimodel.read_csv_smart(args.estimates, args.rds, prefer_higher=True)
@@ -481,8 +479,7 @@ def process_export(args) -> None:
     analyze_data_consistency(
         args.debug,
         export_regions,
-        # TODO: replace by cummulative version as models are not needed anymore
-        models_df_old,
+        cummulative_active_df,
         rates_df,
         hopkins_df,
         foretold_df,
