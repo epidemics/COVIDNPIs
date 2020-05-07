@@ -491,7 +491,6 @@ def process_export(args) -> None:
     for code in export_regions:
         reg: Region = args.rds[code]
         m49 = int(reg["M49Code"]) if pd.notnull(reg["M49Code"]) else -1
-        iso3 = reg["CountryCodeISOa3"]
 
         ex.new_region(
             reg,
