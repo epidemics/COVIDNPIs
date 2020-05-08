@@ -103,10 +103,10 @@ class DataMerger():
         Ds = pd.date_range(start=self.start_date, end=self.end_date, tz="utc")
         self.Ds = Ds
 
-        johnhop_ds = read_csv(os.path.join(data_base_path, self.johnhop_fname))
+        # OUR STUFF
         epi_cmset = pd.read_csv(os.path.join(data_base_path, self.episet_fname)).rename(columns=selected_features_epi,
-                                                                                        errors="raise").set_index("Code")
-
+                                                                                        errors="raise").set_index(
+            "Code")
 
         region_names = list([x for x, _, _ in region_info])
         regions_epi = list([x for _, x, _ in region_info])
@@ -123,56 +123,17 @@ class DataMerger():
                 if not on_date == "no" and not on_date == "No":
                     on_date = pd.to_datetime(on_date, dayfirst=True)
                     on_loc = Ds.get_loc(on_date)
-                    ActiveCMs_epi[r, f, on_loc:]
+                    ActiveCMs_epi[r, f, on_loc:] = 1
 
-        return
-
-        # epidemic forecasting.org dataset
-        print("Loading from epidemicforecasting.org")
-        for feat in selected_features_epi.values():
-            if not feat in epi_cmset:
-                logger.warning(f"{feat} is missing in the original epidemicforecasting.org DB")
-                epi_cmset[feat] = 0
-
-        sd = epi_cmset.loc[regions_epi, selected_features_epi.values()]
-
-        for col in epifor_check_cols.values():
-            logger.info(f" updating {col}")
-            epicheck[col] = epicheck[col].str.lower().replace("no", '01-01-2021')
-            epicheck[col] = pd.to_datetime(epicheck[col].str.replace('.', '-'), format="%d-%m-%Y")
-            for ccode in epicheck.index:
-                switch_date = epicheck.loc[ccode, col]
-                if not pd.isna(switch_date):
-                    dates_off = pd.date_range(self.start_date, switch_date)
-                    dates_on = pd.date_range(switch_date, self.end_date)
-                    sd.loc[(ccode, dates_off), col] = 0
-                    sd.loc[(ccode, dates_on), col] = 1
-
-        logger.info("Mask Override")
-        nRs_over, _ = mask_override_ds.shape
-        for r in range(nRs_over):
-            switch_date = mask_override_ds.iloc[r, 2].strip()
-            ccode = mask_override_ds.iloc[r, 1].strip()
-            # print(f"{ccode} actually had masks from {switch_date}")
-            # print(self.start_date)
-            # print(self.end_date)
-            dates_off = pd.date_range(self.start_date, switch_date)
-            dates_on = pd.date_range(switch_date, self.end_date)
-            # print(dates_off)
-            # print(dates_on)
-            sd.loc[(ccode, dates_off), "Mask Wearing"] = 0
-            sd.loc[(ccode, dates_on), "Mask Wearing"] = 1
-
-        ActiveCMs_epi = np.stack([sd.loc[c].loc[Ds].T for c in filtered_countries])
         logger_str = "\nCountermeasures: EpidemicForecasting.org           min   ... mean  ... max   ... unique"
         for i, cm in enumerate(selected_features_epi.values()):
             logger_str = f"{logger_str}\n{i + 1:2} {cm:42} {np.min(ActiveCMs_epi[:, i, :]):.3f} ... {np.mean(ActiveCMs_epi[:, i, :]):.3f} ... {np.max(ActiveCMs_epi[:, i, :]):.3f} ... {np.unique(ActiveCMs_epi[:, i, :])[:5]}"
         logger.info(logger_str)
 
+        # OXCGRT STUFF
         logger.info("Load OXCGRT")
         unique_missing_countries = []
 
-        # OxCGRT dataset
         def oxcgrt_to_epimodel_index(ind):
             try:
                 return regions_epi[regions_oxcgrt.index(ind)]
@@ -181,14 +142,13 @@ class DataMerger():
                     unique_missing_countries.append(ind)
                 return ind
 
-        date_column = "Date"
         data_oxcgrt = pd.read_csv(os.path.join(data_base_path, self.oxcgrt_fname), index_col="CountryCode")
 
         columns_to_drop = ["CountryName", "Date", "ConfirmedCases", "ConfirmedDeaths",
                            "StringencyIndex", "StringencyIndexForDisplay",
                            "LegacyStringencyIndex", "LegacyStringencyIndexForDisplay"]
 
-        dti = pd.DatetimeIndex(pd.to_datetime(data_oxcgrt[date_column], utc=True, format="%Y%m%d"))
+        dti = pd.DatetimeIndex(pd.to_datetime(data_oxcgrt["Date"], utc=True, format="%Y%m%d"))
         epi_codes = [oxcgrt_to_epimodel_index(cc) for cc in data_oxcgrt.index.array]
         logger.warning(f"Missing {unique_missing_countries} from epidemicforecasting.org DB which are in OxCGRT")
         data_oxcgrt.index = pd.MultiIndex.from_arrays([epi_codes, dti])
@@ -199,7 +159,6 @@ class DataMerger():
         data_oxcgrt.sort_index()
 
         data_oxcgrt_filtered = data_oxcgrt.loc[regions_epi, selected_features_oxcgrt]
-
         values_to_stack = []
         for c in regions_epi:
             if c in data_oxcgrt_filtered.index:
@@ -208,10 +167,11 @@ class DataMerger():
                 logger.info(f"Missing {c} from OXCGRT. Assuming features are 0")
                 values_to_stack.append(np.zeros_like(values_to_stack[-1]))
 
+        # this has NaNs in!
         ActiveCMs_temp = np.stack(values_to_stack)
         nRs, _, nDs = ActiveCMs_temp.shape
-        nCMs = len(oxcgrt_feature_info)
-        ActiveCMs_oxcgrt = np.zeros((nRs, nCMs, nDs))
+        nCMs_oxcgrt = len(oxcgrt_feature_info)
+        ActiveCMs_oxcgrt = np.zeros((nRs, nCMs_oxcgrt, nDs))
         oxcgrt_derived_cm_names = [n for n, _ in oxcgrt_feature_info]
 
         for r_indx in range(nRs):
@@ -225,8 +185,22 @@ class DataMerger():
                         condition_mat[condition, :] += (row_vals == value)
                     # if it has any of them, this condition is satisfied
                     condition_mat[condition, :] = condition_mat[condition, :] > 0
-                # we need all conditions to be satisfied, hence a product
-                ActiveCMs_oxcgrt[r_indx, feature_indx, :] = np.prod(condition_mat, axis=0) > 0
+                    # deal with missing data. nan * 0 = nan. Anything else is zero
+                    condition_mat[condition, :] += (row_vals * 0)
+                    # we need all conditions to be satisfied, hence a product
+                ActiveCMs_oxcgrt[r_indx, feature_indx, :] = (np.prod(condition_mat, axis=0) > 0) + 0 * (
+                    np.prod(condition_mat, axis=0))
+
+        # now forward fill in missing data!
+        for r in range(nRs):
+            for c in range(nCMs_oxcgrt):
+                for d in range(nDs):
+                    # if it starts off nan, assume that its zero
+                    if d == 0 and np.isnan(ActiveCMs_oxcgrt[r, c, d]):
+                        ActiveCMs_oxcgrt[r, c, d] = 0
+                    elif np.isnan(ActiveCMs_oxcgrt[r, c, d]):
+                        # if the value is nan, assume it takes the value of the previous day
+                        ActiveCMs_oxcgrt[r, c, d] = ActiveCMs_oxcgrt[r, c, d - 1]
 
         logger_str = "\nCountermeasures: OxCGRT           min   ... mean  ... max   ... unique"
         for i, cm in enumerate(oxcgrt_derived_cm_names):
@@ -252,13 +226,15 @@ class DataMerger():
 
         dataset_summary_plot(ordered_features, ActiveCMs)
 
-        Confirmed = np.stack([johnhop_ds["Confirmed"].loc[(fc, Ds)] for fc in filtered_countries])
-        Active = np.stack([johnhop_ds["Active"].loc[(fc, Ds)] for fc in filtered_countries])
-        Deaths = np.stack([johnhop_ds["Deaths"].loc[(fc, Ds)] for fc in filtered_countries])
+        # Johnhopkins Stuff
+        johnhop_ds = read_csv(os.path.join(data_base_path, self.johnhop_fname))
+        Confirmed = np.stack([johnhop_ds["Confirmed"].loc[(fc, Ds)] for fc in regions_epi])
+        Active = np.stack([johnhop_ds["Active"].loc[(fc, Ds)] for fc in regions_epi])
+        Deaths = np.stack([johnhop_ds["Deaths"].loc[(fc, Ds)] for fc in regions_epi])
 
         columns = ["Country Code", "Date", "Region Name", "Confirmed", "Active", "Deaths", *ordered_features]
         df = pd.DataFrame(columns=columns)
-        for r_indx, r in enumerate(filtered_countries):
+        for r_indx, r in enumerate(regions_epi):
             for d_indx, d in enumerate(Ds):
                 rows, columns = df.shape
                 country_name = region_names[regions_epi.index(r)]
