@@ -337,12 +337,7 @@ def upload_export(dir_to_export, config, channel="test"):
     log.debug(f"Running {cmd!r}")
     subprocess.run(cmd, check=True)
 
-    gs_tgt = f"{gs_prefix}/{datafile}"
-    log.info(f"Uploading main data file to {gs_tgt} ...")
-    cmd = CMD + ["-Z", channeldir / datafile, gs_tgt]
-    log.debug(f"Running {cmd!r}")
-    subprocess.run(cmd, check=True)
-    log.info(f"File URL: {gs_url}/{datafile}")
+    log.info(f"File URL: {gs_url}/{channeldir.parts[-1]}/{datafile}")
 
     if channel != "main":
         log.info(f"Custom web URL: http://epidemicforecasting.org/?channel={channel}")
