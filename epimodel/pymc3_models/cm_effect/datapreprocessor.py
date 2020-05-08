@@ -81,7 +81,6 @@ class DataMerger():
         self.episet_fname = "countermeasures_pretty080520.csv"
         self.oxcgrt_fname = "OxCGRT_latest.csv"
         self.johnhop_fname = "johns-hopkins.csv"
-        self.regions_fname = "regions.csv"
 
         # load parameters, first from dictionary and then from kwargs
         if params_dict is not None:
@@ -104,30 +103,29 @@ class DataMerger():
         Ds = pd.date_range(start=self.start_date, end=self.end_date, tz="utc")
         self.Ds = Ds
 
-        region_ds = RegionDataset.load(os.path.join(data_base_path, self.regions_fname))
         johnhop_ds = read_csv(os.path.join(data_base_path, self.johnhop_fname))
-        mask_override_ds = pd.read_csv(os.path.join(data_base_path, self.mask_override_fname))
-        epi_cmset = read_csv(os.path.join(data_base_path, self.episet_fname))
-        epi_cmset = epi_cmset.rename(columns=selected_features_epi, errors="raise")
+        epi_cmset = pd.read_csv(os.path.join(data_base_path, self.episet_fname)).rename(columns=selected_features_epi,
+                                                                                        errors="raise").set_index("Code")
+
 
         region_names = list([x for x, _, _ in region_info])
         regions_epi = list([x for _, x, _ in region_info])
         regions_oxcgrt = list([x for _, _, x in region_info])
 
-        # country filtering
-        filtered_countries = []
-        for cc in regions_epi:
-            c = region_ds[cc]
-            if (
-                    c.Level == Level.country
-                    and c.Code in johnhop_ds.index
-                    and c.Code in epi_cmset.index
-            ):
-                if (
-                        johnhop_ds.loc[(c.Code, Ds[-1]), "Active"]
-                        > self.min_final_num_active_cases
-                ):
-                    filtered_countries.append(c.Code)
+        nRs = len(region_names)
+        nDs = len(Ds)
+        nCMs_epi = len(selected_features_epi.values())
+        ActiveCMs_epi = np.zeros((nRs, nCMs_epi, nDs))
+
+        for r, ccode in enumerate(regions_epi):
+            for f, feature_name in enumerate(selected_features_epi.values()):
+                on_date = epi_cmset.loc[ccode][feature_name].strip()
+                if not on_date == "no" and not on_date == "No":
+                    on_date = pd.to_datetime(on_date, dayfirst=True)
+                    on_loc = Ds.get_loc(on_date)
+                    ActiveCMs_epi[r, f, on_loc:]
+
+        return
 
         # epidemic forecasting.org dataset
         print("Loading from epidemicforecasting.org")
@@ -136,14 +134,7 @@ class DataMerger():
                 logger.warning(f"{feat} is missing in the original epidemicforecasting.org DB")
                 epi_cmset[feat] = 0
 
-        sd = epi_cmset.loc[filtered_countries, selected_features_epi.values()]
-
-        # overwrite epidemic forecasting data with dataset checks if they exist
-
-        logger.info("Updating from epidemicforecasting.org double-check data")
-        epicheck = pd.read_csv(os.path.join(data_base_path, self.epicheck_fname), skiprows=[1]).rename(
-            columns=epifor_check_cols).set_index('Code')
-        epicheck = epicheck.loc[epicheck.index.isin(filtered_countries)]
+        sd = epi_cmset.loc[regions_epi, selected_features_epi.values()]
 
         for col in epifor_check_cols.values():
             logger.info(f" updating {col}")
