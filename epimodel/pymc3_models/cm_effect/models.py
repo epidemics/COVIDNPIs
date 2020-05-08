@@ -11,6 +11,8 @@ import theano.tensor as T
 import theano.tensor.signal.conv as C
 from pymc3 import Model
 
+from epimodel.pymc3_models.utils import shift_right
+
 log = logging.getLogger(__name__)
 sns.set_style("ticks")
 
@@ -1337,13 +1339,15 @@ class CMActive_Final_ICL(BaseCMModel):
 
 
         self.SI = np.array(
-            [0, 0.04656309, 0.08698277, 0.1121656, 0.11937737, 0.11456359,
+            [0.04656309, 0.08698277, 0.1121656, 0.11937737, 0.11456359,
              0.10308026, 0.08852893, 0.07356104, 0.059462, 0.04719909,
              0.03683025, 0.02846977, 0.02163222, 0.01640488, 0.01221928,
              0.00903811, 0.00670216, 0.00490314, 0.00361434, 0.00261552,
              0.00187336, 0.00137485, 0.00100352, 0.00071164, 0.00050852,
              0.00036433, 0.00025036]
         )
+
+        self.SI_rev = self.SI[::-1]
         # infection --> confirmed delay
         self.DelayProb = np.array([0.00509233, 0.02039664, 0.03766875, 0.0524391, 0.06340527,
                                    0.07034326, 0.07361858, 0.07378182, 0.07167229, 0.06755999,
@@ -1372,7 +1376,9 @@ class CMActive_Final_ICL(BaseCMModel):
                     skipped_days.append(d)
 
             if len(skipped_days) > 0:
-                print(f"Skipped day {[(data.Ds[sk].day, data.Ds[sk].month) for sk in skipped_days]} for {data.Rs[r]}")
+                # print(f"Skipped day {[(data.Ds[sk].day, data.Ds[sk].month) for sk in skipped_days]} for {data.Rs[r]}")
+                pass
+
         self.observed_days = np.array(observed)
 
     def build_model(self):
@@ -1412,22 +1418,21 @@ class CMActive_Final_ICL(BaseCMModel):
                 plot_trace=False,
             )
 
-            self.Det("Z1", self.Growth - self.ExpectedGrowth, plot_trace=False)
+            self.Det("Z1", self.LogR - self.ExpectedLogR, plot_trace=False)
 
             self.InitialSize_log = pm.Normal("InitialSize_log", 1, 100, shape=(self.nORs,))
 
-            
+            # conv padding
+            conv_padding = self.SI.size
+            infected = self.InitialSize_log.reshape((self.nORs, 1)) * np.ones((self.nORs, self.nDs + conv_padding))
 
             # R is a lognorm
             R = pm.math.exp(self.LogR)
-            for r in range(self.nORs):
-                for d in range()
+            for d in range(self.nDs):
+                val = pm.math.sum(R[:, d].reshape((self.nORs, 1)) * infected[:, d:d + conv_padding] * self.SI.reshape((1, conv_padding)), axis=1)
+                infected = T.set_subtensor(infected[:, d + conv_padding], val)
 
-
-            self.Infected_log = pm.Deterministic("Infected_log", T.reshape(self.InitialSize_log, (
-                self.nORs, 1)) + self.Growth.cumsum(axis=1))
-
-            self.Infected = pm.Deterministic("Infected", pm.math.exp(self.Infected_log))
+            self.Infected = pm.Deterministic("Infected", infected[:, conv_padding:])
 
             expected_confirmed = C.conv2d(
                 self.Infected,
@@ -1438,7 +1443,7 @@ class CMActive_Final_ICL(BaseCMModel):
             self.ExpectedCases = pm.Deterministic("ExpectedCases", expected_confirmed.reshape(
                 (self.nORs, self.nDs)))
 
-            self.Phi = pm.HalfNormal("Phi", 5)
+            self.Phi = 7
 
             # effectively handle missing values ourselves
             self.ObservedCases = pm.NegativeBinomial(
@@ -1544,6 +1549,7 @@ class CMActive_Final_ICL(BaseCMModel):
             plt.xticks(locs, xlabels, rotation=-30)
             ax1 = add_cms_to_plot(ax, self.d.ActiveCMs, country_indx, min_x, max_x, days, plot_style)
 
+            continue
             plt.subplot(5, 3, 3 * (country_indx % 5) + 2)
 
             ax2 = plt.gca()
