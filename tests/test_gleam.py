@@ -15,7 +15,7 @@ def test_batch_new_open(tmp_path):
 
 
 def test_gleam_def(datadir):
-    d = epimodel.gleam.GleamDefinition(datadir / "test_definition.xml")
+    d = epimodel.gleam.GleamDefinition(datadir / "files/test_definition.xml")
     assert d.get_id() == "1585188102568.574"
     assert float(d.get_variable("beta")) == pytest.approx(1.01)
     assert d.get_traffic_occupancy() == 20
@@ -24,7 +24,7 @@ def test_gleam_def(datadir):
 
 
 def test_add_seeds_add_export_sims(regions_gleam, datadir, tmp_path):
-    d = epimodel.gleam.GleamDefinition(datadir / "test_definition.xml")
+    d = epimodel.gleam.GleamDefinition(datadir / "files/test_definition.xml")
     b = epimodel.gleam.Batch.new(dir=tmp_path)
 
     i_df = pd.DataFrame(
@@ -47,7 +47,7 @@ def test_add_seeds_add_export_sims(regions_gleam, datadir, tmp_path):
 
 
 def test_gleam_def_dates(datadir):
-    d = epimodel.gleam.GleamDefinition(datadir / "test_definition.xml")
+    d = epimodel.gleam.GleamDefinition(datadir / "files/test_definition.xml")
     d.set_start_date("2020-10-11")
     d.set_duration(11)
     assert d.get_duration() == 11
@@ -55,7 +55,7 @@ def test_gleam_def_dates(datadir):
 
 
 def test_gleam_def_exceptions(datadir, regions_gleam):
-    d = epimodel.gleam.GleamDefinition(datadir / "test_definition.xml")
+    d = epimodel.gleam.GleamDefinition(datadir / "files/test_definition.xml")
     d.clear_exceptions()
     d.add_exception([regions_gleam["CZ"], regions_gleam["G-AAA"]], {})
     d.add_exception([regions_gleam["W-EU"]], {"beta": 1e-10})
