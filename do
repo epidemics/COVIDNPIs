@@ -17,6 +17,7 @@ log = logging.getLogger("do")
 
 # Global arguments
 
+
 @click.group()
 @click.option("-d", "--debug", is_flag=True, help="Enable debugging logs.")
 @click.option(
@@ -25,8 +26,8 @@ log = logging.getLogger("do")
     type=click.Path(exists=True),
     default="config.yaml",
     envvar="EPI_CONFIG",
-    help="Path to config file (default config.yaml; alternatively set EPI_CONFIG "\
-         "environment variable).",
+    help="Path to config file (default config.yaml; alternatively set EPI_CONFIG "
+    "environment variable).",
 )
 @click.pass_context
 def cli(ctx, debug, config):
@@ -108,6 +109,7 @@ def cli(ctx, debug, config):
 
 
 # Actions
+
 
 @cli.command()
 @click.pass_context
@@ -274,7 +276,12 @@ def export_gleam_batch(ctx, batch_file, out_dir, overwrite):
 @click.option(
     "-p", "--pretty-print", is_flag=True, help="Pretty-print exported JSON files."
 )
-@click.option("-u", "--upload", type=str, help="If this option is set, uploads GLEAM results to the specified channel (main, staging, testing or custom channels).")
+@click.option(
+    "-u",
+    "--upload",
+    type=str,
+    help="If this option is set, uploads GLEAM results to the specified channel (main, staging, testing or custom channels).",
+)
 @click.pass_context
 def web_export(ctx, batch_file, estimates, comment, pretty_print, upload):
     """
@@ -348,6 +355,7 @@ def import_countermeasures(ctx, src, dest):
 
 
 # Workflows
+
 
 @cli.command()
 # update-johns-hopkins
@@ -450,7 +458,7 @@ def workflow_gleam_to_web(
         estimates=estimates,
         comment=comment,
         pretty_print=pretty_print,
-        upload=channel
+        upload=channel,
     )
 
 

@@ -522,12 +522,7 @@ def process_export(
     ).pipe(aggregate_countries, config["state_to_country"], rds)
 
     analyze_data_consistency(
-        debug,
-        export_regions,
-        cummulative_active_df,
-        rates_df,
-        hopkins_df,
-        foretold_df,
+        debug, export_regions, cummulative_active_df, rates_df, hopkins_df, foretold_df,
     )
 
     for code in export_regions:
