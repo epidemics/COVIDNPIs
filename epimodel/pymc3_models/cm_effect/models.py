@@ -24,7 +24,7 @@ def save_fig_pdf(output_dir, figname):
     datetime_str = datetime.now().strftime("%d-%m;%H-%M")
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
-    log.info(f"Saving Plot at {os.path.abspath(output_dir)}")
+    log.info(f"Saving Plot at {os.path.abspath(output_dir)} at {datetime_str}")
     plt.savefig(f"{output_dir}/{figname}_t{datetime_str}.pdf")
 
 
@@ -628,10 +628,8 @@ class CMActive_Final(BaseCMModel):
             )
 
             self.ExpectedGrowth = self.Det("ExpectedGrowth",
-                                           pm.math.log(
                                                beta * (pm.math.exp(
                                                    self.ExpectedLogR / alpha) - T.ones_like(
-                                                   self.ExpectedLogR)) + T.ones_like(
                                                    self.ExpectedLogR)),
                                            plot_trace=False
                                            )
@@ -1039,7 +1037,7 @@ class CMCombined_Final(BaseCMModel):
             self.ExpectedCases = pm.Deterministic("ExpectedCases", expected_cases.reshape(
                 (self.nORs, self.nDs)))
 
-            self.Phi_1 = pm.HalfNormal("Phi_1", 5)
+            self.Phi_1 = 6
 
             # effectively handle missing values ourselves
             self.ObservedCases = pm.NegativeBinomial(
@@ -1070,7 +1068,7 @@ class CMCombined_Final(BaseCMModel):
             self.ExpectedDeaths = pm.Deterministic("ExpectedDeaths", expected_deaths.reshape(
                 (self.nORs, self.nDs)))
 
-            self.Phi_2 = pm.HalfNormal("Phi_2", 5)
+            self.Phi_2 = 5
 
             # effectively handle missing values ourselves
             self.ObservedDeaths = pm.NegativeBinomial(
@@ -1096,23 +1094,30 @@ class CMCombined_Final(BaseCMModel):
 
             plt.subplot(5, 3, 3 * (country_indx % 5) + 1)
 
-            means_d, lu_id, up_id, err_d = produce_CIs(
-                self.trace.Infected[:, country_indx, :]
-            )
-
-            means_ea, lu_ea, up_ea, err_eea = produce_CIs(
-                self.trace.ExpectedCases[:, country_indx, :] * np.exp(
-                    0.3 * np.random.normal(
-                        size=(self.trace.ExpectedCases[:, country_indx, :].shape)))
+            means_ic, lu_ic, up_ic, err_ic = produce_CIs(
+                self.trace.InfectedCases[:, country_indx, :]
             )
 
             ec = self.trace.ExpectedCases[:, country_indx, :]
             nS, nDs = ec.shape
-            dist = pm.NegativeBinomial.dist(mu=ec + 1e-3, alpha=np.repeat(np.array([self.trace.Phi]), nDs, axis=0).T)
+            dist = pm.NegativeBinomial.dist(mu=ec + 1e-3, alpha=np.repeat(np.array([self.trace.Phi_1]), nDs, axis=0).T)
             ec_output = dist.random()
 
-            means_ea, lu_ea, up_ea, err_eea = produce_CIs(
+            means_ec, lu_ec, up_ec, err_ec = produce_CIs(
                 ec_output
+            )
+
+            means_id, lu_id, up_id, err_id = produce_CIs(
+                self.trace.InfectedDeaths[:, country_indx, :]
+            )
+
+            ed = self.trace.ExpectedDeaths[:, country_indx, :]
+            nS, nDs = ed.shape
+            dist = pm.NegativeBinomial.dist(mu=ed + 1e-3, alpha=np.repeat(np.array([self.trace.Phi_2]), nDs, axis=0).T)
+            ed_output = dist.random()
+
+            means_ed, lu_ed, up_ed, err_ed = produce_CIs(
+                ed_output
             )
 
             days = self.d.Ds
@@ -1122,31 +1127,32 @@ class CMCombined_Final(BaseCMModel):
             max_x = len(days) - 1
 
             newcases = self.d.NewCases[country_indx, :]
+            deaths = self.d.NewDeaths[country_indx, :]
 
             ax = plt.gca()
             plt.plot(
                 days_x,
-                means_d,
-                label="Daily Infected",
+                means_ic,
+                label="Daily Infected - Cases",
                 zorder=1,
                 color="tab:purple",
                 alpha=0.25
             )
 
             plt.fill_between(
-                days_x, lu_id, up_id, alpha=0.15, color="tab:purple", linewidth=0
+                days_x, lu_ic, up_ic, alpha=0.15, color="tab:purple", linewidth=0
             )
 
             plt.plot(
                 days_x,
-                means_ea,
+                means_ec,
                 label="Predicted New Cases",
                 zorder=2,
                 color="tab:blue"
             )
 
             plt.fill_between(
-                days_x, lu_ea, up_ea, alpha=0.25, color="tab:blue", linewidth=0
+                days_x, lu_ec, up_ec, alpha=0.25, color="tab:blue", linewidth=0
             )
 
             plt.scatter(
@@ -1163,7 +1169,7 @@ class CMCombined_Final(BaseCMModel):
             plt.scatter(
                 self.ObservedDaysIndx,
                 newcases[self.ObservedDaysIndx].data,
-                label="Heldout New Deaths",
+                label="Heldout New Cases",
                 marker="o",
                 s=12,
                 edgecolor="tab:green",
@@ -1173,9 +1179,58 @@ class CMCombined_Final(BaseCMModel):
                 zorder=2,
             )
 
+            plt.plot(
+                days_x,
+                means_id,
+                label="Daily Infected - Deaths",
+                zorder=1,
+                color="tab:orange",
+                alpha=0.25
+            )
+
+            plt.fill_between(
+                days_x, lu_id, up_id, alpha=0.15, color="tab:orange", linewidth=0
+            )
+
+            plt.plot(
+                days_x,
+                means_ed,
+                label="Predicted Deaths",
+                zorder=2,
+                color="tab:red"
+            )
+
+            plt.fill_between(
+                days_x, lu_ed, up_ed, alpha=0.25, color="tab:red", linewidth=0
+            )
+
+            plt.scatter(
+                self.ObservedDaysIndx,
+                deaths[self.ObservedDaysIndx],
+                label="Recorded Deaths",
+                marker="o",
+                s=10,
+                color="tab:gray",
+                alpha=0.9,
+                zorder=3,
+            )
+
+            plt.scatter(
+                self.ObservedDaysIndx,
+                deaths[self.ObservedDaysIndx].data,
+                label="Recorded Heldout Deaths",
+                marker="o",
+                s=12,
+                edgecolor="tab:gray",
+                facecolor="white",
+                linewidth=1,
+                alpha=0.9,
+                zorder=2,
+            )
+
             ax.set_yscale("log")
             plt.xlim([min_x, max_x])
-            plt.ylim([10 ** 0, 10 ** 5])
+            plt.ylim([10 ** 0, 10 ** 6])
             locs = np.arange(min_x, max_x, 7)
             xlabels = [f"{days[ts].day}-{days[ts].month}" for ts in locs]
             plt.xticks(locs, xlabels, rotation=-30)
@@ -1185,29 +1240,31 @@ class CMCombined_Final(BaseCMModel):
 
             ax2 = plt.gca()
 
-            means_growth, lu_g, up_g, err = produce_CIs(
+            means_g, lu_g, up_g, err_g = produce_CIs(
                 np.exp(self.trace.ExpectedGrowth[:, country_indx, :])
             )
 
-            actual_growth, lu_ag, up_ag, err_act = produce_CIs(
-                np.exp(self.trace.Growth[:, country_indx, :])
+            means_agc, lu_agc, up_agc, err_agc = produce_CIs(
+                np.exp(self.trace.GrowthCases[:, country_indx, :])
             )
 
-            med_growth = np.percentile(np.exp(self.trace.Growth[:, country_indx, :]), 50, axis=0)
-
-            plt.plot(days_x, med_growth, "--", label="Median Growth",
-                     color="tab:blue")
-
-            plt.plot(days_x, means_growth, label="Expected Growth", zorder=1, color="tab:orange")
-            plt.plot(days_x, actual_growth, label="Predicted Growth", zorder=1, color="tab:blue")
-
-            plt.fill_between(
-                days_x, lu_g, up_g, alpha=0.25, color="tab:orange", linewidth=0
+            means_agd, lu_agd, up_agd, err_agd = produce_CIs(
+                np.exp(self.trace.GrowthDeaths[:, country_indx, :])
             )
 
-            plt.fill_between(
-                days_x, lu_ag, up_ag, alpha=0.25, color="tab:blue", linewidth=0
-            )
+            med_agc = np.percentile(np.exp(self.trace.GrowthCases[:, country_indx, :]), 50, axis=0)
+            med_agd = np.percentile(np.exp(self.trace.GrowthDeaths[:, country_indx, :]), 50, axis=0)
+
+            plt.plot(days_x, means_g, label="Predicted Growth", zorder=1, color="tab:gray")
+            plt.plot(days_x, means_agc, label="Corrupted Growth - Cases", zorder=1, color="tab:purple")
+            # plt.plot(days_x, med_agc, "--", color="tab:purple")
+            plt.plot(days_x, means_agd, label="Corrupted Growth - Deaths", zorder=1, color="tab:orange")
+            # plt.plot(days_x, med_agd, "--", color="tab:orange")
+
+            plt.fill_between(days_x, lu_g, up_g, alpha=0.25, color="tab:gray", linewidth=0)
+            plt.fill_between(days_x, lu_agc, up_agc, alpha=0.25, color="tab:purple", linewidth=0)
+            plt.fill_between(days_x, lu_agd, up_agd, alpha=0.25, color="tab:orange", linewidth=0)
+
             plt.plot([min_x, max_x], [1, 1], "--", linewidth=0.5, color="lightgrey")
 
             plt.ylim([0.5, 2])
@@ -1222,13 +1279,20 @@ class CMCombined_Final(BaseCMModel):
             plt.subplot(5, 3, 3 * (country_indx % 5) + 3)
             axis_scale = 1.5
             ax4 = plt.gca()
-            z1_mean, lu_z1, up_z1, err_1 = produce_CIs(self.trace.Z1[:, country_indx, :])
+            z1C_mean, lu_z1C, up_z1C, err_1C = produce_CIs(self.trace.Z1C[:, country_indx, :])
+            z1D_mean, lu_z1D, up_z1D, err_1D = produce_CIs(self.trace.Z1D[:, country_indx, :])
             # z2_mean, lu_z2, up_z2, err_2 = produce_CIs(self.trace.Z2[:, country_indx, :])
 
-            plt.plot(days_x, z1_mean, color="tab:blue", label="Growth Noise")
+            plt.plot(days_x, z1C_mean, color="tab:purple", label="Growth Noise - Cases")
             plt.fill_between(
-                days_x, lu_z1, up_z1, alpha=0.25, color="tab:blue", linewidth=0
+                days_x, lu_z1C, up_z1C, alpha=0.25, color="tab:purple", linewidth=0
             )
+            plt.plot(days_x, z1D_mean, color="tab:purple", label="Growth Noise - Deaths")
+            plt.fill_between(
+                days_x, lu_z1D, up_z1D, alpha=0.25, color="tab:orange", linewidth=0
+            )
+
+
             plt.xlim([min_x, max_x])
             plt.ylim([-2, 2])
             plt.xticks(locs, xlabels, rotation=-30)
