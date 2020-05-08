@@ -93,9 +93,6 @@ class BaseCMModel(Model):
         """Create a lognorm variable, adding it to self as attribute."""
         if name in self.__dict__:
             log.warning(f"Variable {name} already present, overwriting def")
-        if hyperprior:
-            # TODO
-            pass
         kws = {}
         if shape is not None:
             kws["shape"] = shape
