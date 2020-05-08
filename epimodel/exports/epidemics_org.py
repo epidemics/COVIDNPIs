@@ -87,7 +87,7 @@ class WebExport:
         exdir.mkdir(exist_ok=False, parents=True)
         for rc, er in tqdm(list(self.export_regions.items()), desc="Writing regions"):
             fname = f"extdata-{rc}.json"
-            er.data_url = f"{name}/{fname}"
+            er.data_url = f"{fname}"
             with open(exdir / fname, "wt") as f:
                 json.dump(
                     er.data_ext,
