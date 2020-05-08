@@ -78,10 +78,8 @@ class DataMerger():
         self.min_num_active_mask = 10
         self.min_num_confirmed_mask = 10
 
-        self.episet_fname = "countermeasures-model-boolean_Gat3Bus2SchCurHespMa.csv"
+        self.episet_fname = "countermeasures_pretty080520.csv"
         self.oxcgrt_fname = "OxCGRT_latest.csv"
-        self.epicheck_fname = "Hspec_Bus_Sah_Gath_doublecheck.csv"
-        self.mask_override_fname = "mask_override.csv"
         self.johnhop_fname = "johns-hopkins.csv"
         self.regions_fname = "regions.csv"
 
@@ -101,7 +99,6 @@ class DataMerger():
             selected_features_oxcgrt,
             selected_features_epi,
             ordered_features,
-            epifor_check_cols
     ):
         # at the moment only features from the 0-1 countermeasures dataset
         Ds = pd.date_range(start=self.start_date, end=self.end_date, tz="utc")
