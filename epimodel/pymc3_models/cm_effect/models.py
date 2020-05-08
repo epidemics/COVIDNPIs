@@ -5422,7 +5422,7 @@ class death_test_r_nb(BaseCMModel):
 
 class active_test_r_nb(BaseCMModel):
     def __init__(
-            self, data, output_model="lognorm", name="", model=None
+            self, data, output_model="lognorm", name="", model=None, heldout_days=0
     ):
         super().__init__(data, name=name, model=model)
 
@@ -5437,7 +5437,7 @@ class active_test_r_nb(BaseCMModel):
         self.CMDelayCut = 10
         self.DailyGrowthNoise = 0.15
 
-        self.ObservedDaysIndx = np.arange(self.CMDelayCut, len(self.d.Ds))
+        self.ObservedDaysIndx = np.arange(self.CMDelayCut, len(self.d.Ds) - heldout_days)
         self.OR_indxs = np.arange(len(self.d.Rs))
         self.nORs = self.nRs
         self.nODs = len(self.ObservedDaysIndx)
@@ -5510,14 +5510,14 @@ class active_test_r_nb(BaseCMModel):
             self.ObservedCases = pm.NegativeBinomial(
                 "ObservedCases",
                 mu=self.ExpectedCases[:, self.ObservedDaysIndx],
-                alpha=self.Phi,
+                alpha= self.Phi,
                 shape=(self.nORs, self.nODs),
                 observed=self.d.NewCases[self.OR_indxs, :][:, self.ObservedDaysIndx]
             )
 
             self.Det(
                 "Z2",
-                self.ObservedCases - self.ExpectedCases[:, self.CMDelayCut:],
+                self.ObservedCases - self.ExpectedCases[:, self.ObservedDaysIndx],
                 plot_trace=False
             )
 
