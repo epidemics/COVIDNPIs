@@ -17,7 +17,7 @@ log = logging.getLogger("do")
 
 # Global arguments
 
-@click.group(chain=True)
+@click.group()
 @click.option("-d", "--debug", is_flag=True, help="Enable debugging logs.")
 @click.option(
     "-C",
@@ -274,8 +274,9 @@ def export_gleam_batch(ctx, batch_file, out_dir, overwrite):
 @click.option(
     "-p", "--pretty-print", is_flag=True, help="Pretty-print exported JSON files."
 )
+@click.option("-u", "--upload", type=str, help="If this option is set, uploads GLEAM results to the specified channel (main, staging, testing or custom channels).")
 @click.pass_context
-def web_export(ctx, batch_file, estimates, comment, pretty_print):
+def web_export(ctx, batch_file, estimates, comment, pretty_print, upload):
     """
     Create data export for web.
 
@@ -294,6 +295,8 @@ def web_export(ctx, batch_file, estimates, comment, pretty_print):
         estimates,
         pretty_print,
     )
+    if upload is not None:
+        ctx.invoke(web_upload, channel=upload)
 
 
 @cli.command()
@@ -447,8 +450,8 @@ def workflow_gleam_to_web(
         estimates=estimates,
         comment=comment,
         pretty_print=pretty_print,
+        upload=channel
     )
-    ctx.invoke(web_upload, channel=channel)
 
 
 if __name__ == "__main__":
