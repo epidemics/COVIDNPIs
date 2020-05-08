@@ -12,6 +12,8 @@ from epimodel import Level, RegionDataset, read_csv_smart, utils
 from epimodel.exports.epidemics_org import process_export, upload_export
 from epimodel.gleam import Batch, batch
 
+from shutil import copyfile
+
 log = logging.getLogger("do")
 
 
@@ -37,11 +39,11 @@ def cli(ctx, debug, config):
     See https://github.com/epidemics/epimodel for more details.
 
     1. Update Johns Hopkins data:
-    
+
     ./do update-johns-hopkins (not needed if you got fresh data from the repo)
 
     2. Generate batch file from estimates and basic Gleam XML definition.
-    
+
     ./do generate-gleam-batch -D 2020-04-15 -c JK default.xml
     estimates-2020-04-15.csv
 
@@ -77,7 +79,7 @@ def cli(ctx, debug, config):
     1. Update Johns Hopkins and Foretold data, generate batch file from
        estimates and basic Gleam XML definition and export Gleam simulation
        XML files to Gleamviz (not while gleamviz is running!):
-   
+
     ./do workflow-prepare-gleam -D 2020-04-15 -c JK default.xml
     estimates-2020-04-15.csv
 
@@ -88,7 +90,7 @@ def cli(ctx, debug, config):
        export and export the generated folder to web (Gleamviz must be stopped
        before that.) After this succeeds, you may delete the simulations from
        gleamviz.
-    
+
     ./do workflow-gleam-to-web -C ttest28
     out/batch-2020-04-16T03:54:52.910001+00:00.hdf5
     data/sources/estimates-JK-2020-04-15.csv
@@ -168,7 +170,19 @@ def import_gleam_batch(ctx, batch_file, allow_missing, overwrite):
 
     BATCH_FILE: The batch-*.hdf5 file with batch spec to be updated.
     """
-    b = Batch.open(batch_file)
+
+    # Verify batch_file name is in expected format of name.hdf5
+    assert(batch_file.count('.') == 1)
+
+    # Copy batch file to a new file (name-out.ext) so it can be written to
+    [name, ext] = batch_file.split('.')
+    assert(ext == 'hdf5')
+    out_file_name = name + '-out.' + ext
+
+    copyfile(batch_file, out_file_name)
+    # batch_file = 'out/out.hdf5'?
+
+    b = Batch.open(out_file_name)
     d = ctx.obj["RDS"].data
     regions = set(
         d.loc[
@@ -182,7 +196,7 @@ def import_gleam_batch(ctx, batch_file, allow_missing, overwrite):
         if r.GleamID != "":
             regions.add(r)
 
-    log.info(f"Importing results for {len(regions)} from GLEAM into {batch_file} ...")
+    log.info(f"Importing results for {len(regions)} from GLEAM into {out_file_name} ...")
     b.import_results_from_gleam(
         Path(ctx.obj["CONFIG"]["gleamviz_sims_dir"]).expanduser(),
         regions,
@@ -212,7 +226,7 @@ def generate_gleam_batch(ctx, base_def, country_estimates, top, comment, start_d
     Create batch of definitions for GLEAM.
 
     Saved in the directory specified by 'output_dir' in config.yml.
-    
+
     BASE_DEF: Basic definition file to use.
 
     COUNTRY_ESTIMATES: The country-level estimate source CSV file.
@@ -322,7 +336,7 @@ def web_upload(ctx, dir_, channel):
 
     By default, uploads from the output_latest directory specified in
     config.yaml (out/latest).
-    
+
     CHANNEL: Channel to upload to (main, staging, testing or custom channels).
     """
     c = ctx.obj["CONFIG"]
@@ -385,7 +399,7 @@ def workflow_prepare_gleam(
     ctx, base_def, country_estimates, top, comment, start_date, out_dir, overwrite
 ):
     """
-    Creates and exports a batch of definitions for GLEAM. 
+    Creates and exports a batch of definitions for GLEAM.
 
     Runs update-johns-hopkins, generate-gleam-batch and
     export-gleam-batch.
@@ -393,7 +407,7 @@ def workflow_prepare_gleam(
     By default exports to 'gleamviz_sims_dir' as specified in config.yml.
 
     BASE_DEF: Basic definition file to use.
-    
+
     COUNTRY_ESTIMATES: The country-level estimate source CSV file.
     """
     ctx.invoked_by_subcommand = True
