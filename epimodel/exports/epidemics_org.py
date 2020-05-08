@@ -7,7 +7,7 @@ import socket
 import subprocess
 from enum import Enum
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Iterable
 
 import numpy as np
 import pandas as pd
@@ -30,7 +30,7 @@ class WebExport:
         self.created_by = f"{getpass.getuser()}@{socket.gethostname()}"
         self.comment = comment
         self.date_resample = date_resample
-        self.export_regions = {}
+        self.export_regions: Dict[str, WebExportRegion] = {}
 
     def to_json(self):
         return {
@@ -53,7 +53,6 @@ class WebExport:
         foretold: Optional[pd.DataFrame],
         timezones: Optional[pd.DataFrame],
         un_age_dist: Optional[pd.DataFrame],
-        traces_v3: Optional[pd.DataFrame],
     ):
         er = WebExportRegion(
             region,
@@ -66,7 +65,6 @@ class WebExport:
             foretold,
             timezones,
             un_age_dist,
-            traces_v3,
         )
         self.export_regions[region.Code] = er
         return er
@@ -130,7 +128,6 @@ class WebExportRegion:
         foretold: Optional[pd.DataFrame],
         timezones: Optional[pd.DataFrame],
         un_age_dist: Optional[pd.DataFrame],
-        traces_v3: Optional[pd.DataFrame],
     ):
         log.debug(f"Prepare WebExport: {region.Code}, {region.Name}")
 
@@ -139,7 +136,7 @@ class WebExportRegion:
         self.current_estimate = current_estimate
         # Any per-region data. Large ones should go to data_ext.
         self.data = self.extract_smallish_data(
-            rates, hopkins, foretold, timezones, un_age_dist, traces_v3
+            rates, hopkins, foretold, timezones, un_age_dist
         )
         # Extended data to be written in a separate per-region file
         self.data_ext = self.extract_external_data(models, simulations_spec, groups)
@@ -153,7 +150,6 @@ class WebExportRegion:
         foretold: Optional[pd.DataFrame],
         timezones: pd.DataFrame,
         un_age_dist: Optional[pd.DataFrame],
-        traces_v3: Optional[pd.DataFrame],
     ) -> Dict[str, Dict[str, Any]]:
         d = {}
 
@@ -171,7 +167,7 @@ class WebExportRegion:
                 )
             d["JohnsHopkins"] = {
                 "Date": [x.date().isoformat() for x in hopkins.index],
-                **hopkins.replace({np.nan: None}).to_dict(orient="list"),
+                **hopkins.astype("Int64").replace({pd.NA: None}).to_dict(orient="list"),
             }
 
         if foretold is not None:
@@ -181,9 +177,6 @@ class WebExportRegion:
                 .loc[:, ["Mean", "Variance", "0.05", "0.50", "0.95"]]
                 .to_dict(orient="list"),
             }
-
-        if traces_v3 is not None:
-            d["TracesV3"] = traces_v3["TracesV3"]
 
         d["Timezones"] = timezones["Timezone"].tolist()
 
@@ -195,7 +188,7 @@ class WebExportRegion:
     @staticmethod
     def get_stats(
         cummulative_active_df: pd.DataFrame, simulation_specs: pd.DataFrame
-    ) -> Dict[str, float]:
+    ) -> Dict[str, Dict[str, float]]:
         stats = {}
         for group in simulation_specs.Group.unique():
             sim_ids = list(simulation_specs[simulation_specs.Group == group].index)
@@ -204,7 +197,7 @@ class WebExportRegion:
         return stats
 
     @staticmethod
-    def get_date_index(models: pd.DataFrame) -> None:
+    def get_date_index(models: pd.DataFrame) -> Iterable[datetime.datetime]:
         date_indexes = models.groupby(level=0).apply(
             lambda x: x.index.get_level_values("Date")
         )
@@ -219,9 +212,9 @@ class WebExportRegion:
     def extract_external_data(
         models: pd.DataFrame, simulation_spec: pd.DataFrame, groups,
     ) -> Dict[str, Any]:
-        d = {
+        d: Dict[str, Any] = {
             "date_index": [
-                x.isoformat() for x in WebExportRegion.get_date_index(models)
+                x.date().isoformat() for x in WebExportRegion.get_date_index(models)
             ]
         }
         traces = []
@@ -254,7 +247,6 @@ class WebExportRegion:
             "CurrentEstimate": self.current_estimate,
         }
         for n in [
-            "Population",
             "Lat",
             "Lon",
             "OfficialName",
@@ -268,6 +260,9 @@ class WebExportRegion:
         ]:
             if not pd.isnull(self.region[n]):
                 d[n] = self.region[n]
+
+        if not pd.isnull(self.region["Population"]):
+            d["Population"] = int(self.region["Population"])
 
         if self.current_estimate is not None:
             d["CurrentEstimate"] = self.current_estimate.to_dict()
@@ -490,14 +485,11 @@ def process_export(
     rates = get_extra_path(config, "rates")
     timezone = get_extra_path(config, "timezones")
     un_age_dist = get_extra_path(config, "un_age_dist")
-    traces_v3 = get_extra_path(config, "traces_v3")
 
     export_regions = sorted(config["export_regions"])
 
     batch = Batch.open(batch_file)
     simulation_specs: pd.DataFrame = batch.hdf["simulations"]
-    # TODO: models_df_old likely not needed anymore
-    models_df_old: pd.DataFrame = batch.hdf["new_fraction"]
     cummulative_active_df = batch.get_cummulative_active_df()
 
     estimates_df = epimodel.read_csv_smart(estimates, rds, prefer_higher=True)
@@ -512,8 +504,6 @@ def process_export(
     un_age_dist_df: pd.DataFrame = pd.read_csv(un_age_dist, index_col="Code M49").drop(
         columns=["Type", "Region Name", "Parent Code M49"]
     )
-
-    traces_v3_df: pd.DataFrame = pd.read_csv(traces_v3, index_col="CodeISO3")
 
     foretold_df: pd.DataFrame = pd.read_csv(
         foretold,
@@ -534,8 +524,7 @@ def process_export(
     analyze_data_consistency(
         debug,
         export_regions,
-        # TODO: replace by cummulative version as models are not needed anymore
-        models_df_old,
+        cummulative_active_df,
         rates_df,
         hopkins_df,
         foretold_df,
@@ -544,7 +533,6 @@ def process_export(
     for code in export_regions:
         reg: Region = rds[code]
         m49 = int(reg["M49Code"]) if pd.notnull(reg["M49Code"]) else -1
-        iso3 = reg["CountryCodeISOa3"]
 
         ex.new_region(
             reg,
@@ -557,7 +545,6 @@ def process_export(
             get_df_else_none(foretold_df, code),
             get_df_list(timezone_df, code),
             get_df_else_none(un_age_dist_df, m49),
-            get_df_else_none(traces_v3_df, iso3),
         )
 
     ex.write(
