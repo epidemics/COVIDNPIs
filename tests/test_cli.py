@@ -54,6 +54,7 @@ def test_generate_gleam_batch(datadir):
                 str(datadir / "files/test_definition.xml"),
                 "data/sources/estimates-JK-2020-04-15-no-CD.csv",
             ],
+            catch_exceptions=False,
         )
         assert result.exit_code == 0
 
@@ -117,6 +118,7 @@ def test_export_gleam_batch(datadir):
                 "export-gleam-batch",
                 str(datadir / "files/test-generate-gleam-batch.hdf5"),
             ],
+            catch_exceptions=False,
         )
         assert result.exit_code == 0
 
