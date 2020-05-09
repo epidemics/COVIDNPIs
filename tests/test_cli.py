@@ -28,7 +28,8 @@ update-foretold (requires API keys)
 
 def prepareFS(datadir):
     copy_tree(str(datadir / "cli-dir"), str(Path.cwd()))
-
+    (Path.cwd() / "out").mkdir()
+    (Path.cwd() / "sims").mkdir()
 
 def test_update_johns_hopkins(datadir):
     runner = CliRunner()
