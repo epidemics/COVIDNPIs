@@ -164,8 +164,6 @@ def test_web_export(datadir):
     runner = CliRunner()
     with runner.isolated_filesystem():
         prepareFS(datadir)
-        result = runner.invoke(do.cli, ["update-johns-hopkins"])
-        assert result.exit_code == 0
         result = runner.invoke(
             do.cli,
             [
