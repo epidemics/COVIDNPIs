@@ -31,6 +31,7 @@ def prepareFS(datadir):
     (Path.cwd() / "out").mkdir()
     (Path.cwd() / "sims").mkdir()
 
+
 def test_update_johns_hopkins(datadir):
     runner = CliRunner()
     with runner.isolated_filesystem():
