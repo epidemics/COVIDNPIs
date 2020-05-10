@@ -1051,8 +1051,8 @@ class CMCombined_Final(BaseCMModel):
                 plot_trace=False,
             )
 
-            # self.Det("Z1C", self.GrowthCases - self.ExpectedGrowth, plot_trace=False)
-            # self.Det("Z1D", self.GrowthDeaths - self.ExpectedGrowth, plot_trace=False)
+            self.Det("Z1C", self.GrowthCases - self.ExpectedGrowth, plot_trace=False)
+            self.Det("Z1D", self.GrowthDeaths - self.ExpectedGrowth, plot_trace=False)
 
             self.InitialSizeCases_log = pm.Normal("InitialSizeCases_log", 1, 20, shape=(self.nORs,))
             self.InfectedCases_log = pm.Deterministic("InfectedCases_log", T.reshape(self.InitialSizeCases_log, (
@@ -1082,10 +1082,10 @@ class CMCombined_Final(BaseCMModel):
                 observed=self.d.NewCases.data.reshape((self.nORs * self.nDs,))[self.all_observed_active]
             )
 
-            # self.Z2C = pm.Deterministic(
-            #     "Z2C",
-            #     self.ObservedCases - self.ExpectedCases.reshape((self.nORs * self.nDs,))[self.all_observed_active]
-            # )
+            self.Z2C = pm.Deterministic(
+                "Z2C",
+                self.ObservedCases - self.ExpectedCases.reshape((self.nORs * self.nDs,))[self.all_observed_active]
+            )
 
             self.InitialSizeDeaths_log = pm.Normal("InitialSizeDeaths_log", -3, 20, shape=(self.nORs,))
             self.InfectedDeaths_log = pm.Deterministic("InfectedDeaths_log", T.reshape(self.InitialSizeDeaths_log, (
@@ -1114,10 +1114,10 @@ class CMCombined_Final(BaseCMModel):
                 observed=self.d.NewDeaths.data.reshape((self.nORs * self.nDs,))[self.all_observed_deaths]
             )
 
-            # self.Det(
-            #     "Z2D",
-            #     self.ObservedDeaths - self.ExpectedDeaths.reshape((self.nORs * self.nDs,))[self.all_observed_deaths]
-            # )
+            self.Det(
+                "Z2D",
+                self.ObservedDeaths - self.ExpectedDeaths.reshape((self.nORs * self.nDs,))[self.all_observed_deaths]
+            )
 
     def plot_region_predictions(self, plot_style, save_fig=True, output_dir="./out"):
         assert self.trace is not None
