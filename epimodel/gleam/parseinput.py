@@ -10,17 +10,29 @@ import ergo
 from epimodel import RegionDataset, Level, algorithms
 
 
-def load_spreadsheet(sheet_url: str, tab_name: str):
+def gsheet_to_df(url: str):
     """ Export a DataFrame from a Google Sheets tab. The first row is
         used for column names, and index is set equal to the row number
-        for easy cross-referencing. """
+        for easy cross-referencing."""
+    sheet_url, _, worksheet_id = url.partition('#gid=')
+    worksheet_id = int(worksheet_id or 0)
+
     client = gspread.authorize(GoogleCredentials.get_application_default())
     spreadsheet = client.open_by_url(sheet_url)
-    values = spreadsheet.worksheet(tab_name).get_all_values()
+    worksheet = get_worksheet_by_id(spreadsheet, worksheet_id)
+    values = worksheet.get_all_values()
     return pd.DataFrame(values[1:], columns=values[0], index=range(2, len(values) + 1))
 
 
-class Exporter:
+def get_worksheet_by_id(spreadsheet, worksheet_id):
+    """ gspread does not provide this function, so I added it """
+    for worksheet in spreadsheet.worksheets():
+        if worksheet.id == worksheet_id:
+            return worksheet
+    raise gspread.WorksheetNotFound(f"id {worksheet_id}")
+
+
+class Parser:
     FIELDS = [
         "Region",
         "Value",
@@ -39,11 +51,11 @@ class Exporter:
         )
         algorithms.estimate_missing_populations(rds)
 
-    def make_scenarios(self, sheet_url, tab_name):
-        df = self.fetch_parameters_sheet(sheet_url, tab_name)
+    def make_scenarios(self, gsheet_url):
+        df = self.fetch_parameters_sheet(gsheet_url)
 
-    def fetch_parameters_sheet(self, sheet_url, tab_name):
-        df = load_spreadsheet(sheet_url, tab_name).replace({"": None})
+    def fetch_parameters_sheet(self, gsheet_url):
+        df = gsheet_to_df(gsheet_url).replace({"": None})
         df = df[pd.notnull(df["Parameter"])][self.FIELDS].copy()
         df["Start date"] = df["Start date"].astype("datetime64[D]")
         df["End date"] = df["End date"].astype("datetime64[D]")
@@ -96,3 +108,4 @@ class Exporter:
         if self.progress_bar:
             return tqdm(enum, desc=desc)
         return enum
+
