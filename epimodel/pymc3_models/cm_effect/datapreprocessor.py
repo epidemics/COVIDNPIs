@@ -78,7 +78,7 @@ class DataMerger():
         self.min_num_active_mask = 10
         self.min_num_confirmed_mask = 10
 
-        self.episet_fname = "countermeasures_pretty080520.csv"
+        self.episet_fname = "countermeasures_pretty090520.csv"
         self.oxcgrt_fname = "OxCGRT_latest.csv"
         self.johnhop_fname = "johns-hopkins.csv"
 
