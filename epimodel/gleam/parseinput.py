@@ -44,7 +44,7 @@ class Exporter:
 
     def fetch_parameters_sheet(self, sheet_url, tab_name):
         df = load_spreadsheet(sheet_url, tab_name).replace({"": None})
-        df = df[pd.notnull(df["Region"])][self.FIELDS].copy()
+        df = df[pd.notnull(df["Parameter"])][self.FIELDS].copy()
         df["Start date"] = df["Start date"].astype("datetime64[D]")
         df["End date"] = df["End date"].astype("datetime64[D]")
         df["Value"] = self._values_to_float(df["Value"])
@@ -79,15 +79,18 @@ class Exporter:
         return mean
 
     def _get_region_code(self, region):
+        if pd.isnull(region):
+            return None
+
         # try code first
         if region in self.rds:
             return region
 
         # If this fails, assume name. Match Gleam regions first.
-        matches = self.rds.find_all_by_name(region, levels=Level)
+        matches = self.rds.find_all_by_name(region, levels=tuple(Level))
         if not matches:
             raise Exception(f"No corresponding region found for {region!r}.")
-        return matches[0]
+        return matches[0].Code
 
     def _progress_bar(self, enum, desc=None):
         if self.progress_bar:
