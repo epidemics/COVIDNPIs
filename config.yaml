@@ -89,18 +89,11 @@ compartment_multipliers:
 compartments_max_fraction: 0.8
 
 ### Upload settings
-gs_prefix: "gs://static-covid/static/v4/"
-gs_url_prefix: "https://storage.googleapis.com/static-covid/static/v4/"
-gs_datafile_name: "data-v4.json"
+gs_prefix: "gs://static-covid/static/"
+gs_url_prefix: "https://storage.googleapis.com/static-covid/static/"
 
 ### Output directory for exported data
 output_dir: out/
-
-### Name of directory within output_dir to store latest exports in
-output_latest: latest
-
-### Name of directory within output_dir to store uploaded exports
-output_uploads: uploads
 
 ### List of exported regions code
 # We also ensure all of these are imported to the batch file from GLEAM
