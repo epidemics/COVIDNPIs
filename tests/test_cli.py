@@ -18,6 +18,7 @@ loader.exec_module(do)
 
 """
 Not tested:
+import-gleam-batch
 web-upload
 workflow-gleam-to-web
 workflow-prepare-gleam
@@ -40,8 +41,13 @@ def test_update_johns_hopkins(datadir):
         assert result.exit_code == 0
         df_val = pd.read_csv(str(datadir / "files/johns-hopkins-until-may.csv"))
         df = pd.read_csv("data/johns-hopkins.csv")
-        df_before_may = df.loc[df.Date < "2020-05-01"].reset_index(drop=True)
-        pd.testing.assert_frame_equal(df_val, df_before_may)
+        df_before_may = df.loc[
+            (df.Code == "GB") & (df.Date < "2020-05-01")
+        ].reset_index(drop=True)
+        df_val_before_may = df_val.loc[
+            (df_val.Code == "GB") & (df_val.Date < "2020-05-01")
+        ].reset_index(drop=True)
+        pd.testing.assert_frame_equal(df_val_before_may, df_before_may)
 
 
 def test_generate_gleam_batch(datadir):
@@ -159,9 +165,6 @@ def test_export_gleam_batch(datadir):
             assert ET.tostring(root_gen) == ET.tostring(root_val)
 
 
-# import-gleam-batch
-
-# web-export
 def test_web_export(datadir):
     runner = CliRunner()
     with runner.isolated_filesystem():
@@ -220,4 +223,5 @@ def test_web_export(datadir):
         #    if i == config["gs_datafile_name"]:
         #        continue
         #    assert filecmp.cmp(json_gen / i, json_val / i)
+
         assert filecmp.cmp(json_gen / "extdata-GB.json", json_val / "extdata-GB.json")
