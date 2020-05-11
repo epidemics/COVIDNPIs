@@ -118,27 +118,31 @@ class ScenarioSet:
         self._set_df(df)
 
     def _set_df(self, df):
-        df = df.copy()
-        df["Class"] = df.Class.fillna("Default")
         is_package = df.Type == "Countermeasure package"
         is_background = df.Type == "Background condition"
         assert df[~is_package & ~is_background].empty
 
         self.package_df = df[is_package]
-        self.package_classes = set(self.package_df.Class)
+        self.package_classes = set(self.package_df["Class"])
 
         self.background_df = df[is_background]
-        self.background_classes = set(self.background_df.Class)
+        self.background_classes = set(self.background_df["Class"])
+
 
     def get_scenario_definitions(self):
         """ Result: { (background_class, package_class): GleamDefinition } """
+        # rows with no class are applied to all scenarios
+        b_classless_df = self.background_df[pd.isnull(self.background_df["Class"])]
+        p_classless_df = self.package_df[pd.isnull(self.package_df["Class"])]
+
         res = {}
         for bc in self.background_classes:
             for pc in self.package_classes:
-                b_df = self.background_df[self.background_df.Class == bc]
-                p_df = self.package_df[self.package_df.Class == pc]
+                b_df = self.background_df[self.background_df["Class"] == bc]
+                p_df = self.package_df[self.package_df["Class"] == pc]
                 res[(bc, pc)] = DefinitionGenerator.definition_from_config(
-                    pd.concat([b_df, p_df]), self.rds
+                    # ensure that package exceptions come before background conditions
+                    pd.concat([p_df, p_classless_df, b_df, b_classless_df]), self.rds
                 )
         return res
 
