@@ -14,25 +14,11 @@ log = logging.getLogger(__name__)
 
 class GleamDefinition:
     DEFAULT_XML_FILE = "data/default_gleam_definition.xml"
-    GLOBAL_PARAMETERS = (
-        "number of runs",
-        "airline traffic",
-        "seasonality",
-        "commuting time",
-    )
-    COMPARTMENT_VARIABLES = (
-        "beta",
-        "epsilon",
-        "mu",
-        "imu",
-    )
 
-    def __init__(self, file=DEFAULT_XML_FILE, rds=None):
+    def __init__(self, file=DEFAULT_XML_FILE):
         """
         Load gleam `definition.xml` from a file (path or a file-like object).
         """
-        self.rds = rds
-
         ET.register_namespace("", "http://www.gleamviz.org/xmlns/gleamviz_v4_0")
         self.ns = {"gv": "http://www.gleamviz.org/xmlns/gleamviz_v4_0"}
         self.tree = ET.parse(file)
@@ -83,63 +69,6 @@ class GleamDefinition:
 
     def timestamp_node(self) -> ET.Element:
         return self.find_one("./gv:definition/gv:metadata/gv:creationDate")
-
-    ### Input from DataFrame
-
-    @classmethod
-    def from_config_df(cls, df: pd.DataFrame, rds: RegionDataset):
-        definitions = cls(rds=rds)
-        definitions.set_variables_from_df(df)
-        return definitions
-
-    def set_from_config_df(self, df: pd.DataFrame):
-        compartments = df["Parameter"].isin(self.COMPARTMENT_VARIABLES)
-        exceptions = compartments & pd.notnull(df["Region"])
-
-        # set exceptions
-        self.clear_exceptions()
-        for row in prepare_df_exceptions(df[exceptions]).itertuples():
-            self.add_exception(*row)
-
-        # set global compartment variables
-        for row in df[~exceptions & compartments].itertuples():
-            self.set_compartment_variable(row["Parameter"], row["Value"])
-
-        # set global parameters
-        for row in df[~exceptions & ~compartments].itertuples():
-            self._set_parameter_from_df_row(row)
-
-        if "name" not in df.Parameter:
-            self.set_default_name()
-
-    def _prepare_df_exceptions(self, exceptions_df):
-        return (
-            exceptions_df.groupby(["Region", "Start date", "End date"])
-            .apply(lambda group: dict(zip(group["Parameter"], group["Value"])))
-            .reset_index()
-            .groupby([0, "Start date", "End date"])
-            .apply(lambda group: [self.rds[reg] for reg in group["Region"]])
-            .reset_index.rename(
-                columns={
-                    0: "variables",
-                    1: "regions",
-                    "Start date": "start",
-                    "End date": "end",
-                }
-            )[["variables", "regions", "start", "end"]]
-        )
-
-    def _set_parameter_from_df_row(self, row):
-        param = row["Parameter"]
-        if param == "run dates":
-            if pd.notnull(row["Start date"]):
-                self.set_start_date(row["Start date"])
-            if pd.notnull(row["End date"]):
-                self.set_end_date(row["End date"])
-        else:
-            value = row["Value"]
-            log.debug(f"setting parameter {param!r} = {value!r}")
-            getattr(self, f'set_{name.replace(" ", "_")}')(param, value)
 
     ### Exceptions
 
@@ -257,11 +186,11 @@ class GleamDefinition:
         assert isinstance(duration, int)
         self.parameter_node.set("duration", str(duration))
 
-    def get_number_of_runs(self) -> int:
+    def get_run_count(self) -> int:
         """Set number of simulations to run."""
         return int(self.parameter_node.get("runCount"))
 
-    def set_number_of_runs(self, run_count: int):
+    def set_run_count(self, run_count: int):
         """Set number of simulations to run."""
         assert isinstance(run_count, int)
         self.parameter_node.set("runCount", str(run_count))
@@ -318,12 +247,6 @@ class GleamDefinition:
         self.variable_node(name).set("value", f"{val:.2f}")
 
     ### Backwards Compatibility
-
-    def fa(self, query):
-        return self.find_all(query)
-
-    def f1(self, query):
-        return self.find_one(query)
 
     def get_variable(self, name: str) -> str:
         return self.get_compartment_variable(name)
