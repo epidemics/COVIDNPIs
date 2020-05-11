@@ -63,11 +63,11 @@ def cli(ctx, debug, config):
        After this succeeds, you may delete the simulations from gleamviz.
 
     ./do import-gleam-batch out/batch-2020-04-16T03:54:52.910001+00:00.hdf5
-    will output to  out/batch-2020-04-16T03:54:52.910001+00:00.hdf5
+    will output to  out/batch-out.hdf5
 
     6. Generate web export (additional data are fetched from config.yml)
 
-    ./do web-export out/batch-2020-04-16T03:54:52.910001+00:00-out.hdf5
+    ./do web-export out/batch-out.hdf5
     data/sources/estimates-JK-2020-04-15.csv
 
     7. Export the generated folder to web! Optionally, set a channel for
@@ -176,6 +176,7 @@ def import_gleam_batch(ctx, batch_file, allow_missing, overwrite):
     copyfile(batch_file, out_file_name)
 
     b = Batch.open(out_file_name)
+
     d = ctx.obj["RDS"].data
     regions = set(
         d.loc[

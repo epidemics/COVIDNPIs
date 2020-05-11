@@ -2,6 +2,9 @@
 
 A data library and a toolkit for modelling COVID-19 epidemics.
 
+## Issue tracking
+Please use the [covid](https://github.com/epidemics/covid/issues/new/choose) repository to submit issues.
+
 ## Main concepts
 
 * Region database (continents, countries, provinces, GLEAM basins) - codes, names, basic stats, tree structure (TODO).
@@ -63,6 +66,9 @@ print(csse.loc[('CZ', "2020-03-28")])
 * Use `pytest` for testing, add tests for your code!
 * Use pull requests for both this and the data repository.
 
+## Contributing
+
+For the contribution details and project management, please see [this specification](https://www.notion.so/Development-project-management-476f3c53b0f24171a78146365072d82e).
 
 ## Running pipeline to get web export
 
@@ -88,10 +94,10 @@ Also, you did `cp config.yaml config-local.yaml` (modifying it as fit) and set e
     will output to  out/batch-out.hdf5
    (Gleamviz must be stopped before that.) After this succeeds, you may delete the simulations from gleamviz.
 
-
 7. Generate web export (additional data are fetched from [config.yml](https://github.com/epidemics/epimodel/blob/master/config.yaml#L16))
 
    `./do web-export out/batch-out.hdf5 data/sources/estimates-JK-2020-04-15.csv`
+
 
 8. Export the generated folder to web! Optionally, set a channel for testing first.
    `./do web-upload -d out/export-2020-04-03T02:03:28.991629+00:00 ttest28`
