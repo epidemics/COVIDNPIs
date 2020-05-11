@@ -14,6 +14,18 @@ log = logging.getLogger(__name__)
 
 class GleamDefinition:
     DEFAULT_XML_FILE = "data/default_gleam_definition.xml"
+    GLOBAL_PARAMETERS = (
+        "number of runs",
+        "airline traffic",
+        "seasonality",
+        "commuting time",
+    )
+    COMPARTMENT_VARIABLES = (
+        "beta",
+        "epsilon",
+        "mu",
+        "imu",
+    )
 
     def __init__(self, file=DEFAULT_XML_FILE):
         """
@@ -24,7 +36,7 @@ class GleamDefinition:
         self.tree = ET.parse(file)
         self.root = self.tree.getroot()
 
-        self.updated = datetime.now()
+        self.set_timestamp()
 
     def copy(self):
         return copy.deepcopy(self)
@@ -66,6 +78,9 @@ class GleamDefinition:
     @property
     def seeds_node(self) -> ET.Element:
         return self.find_one("./gv:definition/gv:seeds")
+
+    def timestamp_node(self) -> ET.Element:
+        return self.find_one("./gv:definition/gv:metadata/gv:creationDate")
 
     ### Exceptions
 
@@ -149,7 +164,7 @@ class GleamDefinition:
 
     def set_default_name(self, comment=None):
         self.set_name(
-            f"{self.updated.strftime('%Y-%m-%d %H:%M:%S')} {comment} "
+            f"{self.timestamp_node.text} {comment} "
             f"Seas={self.get_seasonality()} TrOcc={self.get_traffic_occupancy()} "
             f"beta={self.get_variable('beta')}"
         )
@@ -160,6 +175,13 @@ class GleamDefinition:
     def set_id(self, val: str):
         assert isinstance(val, str)
         return self.definition_node.set("id", val)
+
+    def get_timestamp(self) -> datetime:
+        return pd.Timestamp(self.timestamp_node.text)
+
+    def set_timestamp(self, timestamp=None):
+        timestamp = pd.Timestamp(timestamp or "now")
+        self.timestamp_node.text = timestamp.strftime("%Y-%m-%dT%T")
 
     def get_start_date(self) -> datetime:
         return utc_date(self.parameter_node.get("startDate"))
@@ -176,8 +198,22 @@ class GleamDefinition:
         assert isinstance(duration, int)
         self.parameter_node.set("duration", str(duration))
 
+    def get_number_of_runs(self) -> int:
+        """Set number of simulations to run."""
+        return int(self.parameter_node.get("runCount"))
+
+    def set_number_of_runs(self, run_count: int):
+        """Set number of simulations to run."""
+        assert isinstance(run_count, int)
+        self.parameter_node.set("runCount", str(run_count))
+
     def get_end_date(self) -> datetime:
         return self.get_start_date() + pd.DateOffset(self.get_duration())
+
+    def set_end_date(self, date: Union[str, date, datetime]):
+        """ Note: this must be set *after* start_date
+            or it may change unexpectedly """
+        self.set_duration(utc_date(date) - self.get_start_date())
 
     ### Global Parameters
 
