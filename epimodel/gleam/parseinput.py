@@ -113,7 +113,32 @@ class SpecGenerator:
 class Spec:
     def __init__(self, df: pd.DataFrame, rds: RegionDataset):
         self.rds = rds
-        self.df = df
+        self._set_df(df)
+
+    def _set_df(self, df):
+        df = df.copy()
+        df["Class"] = df.Class.fillna("Default")
+        is_package = df.Type == "Countermeasure package"
+        is_background = df.Type == "Background condition"
+        assert df[~is_package & ~is_background].empty
+
+        self.package_df = df[is_package]
+        self.package_classes = set(self.package_df.Class)
+
+        self.background_df = df[is_background]
+        self.background_classes = set(self.background_df.Class)
+
+    def get_scenario_definitions(self):
+        """ Result: { (background_class, package_class): GleamDefinition } """
+        res = {}
+        for bc in self.background_classes:
+            for pc in self.package_classes:
+                b_df = self.background_df[self.background_df.Class == bc]
+                p_df = self.package_df[self.package_df.Class == pc]
+                res[(bc, pc)] = DefinitionGenerator.definition_from_config(
+                    pd.concat([b_df, p_df]), self.rds
+                )
+        return res
 
 
 class DefinitionGenerator:
@@ -140,7 +165,7 @@ class DefinitionGenerator:
     def __init__(self, df: pd.DataFrame, rds: RegionDataset):
         self.definition = GleamDefinition()
         self.rds = rds
-        assert len(df["Class"].unique()) == 1
+        assert len(df.groupby(["Type", "Class"])) <= 2
 
         parameters, compartments, exceptions = self.parse_df(df)
 
