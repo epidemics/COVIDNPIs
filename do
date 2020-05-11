@@ -172,16 +172,8 @@ def import_gleam_batch(ctx, batch_file, allow_missing, overwrite):
     BATCH_FILE: The batch-*.hdf5 file with batch spec to be updated.
     """
 
-    # Verify batch_file name is in expected format of name.hdf5
-    assert(batch_file.count('.') == 1)
-
-    # Copy batch file to a new file (name-out.ext) so it can be written to
-    [name, ext] = batch_file.split('.')
-    assert(ext == 'hdf5')
-    out_file_name = name + '-out.' + ext
-
+    out_file_name = get_batch_out_default_path(ctx, batch_file)
     copyfile(batch_file, out_file_name)
-    # batch_file = 'out/out.hdf5'?
 
     b = Batch.open(out_file_name)
     d = ctx.obj["RDS"].data
@@ -285,7 +277,13 @@ def export_gleam_batch(ctx, batch_file, out_dir, overwrite):
 
 
 @cli.command()
-@click.argument("batch_file", type=click.Path(exists=True))
+@click.option(
+    "-b",
+    "--batch_file",
+    "batch_file_",
+    type=click.Path(exists=True),
+    help="The generated export directory to upload from.",
+)
 @click.argument("estimates", type=click.Path(exists=True))
 @click.option("-c", "--comment", type=str, help="A short comment (to be part of path).")
 @click.option(
@@ -298,7 +296,7 @@ def export_gleam_batch(ctx, batch_file, out_dir, overwrite):
     help="If this option is set, uploads GLEAM results to the specified channel (main, staging, testing or custom channels).",
 )
 @click.pass_context
-def web_export(ctx, batch_file, estimates, comment, pretty_print, upload):
+def web_export(ctx, batch_file_, estimates, comment, pretty_print, upload):
     """
     Create data export for web.
 
@@ -308,12 +306,17 @@ def web_export(ctx, batch_file, estimates, comment, pretty_print, upload):
 
     ESTIMATES: CSV file containing the current estimates
     """
+
+    #TODO this exists in two places at once, abstract it
+    if batch_file_ == None:
+        batch_file_ = get_batch_out_default_path(ctx)
+
     process_export(
         ctx.obj["CONFIG"],
         ctx.obj["RDS"],
         ctx.obj["DEBUG"],
         comment,
-        batch_file,
+        batch_file_,
         estimates,
         pretty_print,
     )
@@ -469,13 +472,30 @@ def workflow_gleam_to_web(
     )
     ctx.invoke(
         web_export,
-        batch_file=batch_file,
+        batch_file_=get_batch_out_default_path(ctx, batch_file),
         estimates=estimates,
         comment=comment,
         pretty_print=pretty_print,
         upload=channel,
     )
 
+def get_batch_out_default_path(ctx, batch_file_in=None):
+    """ 
+    Returns the default name for an outputted batch file, 
+    given the input file's name (currently ignores the name, 
+    and always returns [out_dir]/[batch-out.hdf5],
+    but input-based naming could be added back in later).
+    """
+
+    # Code for naming out file based on in file
+    # [name, ext] = batch_file_in.split('.')
+    # assert(ext == 'hdf5')
+    # out_file_name = name + '-out.' + ext
+    # out_file_name = Path(config["output_dir"], )
+
+    c = ctx.obj["CONFIG"]
+    out_file_name = Path(c["output_dir"]) / c["output_batch"]
+    return out_file_name
 
 if __name__ == "__main__":
     cli(obj={})

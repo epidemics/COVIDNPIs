@@ -102,6 +102,9 @@ output_latest: latest
 ### Name of directory within output_dir to store uploaded exports
 output_uploads: uploads
 
+### Name of batch file to output to
+output_batch: batch-out.hdf5
+
 ### List of exported regions code
 # We also ensure all of these are imported to the batch file from GLEAM
 # (in addition to all countries and continents)
