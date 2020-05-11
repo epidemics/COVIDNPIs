@@ -480,9 +480,9 @@ def workflow_gleam_to_web(
     )
 
 def get_batch_out_default_path(ctx, batch_file_in=None):
-    """ 
-    Returns the default name for an outputted batch file, 
-    given the input file's name (currently ignores the name, 
+    """
+    Returns the default name for an outputted batch file,
+    given the input file's name (currently ignores the name,
     and always returns [out_dir]/[batch-out.hdf5],
     but input-based naming could be added back in later).
     """

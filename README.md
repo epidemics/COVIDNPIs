@@ -2,6 +2,9 @@
 
 A data library and a toolkit for modelling COVID-19 epidemics.
 
+## Issue tracking
+Please use the [covid](https://github.com/epidemics/covid/issues/new/choose) repository to submit issues.
+
 ## Main concepts
 
 * Region database (continents, countries, provinces, GLEAM basins) - codes, names, basic stats, tree structure (TODO).
@@ -63,6 +66,9 @@ print(csse.loc[('CZ', "2020-03-28")])
 * Use `pytest` for testing, add tests for your code!
 * Use pull requests for both this and the data repository.
 
+## Contributing
+
+For the contribution details and project management, please see [this specification](https://www.notion.so/Development-project-management-476f3c53b0f24171a78146365072d82e).
 
 ## Running pipeline to get web export
 
