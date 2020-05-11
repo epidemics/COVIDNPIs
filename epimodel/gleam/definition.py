@@ -2,7 +2,7 @@ import copy
 from datetime import datetime, date
 import logging
 import xml.etree.ElementTree as ET
-from typing import Iterable, Union
+from typing import Iterable, Union, Callable
 
 import pandas as pd
 
@@ -13,7 +13,9 @@ log = logging.getLogger(__name__)
 
 
 class GleamDefinition:
-    def __init__(self, file):
+    DEFAULT_XML_FILE = "data/default_gleam_definition.xml"
+
+    def __init__(self, file=DEFAULT_XML_FILE):
         """
         Load gleam `definition.xml` from a file (path or a file-like object).
         """
@@ -27,10 +29,10 @@ class GleamDefinition:
     def copy(self):
         return copy.deepcopy(self)
 
-    def fa(self, query):
+    def find_all(self, query):
         return self.root.findall(query, namespaces=self.ns)
 
-    def f1(self, query):
+    def find_one(self, query):
         x = self.root.findall(query, namespaces=self.ns)
         if not len(x) == 1:
             raise Exception(
@@ -42,11 +44,34 @@ class GleamDefinition:
         self.tree.write(file)  # , default_namespace=self.ns['gv'])
         log.debug(f"Written Gleam definition to {file!r}")
 
+    ### Main nodes
+
+    @property
+    def definition_node(self) -> ET.Element:
+        return self.find_one("./gv:definition")
+
+    @property
+    def parameter_node(self) -> ET.Element:
+        return self.find_one("./gv:definition/gv:parameters")
+
+    def variable_node(self, name: str) -> ET.Element:
+        return self.find_one(
+            f'./gv:definition/gv:compartmentalModel/gv:variables/gv:variable[@name="{name}"]'
+        )
+
+    @property
+    def exceptions_node(self) -> ET.Element:
+        return self.find_one("./gv:definition/gv:exceptions")
+
+    @property
+    def seeds_node(self) -> ET.Element:
+        return self.find_one("./gv:definition/gv:seeds")
+
     ### Exceptions
 
     def clear_exceptions(self):
         """Remove all exceptions from the XML."""
-        self.f1("./gv:definition/gv:exceptions").clear()
+        self.exceptions_node.clear()
 
     def add_exception(
         self, regions: Iterable[Region], variables: dict, start=None, end=None
@@ -58,7 +83,7 @@ class GleamDefinition:
         Default `start` is the simulation start, default `end` is the simulation end.
         NB: This is not changed if you change the simulation start/end later!
         """
-        enode = self.f1("./gv:definition/gv:exceptions")
+        enode = self.exceptions_node
         attrs = dict(basins="", continents="", countries="", hemispheres="", regions="")
         if start is None:
             start = self.get_start_date()
@@ -84,7 +109,7 @@ class GleamDefinition:
     ### Seed compartments
 
     def clear_seeds(self):
-        self.f1("./gv:definition/gv:seeds").clear()
+        self.seeds_node.clear()
 
     def add_seeds(self, rds: RegionDataset, compartments: pd.DataFrame, top=None):
         """
@@ -96,7 +121,7 @@ class GleamDefinition:
         """
         assert isinstance(rds, RegionDataset)
         assert isinstance(compartments, pd.DataFrame)
-        sroot = self.f1("./gv:definition/gv:seeds")
+        seeds_node = self.seeds_node
         for c in compartments.columns:
             sizes = compartments[c].sort_values(ascending=False)
             sl = slice(None) if top is None else slice(0, top)
@@ -107,7 +132,7 @@ class GleamDefinition:
                 assert not pd.isnull(r.GleamID)
 
                 seed = ET.SubElement(
-                    sroot,
+                    seeds_node,
                     "seed",
                     {"number": str(int(s)), "compartment": c, "city": str(r.GleamID)},
                 )
@@ -116,11 +141,11 @@ class GleamDefinition:
     ### General attributes
 
     def get_name(self):
-        return self.f1("./gv:definition").attrib["name"]
+        return self.definition_node.attrib["name"]
 
     def set_name(self, val):
         assert isinstance(val, str)
-        self.f1("./gv:definition").attrib["name"] = val
+        self.definition_node.attrib["name"] = val
 
     def set_default_name(self, comment=None):
         self.set_name(
@@ -130,63 +155,83 @@ class GleamDefinition:
         )
 
     def get_id(self) -> str:
-        return self.f1("gv:definition").get("id")
+        return self.definition_node.get("id")
 
     def set_id(self, val: str):
         assert isinstance(val, str)
-        return self.f1("gv:definition").set("id", val)
+        return self.definition_node.set("id", val)
 
     def get_start_date(self) -> datetime:
-        return utc_date(self.f1("./gv:definition/gv:parameters").get("startDate"))
+        return utc_date(self.parameter_node.get("startDate"))
 
     def set_start_date(self, date: Union[str, date, datetime]):
-        self.f1("./gv:definition/gv:parameters").set(
-            "startDate", utc_date(date).date().isoformat()
-        )
+        self.parameter_node.set("startDate", utc_date(date).date().isoformat())
 
     def get_duration(self) -> int:
         """Return the number of days to simulate."""
-        return int(self.f1("./gv:definition/gv:parameters").get("duration"))
+        return int(self.parameter_node.get("duration"))
 
     def set_duration(self, duration: int):
         """Set duration in days."""
         assert isinstance(duration, int)
-        self.f1("./gv:definition/gv:parameters").set("duration", str(duration))
+        self.parameter_node.set("duration", str(duration))
 
     def get_end_date(self) -> datetime:
         return self.get_start_date() + pd.DateOffset(self.get_duration())
 
-    ### Parameters
+    ### Global Parameters
 
     def get_seasonality(self) -> float:
-        return float(
-            self.f1("./gv:definition/gv:parameters").get("seasonalityAlphaMin")
-        )
+        return float(self.parameter_node.get("seasonalityAlphaMin"))
 
     def set_seasonality(self, val: float):
         assert val <= 2.0
-        self.f1("./gv:definition/gv:parameters").set(
-            "seasonalityAlphaMin", f"{val:.2f}"
-        )
+        self.parameter_node.set("seasonalityAlphaMin", f"{val:.2f}")
 
-    def get_variable(self, name: str) -> str:
-        return self.f1(
-            f'./gv:definition/gv:compartmentalModel/gv:variables/gv:variable[@name="{name}"]'
-        ).get("value")
+    def get_airline_traffic(self) -> float:
+        """ TrafficOccupancy scaled as 0-1 """
+        return self.get_traffic_occupancy / 100.0
 
-    def set_variable(self, name: str, val: float):
-        assert isinstance(name, str)
-        assert isinstance(val, float)
-        self.f1(
-            f'./gv:definition/gv:compartmentalModel/gv:variables/gv:variable[@name="{name}"]'
-        ).set("value", f"{val:.2f}")
+    def set_airline_traffic(self, val: float):
+        """ TrafficOccupancy scaled as 0-1 """
+        self.set_traffic_occupancy(round(val * 100))
 
     def get_traffic_occupancy(self) -> int:
         "Note: this an integer in percent"
-        return int(self.f1("./gv:definition/gv:parameters").get("occupancyRate"))
+        return int(self.parameter_node.get("occupancyRate"))
 
     def set_traffic_occupancy(self, val: int):
         "Note: this must be an integer in percent"
         assert isinstance(val, int)
         assert 0 <= val and val <= 100
-        self.f1("./gv:definition/gv:parameters").set("occupancyRate", str(int(val)))
+        self.parameter_node.set("occupancyRate", str(int(val)))
+
+    def get_commuting_rate(self, val: Union[float, int]):
+        """ "time spent at commuting destination" in Gleam settings """
+        self.parameter_node.set("occupancyRate", f"{val:.1f}")
+
+    def set_commuting_rate(self, val: Union[float, int]):
+        """ "time spent at commuting destination" in Gleam settings """
+        self.parameter_node.set("occupancyRate", f"{val:.1f}")
+
+    def get_compartment_variable(self, name: str) -> str:
+        return self.variable_node(name).get("value")
+
+    def set_compartment_variable(self, name: str, val: float):
+        assert isinstance(name, str)
+        assert isinstance(val, float)
+        self.variable_node(name).set("value", f"{val:.2f}")
+
+    ### Backwards Compatibility
+
+    def fa(self, query):
+        return self.find_all(query)
+
+    def f1(self, query):
+        return self.find_one(query)
+
+    def get_variable(self, name: str) -> str:
+        return self.get_compartment_variable(name)
+
+    def set_variable(self, name: str, val: float):
+        return self.set_compartment_variable(name, val)
