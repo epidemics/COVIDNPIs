@@ -1,4 +1,6 @@
 from uuid import UUID
+from collections import namedtuple
+
 import numpy as np
 import pandas as pd
 
@@ -35,7 +37,7 @@ def get_worksheet_by_id(spreadsheet, worksheet_id):
     raise gspread.WorksheetNotFound(f"id {worksheet_id}")
 
 
-class SpecGenerator:
+class ScenarioGenerator:
     FIELDS = [
         "Region",
         "Value",
@@ -54,14 +56,14 @@ class SpecGenerator:
         )
         algorithms.estimate_missing_populations(rds)
 
-    def create_spec_from_gsheet(self, gsheet_url):
+    def create_scenarios_from_gsheet(self, gsheet_url):
         df = gsheet_to_df(gsheet_url).replace({"": None})
         df = df[pd.notnull(df["Parameter"])][self.FIELDS].copy()
         df["Start date"] = df["Start date"].astype("datetime64[D]")
         df["End date"] = df["End date"].astype("datetime64[D]")
         df["Value"] = self._values_to_float(df["Value"])
         df["Region"] = df["Region"].apply(self._get_region_code)
-        return Spec(df, self.rds)
+        return ScenarioSet(df, self.rds)
 
     def _values_to_float(self, values: pd.Series):
         values = values.copy()
@@ -110,7 +112,7 @@ class SpecGenerator:
         return enum
 
 
-class Spec:
+class ScenarioSet:
     def __init__(self, df: pd.DataFrame, rds: RegionDataset):
         self.rds = rds
         self._set_df(df)
@@ -167,46 +169,55 @@ class DefinitionGenerator:
         self.rds = rds
         assert len(df.groupby(["Type", "Class"])) <= 2
 
-        parameters, compartments, exceptions = self.parse_df(df)
+        self._parse_df(df)
 
-        self.set_global_parameters(parameters)
-        self.set_global_compartment_variables(compartments)
-        self.set_exceptions(exceptions)
+        self.set_global_parameters()
+        self.set_global_compartment_variables()
+        self.set_exceptions()
 
-        if "name" not in parameters.Parameter:
+        if "name" not in df.Parameter:
             self.definition.set_default_name()
 
-    def parse_df(self, df: pd.DataFrame):
+    def _parse_df(self, df: pd.DataFrame):
         is_compartment = df["Parameter"].isin(self.COMPARTMENT_VARIABLES)
+        is_multiplier = df["Parameter"].str.contains(" multiplier")
         is_exception = is_compartment & pd.notnull(df["Region"])
 
-        parameters = df[~is_exception & ~is_compartment]
-        compartments = df[~is_exception & is_compartment][["Parameter", "Value"]]
-        exceptions = self._prepare_exceptions(df[is_exception])
+        multipliers = self._prepare_multipliers(df[is_multiplier])
+        if multipliers:
+            df = df.copy()
+            for param, multiplier in multipliers:
+                df.loc[df["Parameter"] == param, "Value"] *= multiplier
 
-        return (parameters, compartments, exceptions)
+        self.parameters = df[~is_compartment & ~is_multiplier & ~is_exception]
+        self.compartments = df[is_compartment & ~is_exception][["Parameter", "Value"]]
+        self.exceptions = self._prepare_exceptions(df[is_exception])
 
-    def set_global_parameters(self, parameters):
-        for row in parameters.itertuples():
+    def set_global_parameters(self):
+        self._assert_no_duplicate_values(self.parameters)
+
+        for row in self.parameters.itertuples():
             self._set_parameter_from_df_row(row)
 
-    def set_global_compartment_variables(self, compartments):
-        for row in compartments.itertuples():
+    def set_global_compartment_variables(self):
+        self._assert_no_duplicate_values(self.compartments)
+
+        for row in self.compartments.itertuples():
             self.definition.set_compartment_variable(*row)
 
-    def set_exceptions(self, exceptions):
+    def set_exceptions(self):
         self.definition.clear_exceptions()
-        for row in exceptions.itertuples():
+        for row in self.exceptions.itertuples():
             self.definition.add_exception(*row)
 
-    def _prepare_exceptions(self, exceptions_df):
+    def _prepare_exceptions(self, exceptions: pd.DataFrame) -> pd.DataFrame:
         """
         Group by time period and region set, creating a new df where
         each row corresponds to the Definition.add_exception interface,
         with regions as an array and variables as a dict.
         """
         return (
-            exceptions_df.groupby(["Region", "Start date", "End date"])
+            exceptions.groupby(["Region", "Start date", "End date"])
             .apply(lambda group: dict(zip(group["Parameter"], group["Value"])))
             .reset_index()
             .groupby([0, "Start date", "End date"])
@@ -221,7 +232,17 @@ class DefinitionGenerator:
             )[["variables", "regions", "start", "end"]]
         )
 
-    def _set_parameter_from_df_row(self, row):
+    def _prepare_multipliers(self, multipliers: pd.DataFrame) -> dict:
+        """ returns a dict of param: multiplier pairs """
+        self._assert_no_duplicate_values(multipliers)
+        return dict(
+            zip(
+                multipliers["Parameter"].str.replace(" multiplier", ""),
+                multipliers["Value"],
+            )
+        )
+
+    def _set_parameter_from_df_row(self, row: namedtuple):
         param = row["Parameter"]
         if param == "run dates":
             if pd.notnull(row["Start date"]):
@@ -231,3 +252,12 @@ class DefinitionGenerator:
         else:
             value = row["Value"]
             getattr(self.definition, self.GLOBAL_PARAMETERS[param])(value)
+
+    def _assert_no_duplicate_values(self, df):
+        counts = df.groupby("Parameter")["Value"].count()
+        duplicates = list(counts[counts > 1].index)
+        if duplicates:
+            raise ValueError(
+                "Duplicate values passed to a single scenario "
+                f"for the following parameters: {duplicates!r}"
+            )
