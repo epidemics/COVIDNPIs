@@ -255,7 +255,7 @@ class RegionDataset:
             G-ISB: 0.21
         """
         with open(yaml_file, "r") as fp:
-            self.add_aggregate_regions(yaml.load(fp))
+            self.add_aggregate_regions(yaml.safe_load(fp))
 
     def add_aggregate_regions(self, aggregate_regions=dict):
         """
@@ -336,6 +336,12 @@ class RegionDataset:
     def regions(self):
         """Iterator over all regions."""
         return self._code_index.values()
+
+    @property
+    def aggregate_regions(self):
+        return [
+            self[code] for code in self.data[pd.notnull(self.data.agg_children)].index
+        ]
 
     def __getitem__(self, code):
         """

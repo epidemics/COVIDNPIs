@@ -515,6 +515,8 @@ def process_export(
     timezone = get_extra_path(config, "timezones")
     un_age_dist = get_extra_path(config, "un_age_dist")
 
+    export_regions = sorted(config["export_regions"])
+
     batch = Batch.open(batch_file)
     simulation_specs: pd.DataFrame = batch.hdf["simulations"]
     cummulative_active_df = batch.get_cummulative_active_df()
@@ -549,7 +551,7 @@ def process_export(
     ).pipe(aggregate_countries, config["state_to_country"], rds)
 
     cummulative_active_df = add_aggregate_traces(
-        aggregate_regions, cummulative_active_df
+        rds.aggregate_regions, cummulative_active_df
     )
 
     analyze_data_consistency(
