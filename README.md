@@ -90,13 +90,13 @@ Also, you did `cp config.yaml config-local.yaml` (modifying it as fit) and set e
 
 5. Start gleamviz. You should see the new simulations loaded. Run all of them and "Retrieve results" (do not export manually). Exit gleamviz.
 
-6. Import the gleamviz results into the HDF batch file.
-   `./do import-gleam-batch out/batch-2020-04-16T03:54:52.910001+00:00.hdf5`
+6. ./do import-gleam-batch out/batch-2020-04-16T03:54:52.910001+00:00.hdf5
+    will output to  out/batch-out.hdf5
    (Gleamviz must be stopped before that.) After this succeeds, you may delete the simulations from gleamviz.
 
 7. Generate web export (additional data are fetched from [config.yml](https://github.com/epidemics/epimodel/blob/master/config.yaml#L16))
 
-   `./do web-export out/batch-2020-04-16T03:54:52.910001+00:00.hdf5 data/sources/estimates-JK-2020-04-15.csv`
+   `./do web-export out/batch-out.hdf5 data/sources/estimates-JK-2020-04-15.csv`
 
 8. Export the generated folder to web! Optionally, set a channel for testing first.
    `./do web-upload -d out/export-2020-04-03T02:03:28.991629+00:00 ttest28`

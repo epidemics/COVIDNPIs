@@ -12,6 +12,8 @@ from epimodel import Level, RegionDataset, read_csv_smart, utils
 from epimodel.exports.epidemics_org import process_export, upload_export
 from epimodel.gleam import Batch, batch
 
+from shutil import copyfile
+
 log = logging.getLogger("do")
 
 
@@ -37,11 +39,11 @@ def cli(ctx, debug, config):
     See https://github.com/epidemics/epimodel for more details.
 
     1. Update Johns Hopkins data:
-    
+
     ./do update-johns-hopkins (not needed if you got fresh data from the repo)
 
     2. Generate batch file from estimates and basic Gleam XML definition.
-    
+
     ./do generate-gleam-batch -D 2020-04-15 -c JK default.xml
     estimates-2020-04-15.csv
 
@@ -56,15 +58,16 @@ def cli(ctx, debug, config):
     4. Start gleamviz. You should see the new simulations loaded. Run all of
        them and "Retrieve results" (do not export manually). Exit gleamviz.
 
-    5. Import the gleamviz results into the HDF batch file (Gleamviz must be
-       stopped before that). After this succeeds, you may delete the
-       simulations from gleamviz.
+    5. Import the gleamviz results into a copy of the HDF batch file
+       (Gleamviz must be stopped before that).
+       After this succeeds, you may delete the simulations from gleamviz.
 
     ./do import-gleam-batch out/batch-2020-04-16T03:54:52.910001+00:00.hdf5
+    will output to  out/batch-out.hdf5
 
     6. Generate web export (additional data are fetched from config.yml)
 
-    ./do web-export out/batch-2020-04-16T03:54:52.910001+00:00.hdf5
+    ./do web-export out/batch-2020-04-16T03:54:52.910001+00:00-out.hdf5
     data/sources/estimates-JK-2020-04-15.csv
 
     7. Export the generated folder to web! Optionally, set a channel for
@@ -77,7 +80,7 @@ def cli(ctx, debug, config):
     1. Update Johns Hopkins and Foretold data, generate batch file from
        estimates and basic Gleam XML definition and export Gleam simulation
        XML files to Gleamviz (not while gleamviz is running!):
-   
+
     ./do workflow-prepare-gleam -D 2020-04-15 -c JK default.xml
     estimates-2020-04-15.csv
 
@@ -88,7 +91,7 @@ def cli(ctx, debug, config):
        export and export the generated folder to web (Gleamviz must be stopped
        before that.) After this succeeds, you may delete the simulations from
        gleamviz.
-    
+
     ./do workflow-gleam-to-web -C ttest28
     out/batch-2020-04-16T03:54:52.910001+00:00.hdf5
     data/sources/estimates-JK-2020-04-15.csv
@@ -168,7 +171,11 @@ def import_gleam_batch(ctx, batch_file, allow_missing, overwrite):
 
     BATCH_FILE: The batch-*.hdf5 file with batch spec to be updated.
     """
-    b = Batch.open(batch_file)
+
+    out_file_name = get_batch_out_default_path(ctx, batch_file)
+    copyfile(batch_file, out_file_name)
+
+    b = Batch.open(out_file_name)
     d = ctx.obj["RDS"].data
     regions = set(
         d.loc[
@@ -182,7 +189,7 @@ def import_gleam_batch(ctx, batch_file, allow_missing, overwrite):
         if r.GleamID != "":
             regions.add(r)
 
-    log.info(f"Importing results for {len(regions)} from GLEAM into {batch_file} ...")
+    log.info(f"Importing results for {len(regions)} from GLEAM into {out_file_name} ...")
     b.import_results_from_gleam(
         Path(ctx.obj["CONFIG"]["gleamviz_sims_dir"]).expanduser(),
         regions,
@@ -212,7 +219,7 @@ def generate_gleam_batch(ctx, base_def, country_estimates, top, comment, start_d
     Create batch of definitions for GLEAM.
 
     Saved in the directory specified by 'output_dir' in config.yml.
-    
+
     BASE_DEF: Basic definition file to use.
 
     COUNTRY_ESTIMATES: The country-level estimate source CSV file.
@@ -270,7 +277,13 @@ def export_gleam_batch(ctx, batch_file, out_dir, overwrite):
 
 
 @cli.command()
-@click.argument("batch_file", type=click.Path(exists=True))
+@click.option(
+    "-b",
+    "--batch_file",
+    "batch_file_",
+    type=click.Path(exists=True),
+    help="The generated export directory to upload from.",
+)
 @click.argument("estimates", type=click.Path(exists=True))
 @click.option("-c", "--comment", type=str, help="A short comment (to be part of path).")
 @click.option(
@@ -283,7 +296,7 @@ def export_gleam_batch(ctx, batch_file, out_dir, overwrite):
     help="If this option is set, uploads GLEAM results to the specified channel (main, staging, testing or custom channels).",
 )
 @click.pass_context
-def web_export(ctx, batch_file, estimates, comment, pretty_print, upload):
+def web_export(ctx, batch_file_, estimates, comment, pretty_print, upload):
     """
     Create data export for web.
 
@@ -293,12 +306,17 @@ def web_export(ctx, batch_file, estimates, comment, pretty_print, upload):
 
     ESTIMATES: CSV file containing the current estimates
     """
+
+    #TODO this exists in two places at once, abstract it
+    if batch_file_ == None:
+        batch_file_ = get_batch_out_default_path(ctx)
+
     process_export(
         ctx.obj["CONFIG"],
         ctx.obj["RDS"],
         ctx.obj["DEBUG"],
         comment,
-        batch_file,
+        batch_file_,
         estimates,
         pretty_print,
     )
@@ -322,7 +340,7 @@ def web_upload(ctx, dir_, channel):
 
     By default, uploads from the output_latest directory specified in
     config.yaml (out/latest).
-    
+
     CHANNEL: Channel to upload to (main, staging, testing or custom channels).
     """
     c = ctx.obj["CONFIG"]
@@ -385,7 +403,7 @@ def workflow_prepare_gleam(
     ctx, base_def, country_estimates, top, comment, start_date, out_dir, overwrite
 ):
     """
-    Creates and exports a batch of definitions for GLEAM. 
+    Creates and exports a batch of definitions for GLEAM.
 
     Runs update-johns-hopkins, generate-gleam-batch and
     export-gleam-batch.
@@ -393,7 +411,7 @@ def workflow_prepare_gleam(
     By default exports to 'gleamviz_sims_dir' as specified in config.yml.
 
     BASE_DEF: Basic definition file to use.
-    
+
     COUNTRY_ESTIMATES: The country-level estimate source CSV file.
     """
     ctx.invoked_by_subcommand = True
@@ -454,13 +472,30 @@ def workflow_gleam_to_web(
     )
     ctx.invoke(
         web_export,
-        batch_file=batch_file,
+        batch_file_=get_batch_out_default_path(ctx, batch_file),
         estimates=estimates,
         comment=comment,
         pretty_print=pretty_print,
         upload=channel,
     )
 
+def get_batch_out_default_path(ctx, batch_file_in=None):
+    """
+    Returns the default name for an outputted batch file,
+    given the input file's name (currently ignores the name,
+    and always returns [out_dir]/[batch-out.hdf5],
+    but input-based naming could be added back in later).
+    """
+
+    # Code for naming out file based on in file
+    # [name, ext] = batch_file_in.split('.')
+    # assert(ext == 'hdf5')
+    # out_file_name = name + '-out.' + ext
+    # out_file_name = Path(config["output_dir"], )
+
+    c = ctx.obj["CONFIG"]
+    out_file_name = Path(c["output_dir"]) / c["output_batch"]
+    return out_file_name
 
 if __name__ == "__main__":
     cli(obj={})
