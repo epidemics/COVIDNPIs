@@ -7,9 +7,7 @@ foretold_channel: SECRET
 ### GLEAM
 
 # data/sims subdirectory of gleamviz
-gleamviz_sims_dir: /Users/jakey/GLEAMviz-data/sims
-# Path to epimodel-data directory
-data_dir: data
+gleamviz_sims_dir: ~/GLEAMviz/data/sims/
 
 # Subsampling of imported data (see Pandas `df.resample`)
 gleam_resample: 1D
@@ -21,7 +19,6 @@ web_export:
   rates: rates.csv
   timezones: timezones.csv
   un_age_dist: various/age_dist_un.csv
-  traces_v3: various/traces_v3.csv
 
 ### Generating GLEAM scenarios
 # All combinations of groups and scenarios are created,
@@ -31,26 +28,56 @@ web_export:
 #   where value is eother a number, os region column name
 # - param_beta is the global parameter setting
 scenarios:
-  - name: Irrelevant
-    key: "IRRELEVANT"
+  - param_occupancyRate: 70 # Note this is in percent!
+    param_beta_multiplier: 1.1
+    name: Faster spread (110%)<br>Less air travel
+    key: "HIGHER_WEAK"
+  - param_occupancyRate: 70 # Note this is in percent!
+    param_beta_multiplier: 1.0
+    name: Expected spread (100%)<br>Less air travel
+    key: "EXPECTED_WEAK"
+  - param_occupancyRate: 70 # Note this is in percent!
+    param_beta_multiplier: 0.9
+    name: Slower spread (90%)<br>Less air travel
+    key: "LOWER_WEAK"
+  - param_occupancyRate: 20 # Note this is in percent!
+    param_beta_multiplier: 1.1
+    name: Faster spread (110%)<br>Much less air travel
+    key: "HIGHER_STRONG"
+  - param_occupancyRate: 20 # Note this is in percent!
+    param_beta_multiplier: 1.0
+    name: Expected spread (100%)<br>Much less air travel
+    key: "EXPECTED_STRONG"
+  - param_occupancyRate: 20 # Note this is in percent!
+    param_beta_multiplier: 0.9
+    name: Slower spread (90%)<br>Much less air travel
+    key: "LOWER_STRONG"
 
 groups:
-  - group: "Default_Weak"
-    name: Weak mitigation
-    description: Mostly open borders; full opening of public places; no social distancing; little compliance with hygiene advice
-
-  - group: "Default_Moderate"
-    name: Moderate mitigation
-    description: Some border closure; closure of schools; ban on public gatherings; partial social distancing
-
-  - group: "Default_Strong"
-    name: Strong mitigation
-    description: Strong external and internal border closure; full closure of public places (including places of worship); social distancing outside and within homes
-
-  - group: "Default_Recommended"
-    name: Recommended mitigation
-    description: Moderate measures + compulsory masks; contact tracing; social distancing at places of worship and within homes
-
+  - group: "2W_None"
+    name: Scenario 1
+    description: Current mitigation measures are completely lifted in 2 weeks without replacement.
+    param_beta: 0.4
+    param_beta_exceptions: [[14, "Beta1"], [999, 1.285]]
+    param_seasonalityAlphaMin: 1.0
+  - group: "4W_None"
+    name: Scenario 2
+    description: Current mitigation measures stay in for 4 weeks and are replaced by milder measures afterwards.
+    param_beta: 0.4
+    param_beta_exceptions: [[28, "Beta1"], [999, "Beta2"]]
+    param_seasonalityAlphaMin: 1.0
+  - group: "2W_Strong"
+    name: Scenario 3
+    description: Current mitigation measures stay in for 2 weeks and are replaced by strong mitigation afterwards.
+    param_beta: 0.4
+    param_beta_exceptions: [[14, "Beta1"], [999, 0.4]]
+    param_seasonalityAlphaMin: 1.0
+  - group: "2W_Moderate"
+    name: Scenario 4
+    description: Current mitigation measures stay in for 2 weeks and are replaced by moderate mitigation afterwards.
+    param_beta: 0.4
+    param_beta_exceptions: [[14, "Beta1"], [999, 0.55]]
+    param_seasonalityAlphaMin: 1.0
 
 # How to assign estimate different compartments
 compartment_multipliers:
@@ -62,49 +89,175 @@ compartment_multipliers:
 compartments_max_fraction: 0.8
 
 ### Upload settings
-gs_prefix: "gs://static-covid/static/"
-gs_url_prefix: "https://storage.googleapis.com/static-covid/static/"
+gs_prefix: "gs://static-covid/static/v4/"
+gs_url_prefix: "https://storage.googleapis.com/static-covid/static/v4/"
+gs_datafile_name: "data-v4.json"
 
 ### Output directory for exported data
 output_dir: out/
 
+### Name of directory within output_dir to store latest exports in
+output_latest: latest
+
+### Name of directory within output_dir to store uploaded exports
+output_uploads: uploads
+
 ### List of exported regions code
+# We also ensure all of these are imported to the batch file from GLEAM
+# (in addition to all countries and continents)
 export_regions:
-  - G-SDT
-  - G-PEW
-  - G-ISB
-  - G-GIL
-  - G-KDU
-  - G-SKT
-  - G-LHE
-  - G-LYP
-  - G-DSK
-  - G-MUX
-  - G-DEA
-  - G-BHV
-  - G-RYK
-  - G-PZH
-  - G-UET
-  - G-SUL
-  - G-SKZ
-  - G-KCF
-  - G-MJD
-  - G-DBA
-  - G-PJG
-  - G-TUK
-  - G-GWD
-  - G-DDU
-  - G-KHI
-  - G-WNS
-  - G-HDD
-  - PK
-  - PK-AJK
-  - PK-BA
-  - PK-GB
-  - PK-ICT
-  - PK-KP
-  - PK-PB
-  - PK-SD
+  [
+    "AE",
+    "AF",
+    "AG",
+    "AL",
+    "AM",
+    "AO",
+    "AR",
+    "AT",
+    "AU",
+    "AZ",
+    "BA",
+    "BB",
+    "BD",
+    "BE",
+    "BF",
+    "BG",
+    "BH",
+    "BJ",
+    "BN",
+    "BO",
+    "BR",
+    "BT",
+    "BY",
+    "CA",
+    "CF",
+    "CH",
+    "CI",
+    "CL",
+    "CM",
+    "CN",
+    "CO",
+    "CR",
+    "CU",
+    "CY",
+    "CZ",
+    "DE",
+    "DJ",
+    "DK",
+    "DO",
+    "DZ",
+    "EC",
+    "EE",
+    "EG",
+    "ER",
+    "ES",
+    "ET",
+    "FI",
+    "FJ",
+    "FR",
+    "GB",
+    "GE",
+    "GH",
+    "GN",
+    "GQ",
+    "GR",
+    "GT",
+    "GY",
+    "HN",
+    "HR",
+    "HT",
+    "HU",
+    "ID",
+    "IE",
+    "IL",
+    "IN",
+    "IQ",
+    "IR",
+    "IS",
+    "IT",
+    "JM",
+    "JO",
+    "JP",
+    "KE",
+    "KG",
+    "KH",
+    "KR",
+    "KW",
+    "KZ",
+    "LB",
+    "LC",
+    "LK",
+    "LR",
+    "LT",
+    "LU",
+    "LV",
+    "MA",
+    "MC",
+    "MD",
+    "ME",
+    "MG",
+    "MK",
+    "MN",
+    "MR",
+    "MT",
+    "MU",
+    "MV",
+    "MX",
+    "MY",
+    "NA",
+    "NE",
+    "NG",
+    "NI",
+    "NL",
+    "NO",
+    "NP",
+    "NZ",
+    "OM",
+    "PA",
+    "PE",
+    "PG",
+    "PH",
+    "PK",
+    "PL",
+    "PT",
+    "PY",
+    "QA",
+    "RO",
+    "RS",
+    "RU",
+    "RW",
+    "SA",
+    "SC",
+    "SD",
+    "SE",
+    "SG",
+    "SI",
+    "SK",
+    "SN",
+    "SO",
+    "SR",
+    "SV",
+    "SZ",
+    "TD",
+    "TG",
+    "TH",
+    "TN",
+    "TR",
+    "TT",
+    "TZ",
+    "UA",
+    "UG",
+    "US",
+    "UY",
+    "UZ",
+    "VC",
+    "VE",
+    "VN",
+    "ZA",
+    "ZM",
+    "ZW",
+  ]
 
 ### these are used to match our non-state codes (e.g. AU) for John Hopkins database
 ### where they have it on state/province granularity
@@ -112,83 +265,3 @@ state_to_country:
   - AU
   - CN
   - CA
-
-### Define extra regions that are composed of arbitrary other regions.
-### Region info not specified here will either be aggregated from the
-### specified children if possible or left blank.
-### children can be a list or a dict. If a list, the forecasting model
-### for each child will be weighted according to population. If a dict,
-### the values specify additional weights that will be multiplied by
-### population before being applied to the model traces.
-
-custom_regions:
-  PK-AJK:
-    Name: 'Azad Jammu & Kashmir'
-    Population: 4100000
-    children:
-      G-SDT: 0.02
-      G-ISB: 0.08
-      G-IXJ: 1
-  PK-BA:
-    Name: 'Balochistan'
-    Population: 10728000
-    children:
-      G-DEA: 0.05
-      G-PZH: 0.9
-      G-UET: 1
-      G-SUL: 0.8
-      G-SKZ: 0.06
-      G-MJD: 0.3
-      G-DBA: 1
-      G-PJG: 1
-      G-TUK: 1
-      G-GWD: 1
-      G-DDU: 0.7
-      G-KHI: 0.02
-  PK-GB:
-    Name: 'Gilgit-Baltistan'
-    Population: 5400000
-    children:
-      G-CJL: 0.25
-      G-GIL: 1
-      G-KDU: 1
-  PK-ICT:
-    Name: 'Islamabad Capital Territory'
-    Population: 15300000
-    children:
-      G-ISB: 0.21
-  PK-KP:
-    Name: 'Khyber Pakhtunkhwa'
-    Population: 31900000
-    children:
-      G-CJL: 0.75
-      G-SDT: 0.98
-      G-PEW: 1
-      G-ISB: 0.15
-      G-DSK: 0.6
-      G-PZH: 0.1
-  PK-PB:
-    Name: 'Punjab'
-    Population: 96200000
-    children:
-      G-ISB: 0.56
-      G-SKT: 1
-      G-LHE: 1
-      G-LYP: 1
-      G-DSK: 0.4
-      G-MUX: 1
-      G-DEA: 0.95
-      G-BHV: 1
-      G-RYK: 1
-  PK-SD:
-    Name: 'Sindh'
-    Population: 45900000
-    children:
-      G-SUL: 0.2
-      G-SKZ: 0.94
-      G-KCF: 1
-      G-MJD: 0.7
-      G-DDU: 0.3
-      G-KHI: 0.98
-      G-WNS: 1
-      G-HDD: 1
