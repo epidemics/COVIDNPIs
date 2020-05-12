@@ -390,9 +390,16 @@ class RegionDataset:
             raise KeyError(f"Found no regions matching {s!r}{lcmt}")
         raise KeyError(f"Found multiple regions matching {s!r}{lcmt}: {rs!r}")
 
-    def write_csv(self, path):
+    def write_csv(self, path, regions=None):
+        """
+        Write the selected regions as a `regions-*.csv` file.
+
+        Only writes pre-defined columns. By default, writes all regions.
+        """
+        if regions is None:
+            regions = self.regions
         # Reconstruct the OtherNames column
-        for r in self.regions:
+        for r in regions:
             # don't include aggregate regions
             if r.is_aggregate:
                 continue
@@ -403,7 +410,7 @@ class RegionDataset:
                 names.remove(r.OfficialName)
             self.data.loc[r.Code, "OtherNames"] = self.SEP.join(names)
         # Write only non-generated columns
-        df = self.data[self.COLUMN_TYPES.keys()]
+        df = self.data.loc[[r.Code for r in regions], self.COLUMN_TYPES.keys()]
         # Convert Level to names
         df.Level = df.Level.map(lambda l: l.name)
         # Write

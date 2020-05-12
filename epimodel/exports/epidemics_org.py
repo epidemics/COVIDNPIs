@@ -2,11 +2,12 @@ import datetime
 import getpass
 import json
 import logging
+import shutil
 import socket
 import subprocess
 from enum import Enum
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Iterable
 
 import numpy as np
 import pandas as pd
@@ -17,8 +18,6 @@ from ..regions import Region, RegionDataset, Level
 import epimodel
 
 log = logging.getLogger(__name__)
-
-MAIN_DATA_FILENAME = "data-CHANNEL-v4.json"
 
 
 class WebExport:
@@ -31,7 +30,7 @@ class WebExport:
         self.created_by = f"{getpass.getuser()}@{socket.gethostname()}"
         self.comment = comment
         self.date_resample = date_resample
-        self.export_regions = {}
+        self.export_regions: Dict[str, WebExportRegion] = {}
 
     def to_json(self):
         return {
@@ -54,7 +53,6 @@ class WebExport:
         foretold: Optional[pd.DataFrame],
         timezones: Optional[pd.DataFrame],
         un_age_dist: Optional[pd.DataFrame],
-        traces_v3: Optional[pd.DataFrame],
     ):
         er = WebExportRegion(
             region,
@@ -67,16 +65,20 @@ class WebExport:
             foretold,
             timezones,
             un_age_dist,
-            traces_v3,
         )
         self.export_regions[region.Code] = er
         return er
 
-    def write(self, path, name=None):
+    def write(
+        self, path, main_data_filename, name=None, latest=None, pretty_print=False
+    ):
         if name is None:
             name = f"export-{self.created.isoformat()}"
             if self.comment:
                 name += self.comment
+        indent = None
+        if pretty_print:
+            indent = 4
         name = name.replace(" ", "_").replace(":", "-")
         outdir = Path(path)
         assert (not outdir.exists()) or outdir.is_dir()
@@ -85,7 +87,7 @@ class WebExport:
         exdir.mkdir(exist_ok=False, parents=True)
         for rc, er in tqdm(list(self.export_regions.items()), desc="Writing regions"):
             fname = f"extdata-{rc}.json"
-            er.data_url = f"{name}/{fname}"
+            er.data_url = f"{fname}"
             with open(exdir / fname, "wt") as f:
                 json.dump(
                     er.data_ext,
@@ -93,16 +95,24 @@ class WebExport:
                     default=types_to_json,
                     allow_nan=False,
                     separators=(",", ":"),
+                    indent=indent,
                 )
-        with open(exdir / MAIN_DATA_FILENAME, "wt") as f:
+        with open(exdir / main_data_filename, "wt") as f:
             json.dump(
                 self.to_json(),
                 f,
                 default=types_to_json,
                 allow_nan=False,
                 separators=(",", ":"),
+                indent=indent,
             )
         log.info(f"Exported {len(self.export_regions)} regions to {exdir}")
+        if latest is not None:
+            latestdir = outdir / latest
+            if latestdir.exists():
+                shutil.rmtree(latestdir)
+            shutil.copytree(exdir, latestdir)
+            log.info(f"Copied export to {latestdir}")
 
 
 class WebExportRegion:
@@ -118,7 +128,6 @@ class WebExportRegion:
         foretold: Optional[pd.DataFrame],
         timezones: Optional[pd.DataFrame],
         un_age_dist: Optional[pd.DataFrame],
-        traces_v3: Optional[pd.DataFrame],
     ):
         log.debug(f"Prepare WebExport: {region.Code}, {region.Name}")
 
@@ -127,7 +136,7 @@ class WebExportRegion:
         self.current_estimate = current_estimate
         # Any per-region data. Large ones should go to data_ext.
         self.data = self.extract_smallish_data(
-            rates, hopkins, foretold, timezones, un_age_dist, traces_v3
+            rates, hopkins, foretold, timezones, un_age_dist
         )
         # Extended data to be written in a separate per-region file
         self.data_ext = self.extract_external_data(models, simulations_spec, groups)
@@ -141,7 +150,6 @@ class WebExportRegion:
         foretold: Optional[pd.DataFrame],
         timezones: pd.DataFrame,
         un_age_dist: Optional[pd.DataFrame],
-        traces_v3: Optional[pd.DataFrame],
     ) -> Dict[str, Dict[str, Any]]:
         d = {}
 
@@ -159,7 +167,7 @@ class WebExportRegion:
                 )
             d["JohnsHopkins"] = {
                 "Date": [x.date().isoformat() for x in hopkins.index],
-                **hopkins.replace({np.nan: None}).to_dict(orient="list"),
+                **hopkins.astype("Int64").replace({pd.NA: None}).to_dict(orient="list"),
             }
 
         if foretold is not None:
@@ -169,9 +177,6 @@ class WebExportRegion:
                 .loc[:, ["Mean", "Variance", "0.05", "0.50", "0.95"]]
                 .to_dict(orient="list"),
             }
-
-        if traces_v3 is not None:
-            d["TracesV3"] = traces_v3["TracesV3"]
 
         d["Timezones"] = timezones["Timezone"].tolist()
 
@@ -183,7 +188,7 @@ class WebExportRegion:
     @staticmethod
     def get_stats(
         cummulative_active_df: pd.DataFrame, simulation_specs: pd.DataFrame
-    ) -> Dict[str, float]:
+    ) -> Dict[str, Dict[str, float]]:
         stats = {}
         for group in simulation_specs.Group.unique():
             sim_ids = list(simulation_specs[simulation_specs.Group == group].index)
@@ -192,7 +197,7 @@ class WebExportRegion:
         return stats
 
     @staticmethod
-    def get_date_index(models: pd.DataFrame) -> None:
+    def get_date_index(models: pd.DataFrame) -> Iterable[datetime.datetime]:
         date_indexes = models.groupby(level=0).apply(
             lambda x: x.index.get_level_values("Date")
         )
@@ -207,9 +212,9 @@ class WebExportRegion:
     def extract_external_data(
         models: pd.DataFrame, simulation_spec: pd.DataFrame, groups,
     ) -> Dict[str, Any]:
-        d = {
+        d: Dict[str, Any] = {
             "date_index": [
-                x.isoformat() for x in WebExportRegion.get_date_index(models)
+                x.date().isoformat() for x in WebExportRegion.get_date_index(models)
             ]
         }
         traces = []
@@ -242,7 +247,6 @@ class WebExportRegion:
             "CurrentEstimate": self.current_estimate,
         }
         for n in [
-            "Population",
             "Lat",
             "Lon",
             "OfficialName",
@@ -257,6 +261,9 @@ class WebExportRegion:
             if not pd.isnull(self.region[n]):
                 d[n] = self.region[n]
 
+        if not pd.isnull(self.region["Population"]):
+            d["Population"] = int(self.region["Population"])
+
         if self.current_estimate is not None:
             d["CurrentEstimate"] = self.current_estimate.to_dict()
 
@@ -267,15 +274,20 @@ def raise_(msg):
     raise Exception(msg)
 
 
-def assert_valid_json(file):
+def assert_valid_json(file, minify=False):
     with open(file, "r") as blob:
-        json.load(
+        data = json.load(
             blob,
             parse_constant=(lambda x: raise_("Not valid JSON: detected `" + x + "'")),
         )
+    if minify:
+        with open(file, "wt") as f:
+            json.dump(
+                data, f, default=types_to_json, allow_nan=False, separators=(",", ":"),
+            )
 
 
-def upload_export(dir_to_export, gs_prefix, gs_url, channel="test"):
+def upload_export(dir_to_export, config, channel="test"):
     """The 'upload' subcommand"""
     CMD = [
         "gsutil",
@@ -286,25 +298,46 @@ def upload_export(dir_to_export, gs_prefix, gs_url, channel="test"):
         "-a",
         "public-read",
     ]
-    gs_prefix = gs_prefix.rstrip("/")
-    gs_url = gs_url.rstrip("/")
+    gs_prefix = config["gs_prefix"].rstrip("/")
+    gs_url = config["gs_url_prefix"].rstrip("/")
     exdir = Path(dir_to_export)
     assert exdir.is_dir()
 
-    assert_valid_json(exdir / MAIN_DATA_FILENAME)
+    uploaddir = Path(config["output_dir"]) / config["output_uploads"]
+    if not uploaddir.exists():
+        uploaddir.mkdir()
+    channeldir = uploaddir / channel
 
-    log.info(f"Uploading data folder {exdir} to {gs_prefix}/{exdir.parts[-1]} ...")
-    cmd = CMD + ["-Z", "-R", exdir, gs_prefix]
+    if channeldir.exists():
+        shutil.rmtree(channeldir)
+
+    shutil.copytree(exdir, channeldir)
+    log.info(f"Copied export to {channeldir} for uploading")
+
+    datafile = config["gs_datafile_name"]
+    # Backwards compatibility
+    old_filename = "data-CHANNEL-v4.json"
+    old_path = channeldir / old_filename
+    if old_path.exists():
+        old_path.rename(channeldir / datafile)
+
+    for json_file in channeldir.iterdir():
+        if json_file.suffix != ".json":
+            continue
+        try:
+            assert_valid_json(json_file, minify=True)
+        except Exception as e:
+            log.error(f"Error in JSON file {json_file}")
+            raise e
+
+    log.info(
+        f"Uploading data folder {channeldir} to {gs_prefix}/{channeldir.parts[-1]} ..."
+    )
+    cmd = CMD + ["-Z", "-R", channeldir, gs_prefix]
     log.debug(f"Running {cmd!r}")
     subprocess.run(cmd, check=True)
 
-    datafile = MAIN_DATA_FILENAME.replace("CHANNEL", channel)
-    gs_tgt = f"{gs_prefix}/{datafile}"
-    log.info(f"Uploading main data file to {gs_tgt} ...")
-    cmd = CMD + ["-Z", exdir / MAIN_DATA_FILENAME, gs_tgt]
-    log.debug(f"Running {cmd!r}")
-    subprocess.run(cmd, check=True)
-    log.info(f"File URL: {gs_url}/{datafile}")
+    log.info(f"File URL: {gs_url}/{channeldir.parts[-1]}/{datafile}")
 
     if channel != "main":
         log.info(f"Custom web URL: http://epidemicforecasting.org/?channel={channel}")
@@ -404,8 +437,8 @@ def get_df_list(df: pd.DataFrame, code) -> pd.DataFrame:
     return df.loc[[code]].sort_index()
 
 
-def get_extra_path(args, name: str) -> Path:
-    return Path(args.config["data_dir"]) / args.config["web_export"][name]
+def get_extra_path(config, name: str) -> Path:
+    return Path(config["data_dir"]) / config["web_export"][name]
 
 
 def aggregate_countries(
@@ -471,26 +504,22 @@ def add_aggregate_traces(aggregate_regions, cummulative_active_df):
     return cummulative_active_df.append(additions_df)
 
 
-def process_export(args) -> None:
-    ex = WebExport(args.config["gleam_resample"], comment=args.comment)
+def process_export(
+    config, rds, debug, comment, batch_file, estimates, pretty_print
+) -> None:
+    ex = WebExport(config["gleam_resample"], comment=comment)
 
-    hopkins = get_extra_path(args, "john_hopkins")
-    foretold = get_extra_path(args, "foretold")
-    rates = get_extra_path(args, "rates")
-    timezone = get_extra_path(args, "timezones")
-    un_age_dist = get_extra_path(args, "un_age_dist")
-    traces_v3 = get_extra_path(args, "traces_v3")
+    hopkins = get_extra_path(config, "john_hopkins")
+    foretold = get_extra_path(config, "foretold")
+    rates = get_extra_path(config, "rates")
+    timezone = get_extra_path(config, "timezones")
+    un_age_dist = get_extra_path(config, "un_age_dist")
 
-    export_regions = sorted(args.config["export_regions"])
-    aggregate_regions = [
-        args.rds[code] for code in export_regions if args.rds[code].is_aggregate
-    ]
-
-    batch = Batch.open(args.BATCH_FILE)
+    batch = Batch.open(batch_file)
     simulation_specs: pd.DataFrame = batch.hdf["simulations"]
     cummulative_active_df = batch.get_cummulative_active_df()
 
-    estimates_df = epimodel.read_csv_smart(args.estimates, args.rds, prefer_higher=True)
+    estimates_df = epimodel.read_csv_smart(estimates, rds, prefer_higher=True)
 
     rates_df: pd.DataFrame = pd.read_csv(
         rates, index_col="Code", keep_default_na=False, na_values=[""]
@@ -502,8 +531,6 @@ def process_export(args) -> None:
     un_age_dist_df: pd.DataFrame = pd.read_csv(un_age_dist, index_col="Code M49").drop(
         columns=["Type", "Region Name", "Parent Code M49"]
     )
-
-    traces_v3_df: pd.DataFrame = pd.read_csv(traces_v3, index_col="CodeISO3")
 
     foretold_df: pd.DataFrame = pd.read_csv(
         foretold,
@@ -519,30 +546,24 @@ def process_export(args) -> None:
         parse_dates=["Date"],
         keep_default_na=False,
         na_values=[""],
-    ).pipe(aggregate_countries, args.config["state_to_country"], args.rds)
+    ).pipe(aggregate_countries, config["state_to_country"], rds)
 
     cummulative_active_df = add_aggregate_traces(
         aggregate_regions, cummulative_active_df
     )
 
     analyze_data_consistency(
-        args.debug,
-        export_regions,
-        cummulative_active_df,
-        rates_df,
-        hopkins_df,
-        foretold_df,
+        debug, export_regions, cummulative_active_df, rates_df, hopkins_df, foretold_df,
     )
 
     for code in export_regions:
-        reg: Region = args.rds[code]
+        reg: Region = rds[code]
         m49 = int(reg["M49Code"]) if pd.notnull(reg["M49Code"]) else -1
-        iso3 = reg["CountryCodeISOa3"]
 
         ex.new_region(
             reg,
             get_df_else_none(estimates_df, code),
-            args.config["groups"],
+            config["groups"],
             cummulative_active_df.xs(key=code, level="Code").sort_index(level="Date"),
             simulation_specs,
             get_df_else_none(rates_df, code),
@@ -550,7 +571,11 @@ def process_export(args) -> None:
             get_df_else_none(foretold_df, code),
             get_df_list(timezone_df, code),
             get_df_else_none(un_age_dist_df, m49),
-            get_df_else_none(traces_v3_df, iso3),
         )
 
-    ex.write(args.config["output_dir"])
+    ex.write(
+        config["output_dir"],
+        config["gs_datafile_name"],
+        latest=config["output_latest"],
+        pretty_print=pretty_print,
+    )
