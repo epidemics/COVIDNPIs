@@ -23,7 +23,6 @@ class Level(enum.Enum):
     subregion = 4
     continent = 5
     world = 6
-    custom = None
 
     def __ge__(self, other):
         if self.__class__ is other.__class__:
@@ -112,8 +111,8 @@ class Region:
         return self._children
 
     @property
-    def model_weights(self):
-        return self["model_weights"]
+    def agg_children(self):
+        return self["agg_children"]
 
     def _region_prop(self, name):
         """Return the Region corresponding to code in `self[name]` (None if that is None)."""
@@ -225,8 +224,44 @@ class RegionDataset:
         s._rebuild_index()
         return s
 
-    def add_custom_regions(self, custom_regions):
-        """Adds custom regions composed of existing regions from a config dict"""
+    def add_aggregate_regions_yaml(self, yaml_file):
+        """
+        Adds aggregate regions from yaml file. Uses the same input
+        format as add_cusom_regions().
+
+        Example input file:
+        ---
+        PK-GB:
+          Name: 'Gilgit-Baltistan'
+          AggregateFrom:
+            G-CJL: 0.25
+            G-GIL: 1
+            G-KDU: 1
+        PK-ICT:
+          Name: 'Islamabad Capital Territory'
+          AggregateFrom:
+            G-ISB: 0.21
+        """
+        with open(yaml_file, 'r') as fp:
+            self.add_aggregate_regions(yaml.load(fp))
+
+    def add_aggregate_regions(self, aggregate_regions=dict):
+        """
+        Adds custom regions composed of existing regions from a config
+        dict. Dict keys are new region codes and values are other dicts
+        whose keys correspond to regions.csv fields. Any field not
+        specified will be aggregated from the children if possible or
+        left blank otherwise. The default Level value is "subregion".
+
+        The "AggregateFrom" key specifies other region codes and can be
+        a list or a dict. If a list, all specified regions are assumed
+        to be wholly contained in the custom region. If a dict, the
+        values define what portion of each is contained in the custom
+        region. These proportions are then used to weight aggregated
+        info such as Gleam traces.
+
+        See add_aggregate_regions_yaml() docstring for example input.
+        """
         region_fields = (
             "M49Code",
             "ContinentCode",
@@ -237,53 +272,51 @@ class RegionDataset:
         )
 
         rows = []
-        for code, data in custom_regions.items():
-            child_codes = data.get("children", [])
-            if isinstance(child_codes, list):
-                weights = [1 for _ in child_codes]
+        for code, data in aggregate_regions.items():
+            agg_codes = data.get("AggregateFrom", [])
+            if isinstance(agg_codes, dict):
+                agg_weights = list(agg_codes.values())
+                agg_codes = list(agg_codes.keys())
             else:
-                weights = list(child_codes.values())
-                child_codes = list(child_codes.keys())
-            children = [self[code] for code in child_codes]
+                agg_weights = [1 for _ in agg_codes]
+            agg_children = [
+                (self[code], weight) for code, weight in zip(agg_codes, agg_weights)
+            ]
 
             row = {k: v for k, v in data.items() if k in self.COLUMN_TYPES}
             row["Code"] = code
-            row["Level"] = row.get("Level") or Level.custom
+            row["Level"] = row.get("Level", Level.subregion)
 
             # set superregion fields if not otherwise set
-            # and value is same for all children
+            # and value is same for all included regions
             for region_field in region_fields:
                 if region_field not in row:
-                    value = children[0][region_field]
-                    for child in children[1:]:
-                        if child[region_field] != value:
-                            continue
-                    row[region_field] = value
+                    values = self.data.loc[agg_codes, region_field].unique()
+                    if len(values) == 1 and pd.notnull(values[0]):
+                        row[region_field] = values[0]
 
             # average lat/lng
-            row["Lat"] = row.get("Lat") or sum(child.Lat for child in children) / len(
-                children
-            )
-            row["Lon"] = row.get("Lon") or sum(child.Lon for child in children) / len(
-                children
-            )
+            # this algo breaks down for regions that span 180º longitude
+            row["Lat"] = row.get("Lat") or sum(
+                child.Lat * weight for child, weight in agg_children
+            ) / sum(agg_weights)
+            row["Lon"] = row.get("Lon") or sum(
+                child.Lon * weight for child, weight in agg_children
+            ) / sum(agg_weights)
 
             # sum population
-            row["Population"] = row.get("Population") or sum(
-                child.Population for child in children
-            )
+            row["Population"] = row.get("Population") or round(sum(
+                child.Population * weight for child, weight in agg_children
+            ))
 
             # add extra data
-            row["children"] = child_codes
-            row["model_weights"] = dict(zip(child_codes, weights))
+            row["agg_children"] = agg_children
 
             rows.append(row)
 
         data = pd.DataFrame(rows).set_index("Code")
-        if "children" not in self.data:
-            self.data["children"] = None
-        if "model_weights" not in self.data:
-            self.data["model_weights"] = None
+        if "agg_children" not in self.data:
+            self.data["agg_children"] = None
         self.data = self.data.append(data, verify_integrity=True)
         self._rebuild_index()
 
@@ -348,8 +381,8 @@ class RegionDataset:
     def write_csv(self, path):
         # Reconstruct the OtherNames column
         for r in self.regions:
-            # don't include custom regions
-            if r.Level == Level.custom:
+            # don't include aggregate regions
+            if r.agg_children:
                 continue
             names = set(r.AllNames)
             if r.Name in names:
@@ -394,10 +427,6 @@ class RegionDataset:
 
         # Add parent/children relations
         for r in self.regions:
-            if r.Level == Level.custom:
-                child_codes = self._code_index[r.Code]["children"]
-                r._children = set(self[code] for code in child_codes)
-                continue
             parent = None
             if parent is None and r.Level <= Level.gleam_basin:
                 parent = r.subdivision

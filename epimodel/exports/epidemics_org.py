@@ -437,30 +437,26 @@ def aggregate_countries(
     return hopkins.drop(index=all_state_codes).append(pd.concat(to_append))
 
 
-def add_custom_regions_to_traces(custom_regions, cummulative_active_df):
+def add_aggregate_traces(aggregate_regions, cummulative_active_df):
     additions = []
 
-    for reg in custom_regions:
-        log.info(
-            "Aggregating model traces for custom region %s using weights %r and populations %r",
-            reg.Code,
-            reg.model_weights,
-            {child.Code: child.Population for child in reg.children},
-        )
-
+    for reg in aggregate_regions:
         # compute aggregate weights
-        child_codes = [child.Code for child in reg.children]
+        agg_codes = [child.Code for child in reg.agg_children.keys()]
         weights = pd.Series(
-            [
-                reg.model_weights[child.Code] * child.Population
-                for child in reg.children
-            ],
-            index=child_codes,
+            [child.Population * weight for child, weight in reg.agg_children],
+            index=agg_codes,
         )
         weights /= weights.sum()
 
-        # weight totals for each child region
-        reg_cad = cummulative_active_df.loc[pd.IndexSlice[:, child_codes], :].copy()
+        log.info(
+            "Aggregating model traces for region %s using weights %r",
+            reg.Code,
+            weights.to_dict(),
+        )
+
+        # weight totals for each aggregated region
+        reg_cad = cummulative_active_df.loc[pd.IndexSlice[:, agg_codes], :].copy()
         for child, weight in weights.items():
             reg_cad.loc[pd.IndexSlice[:, child], :] *= weight
 
@@ -469,7 +465,7 @@ def add_custom_regions_to_traces(custom_regions, cummulative_active_df):
 
     # re-add Code index & combine results
     additions_df = pd.concat(
-        additions, keys=[reg.Code for reg in custom_regions], names=["Code"]
+        additions, keys=[reg.Code for reg in aggregate_regions], names=["Code"]
     ).reorder_levels(["SimulationID", "Code", "Date"])
 
     return cummulative_active_df.append(additions_df)
@@ -486,7 +482,7 @@ def process_export(args) -> None:
     traces_v3 = get_extra_path(args, "traces_v3")
 
     export_regions = sorted(args.config["export_regions"])
-    custom_regions = [
+    aggregate_regions = [
         args.rds[code]
         for code in export_regions
         if args.rds[code].Level == Level.custom
@@ -527,8 +523,8 @@ def process_export(args) -> None:
         na_values=[""],
     ).pipe(aggregate_countries, args.config["state_to_country"], args.rds)
 
-    cummulative_active_df = add_custom_regions_to_traces(
-        custom_regions, cummulative_active_df
+    cummulative_active_df = add_aggregate_traces(
+        aggregate_regions, cummulative_active_df
     )
 
     analyze_data_consistency(
