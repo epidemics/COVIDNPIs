@@ -37,12 +37,12 @@ def get_worksheet_by_id(spreadsheet, worksheet_id):
     raise gspread.WorksheetNotFound(f"id {worksheet_id}")
 
 
-class ScenarioGenerator:
+class ConfigParser:
     """
-    Object that encapsulates credentials and is responsible for loading
-    Google Sheets data, formatting it for use by the rest of the
-    scenario logic, and passing it to ScenarioSet
+    encapsulates credentials and logic for loading Google Sheets data
+    and formatting it for use by the rest of the scenario logic
     """
+
     FIELDS = [
         "Region",
         "Value",
@@ -59,20 +59,20 @@ class ScenarioGenerator:
         self.rds = rds or RegionDataset.load("epimodel/data/regions-gleam.csv")
         algorithms.estimate_missing_populations(rds)
 
-    def create_scenarios_from_gsheet(self, gsheet_url):
-        return self.create_scenarios(gsheet_to_df(gsheet_url))
+    def get_config_from_gsheet(self, gsheet_url):
+        return self.get_config(gsheet_to_df(gsheet_url))
 
-    def create_scenarios_from_csv(self, csv_file):
-        return self.create_scenarios(pd.read_csv(csv_file))
+    def get_config_from_csv(self, csv_file):
+        return self.get_config(pd.read_csv(csv_file))
 
-    def create_scenarios(self, df):
+    def get_config(self, df):
         df = df.replace({"": None})
         df = df[pd.notnull(df["Parameter"])][self.FIELDS].copy()
         df["Start date"] = df["Start date"].astype("datetime64[D]")
         df["End date"] = df["End date"].astype("datetime64[D]")
         df["Value"] = self._values_to_float(df["Value"])
         df["Region"] = df["Region"].apply(self._get_region_code)
-        return ScenarioSet(df, self.rds)
+        return df
 
     def _values_to_float(self, values: pd.Series):
         values = values.copy()
@@ -121,38 +121,54 @@ class ScenarioGenerator:
         return enum
 
 
-class ScenarioSet:
-    def __init__(self, df: pd.DataFrame):
-        self._set_df(df)
+class SimulationSet:
+    """
+    generates a matrix of different simulations from the config df based
+    on the cartesian product of Countermeasure packages X Background
+    conditions
+    """
 
-    def _set_df(self, df):
+    def __init__(self, df: pd.DataFrame):
+        self._set_scenario_values(df)
+        self._generate_scenario_definitions()
+
+    def _set_scenario_values(self, df):
         is_package = df.Type == "Countermeasure package"
-        is_background = df.Type == "Background condition"
+        is_background = pd.isnull(df.Type) | (df.Type == "Background condition")
         assert df[~is_package & ~is_background].empty
 
         self.package_df = df[is_package]
-        self.package_classes = set(self.package_df["Class"])
-
         self.background_df = df[is_background]
-        self.background_classes = set(self.background_df["Class"])
 
+        self.package_classes = set(self.package_df["Class"].dropna())
+        self.background_classes = set(self.background_df["Class"].dropna())
 
-    def get_scenario_definitions(self):
-        """ Result: { (background_class, package_class): GleamDefinition } """
-        # rows with no class are applied to all scenarios
-        b_classless_df = self.background_df[pd.isnull(self.background_df["Class"])]
-        p_classless_df = self.package_df[pd.isnull(self.package_df["Class"])]
+        # rows with no class are applied to all simulations
+        self.package_classless_df = self.package_df[pd.isnull(self.package_df["Class"])]
+        self.background_classless_df = self.background_df[
+            pd.isnull(self.background_df["Class"])
+        ]
 
-        res = {}
-        for bc in self.background_classes:
-            for pc in self.package_classes:
-                b_df = self.background_df[self.background_df["Class"] == bc]
-                p_df = self.package_df[self.package_df["Class"] == pc]
-                res[(bc, pc)] = DefinitionGenerator.definition_from_config(
-                    # ensure that package exceptions come before background conditions
-                    pd.concat([p_df, p_classless_df, b_df, b_classless_df])
-                )
-        return res
+    def _generate_scenario_definitions(self):
+        index = pd.MultiIndex.from_product(
+            self.background_classes, self.package_classes
+        )
+        self.definitions = pd.Series(
+            [self._definition_for_class_pair(*pair) for pair in index], index=index
+        )
+
+    def _definition_for_class_pair(self, package_class, background_class):
+        p_df = self.package_df[self.package_df["Class"] == package_class]
+        b_df = self.background_df[self.background_df["Class"] == background_class]
+        return DefinitionGenerator.definition_from_config(
+            # ensure that package exceptions come before background conditions
+            pd.concat(
+                [p_df, self.package_classless_df, b_df, self.background_classless_df]
+            )
+        )
+
+    def __getitem__(self, *classes):
+        return self.definitions[classes]
 
 
 class DefinitionGenerator:
