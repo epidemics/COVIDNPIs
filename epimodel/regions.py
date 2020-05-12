@@ -1,9 +1,11 @@
+import re
 import enum
 import logging
 import weakref
 from collections import OrderedDict
 
 import pandas as pd
+import yaml
 
 from .utils import normalize_name
 
@@ -203,13 +205,17 @@ class RegionDataset:
     @classmethod
     def load(cls, *paths):
         """
-        Create a RegionDataset and its Regions from the given CSV.
+        Create a RegionDataset and its Regions from the given CSV or YAML.
 
         Optionally also loads other CSVs with additional regions (e.g. GLEAM regions)
         """
         s = cls()
         cols = dict(cls.COLUMN_TYPES, Level="U")
+        yaml_paths = []
         for path in paths:
+            if re.match(r"\.ya?ml$", re.IGNORECASE):
+                yaml_paths.append(path)
+                continue
             log.debug(f"Loading regions from {path!r} ...")
             data = pd.read_csv(
                 path,
@@ -222,6 +228,8 @@ class RegionDataset:
             data["Level"] = data["Level"].map(lambda name: Level[name])
             s.data = s.data.append(data, verify_integrity=True)
         s._rebuild_index()
+        for path in yaml_paths:
+            s.add_aggregate_regions_yaml(path)
         return s
 
     def add_aggregate_regions_yaml(self, yaml_file):
@@ -242,7 +250,7 @@ class RegionDataset:
           AggregateFrom:
             G-ISB: 0.21
         """
-        with open(yaml_file, 'r') as fp:
+        with open(yaml_file, "r") as fp:
             self.add_aggregate_regions(yaml.load(fp))
 
     def add_aggregate_regions(self, aggregate_regions=dict):
@@ -305,9 +313,9 @@ class RegionDataset:
             ) / sum(agg_weights)
 
             # sum population
-            row["Population"] = row.get("Population") or round(sum(
-                child.Population * weight for child, weight in agg_children
-            ))
+            row["Population"] = row.get("Population") or round(
+                sum(child.Population * weight for child, weight in agg_children)
+            )
 
             # add extra data
             row["agg_children"] = agg_children
