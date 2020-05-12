@@ -94,7 +94,6 @@ Also, you did `cp config.yaml config-local.yaml` (modifying it as fit) and set e
     will output to  out/batch-out.hdf5
    (Gleamviz must be stopped before that.) After this succeeds, you may delete the simulations from gleamviz.
 
-
 7. Generate web export (additional data are fetched from [config.yml](https://github.com/epidemics/epimodel/blob/master/config.yaml#L16))
 
    `./do web-export out/batch-out.hdf5 data/sources/estimates-JK-2020-04-15.csv`

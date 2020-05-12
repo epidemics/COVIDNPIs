@@ -63,7 +63,7 @@ def cli(ctx, debug, config):
        After this succeeds, you may delete the simulations from gleamviz.
 
     ./do import-gleam-batch out/batch-2020-04-16T03:54:52.910001+00:00.hdf5
-    will output to  out/batch-2020-04-16T03:54:52.910001+00:00.hdf5
+    will output to  out/batch-out.hdf5
 
     6. Generate web export (additional data are fetched from config.yml)
 
