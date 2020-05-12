@@ -78,7 +78,7 @@ class DataMerger():
         self.min_num_active_mask = 10
         self.min_num_confirmed_mask = 10
 
-        self.episet_fname = "countermeasures_pretty090520.csv"
+        self.episet_fname = "countermeasures_pretty120520.csv"
         self.oxcgrt_fname = "OxCGRT_latest.csv"
         self.johnhop_fname = "johns-hopkins.csv"
 
@@ -391,6 +391,15 @@ class PreprocessedData(object):
         self.NewDeaths = NewDeaths
         self.NewCases = NewCases
 
+
+    def reduce_regions_from_index(self, reduced_regions_indx):
+        self.Active = self.Active[reduced_regions_indx, :]
+        self.Confirmed = self.Confirmed[reduced_regions_indx, :]
+        self.Deaths = self.Deaths[reduced_regions_indx, :]
+        self.NewDeaths = self.NewDeaths[reduced_regions_indx, :]
+        self.NewCases = self.NewCases[reduced_regions_indx, :]
+        self.ActiveCMs = self.ActiveCMs[reduced_regions_indx, :, :]
+
     def filter_region_min_deaths(self, min_num_deaths=100):
         reduced_regions = []
         reduced_regions_indx = []
@@ -404,11 +413,19 @@ class PreprocessedData(object):
                 reduced_regions_indx.append(indx)
 
         self.Rs = reduced_regions
-        _, nCMs, nDs = self.ActiveCMs.shape
+        self.reduce_regions_from_index(reduced_regions_indx)
 
-        self.Active = self.Active[reduced_regions_indx, :]
-        self.Confirmed = self.Confirmed[reduced_regions_indx, :]
-        self.Deaths = self.Deaths[reduced_regions_indx, :]
-        self.NewDeaths = self.NewDeaths[reduced_regions_indx, :]
-        self.NewCases = self.NewCases[reduced_regions_indx, :]
-        self.ActiveCMs = self.ActiveCMs[reduced_regions_indx, :, :]
+    def filter_regions(self, regions_to_remove):
+        reduced_regions = []
+        reduced_regions_indx = []
+        for indx, r in enumerate(self.Rs):
+            if r in regions_to_remove:
+                pass
+            else:
+                reduced_regions_indx.append(indx)
+                reduced_regions.append(r)
+
+        self.Rs = reduced_regions
+        _, nCMs, nDs = self.ActiveCMs.shape
+        self.reduce_regions_from_index(reduced_regions_indx)
+
