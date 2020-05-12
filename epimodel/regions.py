@@ -98,6 +98,9 @@ class Region:
                 f"Setting attribute {name} on {self!r} not allowed (use rds.data directly)."
             )
 
+    def __eq__(self, other):
+        return isinstance(other, Region) and self.Code == other.Code
+
     @property
     def Code(self):
         return self._code

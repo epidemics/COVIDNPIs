@@ -38,6 +38,11 @@ def get_worksheet_by_id(spreadsheet, worksheet_id):
 
 
 class ScenarioGenerator:
+    """
+    Object that encapsulates credentials and is responsible for loading
+    Google Sheets data, formatting it for use by the rest of the
+    scenario logic, and passing it to ScenarioSet
+    """
     FIELDS = [
         "Region",
         "Value",
@@ -51,13 +56,17 @@ class ScenarioGenerator:
     def __init__(self, foretold_token=None, progress_bar=True, rds=None):
         self.foretold = ergo.Foretold(foretold_token) if foretold_token else None
         self.progress_bar = progress_bar
-        self.rds = rds or RegionDataset.load(
-            "epimodel/data/regions.csv", "epimodel/data/regions-gleam.csv"
-        )
+        self.rds = rds or RegionDataset.load("epimodel/data/regions-gleam.csv")
         algorithms.estimate_missing_populations(rds)
 
     def create_scenarios_from_gsheet(self, gsheet_url):
-        df = gsheet_to_df(gsheet_url).replace({"": None})
+        return self.create_scenarios(gsheet_to_df(gsheet_url))
+
+    def create_scenarios_from_csv(self, csv_file):
+        return self.create_scenarios(pd.read_csv(csv_file))
+
+    def create_scenarios(self, df):
+        df = df.replace({"": None})
         df = df[pd.notnull(df["Parameter"])][self.FIELDS].copy()
         df["Start date"] = df["Start date"].astype("datetime64[D]")
         df["End date"] = df["End date"].astype("datetime64[D]")
@@ -98,13 +107,13 @@ class ScenarioGenerator:
 
         # try code first
         if region in self.rds:
-            return region
+            return self.rds[region]
 
         # If this fails, assume name. Match Gleam regions first.
         matches = self.rds.find_all_by_name(region, levels=tuple(Level))
         if not matches:
             raise Exception(f"No corresponding region found for {region!r}.")
-        return matches[0].Code
+        return matches[0]
 
     def _progress_bar(self, enum, desc=None):
         if self.progress_bar:
@@ -113,8 +122,7 @@ class ScenarioGenerator:
 
 
 class ScenarioSet:
-    def __init__(self, df: pd.DataFrame, rds: RegionDataset):
-        self.rds = rds
+    def __init__(self, df: pd.DataFrame):
         self._set_df(df)
 
     def _set_df(self, df):
@@ -142,7 +150,7 @@ class ScenarioSet:
                 p_df = self.package_df[self.package_df["Class"] == pc]
                 res[(bc, pc)] = DefinitionGenerator.definition_from_config(
                     # ensure that package exceptions come before background conditions
-                    pd.concat([p_df, p_classless_df, b_df, b_classless_df]), self.rds
+                    pd.concat([p_df, p_classless_df, b_df, b_classless_df])
                 )
         return res
 
@@ -165,12 +173,11 @@ class DefinitionGenerator:
     )
 
     @classmethod
-    def definition_from_config(cls, df: pd.DataFrame, rds: RegionDataset):
-        return cls(df, rds).definition
+    def definition_from_config(cls, df: pd.DataFrame):
+        return cls(df).definition
 
-    def __init__(self, df: pd.DataFrame, rds: RegionDataset):
+    def __init__(self, df: pd.DataFrame):
         self.definition = GleamDefinition()
-        self.rds = rds
         assert len(df.groupby(["Type", "Class"])) <= 2
 
         self._parse_df(df)
@@ -225,7 +232,7 @@ class DefinitionGenerator:
             .apply(lambda group: dict(zip(group["Parameter"], group["Value"])))
             .reset_index()
             .groupby([0, "Start date", "End date"])
-            .apply(lambda group: [self.rds[reg] for reg in group["Region"]])
+            .apply(lambda group: list(group["Region"]))
             .reset_index.rename(
                 columns={
                     0: "variables",
