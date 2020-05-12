@@ -116,6 +116,10 @@ class Region:
     def agg_children(self):
         return self["agg_children"]
 
+    @property
+    def is_aggregate(self):
+        return bool(self.agg_children)
+
     def _region_prop(self, name):
         """Return the Region corresponding to code in `self[name]` (None if that is None)."""
         rds = self._rds()
@@ -213,7 +217,7 @@ class RegionDataset:
         cols = dict(cls.COLUMN_TYPES, Level="U")
         yaml_paths = []
         for path in paths:
-            if re.match(r"\.ya?ml$", re.IGNORECASE):
+            if re.search(r"\.ya?ml$", str(path), re.IGNORECASE):
                 yaml_paths.append(path)
                 continue
             log.debug(f"Loading regions from {path!r} ...")
@@ -390,7 +394,7 @@ class RegionDataset:
         # Reconstruct the OtherNames column
         for r in self.regions:
             # don't include aggregate regions
-            if r.agg_children:
+            if r.is_aggregate:
                 continue
             names = set(r.AllNames)
             if r.Name in names:

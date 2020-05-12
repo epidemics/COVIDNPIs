@@ -442,7 +442,7 @@ def add_aggregate_traces(aggregate_regions, cummulative_active_df):
 
     for reg in aggregate_regions:
         # compute aggregate weights
-        agg_codes = [child.Code for child in reg.agg_children.keys()]
+        agg_codes = [child.Code for child, _ in reg.agg_children]
         weights = pd.Series(
             [child.Population * weight for child, weight in reg.agg_children],
             index=agg_codes,
@@ -483,9 +483,7 @@ def process_export(args) -> None:
 
     export_regions = sorted(args.config["export_regions"])
     aggregate_regions = [
-        args.rds[code]
-        for code in export_regions
-        if args.rds[code].Level == Level.custom
+        args.rds[code] for code in export_regions if args.rds[code].is_aggregate
     ]
 
     batch = Batch.open(args.BATCH_FILE)

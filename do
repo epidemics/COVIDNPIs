@@ -217,7 +217,7 @@ def main():
     args.rds = RegionDataset.load(
         data_dir / "regions.csv",
         data_dir / "regions-gleam.csv",
-        data_dir / "regions-agg.csv"
+        data_dir / "regions-agg.yaml"
     )
     rds = args.rds
     config = args.config
