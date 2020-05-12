@@ -551,7 +551,8 @@ def process_export(
     ).pipe(aggregate_countries, config["state_to_country"], rds)
 
     cummulative_active_df = add_aggregate_traces(
-        rds.aggregate_regions, cummulative_active_df
+        [reg for reg in rds.aggregate_regions if reg.Code in export_regions],
+        cummulative_active_df,
     )
 
     analyze_data_consistency(
