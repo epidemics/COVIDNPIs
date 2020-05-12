@@ -1,0 +1,33 @@
+Name,Infectious_mean,Beta1,Beta2
+Afghanistan,21185,0.79,0.99
+Albania,1199,0.62,0.82
+Algeria,46994,0.58,0.78
+Angola,1326,0.43,0.63
+Antigua and Barbuda,200,0.64,0.84
+Argentina,18734,0.65,0.85
+Armenia,4001,0.58,0.78
+Austria,15393,0.47,0.67
+Azerbaijan,3732,0.56,0.76
+Bangladesh,26052,1.95,2.15
+Belarus,28223,0.93,1.13
+Belgium,200420,0.59,0.79
+Benin,200,0.55,0.75
+Bolivia,3318,0.81,1.01
+Bosnia and Herzegovina,4908,0.60,0.80
+Brunei,100,0.43,0.63
+Bulgaria,2665,0.51,0.71
+Burkina Faso,4413,0.48,0.68
+Cambodia,1000,0.55,0.75
+Cameroon,3854,0.50,0.70
+Central African Republic,400,1.50,1.70
+Chad,200,2.00,2.20
+Chile,30439,0.58,0.78
+Colombia,33169,0.51,0.71
+Costa Rica,3000,0.58,0.78
+India,295981,0.84,1.04
+Iran,656034,0.54,0.74
+Iraq,2990,0.52,0.72
+Kazakhstan,3280,0.94,1.14
+Kenya,2155,0.57,0.77
+Kyrgyzstan,3000,0.86,1.06
+Nepal,2000,1.00,1.20

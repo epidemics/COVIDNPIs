@@ -1,0 +1,117 @@
+# Path to epimodel-data directory
+data_dir: data
+
+# Replace with the actual channel (non-public)
+foretold_channel: SECRET
+
+### GLEAM
+
+# data/sims subdirectory of gleamviz
+gleamviz_sims_dir: ~/GLEAMviz-data/sims
+
+# Subsampling of imported data (see Pandas `df.resample`)
+gleam_resample: 1D
+
+### Extra data for web_export, relative to data_dir
+web_export:
+  john_hopkins: johns-hopkins.csv
+  foretold: foretold.csv
+  rates: rates.csv
+  timezones: timezones.csv
+  un_age_dist: various/age_dist_un.csv
+  traces_v3: various/traces_v3.csv
+
+### Generating GLEAM scenarios
+# All combinations of groups and scenarios are created,
+# unifying the attributes. Semantics:
+# - param_beta_multiplier is applied to all beta (incl. exceptions)
+# - param_beta_exceptions is list of [[days, vaue], [days, value], ...],
+#   where value is eother a number, os region column name
+# - param_beta is the global parameter setting
+scenarios:
+  - name: Irrelevant
+    key: "IRRELEVANT"
+
+groups:
+  - group: "Default_Weak"
+    name: Weak mitigation
+    description: Mostly open borders; full opening of public places; no social distancing; little compliance with hygiene advice
+
+  - group: "Default_Moderate"
+    name: Moderate mitigation
+    description: Some border closure; closure of schools; ban on public gatherings; partial social distancing
+
+  - group: "Default_Strong"
+    name: Strong mitigation
+    description: Strong external and internal border closure; full closure of public places (including places of worship); social distancing outside and within homes
+
+  - group: "Default_Recommended"
+    name: Recommended mitigation
+    description: Moderate measures + compulsory masks; contact tracing; social distancing at places of worship and within homes
+
+# How to assign estimate different compartments
+compartment_multipliers:
+  Infectious: 1.0
+  Exposed: 1.8
+
+# Maximal fraction of population in a region that is in
+# some compartment
+compartments_max_fraction: 0.8
+
+### Upload settings
+gs_prefix: "gs://static-covid/static/v4/"
+gs_url_prefix: "https://storage.googleapis.com/static-covid/static/v4/"
+gs_datafile_name: "data-v4.json"
+
+### Output directory for exported data
+output_dir: out/
+
+### Name of directory within output_dir to store latest exports in
+output_latest: latest
+
+### Name of directory within output_dir to store uploaded exports
+output_uploads: uploads
+
+### List of exported regions code
+export_regions:
+  - { code: G-BHV, name: "Bahawalpur (and nearby regions)" }
+  - { code: G-DBA, name: "Dalbandin (and nearby regions)" }
+  - { code: G-DDU, name: "Dadu (and nearby regions)" }
+  - { code: G-DEA, name: "Dera Ghazi Khan (and nearby regions)" }
+  - { code: G-DSK, name: "Dera Ismail Khan (and nearby regions)" }
+  - { code: G-GIL, name: "Gilgit (and nearby regions)" }
+  - { code: G-GWD, name: "Gwadar (and nearby regions)" }
+  - { code: G-HDD, name: "Hyderabad (and nearby regions)" }
+  - { code: G-ISB, name: "Islamabad (and nearby regions)" }
+  - { code: G-KCF, name: "Kadanwari (and nearby regions)" }
+  - { code: G-KDU, name: "Skardu (and nearby regions)" }
+  - { code: G-KHI, name: "Karachi (and nearby regions)" }
+  - { code: G-LHE, name: "Lahore (and nearby regions)" }
+  - { code: G-LYP, name: "Faisalabad (and nearby regions)" }
+  - { code: G-MJD, name: "Mohenjodaro (and nearby regions)" }
+  - { code: G-MUX, name: "Multan (and nearby regions)" }
+  - { code: G-PEW, name: "Peshawar (and nearby regions)" }
+  - { code: G-PJG, name: "Panjgur (and nearby regions)" }
+  - { code: G-PZH, name: "Zhob (and nearby regions)" }
+  - { code: G-RYK, name: "Rahim Yar Khan (and nearby regions)" }
+  - { code: G-SDT, name: "Saidu Sharif (and nearby regions)" }
+  - { code: G-SKT, name: "Sialkot (and nearby regions)" }
+  - { code: G-SKZ, name: "Sukkur (and nearby regions)" }
+  - { code: G-SUL, name: "Sui (and nearby regions)" }
+  - { code: G-TUK, name: "Turbat (and nearby regions)" }
+  - { code: G-UET, name: "Quetta (and nearby regions)" }
+  - { code: G-WNS, name: "Nawabshah (and nearby regions)" }
+  - PK
+  - PK-BA
+  - PK-GB
+  - PK-ICT
+  - PK-KP
+  - PK-PB
+  - PK-SD
+
+### these are used to match our non-state codes (e.g. AU) for John Hopkins database
+### where they have it on state/province granularity
+state_to_country:
+  - AU
+  - CN
+  - CA

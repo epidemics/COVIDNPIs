@@ -7,7 +7,7 @@ import socket
 import subprocess
 from enum import Enum
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Iterable
+from typing import Any, Dict, List, Optional, Iterable, KeysView
 
 import numpy as np
 import pandas as pd
@@ -16,6 +16,7 @@ from tqdm import tqdm
 from ..gleam import Batch
 from ..regions import Region, RegionDataset, Level
 import epimodel
+from collections.abc import Mapping
 
 log = logging.getLogger(__name__)
 
@@ -44,6 +45,7 @@ class WebExport:
     def new_region(
         self,
         region,
+        overwrite,
         current_estimate: Optional[pd.DataFrame],
         groups,
         models: pd.DataFrame,
@@ -56,6 +58,7 @@ class WebExport:
     ):
         er = WebExportRegion(
             region,
+            overwrite,
             current_estimate,
             groups,
             models,
@@ -119,6 +122,7 @@ class WebExportRegion:
     def __init__(
         self,
         region: Region,
+        overwrites: Dict[str, str],
         current_estimate: Optional[pd.DataFrame],
         groups,
         models: pd.DataFrame,
@@ -133,6 +137,7 @@ class WebExportRegion:
 
         assert isinstance(region, Region)
         self.region = region
+        self.overwrites = overwrites
         self.current_estimate = current_estimate
         # Any per-region data. Large ones should go to data_ext.
         self.data = self.extract_smallish_data(
@@ -243,7 +248,7 @@ class WebExportRegion:
         d = {
             "data": self.data,
             "data_url": self.data_url,
-            "Name": self.region.DisplayName,
+            "Name": self.overwrites.get("name", self.region.DisplayName),
             "CurrentEstimate": self.current_estimate,
         }
         for n in [
@@ -362,7 +367,7 @@ def get_cmi(df: pd.DataFrame):
 
 def analyze_data_consistency(
     debug: Optional[None],
-    export_regions: List[str],
+    export_regions: KeysView[str],
     models,
     rates_df,
     hopkins,
@@ -508,7 +513,7 @@ def add_aggregate_traces(aggregate_regions, cummulative_active_df):
 
 
 def process_export(
-    config, rds, debug, comment, batch_file, estimates, pretty_print
+    config, export_regions, rds, debug, comment, batch_file, estimates, pretty_print
 ) -> None:
     ex = WebExport(config["gleam_resample"], comment=comment)
 
@@ -517,8 +522,6 @@ def process_export(
     rates = get_extra_path(config, "rates")
     timezone = get_extra_path(config, "timezones")
     un_age_dist = get_extra_path(config, "un_age_dist")
-
-    export_regions = sorted(config["export_regions"])
 
     batch = Batch.open(batch_file)
     simulation_specs: pd.DataFrame = batch.hdf["simulations"]
@@ -559,15 +562,21 @@ def process_export(
     )
 
     analyze_data_consistency(
-        debug, export_regions, cummulative_active_df, rates_df, hopkins_df, foretold_df,
+        debug,
+        export_regions.keys(),
+        cummulative_active_df,
+        rates_df,
+        hopkins_df,
+        foretold_df,
     )
 
-    for code in export_regions:
-        reg: Region = rds[code]
-        m49 = int(reg["M49Code"]) if pd.notnull(reg["M49Code"]) else -1
+    for code, overwrites in export_regions.items():
+        region: Region = rds[code]
+        m49 = int(region["M49Code"]) if pd.notnull(region["M49Code"]) else -1
 
         ex.new_region(
-            reg,
+            region,
+            overwrites,
             get_df_else_none(estimates_df, code),
             config["groups"],
             cummulative_active_df.xs(key=code, level="Code").sort_index(level="Date"),

@@ -11,6 +11,7 @@ import epimodel
 from epimodel import Level, RegionDataset, read_csv_smart, utils
 from epimodel.exports.epidemics_org import process_export, upload_export
 from epimodel.gleam import Batch, batch
+from typing import Dict
 
 from shutil import copyfile
 
@@ -102,7 +103,28 @@ def cli(ctx, debug, config):
     logging.basicConfig(level=logging.DEBUG if debug else logging.INFO)
 
     with open(config, "rt") as f:
-        ctx.obj["CONFIG"] = yaml.safe_load(f)
+        config = yaml.safe_load(f)
+        ctx.obj["CONFIG"] = config
+
+    export_regions = {}
+    for item in config["export_regions"]:
+        if isinstance(item, Dict):
+            CODE_KEY = "code"
+            if not CODE_KEY in item:
+                raise Exception(
+                    "Malformed entry in `export_regions`, expected key `{}'. Entry: {}".format(
+                        CODE_KEY, item
+                    )
+                )
+            code = item[CODE_KEY]
+            del item[CODE_KEY]
+            export_regions[code] = item
+        else:
+            export_regions[item] = {}
+
+    ctx.obj["EXPORT_REGIONS"] = {
+        k: v for k, v in sorted(export_regions.items(), key=lambda item: item[0])
+    }
 
     data_dir = Path(ctx.obj["CONFIG"]["data_dir"])
     ctx.obj["RDS"] = RegionDataset.load(
@@ -185,9 +207,10 @@ def import_gleam_batch(ctx, batch_file, allow_missing, overwrite):
             & (d.GleamID != "")
         ].Region.values
     )
+
     # Add all configured regions
-    for rc in ctx.obj["CONFIG"]["export_regions"]:
-        r = ctx.obj["RDS"][rc]
+    for code in ctx.obj["EXPORT_REGIONS"].keys():
+        r = ctx.obj["RDS"][code]
         if r.GleamID != "":
             regions.add(r)
 
@@ -315,6 +338,7 @@ def web_export(ctx, batch_file_, estimates, comment, pretty_print, upload):
 
     process_export(
         ctx.obj["CONFIG"],
+        ctx.obj["EXPORT_REGIONS"],
         ctx.obj["RDS"],
         ctx.obj["DEBUG"],
         comment,
