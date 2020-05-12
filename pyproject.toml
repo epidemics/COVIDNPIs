@@ -25,6 +25,7 @@ seaborn = { version = "^0.10.0", optional = true }
 tqdm = "^4.45.0"
 scipy = "^1.4.1"
 click = "^7.1.1"
+luigi = "^2.8.13"
 
 [tool.poetry.extras]
 pymc3 = ["pymc3", "jupyter", "seaborn"]
