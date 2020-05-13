@@ -312,9 +312,7 @@ def upload_export(dir_to_export, gs_prefix, channel: str):
             raise
 
     release_name = exdir.parts[-1]
-    log.info(
-        f"Uploading data folder {exdir} to {gs_prefix}/{release_name} ..."
-    )
+    log.info(f"Uploading data folder {exdir} to {gs_prefix}/{release_name} ...")
     cmd = CMD + ["-Z", "-R", exdir, gs_prefix.join_path(release_name)]
     log.debug(f"Running {cmd!r}")
     subprocess.run(cmd, check=True)
