@@ -5,7 +5,7 @@ import numpy.testing as npt
 
 class NumpyTestCase(unittest.TestCase):
     """
-    Test class that includes all of the numpy test assertions
+    Test class that includes all of the non-redundant numpy test assertions
     https://docs.scipy.org/doc/numpy/reference/routines.testing.html#asserts
     """
 
@@ -33,18 +33,6 @@ class NumpyTestCase(unittest.TestCase):
     def assert_array_less(self, *args, **kwargs):
         npt.assert_array_less(*args, **kwargs)
 
-    def assert_equal(self, *args, **kwargs):
-        npt.assert_equal(*args, **kwargs)
-
-    def assert_raises(self, *args, **kwargs):
-        npt.assert_raises(*args, **kwargs)
-
-    def assert_raises_regex(self, *args, **kwargs):
-        npt.assert_raises_regex(*args, **kwargs)
-
-    def assert_warns(self, *args, **kwargs):
-        npt.assert_warns(*args, **kwargs)
-
     def assert_string_equal(self, *args, **kwargs):
         npt.assert_string_equal(*args, **kwargs)
 
@@ -59,4 +47,6 @@ class PandasTestCase(NumpyTestCase):
         else:
             name = "series"
 
-        self.assertEqual(series.dtype, dtype, f"{name} is not dtype {dtype.name!r}")
+        self.assertTrue(
+            np.issubdtype(series.dtype, dtype), f"{name} is not dtype {dtype.name!r}"
+        )
