@@ -101,6 +101,9 @@ class Region:
     def __eq__(self, other):
         return isinstance(other, Region) and self.Code == other.Code
 
+    def __hash__(self):
+        return hash(self._code)
+
     @property
     def Code(self):
         return self._code

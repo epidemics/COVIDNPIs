@@ -4,11 +4,16 @@ from collections import namedtuple
 import numpy as np
 import pandas as pd
 
-import gspread
-from oauth2client.client import GoogleCredentials
+try:
+    import gspread
+    from oauth2client.client import GoogleCredentials
+except ModuleNotFoundError:
+    # ignore since not run in colab
+    pass
 
 from tqdm import tqdm
-import ergo
+
+# import ergo
 from epimodel import RegionDataset, Level, algorithms
 from .definition import GleamDefinition
 
@@ -53,7 +58,7 @@ class ConfigParser:
         "Class",
     ]
 
-    def __init__(self, foretold_token=None, progress_bar=True, rds=None):
+    def __init__(self, rds=None, foretold_token=None, progress_bar=True):
         self.foretold = ergo.Foretold(foretold_token) if foretold_token else None
         self.progress_bar = progress_bar
         self.rds = rds or RegionDataset.load("epimodel/data/regions-gleam.csv")
@@ -68,10 +73,10 @@ class ConfigParser:
     def get_config(self, df):
         df = df.replace({"": None})
         df = df[pd.notnull(df["Parameter"])][self.FIELDS].copy()
-        df["Start date"] = df["Start date"].astype("datetime64[D]")
-        df["End date"] = df["End date"].astype("datetime64[D]")
+        df["Start date"] = pd.to_datetime(df["Start date"])
+        df["End date"] = pd.to_datetime(df["End date"])
         df["Value"] = self._values_to_float(df["Value"])
-        df["Region"] = df["Region"].apply(self._get_region_code)
+        df["Region"] = df["Region"].apply(self._get_region)
         return df
 
     def _values_to_float(self, values: pd.Series):
@@ -90,7 +95,7 @@ class ConfigParser:
         try:
             UUID(value, version=4)
             return True
-        except ValueError:
+        except (ValueError, AttributeError):
             return False
 
     def _get_foretold_mean(self, uuid):
@@ -101,7 +106,7 @@ class ConfigParser:
         mean = np.sum(ys) / len(qs)
         return mean
 
-    def _get_region_code(self, region):
+    def _get_region(self, region):
         if pd.isnull(region):
             return None
 

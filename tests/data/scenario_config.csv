@@ -1,0 +1,15 @@
+Region,Value,Parameter,Start date,End date,Type,Class,Trace,,,Valid Parameters,Valid Types
+,,run dates,2020-04-15,2021-01-01,,,,,,run dates,Background condition
+,5,number of runs,,,,,,,,duration,Countermeasure package
+,0.35,seasonality,,,Background condition,,?? architectureal decision needed ??,,,number of runs,
+,0.9,airline traffic,,,Background condition,,,,,airline traffic,
+,1.285,beta,,,Background condition,,,,,seasonality,
+,0.75,beta multiplier,,,Background condition,Slow Spread,,,,commuting time,
+,1,beta multiplier,,,Background condition,Expected Spread,,,,beta,
+,1.5,beta multiplier,,,Background condition,Faster Spread,,,,epsilon,
+Pakistan,0.35,beta,2020-04-14,2021-05-01,Countermeasure package,Strong,,,,mu,
+Pakistan,0.75,epsilon,2020-04-14,2021-05-01,Countermeasure package,Moderate,,,,imu,
+Pakistan,0.75,beta,2020-04-14,2021-05-01,Countermeasure package,Moderate,,,,beta multiplier,
+Pakistan,1.285,mu,2020-04-14,2021-05-01,Countermeasure package,Weak,,,,epsilon multiplier,
+Pakistan,0.6,mu,2020-04-14,2021-05-01,Countermeasure package,Recommended,,,,mu multiplier,
+Pakistan,0.6,imu,2020-04-14,2021-05-01,Countermeasure package,Recommended,,,,imu multiplier,
