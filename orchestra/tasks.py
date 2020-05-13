@@ -1,15 +1,16 @@
-import luigi
-from luigi.util import requires, inherits
-from pathlib import Path
-from logging import getLogger
-import epimodel
-from epimodel import Level, read_csv_smart, utils
-from epimodel.exports.epidemics_org import process_export, upload_export
-from epimodel.gleam import Batch, batch
-from datetime import date
-import dill
-import yaml
 import datetime
+from datetime import date
+from logging import getLogger
+from pathlib import Path
+
+import dill
+import luigi
+import yaml
+from luigi.util import inherits, requires
+
+from epimodel import Level, RegionDataset, algorithms, imports, read_csv_smart, utils
+from epimodel.exports.epidemics_org import process_export, upload_export
+from epimodel.gleam import Batch, GleamDefinition, batch as batch_module
 
 log = getLogger(__name__)
 
@@ -35,16 +36,16 @@ class GleamRegions(luigi.ExternalTask):
 
 
 @inherits(RegionsFile, GleamRegions)
-class RegionsDataset(luigi.Task):
+class RegionsDatasetTask(luigi.Task):
     region_dataset = luigi.Parameter(
-        config_path=default_from_config("RegionsDataset", "region_dataset")
+        config_path=default_from_config("RegionsDatasetTask", "region_dataset")
     )
 
     def run(self):
         regions = self.input()["region_file"].path
         gleams = self.input()["gleam_regions"].path
-        rds = epimodel.RegionDataset.load(regions, gleams)
-        epimodel.algorithms.estimate_missing_populations(rds)
+        rds = RegionDataset.load(regions, gleams)
+        algorithms.estimate_missing_populations(rds)
         with open(self.region_dataset, "wb") as ofile:
             dill.dump(rds, ofile)
 
@@ -63,7 +64,7 @@ class RegionsDataset(luigi.Task):
             return dill.load(ifile)
 
 
-@requires(RegionsDataset)
+@requires(RegionsDatasetTask)
 class JohnsHopkins(luigi.Task):
     hopkins_output: str = luigi.Parameter(
         config_path=default_from_config("JohnsHopkins", "hopkins_output")
@@ -71,8 +72,8 @@ class JohnsHopkins(luigi.Task):
 
     def run(self):
         log.info("Downloading and parsing CSSE ...")
-        rds = RegionsDataset.load_dilled_rds(self.input().path)
-        csse = epimodel.imports.import_johns_hopkins(rds)
+        rds = RegionsDatasetTask.load_dilled_rds(self.input().path)
+        csse = imports.import_johns_hopkins(rds)
         dest = self.hopkins_output
         csse.to_csv(dest)
         log.info(
@@ -83,7 +84,7 @@ class JohnsHopkins(luigi.Task):
         return luigi.LocalTarget(self.hopkins_output)
 
 
-@requires(RegionsDataset)
+@requires(RegionsDatasetTask)
 class UpdateForetold(luigi.Task):
     foretold_output: str = luigi.Parameter(
         config_path=default_from_config("UpdateForetold", "foretold_output")
@@ -94,8 +95,8 @@ class UpdateForetold(luigi.Task):
 
     def run(self):
         log.info("Downloading and parsing foretold")
-        rds = RegionsDataset.load_dilled_rds(self.input().path)
-        foretold = epimodel.imports.import_foretold(rds, self.foretold_channel)
+        rds = RegionsDatasetTask.load_dilled_rds(self.input().path)
+        foretold = imports.import_foretold(rds, self.foretold_channel)
         dest = self.foretold_output
         foretold.to_csv(dest, float_format="%.7g")
         log.info(f"Saved Foretold to {dest}")
@@ -130,7 +131,7 @@ class ConfigYaml(luigi.ExternalTask):
         return luigi.LocalTarget(self.config_yaml)
 
 
-@inherits(BaseDefinition, CountryEstimates, RegionsDataset, ConfigYaml)
+@inherits(BaseDefinition, CountryEstimates, RegionsDatasetTask, ConfigYaml)
 class GenerateGleamBatch(luigi.Task):
     comment: str = luigi.Parameter(default=None)
     output_suffix: str = luigi.DateSecondParameter(default=datetime.datetime.utcnow())
@@ -143,7 +144,7 @@ class GenerateGleamBatch(luigi.Task):
         return {
             "base_def": self.clone(BaseDefinition),
             "country_estimates": self.clone(CountryEstimates),
-            "regions_dataset": self.clone(RegionsDataset),
+            "regions_dataset": self.clone(RegionsDatasetTask),
             "config_yaml": self.clone(ConfigYaml),
         }
 
@@ -157,23 +158,23 @@ class GenerateGleamBatch(luigi.Task):
         return luigi.LocalTarget(self.output_path)
 
     def run(self):
-        b = Batch.new(path=self.output_path, dir=self.output_dir, comment=self.comment)
+        b = Batch.new(path=self.output_path)
         log.info(f"New batch file {b.path}")
 
         base_def = self.input()["base_def"].path
         log.info(f"Reading base GLEAM definition {base_def} ...")
-        d = epimodel.gleam.GleamDefinition(base_def)
+        d = GleamDefinition(base_def)
 
         # TODO: This should be somewhat more versatile
         country_estimates = self.input()["country_estimates"].path
-        rds = RegionsDataset.load_dilled_rds(self.input()["regions_dataset"].path)
+        rds = RegionsDatasetTask.load_dilled_rds(self.input()["regions_dataset"].path)
         log.info(f"Reading estimates from CSV {country_estimates} ...")
         est = read_csv_smart(self.country_estimates, rds, levels=Level.country)
         start_date = (
             utils.utc_date(self.start_date) if self.start_date else d.get_start_date()
         )
         log.info(f"Generating scenarios with start_date {start_date.ctime()} ...")
-        batch.generate_simulations(
+        batch_module.generate_simulations(
             b,
             d,
             est,
@@ -190,7 +191,7 @@ class GenerateGleamBatch(luigi.Task):
         #    ctx.parent.batch_file = b.path
 
 
-@inherits(RegionsDataset, GenerateGleamBatch)
+@inherits(RegionsDatasetTask, GenerateGleamBatch)
 class ExportGleamBatch(luigi.Task):
     exports_dir = luigi.Parameter(default="~/GLEAMviz/data/sims/")
     overwrite = luigi.BoolParameter(default=False)
@@ -209,7 +210,7 @@ class ExportGleamBatch(luigi.Task):
     def requires(self):
         return {
             "batch_file": self.clone(GenerateGleamBatch),
-            "region_dataset": self.clone(RegionsDataset),
+            "region_dataset": self.clone(RegionsDatasetTask),
         }
 
 
@@ -222,7 +223,7 @@ class GleamvizResults(luigi.ExternalTask):
         return luigi.LocalTarget(self.gleamviz_result)
 
 
-@inherits(GleamvizResults, RegionsDataset, ConfigYaml)
+@inherits(GleamvizResults, RegionsDatasetTask, ConfigYaml)
 class ImportGleamBatch(luigi.Task):
     exports_dir = luigi.Parameter(default="~/GLEAMviz/data/sims/")
     overwrite = luigi.BoolParameter(default=True)
@@ -231,14 +232,14 @@ class ImportGleamBatch(luigi.Task):
     def requires(self):
         return {
             "batch_file": self.clone(GleamvizResults),
-            "region_dataset": self.clone(RegionsDataset),
+            "region_dataset": self.clone(RegionsDatasetTask),
             "config_yaml": self.clone(ConfigYaml),
         }
 
     def run(self):
         batch_file = self.input()["batch_file"].path
         config_yaml = ConfigYaml.load(self.input()["config_yaml"].path)
-        regions_dataset = RegionsDataset.load_dilled_rds(
+        regions_dataset = RegionsDatasetTask.load_dilled_rds(
             self.input()["regions_dataset"].path
         )
 
@@ -318,7 +319,7 @@ class WebExport(luigi.Task):
     def run(self):
         batch_file = self.input()["batch_file"].path
         config_yaml = ConfigYaml.load(self.input()["config_yaml"].path)
-        regions_dataset = RegionsDataset.load_dilled_rds(
+        regions_dataset = RegionsDatasetTask.load_dilled_rds(
             self.input()["regions_dataset"].path
         )
         estimates = self.input()["country_estimates"].path
@@ -363,7 +364,7 @@ class WebUpload(luigi.WrapperTask):
         )
 
     # def output(self):
-        # TODO: could be done fancy via GCS, but that
-        # requires httplib2, google-auth, google-api-python-client
-        # from luigi.contrib.gcs import GCSTarget; return GCSTarget(self.gs_path)
-        # if rewritten, then this task could be a regular luigi.Task
+    # TODO: could be done fancy via GCS, but that
+    # requires httplib2, google-auth, google-api-python-client
+    # from luigi.contrib.gcs import GCSTarget; return GCSTarget(self.gs_path)
+    # if rewritten, then this task could be a regular luigi.Task
