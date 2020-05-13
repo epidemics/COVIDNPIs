@@ -67,8 +67,9 @@ class GleamDefinition:
     def seeds_node(self) -> ET.Element:
         return self.find_one("./gv:definition/gv:seeds")
 
+    @property
     def timestamp_node(self) -> ET.Element:
-        return self.find_one("./gv:definition/gv:metadata/gv:creationDate")
+        return self.find_one("./gv:metadata/gv:creationDate")
 
     ### Exceptions
 
