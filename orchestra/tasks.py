@@ -11,11 +11,16 @@ import dill
 import yaml
 import datetime
 
-
 log = getLogger(__name__)
 
 
+def default_from_config(task_name: str, param_name: str) -> dict:
+    return dict(section=task_name, name=param_name)
+
+
 class RegionsFile(luigi.ExternalTask):
+    # TODO: we can use config_path to fetch defaults from the luigi.cfg
+    # TODO: or use the default in parameter. Now we use both for different tasks
     regions = luigi.Parameter(default="data/regions.csv")
 
     def output(self):
@@ -31,7 +36,9 @@ class GleamRegions(luigi.ExternalTask):
 
 @inherits(RegionsFile, GleamRegions)
 class RegionsDataset(luigi.Task):
-    region_dataset = luigi.Parameter(default="data/rds.pk")
+    region_dataset = luigi.Parameter(
+        config_path=default_from_config("RegionsDataset", "region_dataset")
+    )
 
     def run(self):
         regions = self.input()["region_file"].path
@@ -58,37 +65,43 @@ class RegionsDataset(luigi.Task):
 
 @requires(RegionsDataset)
 class JohnsHopkins(luigi.Task):
-    output_file: str = luigi.Parameter()
+    hopkins_output: str = luigi.Parameter(
+        config_path=default_from_config("JohnsHopkins", "hopkins_output")
+    )
 
     def run(self):
         log.info("Downloading and parsing CSSE ...")
         rds = RegionsDataset.load_dilled_rds(self.input().path)
         csse = epimodel.imports.import_johns_hopkins(rds)
-        dest = self.output_file
+        dest = self.hopkins_output
         csse.to_csv(dest)
         log.info(
             f"Saved CSSE to {dest}, last day is {csse.index.get_level_values(1).max()}"
         )
 
     def output(self):
-        return luigi.LocalTarget(self.output_file)
+        return luigi.LocalTarget(self.hopkins_output)
 
 
 @requires(RegionsDataset)
 class UpdateForetold(luigi.Task):
-    output_file: str = luigi.Parameter()
-    foretold_channel: str = luigi.Parameter()
+    foretold_output: str = luigi.Parameter(
+        config_path=default_from_config("UpdateForetold", "foretold_output")
+    )
+    foretold_channel: str = luigi.Parameter(
+        config_path=default_from_config("UpdateForetold", "foretold_channel")
+    )
 
     def run(self):
         log.info("Downloading and parsing foretold")
         rds = RegionsDataset.load_dilled_rds(self.input().path)
         foretold = epimodel.imports.import_foretold(rds, self.foretold_channel)
-        dest = self.output_file
+        dest = self.foretold_output
         foretold.to_csv(dest, float_format="%.7g")
         log.info(f"Saved Foretold to {dest}")
 
     def output(self):
-        return luigi.LocalTarget(self.output_file)
+        return luigi.LocalTarget(self.foretold_output)
 
 
 class BaseDefinition(luigi.ExternalTask):
@@ -110,7 +123,6 @@ class ConfigYaml(luigi.ExternalTask):
 
     @staticmethod
     def load(path):
-
         with open(path, "rt") as f:
             return yaml.safe_load(f)
 
@@ -200,12 +212,15 @@ class ExportGleamBatch(luigi.Task):
             "region_dataset": self.clone(RegionsDataset),
         }
 
+
 class GleamvizResults(luigi.ExternalTask):
     """This is done manually by a user via Gleam software"""
+
     gleamviz_result = luigi.Parameter()
 
     def output(self):
         return luigi.LocalTarget(self.gleamviz_result)
+
 
 @inherits(GleamvizResults, RegionsDataset, ConfigYaml)
 class ImportGleamBatch(luigi.Task):
@@ -220,11 +235,12 @@ class ImportGleamBatch(luigi.Task):
             "config_yaml": self.clone(ConfigYaml),
         }
 
-
     def run(self):
         batch_file = self.input()["batch_file"].path
         config_yaml = ConfigYaml.load(self.input()["config_yaml"].path)
-        regions_dataset = RegionsDataset.load_dilled_rds(self.input()["regions_dataset"].path)
+        regions_dataset = RegionsDataset.load_dilled_rds(
+            self.input()["regions_dataset"].path
+        )
 
         b = Batch.open(batch_file)
         d = regions_dataset.data
@@ -233,7 +249,7 @@ class ImportGleamBatch(luigi.Task):
             d.loc[
                 ((d.Level == Level.country) | (d.Level == Level.continent))
                 & (d.GleamID != "")
-                ].Region.values
+            ].Region.values
         )
         # Add all configured regions
         for rc in config_yaml["export_regions"]:
@@ -241,7 +257,9 @@ class ImportGleamBatch(luigi.Task):
             if r.GleamID != "":
                 regions.add(r)
 
-        log.info(f"Importing results for {len(regions)} from GLEAM into {batch_file} ...")
+        log.info(
+            f"Importing results for {len(regions)} from GLEAM into {batch_file} ..."
+        )
         b.import_results_from_gleam(
             Path(self.exports_dir).expanduser(),
             regions,
@@ -255,25 +273,97 @@ class ImportGleamBatch(luigi.Task):
         pass
 
 
-@requires(ExportGleamBatch, JohnsHopkins)
+class Rates(luigi.ExternalTask):
+    rates: str = luigi.Parameter(default="data/rates.csv")
+
+    def output(self):
+        return luigi.LocalTarget(self.rates)
+
+
+class Timezones(luigi.ExternalTask):
+    timezones: str = luigi.Parameter(default="data/timezones.csv")
+
+    def output(self):
+        return luigi.LocalTarget(self.timezones)
+
+
+class AgeDistributions(luigi.ExternalTask):
+    age_distributions: str = luigi.Parameter(default="data/various/age_dist_un.csv")
+
+    def output(self):
+        return luigi.LocalTarget(self.age_distributions)
+
+
+WEB_EXPORT_REQUIRED_TASKS = {
+    "batch_file": ImportGleamBatch,
+    "hopkins": JohnsHopkins,
+    "foretold": UpdateForetold,
+    "rates": Rates,
+    "timezone": Timezones,
+    "age_distribution": AgeDistributions,
+    "config_yaml": ConfigYaml,
+    "country_estimates": CountryEstimates,  # "estimates" in click - is the same?
+}
+
+
+@requires(*WEB_EXPORT_REQUIRED_TASKS.values())
 class WebExport(luigi.Task):
-    """TODO: Not implemented
-    """
+    comment: str = luigi.Parameter(default="")
+    pretty_print: bool = luigi.BoolParameter(default=False)
+    web_export_directory: str = luigi.Parameter(default="web-exports")
+    gs_datafile_name: str = luigi.Parameter(default="data-v4.json")
 
-    pass
-
-
-class WebUpload(luigi.Task):
-    output_dir = luigi.Parameter()
-    output_latest = luigi.Parameter()
-    channel: str = luigi.Parameter()
+    # full_export_path: str = luigi.Parameter()  # something which can be used in the output
 
     def run(self):
-        dir_ = Path(self.output_dir) / self.output_latest
-        c = "config"  # TODO
-        upload_export(dir_, c, channel=self.channel)
+        batch_file = self.input()["batch_file"].path
+        config_yaml = ConfigYaml.load(self.input()["config_yaml"].path)
+        regions_dataset = RegionsDataset.load_dilled_rds(
+            self.input()["regions_dataset"].path
+        )
+        estimates = self.input()["country_estimates"].path
+
+        ex = process_export(
+            config_yaml,
+            regions_dataset,
+            False,
+            self.comment,
+            batch_file,
+            estimates,
+            self.pretty_print,
+        )
+        ex.write(
+            self.web_export_directory,
+            self.gs_datafile_name,
+            latest="latest",  # not sure this is being used
+            pretty_print=self.pretty_print,
+        )
+
+    def output(self):
+        # TODO: not enough - we need a specific export dir
+        return luigi.LocalTarget(self.web_export_directory)
+
+    def requires(self):
+        return {name: self.clone(task) for name, task in WEB_EXPORT_REQUIRED_TASKS}
 
 
-@requires(JohnsHopkins, GenerateGleamBatch, ExportGleamBatch)
-class WorkflowPrepareGleam(luigi.WrapperTask):
-    pass
+@requires(WebExport)
+class WebUpload(luigi.WrapperTask):
+    gs_prefix: str = luigi.Parameter(default="gs://static-covid/static/v4/")
+    channel: str = luigi.Parameter(default="main")
+    dir_to_upload: str = luigi.Parameter()  # WebExport.full_export_path and self.input() instead
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.gs_path = Path(self.gs_prefix).joinpath(Path(self.dir_to_upload).parts[-1])
+
+    def run(self):
+        upload_export(
+            self.dir_to_upload, gs_prefix=Path(self.gs_prefix), channel=self.channel
+        )
+
+    # def output(self):
+        # TODO: could be done fancy via GCS, but that
+        # requires httplib2, google-auth, google-api-python-client
+        # from luigi.contrib.gcs import GCSTarget; return GCSTarget(self.gs_path)
+        # if rewritten, then this task could be a regular luigi.Task

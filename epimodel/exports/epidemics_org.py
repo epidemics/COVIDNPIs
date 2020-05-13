@@ -287,8 +287,7 @@ def assert_valid_json(file, minify=False):
             )
 
 
-def upload_export(dir_to_export, config, channel="test"):
-    """The 'upload' subcommand"""
+def upload_export(dir_to_export, gs_prefix, channel: str):
     CMD = [
         "gsutil",
         "-m",
@@ -298,46 +297,29 @@ def upload_export(dir_to_export, config, channel="test"):
         "-a",
         "public-read",
     ]
-    gs_prefix = config["gs_prefix"].rstrip("/")
-    gs_url = config["gs_url_prefix"].rstrip("/")
     exdir = Path(dir_to_export)
     assert exdir.is_dir()
 
-    uploaddir = Path(config["output_dir"]) / config["output_uploads"]
-    if not uploaddir.exists():
-        uploaddir.mkdir()
-    channeldir = uploaddir / channel
+    datafile = "data-v4.json"
 
-    if channeldir.exists():
-        shutil.rmtree(channeldir)
-
-    shutil.copytree(exdir, channeldir)
-    log.info(f"Copied export to {channeldir} for uploading")
-
-    datafile = config["gs_datafile_name"]
-    # Backwards compatibility
-    old_filename = "data-CHANNEL-v4.json"
-    old_path = channeldir / old_filename
-    if old_path.exists():
-        old_path.rename(channeldir / datafile)
-
-    for json_file in channeldir.iterdir():
+    for json_file in exdir.iterdir():
         if json_file.suffix != ".json":
             continue
         try:
             assert_valid_json(json_file, minify=True)
-        except Exception as e:
+        except Exception:
             log.error(f"Error in JSON file {json_file}")
-            raise e
+            raise
 
+    release_name = exdir.parts[-1]
     log.info(
-        f"Uploading data folder {channeldir} to {gs_prefix}/{channeldir.parts[-1]} ..."
+        f"Uploading data folder {exdir} to {gs_prefix}/{release_name} ..."
     )
-    cmd = CMD + ["-Z", "-R", channeldir, gs_prefix]
+    cmd = CMD + ["-Z", "-R", exdir, gs_prefix.join_path(release_name)]
     log.debug(f"Running {cmd!r}")
     subprocess.run(cmd, check=True)
 
-    log.info(f"File URL: {gs_url}/{channeldir.parts[-1]}/{datafile}")
+    log.info(f"Main file: {exdir.parts[-1]}/{datafile}")
 
     if channel != "main":
         log.info(f"Custom web URL: http://epidemicforecasting.org/?channel={channel}")
@@ -509,7 +491,7 @@ def add_aggregate_traces(aggregate_regions, cummulative_active_df):
 
 def process_export(
     config, rds, debug, comment, batch_file, estimates, pretty_print
-) -> None:
+) -> WebExport:
     ex = WebExport(config["gleam_resample"], comment=comment)
 
     hopkins = get_extra_path(config, "john_hopkins")
@@ -578,10 +560,4 @@ def process_export(
             get_df_list(timezone_df, code),
             get_df_else_none(un_age_dist_df, m49),
         )
-
-    ex.write(
-        config["output_dir"],
-        config["gs_datafile_name"],
-        latest=config["output_latest"],
-        pretty_print=pretty_print,
-    )
+    return ex
