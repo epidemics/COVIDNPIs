@@ -224,6 +224,7 @@ class GleamvizResults(luigi.ExternalTask):
 
 @inherits(GleamvizResults, RegionsDatasetTask, ConfigYaml)
 class ImportGleamBatch(luigi.Task):
+    # TODO: I wasn't sure about the flow here, not complete
     exports_dir = luigi.Parameter(default="~/GLEAMviz/data/sims/")
     overwrite = luigi.BoolParameter(default=True)
     allow_missing = luigi.BoolParameter(default=True)
@@ -269,6 +270,7 @@ class ImportGleamBatch(luigi.Task):
             info_level="INFO",
         )
 
+    # TODO: finish here
     def output(self):
         pass
 
