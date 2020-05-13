@@ -74,18 +74,10 @@ class Batch:
         return cls(hdf, path, _direct=False)
 
     @classmethod
-    def new(cls, *, path=None, dir=None, comment=None):
+    def new(cls, *, path=None):
         """
         Create new batch HDF5 file.
-        Either `path` should be a (non-existing) file, or a `dir` should
-        be given - name is then auto-generated (with optional comment suffix).
         """
-        if path is None:
-            dir = Path(dir)
-            assert dir.is_dir()
-            now = datetime.datetime.now().astimezone(datetime.timezone.utc)
-            name = f"batch-{now.isoformat()}" + (f"-{comment}" if comment else "")
-            path = dir / f"{name}.hdf5"
         path = Path(path)
 
         assert not path.exists()
