@@ -196,7 +196,7 @@ class ExportGleamBatch(luigi.Task):
     overwrite = luigi.BoolParameter(default=False)
 
     def run(self):
-        batch_file = self.inpu()["batch_file"]
+        batch_file = self.input()["batch_file"]
         batch = Batch.open(batch_file)
         gdir = Path(self.exports_dir)
         log.info(
@@ -212,7 +212,14 @@ class ExportGleamBatch(luigi.Task):
             "region_dataset": self.clone(RegionsDatasetTask),
         }
 
+    def output(self):
+        # TODO: this needs to be improved and actually catch the generated files and not just the
+        # default directory
+        return luigi.LocalTarget(self.exports_dir)
 
+
+
+@requires(ExportGleamBatch)
 class GleamvizResults(luigi.ExternalTask):
     """This is done manually by a user via Gleam software"""
 
