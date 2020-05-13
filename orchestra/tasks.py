@@ -1,5 +1,4 @@
-import datetime
-from datetime import date
+from datetime import datetime
 from logging import getLogger
 from pathlib import Path
 
@@ -134,10 +133,10 @@ class ConfigYaml(luigi.ExternalTask):
 @inherits(BaseDefinition, CountryEstimates, RegionsDatasetTask, ConfigYaml)
 class GenerateGleamBatch(luigi.Task):
     comment: str = luigi.Parameter(default=None)
-    output_suffix: str = luigi.DateSecondParameter(default=datetime.datetime.utcnow())
+    output_suffix: str = luigi.DateSecondParameter(default=datetime.utcnow())
     output_filename_prefix: str = luigi.Parameter(default="batch-")
     output_directory: str = luigi.Parameter(default="data")
-    start_date = luigi.DateParameter(default=date.today())
+    start_date = luigi.DateParameter(default=datetime.utcnow())
     top = luigi.IntParameter(default=2000)
 
     def requires(self):
