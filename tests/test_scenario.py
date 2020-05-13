@@ -1,4 +1,5 @@
 import pytest
+from unittest.mock import Mock, patch
 from . import PandasTestCase
 
 import pandas as pd
@@ -10,7 +11,6 @@ import epimodel.gleam.scenario as sc
 
 @pytest.mark.usefixtures("ut_datadir", "ut_rds")
 class TestConfigParser(PandasTestCase):
-
     @staticmethod
     def config_from_list(row):
         config = pd.DataFrame(columns=sc.ConfigParser.FIELDS)
@@ -18,7 +18,17 @@ class TestConfigParser(PandasTestCase):
         return config
 
     def config_exception(self, **kwargs):
-        config = self.config_from_list(["PK", "0.35", "beta", "2020-04-14", "2021-05-01", "Countermeasure package", "Strong"])
+        config = self.config_from_list(
+            [
+                "PK",
+                "0.35",
+                "beta",
+                "2020-04-14",
+                "2021-05-01",
+                "Countermeasure package",
+                "Strong",
+            ]
+        )
         for k, v in kwargs.items():
             config.loc[:, k] = v
         return config
@@ -59,3 +69,28 @@ class TestConfigParser(PandasTestCase):
         parser = sc.ConfigParser(rds=self.rds)
         df = parser.get_config(self.config_exception(Region="France"))
         self.assertEqual(df["Region"].iloc[0], self.rds["FR"])
+
+    @patch("epimodel.gleam.scenario.ergo")
+    def test_foretold_lookup(self, ergo):
+        """
+        If the Value field contains a valid UUID, it should be used to
+        obtain a Foretold question distribution which is then averaged.
+        """
+
+        QUESTION_ID = "682befc6-3c19-48b0-98a0-bf52c5221c06"
+
+        question = Mock()
+        question.quantile = Mock(return_value=1)
+        foretold = Mock()
+        foretold.get_question = Mock(return_value=question)
+        ergo.Foretold = Mock(return_value=foretold)
+
+        parser = sc.ConfigParser(rds=self.rds, foretold_token="ABC", progress_bar=False)
+
+        df = parser.get_config(self.config_exception(Value=QUESTION_ID))
+
+        ergo.Foretold.assert_called_once_with("ABC")
+        foretold.get_question.assert_called_once_with(QUESTION_ID)
+        question.quantile.assert_called()
+
+        self.assertEqual(df["Value"].iloc[0], 1)

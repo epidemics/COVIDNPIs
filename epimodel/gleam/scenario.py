@@ -11,9 +11,14 @@ except ModuleNotFoundError:
     # ignore since not run in colab
     pass
 
-from tqdm import tqdm
+try:
+    import ergo
+except ModuleNotFoundError:
+    ergo = None
+    # foretold functionality optional
+    pass
 
-# import ergo
+from tqdm import tqdm
 from epimodel import RegionDataset, Level, algorithms
 from .definition import GleamDefinition
 
