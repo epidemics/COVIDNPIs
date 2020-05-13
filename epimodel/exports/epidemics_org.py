@@ -288,6 +288,7 @@ def assert_valid_json(file, minify=False):
 
 
 def upload_export(dir_to_export, gs_prefix, channel: str):
+    # TODO: I almost certainly broke something
     CMD = [
         "gsutil",
         "-m",
@@ -300,8 +301,6 @@ def upload_export(dir_to_export, gs_prefix, channel: str):
     exdir = Path(dir_to_export)
     assert exdir.is_dir()
 
-    datafile = "data-v4.json"
-
     for json_file in exdir.iterdir():
         if json_file.suffix != ".json":
             continue
@@ -312,12 +311,13 @@ def upload_export(dir_to_export, gs_prefix, channel: str):
             raise
 
     release_name = exdir.parts[-1]
-    log.info(f"Uploading data folder {exdir} to {gs_prefix}/{release_name} ...")
-    cmd = CMD + ["-Z", "-R", exdir, gs_prefix.join_path(release_name)]
+    gcs_path = gs_prefix.joinpath(channel).joinpath(release_name)
+    log.info(f"Uploading data folder {exdir} to {gcs_path} ...")
+    cmd = CMD + ["-Z", "-R", exdir, gcs_path]
     log.debug(f"Running {cmd!r}")
     subprocess.run(cmd, check=True)
 
-    log.info(f"Main file: {exdir.parts[-1]}/{datafile}")
+    log.info(f"Main file: {exdir.parts[-1]}/data-v4.json")
 
     if channel != "main":
         log.info(f"Custom web URL: http://epidemicforecasting.org/?channel={channel}")
