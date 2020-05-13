@@ -3,7 +3,7 @@ from luigi.util import requires, inherits
 from pathlib import Path
 from logging import getLogger
 import epimodel
-from epimodel import Level, RegionDataset, read_csv_smart, utils
+from epimodel import Level, read_csv_smart, utils
 from epimodel.exports.epidemics_org import process_export, upload_export
 from epimodel.gleam import Batch, batch
 from datetime import date
@@ -178,31 +178,81 @@ class GenerateGleamBatch(luigi.Task):
         #    ctx.parent.batch_file = b.path
 
 
-class ExportGleamBatch(RegionsFile):
-    batch_file = luigi.Parameter()
-    gleamviz_sims_dir = luigi.Parameter()
-    out_dir = luigi.Parameter(default=None)
+@inherits(RegionsDataset, GenerateGleamBatch)
+class ExportGleamBatch(luigi.Task):
+    exports_dir = luigi.Parameter(default="~/GLEAMviz/data/sims/")
     overwrite = luigi.BoolParameter(default=False)
 
     def run(self):
-        batch = Batch.open(self.batch_file)
-        gdir = self.gleamviz_sims_dir
-        if self.out_dir is not None:
-            gdir = self.out_dir
+        batch_file = self.inpu()["batch_file"]
+        batch = Batch.open(batch_file)
+        gdir = Path(self.exports_dir)
         log.info(
             f"Creating GLEAM XML definitions for batch {self.batch_file} in dir {gdir} ..."
         )
         batch.export_definitions_to_gleam(
-            Path(gdir).expanduser(), overwrite=self.overwrite, info_level="INFO"
+            gdir.expanduser(), overwrite=self.overwrite, info_level="INFO"
         )
 
-    # TODO: maybe? `def requires(self): return GenerateGleamBatch()`
+    def requires(self):
+        return {
+            "batch_file": self.clone(GenerateGleamBatch),
+            "region_dataset": self.clone(RegionsDataset),
+        }
+
+class GleamvizResults(luigi.ExternalTask):
+    """This is done manually by a user via Gleam software"""
+    gleamviz_result = luigi.Parameter()
+
+    def output(self):
+        return luigi.LocalTarget(self.gleamviz_result)
+
+@inherits(GleamvizResults, RegionsDataset, ConfigYaml)
+class ImportGleamBatch(luigi.Task):
+    exports_dir = luigi.Parameter(default="~/GLEAMviz/data/sims/")
+    overwrite = luigi.BoolParameter(default=True)
+    allow_missing = luigi.BoolParameter(default=True)
+
+    def requires(self):
+        return {
+            "batch_file": self.clone(GleamvizResults),
+            "region_dataset": self.clone(RegionsDataset),
+            "config_yaml": self.clone(ConfigYaml),
+        }
 
 
-class ImportGleamBatch(RegionsFile):
-    """TODO: Not implemented"""
+    def run(self):
+        batch_file = self.input()["batch_file"].path
+        config_yaml = ConfigYaml.load(self.input()["config_yaml"].path)
+        regions_dataset = RegionsDataset.load_dilled_rds(self.input()["regions_dataset"].path)
 
-    pass
+        b = Batch.open(batch_file)
+        d = regions_dataset.data
+
+        regions = set(
+            d.loc[
+                ((d.Level == Level.country) | (d.Level == Level.continent))
+                & (d.GleamID != "")
+                ].Region.values
+        )
+        # Add all configured regions
+        for rc in config_yaml["export_regions"]:
+            r = regions_dataset[rc]
+            if r.GleamID != "":
+                regions.add(r)
+
+        log.info(f"Importing results for {len(regions)} from GLEAM into {batch_file} ...")
+        b.import_results_from_gleam(
+            Path(self.exports_dir).expanduser(),
+            regions,
+            resample=config_yaml["gleam_resample"],
+            allow_unfinished=self.allow_missing,
+            overwrite=self.overwrite,
+            info_level="INFO",
+        )
+
+    def output(self):
+        pass
 
 
 @requires(ExportGleamBatch, JohnsHopkins)
