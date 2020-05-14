@@ -182,9 +182,9 @@ class DefinitionGenerator:
 
         self._parse_df(df)
 
-        self.set_global_parameters()
-        self.set_global_compartment_variables()
-        self.set_exceptions()
+        self._set_global_parameters()
+        self._set_global_compartment_variables()
+        # self._set_exceptions()
 
         if "name" not in df.Parameter:
             self.definition.set_default_name()
@@ -202,23 +202,23 @@ class DefinitionGenerator:
 
         self.parameters = df[~is_compartment & ~is_multiplier & ~is_exception]
         self.compartments = df[is_compartment & ~is_exception][["Parameter", "Value"]]
-        self.exceptions = self._prepare_exceptions(df[is_exception])
+        # self.exceptions = self._prepare_exceptions(df[is_exception])
 
-    def set_global_parameters(self):
+    def _set_global_parameters(self):
         self._assert_no_duplicate_values(self.parameters)
 
-        for row in self.parameters.itertuples():
+        for _, row in self.parameters.iterrows():
             self._set_parameter_from_df_row(row)
 
-    def set_global_compartment_variables(self):
+    def _set_global_compartment_variables(self):
         self._assert_no_duplicate_values(self.compartments)
 
-        for row in self.compartments.itertuples():
+        for _, row in self.compartments.iterrows():
             self.definition.set_compartment_variable(*row)
 
-    def set_exceptions(self):
+    def _set_exceptions(self):
         self.definition.clear_exceptions()
-        for row in self.exceptions.itertuples():
+        for _, row in self.exceptions.iterrows():
             self.definition.add_exception(*row)
 
     def _prepare_exceptions(self, exceptions: pd.DataFrame) -> pd.DataFrame:

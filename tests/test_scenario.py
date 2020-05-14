@@ -9,16 +9,26 @@ from epimodel import Region, RegionDataset
 import epimodel.gleam.scenario as sc
 
 
-@pytest.mark.usefixtures("ut_datadir", "ut_rds")
-class TestConfigParser(PandasTestCase):
+class ConfigTestCase(PandasTestCase):
+
     @staticmethod
-    def config_from_list(row):
-        config = pd.DataFrame(columns=sc.ConfigParser.FIELDS)
-        config.loc[2] = row
+    def config_from_rows(*rows, columns=sc.ConfigParser.FIELDS):
+        return pd.DataFrame(rows, columns=columns)
+
+    def config_row(self, row, **overrides):
+        if row is None:
+            row = [None for _ in sc.ConfigParser.FIELDS]
+        config = self.config_from_rows(row)
+        for k, v in overrides.items():
+            config.loc[:, k] = v
         return config
 
-    def config_exception(self, **kwargs):
-        config = self.config_from_list(
+
+@pytest.mark.usefixtures("ut_datadir", "ut_rds")
+class TestConfigParser(ConfigTestCase):
+
+    def config_exception(self, **overrides):
+        return self.config_row(
             [
                 "PK",
                 "0.35",
@@ -27,11 +37,7 @@ class TestConfigParser(PandasTestCase):
                 "2021-05-01",
                 "Countermeasure package",
                 "Strong",
-            ]
-        )
-        for k, v in kwargs.items():
-            config.loc[:, k] = v
-        return config
+            ], **overrides)
 
     def test_output_format(self):
         parser = sc.ConfigParser(rds=self.rds)
@@ -101,8 +107,7 @@ class TestSimulationSet(PandasTestCase):
 
     def setUp(self):
         self.DefinitionGenerator = self.def_gen_patcher.start()
-        self.output = Mock(side_effect=lambda x: x)
-        self.DefinitionGenerator.definition_from_config = self.output
+        self.DefinitionGenerator.definition_from_config = Mock(side_effect=lambda x: x)
 
     def tearDown(self):
         self.def_gen_patcher.stop()
@@ -120,7 +125,7 @@ class TestSimulationSet(PandasTestCase):
                 ["AC AD BC BD", "Countermeasure package", None],
                 ["AC BC", "Background condition", "C"],
                 ["AD BD", "Background condition", "D"],
-                ["AC AD BC BD", None, None], # None is assumed background
+                ["AC AD BC BD", None, None],  # None is assumed background
             ],
             columns=["present_in", "Type", "Class"],
         )
@@ -136,3 +141,67 @@ class TestSimulationSet(PandasTestCase):
 
                 expected_output = config[config.present_in.str.contains("".join(pair))]
                 self.assert_array_equal(ss[pair], expected_output)
+
+
+@pytest.mark.usefixtures("ut_rds")
+class TestDefinitionGenerator(PandasTestCase):
+    definition_patcher = patch("epimodel.gleam.scenario.GleamDefinition", spec=True)
+
+    def setUp(self):
+        self.GleamDefinition = self.definition_patcher.start()
+        self.output = self.GleamDefinition.return_value
+
+    def tearDown(self):
+        self.definition_patcher.stop()
+
+    def config_row(self, row):
+        if row.get("Region") is not None:
+            row["Region"] = self.rds[row["Region"]]
+        if row.get("Start date") is not None:
+            row["Start date"] = pd.to_datetime(row["Start date"])
+        if row.get("End date") is not None:
+            row["End date"] = pd.to_datetime(row["End date"])
+
+        config = pd.DataFrame(columns=sc.ConfigParser.FIELDS)
+        config.loc[0] = pd.Series(row)
+        return config
+
+    def test_run_dates(self):
+        config = self.config_row({
+            "Parameter": "run dates",
+            "Start date": "2020-04-14",
+            "End date": "2021-05-01",
+        })
+
+        sc.DefinitionGenerator(config)
+        self.output.set_start_date.assert_called_once_with(config["Start date"][0])
+        self.output.set_end_date.assert_called_once_with(config["End date"][0])
+
+    def test_run_dates_only_start(self):
+        config = self.config_row({
+            "Parameter": "run dates",
+            "Start date": "2020-04-14",
+        })
+
+        sc.DefinitionGenerator(config)
+        self.output.set_start_date.assert_called_once_with(config["Start date"][0])
+        self.output.set_end_date.assert_not_called()
+
+    def test_run_dates_only_end(self):
+        config = self.config_row({
+            "Parameter": "run dates",
+            "End date": "2021-05-01",
+        })
+
+        sc.DefinitionGenerator(config)
+        self.output.set_start_date.assert_not_called()
+        self.output.set_end_date.assert_called_once_with(config["End date"][0])
+
+    def test_duration(self):
+        config = self.config_row({
+            "Parameter": "duration",
+            "Value": 180.0,
+        })
+
+        sc.DefinitionGenerator(config)
+        self.output.set_duration.assert_called_once_with(180.0)
