@@ -27,24 +27,24 @@ class Level(enum.Enum):
     world = 6
 
     def __ge__(self, other):
-        if self.__class__ is other.__class__:
+        if isinstance(other, self.__class__):
             return self.value >= other.value
-        return NotImplemented
+        return super() >= other
 
     def __gt__(self, other):
-        if self.__class__ is other.__class__:
+        if isinstance(other, self.__class__):
             return self.value > other.value
-        return NotImplemented
+        return super() > other
 
     def __le__(self, other):
-        if self.__class__ is other.__class__:
+        if isinstance(other, self.__class__):
             return self.value <= other.value
-        return NotImplemented
+        return super() <= other
 
     def __lt__(self, other):
-        if self.__class__ is other.__class__:
+        if isinstance(other, self.__class__):
             return self.value < other.value
-        return NotImplemented
+        return super() < other
 
 
 class Region:
@@ -102,6 +102,16 @@ class Region:
 
     def __eq__(self, other):
         return isinstance(other, Region) and self.Code == other.Code
+
+    def __gt__(self, other):
+        if isinstance(other, self.__class__):
+            return self.Code > other.Code
+        return super() > other
+
+    def __lt__(self, other):
+        if isinstance(other, self.__class__):
+            return self.Code < other.Code
+        return super() < other
 
     def __hash__(self):
         return hash(self._code)

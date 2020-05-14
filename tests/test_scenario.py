@@ -9,24 +9,16 @@ from epimodel import Region, RegionDataset
 import epimodel.gleam.scenario as sc
 
 
-class ConfigTestCase(PandasTestCase):
+@pytest.mark.usefixtures("ut_datadir", "ut_rds")
+class TestConfigParser(PandasTestCase):
     @staticmethod
-    def config_from_rows(*rows, columns=sc.ConfigParser.FIELDS):
-        return pd.DataFrame(rows, columns=columns)
-
-    def config_row(self, row, **overrides):
-        if row is None:
-            row = [None for _ in sc.ConfigParser.FIELDS]
-        config = self.config_from_rows(row)
-        for k, v in overrides.items():
-            config.loc[:, k] = v
+    def config_from_list(row):
+        config = pd.DataFrame(columns=sc.ConfigParser.FIELDS)
+        config.loc[2] = row
         return config
 
-
-@pytest.mark.usefixtures("ut_datadir", "ut_rds")
-class TestConfigParser(ConfigTestCase):
-    def config_exception(self, **overrides):
-        return self.config_row(
+    def config_exception(self, **kwargs):
+        config = self.config_from_list(
             [
                 "PK",
                 "0.35",
@@ -35,9 +27,11 @@ class TestConfigParser(ConfigTestCase):
                 "2021-05-01",
                 "Countermeasure package",
                 "Strong",
-            ],
-            **overrides,
+            ]
         )
+        for k, v in kwargs.items():
+            config.loc[:, k] = v
+        return config
 
     def test_output_format(self):
         parser = sc.ConfigParser(rds=self.rds)
@@ -154,6 +148,9 @@ class TestDefinitionGenerator(PandasTestCase):
     def tearDown(self):
         self.definition_patcher.stop()
 
+    def config_rows(self, *rows):
+        return pd.concat([self.config_row(row) for row in rows]).reset_index()
+
     def config_row(self, row):
         if row.get("Region") is not None:
             row["Region"] = self.rds[row["Region"]]
@@ -165,6 +162,23 @@ class TestDefinitionGenerator(PandasTestCase):
         config = pd.DataFrame(columns=sc.ConfigParser.FIELDS)
         config.loc[0] = pd.Series(row)
         return config
+
+    def config_exception(
+        self, variables: dict, regions=["FR"], start="2020-05-01", end="2020-06-01"
+    ):
+        return self.config_rows(
+            *(
+                {
+                    "Region": region,
+                    "Value": v,
+                    "Parameter": k,
+                    "Start date": start,
+                    "End date": end,
+                }
+                for region in regions
+                for k, v in variables.items()
+            )
+        )
 
     def test_run_dates(self):
         config = self.config_row(
@@ -236,6 +250,16 @@ class TestDefinitionGenerator(PandasTestCase):
         sc.DefinitionGenerator(config)
         self.output.set_commuting_rate.assert_called_once_with(value)
 
+    def test_duplicate_parameter_fails(self):
+        config = pd.concat(
+            [
+                self.config_row({"Parameter": "id", "Value": "abc",}),
+                self.config_row({"Parameter": "id", "Value": "123",}),
+            ]
+        )
+        self.assertRaises(ValueError, sc.DefinitionGenerator, config)
+        self.output.set_id.assert_not_called()
+
     # global compartment variables
 
     def test_compartment_variable(self):
@@ -267,20 +291,89 @@ class TestDefinitionGenerator(PandasTestCase):
     # exceptions
 
     def test_single_exception(self):
-        config = self.config_row(
-            {
-                "Region": "FR",
-                "Parameter": "imu",
-                "Value": 0.3,
-                "Start date": "2020-05-01",
-                "End date": "2020-06-01",
-            }
-        )
+        config = self.config_exception({"imu": 0.3})
         sc.DefinitionGenerator(config)
-        self.output.add_exception.assert_called_with(
-            tuple(config["Region"]),
+        self.output.add_exception.assert_called_once_with(
+            (config["Region"][0],),
             {"imu": 0.3},
             config["Start date"][0],
             config["End date"][0],
+        )
+        self.output.set_compartment_variable.assert_not_called()
+
+    def test_multivariate_exception(self):
+        config = self.config_exception({"beta": 0.8, "imu": 0.3})
+        sc.DefinitionGenerator(config)
+        self.output.add_exception.assert_called_once_with(
+            (config["Region"][0],),
+            {"beta": 0.8, "imu": 0.3},
+            config["Start date"][0],
+            config["End date"][0],
+        )
+        self.output.set_compartment_variable.assert_not_called()
+
+    def test_multi_region_exception(self):
+        config = self.config_exception({"imu": 0.3}, ["FR", "PK"])
+        sc.DefinitionGenerator(config)
+        self.output.add_exception.assert_called_once_with(
+            (self.rds["FR"], self.rds["PK"]),
+            {"imu": 0.3},
+            config["Start date"][0],
+            config["End date"][0],
+        )
+        self.output.set_compartment_variable.assert_not_called()
+
+    def test_multivariate_multi_region_exception(self):
+        config = self.config_exception({"beta": 0.8, "imu": 0.3}, ["FR", "PK"])
+        sc.DefinitionGenerator(config)
+        self.output.add_exception.assert_called_once_with(
+            (self.rds["FR"], self.rds["PK"]),
+            {"beta": 0.8, "imu": 0.3},
+            config["Start date"][0],
+            config["End date"][0],
+        )
+        self.output.set_compartment_variable.assert_not_called()
+
+    def test_multiple_exceptions(self):
+        config = pd.concat(
+            [
+                self.config_exception({"beta": 0.8, "imu": 0.3}, ["FR", "PK"]),
+                self.config_exception({"beta": 0.5, "imu": 0.2}, ["DE", "GB"]),
+            ]
+        ).reset_index()
+        sc.DefinitionGenerator(config)
+        self.output.add_exception.assert_any_call(
+            (self.rds["FR"], self.rds["PK"]),
+            {"beta": 0.8, "imu": 0.3},
+            config["Start date"][0],
+            config["End date"][0],
+        )
+        self.output.add_exception.assert_any_call(
+            (self.rds["DE"], self.rds["GB"]),
+            {"beta": 0.5, "imu": 0.2},
+            config["Start date"][0],
+            config["End date"][0],
+        )
+        self.output.set_compartment_variable.assert_not_called()
+
+    def test_multiple_exception_dates(self):
+        config = pd.concat(
+            [
+                self.config_exception({"mu": 0.5}, ["FR"], "2020-05-01", "2020-06-01"),
+                self.config_exception({"mu": 0.5}, ["FR"], "2020-06-01", "2020-07-01"),
+            ]
+        ).reset_index()
+        sc.DefinitionGenerator(config)
+        self.output.add_exception.assert_any_call(
+            (self.rds["FR"],),
+            {"mu": 0.5},
+            config["Start date"][0],
+            config["End date"][0],
+        )
+        self.output.add_exception.assert_any_call(
+            (self.rds["FR"],),
+            {"mu": 0.5},
+            config["Start date"][1],
+            config["End date"][1],
         )
         self.output.set_compartment_variable.assert_not_called()
