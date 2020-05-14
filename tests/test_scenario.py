@@ -263,3 +263,24 @@ class TestDefinitionGenerator(PandasTestCase):
         self.assertRaises(ValueError, sc.DefinitionGenerator, config)
         self.output.set_compartment_variable.assert_not_called()
         self.output.add_exception.assert_not_called()
+
+    # exceptions
+
+    def test_single_exception(self):
+        config = self.config_row(
+            {
+                "Region": "FR",
+                "Parameter": "imu",
+                "Value": 0.3,
+                "Start date": "2020-05-01",
+                "End date": "2020-06-01",
+            }
+        )
+        sc.DefinitionGenerator(config)
+        self.output.add_exception.assert_called_with(
+            tuple(config["Region"]),
+            {"imu": 0.3},
+            config["Start date"][0],
+            config["End date"][0],
+        )
+        self.output.set_compartment_variable.assert_not_called()

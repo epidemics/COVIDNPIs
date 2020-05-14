@@ -38,10 +38,10 @@ class ConfigParser:
         self.rds = rds or RegionDataset.load("epimodel/data/regions-gleam.csv")
         algorithms.estimate_missing_populations(rds)
 
-    def get_config_from_csv(self, csv_file):
+    def get_config_from_csv(self, csv_file: str):
         return self.get_config(pd.read_csv(csv_file))
 
-    def get_config(self, df):
+    def get_config(self, df: pd.DataFrame):
         df = df.replace({"": None})
         df = df[pd.notnull(df["Parameter"])][self.FIELDS].copy()
         df["Start date"] = pd.to_datetime(df["Start date"])
@@ -69,7 +69,7 @@ class ConfigParser:
         except (ValueError, AttributeError):
             return False
 
-    def _get_foretold_mean(self, uuid):
+    def _get_foretold_mean(self, uuid: str):
         question_distribution = self.foretold.get_question(uuid)
         # Sample the centers of 100 1%-wide quantiles
         qs = np.arange(0.005, 1.0, 0.01)
@@ -77,7 +77,7 @@ class ConfigParser:
         mean = np.sum(ys) / len(qs)
         return mean
 
-    def _get_region(self, region):
+    def _get_region(self, region: str):
         if pd.isnull(region):
             return None
 
@@ -133,7 +133,7 @@ class SimulationSet:
             [self._definition_for_class_pair(*pair) for pair in index], index=index
         )
 
-    def _definition_for_class_pair(self, package_class, background_class):
+    def _definition_for_class_pair(self, package_class: str, background_class: str):
         p_df = self.package_df[self.package_df["Class"] == package_class]
         b_df = self.background_df[self.background_df["Class"] == background_class]
         return DefinitionGenerator.definition_from_config(
@@ -184,15 +184,32 @@ class DefinitionGenerator:
 
         self._set_global_parameters()
         self._set_global_compartment_variables()
-        # self._set_exceptions()
+        self._set_exceptions()
 
         if "name" not in df.Parameter:
             self.definition.set_default_name()
 
     def _parse_df(self, df: pd.DataFrame):
-        is_compartment = df["Parameter"].isin(self.COMPARTMENT_VARIABLES)
+        has_exception_fields = pd.notnull(df[["Region", "Start date", "End date"]])
+        has_compartment_param = df["Parameter"].isin(self.COMPARTMENT_VARIABLES)
+
+        is_exception = has_compartment_param & has_exception_fields.all(axis=1)
+        is_compartment = has_compartment_param & ~is_exception
         is_multiplier = df["Parameter"].str.contains(" multiplier")
-        is_exception = is_compartment & pd.notnull(df["Region"])
+        is_parameter = ~has_compartment_param & ~is_multiplier
+
+        has_any_exception_fields = has_exception_fields.any(axis=1)
+        bad_parameter = (
+            is_parameter & has_any_exception_fields & (df["Parameter"] != "run dates")
+        )
+        bad_compartment = is_compartment & has_any_exception_fields
+        bad_multiplier = is_multiplier & has_any_exception_fields
+        bad = bad_parameter | bad_compartment | bad_multiplier
+        if bad.any():
+            raise ValueError(
+                "Region and/or dates included with parameters they do not "
+                f"apply to: {df[bad]!r}"
+            )
 
         multipliers = self._prepare_multipliers(df[is_multiplier])
         if multipliers:
@@ -200,9 +217,9 @@ class DefinitionGenerator:
             for param, multiplier in multipliers:
                 df.loc[df["Parameter"] == param, "Value"] *= multiplier
 
-        self.parameters = df[~is_compartment & ~is_multiplier & ~is_exception]
-        self.compartments = df[is_compartment & ~is_exception][["Parameter", "Value"]]
-        # self.exceptions = self._prepare_exceptions(df[is_exception])
+        self.parameters = df[is_parameter]
+        self.compartments = df[is_compartment][["Parameter", "Value"]]
+        self.exceptions = self._prepare_exceptions(df[is_exception])
 
     def _set_global_parameters(self):
         self._assert_no_duplicate_values(self.parameters)
@@ -227,20 +244,20 @@ class DefinitionGenerator:
         each row corresponds to the Definition.add_exception interface,
         with regions as an array and variables as a dict.
         """
+        output_columns = ["regions", "variables", "start", "end"]
+        if exceptions.empty:
+            return pd.DataFrame(columns=output_columns)
         return (
-            exceptions.groupby(["Region", "Start date", "End date"])
+            exceptions.groupby(["Parameter", "Value", "Start date", "End date"])
+            .apply(lambda group: tuple(sorted(set(group["Region"]))))
+            .reset_index()
+            .rename(columns={0: "regions"})
+            .groupby(["regions", "Start date", "End date"])
             .apply(lambda group: dict(zip(group["Parameter"], group["Value"])))
             .reset_index()
-            .groupby([0, "Start date", "End date"])
-            .apply(lambda group: list(group["Region"]))
-            .reset_index.rename(
-                columns={
-                    0: "variables",
-                    1: "regions",
-                    "Start date": "start",
-                    "End date": "end",
-                }
-            )[["variables", "regions", "start", "end"]]
+            .rename(
+                columns={0: "variables", "Start date": "start", "End date": "end",}
+            )[output_columns]
         )
 
     def _prepare_multipliers(self, multipliers: pd.DataFrame) -> dict:
@@ -264,7 +281,7 @@ class DefinitionGenerator:
             value = row["Value"]
             getattr(self.definition, self.GLOBAL_PARAMETERS[param])(value)
 
-    def _assert_no_duplicate_values(self, df):
+    def _assert_no_duplicate_values(self, df: pd.DataFrame):
         counts = df.groupby("Parameter")["Value"].count()
         duplicates = list(counts[counts > 1].index)
         if duplicates:
