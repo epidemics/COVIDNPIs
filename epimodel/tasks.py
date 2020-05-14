@@ -1,6 +1,10 @@
+import tempfile
+import shutil
+import os
 from datetime import datetime
 from logging import getLogger
 from pathlib import Path
+
 
 import dill
 import luigi
@@ -218,11 +222,11 @@ class ExportGleamBatch(luigi.Task):
         return luigi.LocalTarget(self.exports_dir)
 
 
-
 @requires(ExportGleamBatch)
 class GleamvizResults(luigi.ExternalTask):
     """This is done manually by a user via Gleam software"""
 
+    # I expect that this is something like "~/GLEAMviz/data/sims/some-batch-file.hdf5"
     gleamviz_result = luigi.Parameter()
 
     def output(self):
@@ -231,26 +235,34 @@ class GleamvizResults(luigi.ExternalTask):
 
 @inherits(GleamvizResults, RegionsDatasetTask, ConfigYaml)
 class ImportGleamBatch(luigi.Task):
-    # TODO: I wasn't sure about the flow here, not complete
-    exports_dir = luigi.Parameter(default="~/GLEAMviz/data/sims/")
-    overwrite = luigi.BoolParameter(default=True)
     allow_missing = luigi.BoolParameter(default=True)
+    result_batch_file_path = luigi.Parameter(default="data/result-batch-file.hdf5")
 
     def requires(self):
         return {
-            "batch_file": self.clone(GleamvizResults),
+            "gleamviz_result": self.clone(GleamvizResults),
             "region_dataset": self.clone(RegionsDatasetTask),
             "config_yaml": self.clone(ConfigYaml),
         }
 
     def run(self):
-        batch_file = self.input()["batch_file"].path
+        batch_file = self.input()["gleamviz_result"].path
+        # assuming batch file is in the gleamviz results dir
+        simulation_directory = os.path.dirname(batch_file)
+
         config_yaml = ConfigYaml.load(self.input()["config_yaml"].path)
         regions_dataset = RegionsDatasetTask.load_dilled_rds(
             self.input()["regions_dataset"].path
         )
 
-        b = Batch.open(batch_file)
+        # copy the gleamviz results into a temporary directory
+        temp_dir = tempfile.TemporaryDirectory()
+        tmp_simulation_dir = os.path.join(temp_dir.name, "simulations")
+        shutil.copytree(simulation_directory, tmp_simulation_dir)
+
+        # work only with the copied data from now on
+        tmp_batch_file = os.path.join(tmp_simulation_dir, os.path.basename(batch_file))
+        b = Batch.open(tmp_batch_file)
         d = regions_dataset.data
 
         regions = set(
@@ -269,17 +281,19 @@ class ImportGleamBatch(luigi.Task):
             f"Importing results for {len(regions)} from GLEAM into {batch_file} ..."
         )
         b.import_results_from_gleam(
-            Path(self.exports_dir).expanduser(),
+            Path(tmp_simulation_dir),
+            Path(tmp_batch_file),
             regions,
             resample=config_yaml["gleam_resample"],
             allow_unfinished=self.allow_missing,
-            overwrite=self.overwrite,
+            overwrite=True,
             info_level="INFO",
         )
+        # copy the result overwritten batch file to the result path
+        shutil.copy2(tmp_batch_file, self.result_batch_file_path)
 
-    # TODO: finish here
     def output(self):
-        pass
+        return luigi.LocalTarget(self.result_batch_file_path)
 
 
 class Rates(luigi.ExternalTask):

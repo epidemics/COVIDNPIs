@@ -151,19 +151,17 @@ class Batch:
 
     def import_results_from_gleam(
         self,
-        sims_dir,
+        sims_dir: Path,
+        results_batch_file_path: Path,
         regions,
         *,
         allow_unfinished=False,
         resample=None,
-        overwrite=False,
         info_level=logging.DEBUG,
     ):
         """
         Import simulation result data from GLEAMViz data/sims dir into the HDF5 file.
         """
-        if "new_fraction" in self.hdf and not overwrite:
-            raise Exception(f"Would overwrite existing `new_fraction` in {self}!")
         sims_df = self.hdf["simulations"]
         sims_dir = Path(sims_dir)
         for sid, sim in sims_df.iterrows():
