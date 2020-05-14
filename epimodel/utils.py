@@ -1,7 +1,7 @@
 import datetime
 import logging
 import re
-from typing import Union, Set, Optional
+from typing import Union, Set, Optional, List
 
 import dateutil
 import pandas as pd
@@ -51,7 +51,7 @@ DATE_COLUMNS = ["Date", "date", "Day", "day"]
 def read_csv_smart(
     path,
     rds: "epimodel.RegionDataset",
-    date_column: str = None,
+    date_column: Union[str, bool] = True,
     name_column: str = None,
     skip_unknown: bool = False,
     levels=None,
@@ -125,19 +125,23 @@ def read_csv_smart(
     if name_column != "Code":
         del data[name_column]
 
-    if date_column is None:
+    if date_column is True:
         for n in DATE_COLUMNS:
             if n in data.columns:
                 date_column = n
                 break
-    if date_column is not None and date_column not in data.columns:
-        raise ValueError(f"CSV file does not have column {name_column}")
+    else:
+        if isinstance(date_column, str) and date_column not in data.columns:
+            raise ValueError(f"CSV file does not have column {name_column}")
 
     if unknown:
         log.warning(f"Skipped unknown regions {unknown!r}")
     data = data.set_index("Code")
     return _process_loaded_table(
-        data, rds, date_column=date_column, drop_underscored=drop_underscored
+        data,
+        rds,
+        date_column=(str(date_column) if date_column else None),
+        drop_underscored=drop_underscored,
     )
 
 

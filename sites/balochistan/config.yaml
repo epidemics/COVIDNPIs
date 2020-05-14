@@ -72,6 +72,12 @@ output_latest: latest
 ### Name of directory within output_dir to store uploaded exports
 output_uploads: uploads
 
+### Name of batch file to output to
+output_batch: batch-out.hdf5
+
+### date on which the model was produced, displayed as 'model last updated on ...' on website
+generation_date: "2020-05-10"
+
 ### List of exported regions code
 export_regions:
   - { code: G-BHV, name: "Bahawalpur (and nearby regions)" }

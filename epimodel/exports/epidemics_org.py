@@ -26,8 +26,9 @@ class WebExport:
     Document holding one data export to web. Contains a subset of Regions.
     """
 
-    def __init__(self, date_resample: str, comment=None):
+    def __init__(self, date_resample: str, date: Optional[str] = None, comment=None):
         self.created = datetime.datetime.now().astimezone(datetime.timezone.utc)
+        self.generated = date
         self.created_by = f"{getpass.getuser()}@{socket.gethostname()}"
         self.comment = comment
         self.date_resample = date_resample
@@ -37,6 +38,7 @@ class WebExport:
         return {
             "created": self.created,
             "created_by": self.created_by,
+            "generated": self.generated,
             "comment": self.comment,
             "date_resample": self.date_resample,
             "regions": {k: a.to_json() for k, a in self.export_regions.items()},
@@ -249,7 +251,6 @@ class WebExportRegion:
             "data": self.data,
             "data_url": self.data_url,
             "Name": self.overwrites.get("name", self.region.DisplayName),
-            "CurrentEstimate": self.current_estimate,
         }
         for n in [
             "Lat",
@@ -355,6 +356,8 @@ def types_to_json(obj):
         return int(obj)
     if isinstance(obj, datetime.datetime):
         return obj.isoformat()
+    if isinstance(obj, pd.Timestamp):
+        return obj.date().isoformat()
     if isinstance(obj, Enum):
         return obj.name
     else:
@@ -515,7 +518,11 @@ def add_aggregate_traces(aggregate_regions, cummulative_active_df):
 def process_export(
     config, export_regions, rds, debug, comment, batch_file, estimates, pretty_print
 ) -> None:
-    ex = WebExport(config["gleam_resample"], comment=comment)
+    ex = WebExport(
+        config["gleam_resample"],
+        date=config.get("generation_date", None),
+        comment=comment,
+    )
 
     hopkins = get_extra_path(config, "john_hopkins")
     foretold = get_extra_path(config, "foretold")
@@ -527,7 +534,9 @@ def process_export(
     simulation_specs: pd.DataFrame = batch.hdf["simulations"]
     cummulative_active_df = batch.get_cummulative_active_df()
 
-    estimates_df = epimodel.read_csv_smart(estimates, rds, prefer_higher=True)
+    estimates_df = epimodel.read_csv_smart(
+        estimates, rds, prefer_higher=True, date_column=False
+    )
 
     rates_df: pd.DataFrame = pd.read_csv(
         rates, index_col="Code", keep_default_na=False, na_values=[""]

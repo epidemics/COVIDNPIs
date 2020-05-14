@@ -27,7 +27,7 @@ log = logging.getLogger("do")
     "-C",
     "--config",
     type=click.Path(exists=True),
-    default="config.yaml",
+    default="sites/main/config.yaml",
     envvar="EPI_CONFIG",
     help="Path to config file (default config.yaml; alternatively set EPI_CONFIG "
     "environment variable).",
