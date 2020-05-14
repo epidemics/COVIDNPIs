@@ -19,7 +19,7 @@ Please use the [covid](https://github.com/epidemics/covid/issues/new/choose) rep
 * [Get Poetry](https://python-poetry.org/docs/#installation)
 * Clone this repository.
 * Install the dependencies and this lib `poetry install` (creates a virtual env by default).
-* Clone the [epimodel-covid-data](https://github.com/epidemics/epimodel-covid-data/) repository. For convenience, I recommend cloninig it inside the `epimodel` repo directory as `data`.
+* Clone the [epimodel-covid-data](https://github.com/epidemics/epimodel-covid-data/) repository. For convenience, I recommend cloning it inside the `epimodel` repo directory as `data`.
 
 ```sh
 ## Clone the repositories (or use their https://... withou github login)
@@ -66,37 +66,56 @@ print(csse.loc[('CZ', "2020-03-28")])
 * Use `pytest` for testing, add tests for your code!
 * Use pull requests for both this and the data repository.
 
+## Contributing
+
+For the contribution details and project management, please see [this specification](https://www.notion.so/Development-project-management-476f3c53b0f24171a78146365072d82e).
 
 ## Running pipeline to get web export
 
 Assuming you've installed deps via `poetry install` and you are in the root epimodel repo.
-Also, you did `cp config.yaml config-local.yaml` (modifying it as fit) and set e.g. `export_regions: [CZ, ES]`. Prepend `-C config_local.yaml` to all commands below to use it rather than `config.yaml` (changing `config.yaml` may later conflict with git update).
+Also, you did `cp config.yaml config-local.yaml` (modifying it as fit) and set e.g. `export_regions: [CZ, ES]`. Prepend `-C config_local.yaml` to all commands below to use it rather than `config.yaml` (changing `config.yaml` may later conflict with git update). Alternatively, set the environment variable `EPI_CONFIG` to the path of the config file you're using.
 
 1. Clone data repo or update it.
    `git clone https://github.com/epidemics/epimodel-covid-data data`
 
-2. Optional: Update Johns Hopkins data `./do -C config-local.yaml update_johns_hopkins` (not needed if you got fresh data from the repo above).
+2. Optional: Update Johns Hopkins data `./do update-johns-hopkins` (not needed if you got fresh data from the repo above).
 
 3. Generate batch file from estimates and basic Gleam XML definition.
-   `./do generate_gleam_batch default.xml estimates-2020-04-15.csv -D 2020-04-15 -c JK`
+   `./do generate-gleam-batch -D 2020-04-15 -c JK default.xml estimates-2020-04-15.csv`
    The batch file now contains all the scenario definitions and initial populations.
    Note the estimate input specification may change.
 
 4. Export Gleam simulation XML files in Gleamviz (not while gleamviz is running!).
-   `./do export_gleam_batch out/batch-2020-04-16T03:54:52.910001+00:00.hdf5`
+   `./do export-gleam-batch out/batch-2020-04-16T03:54:52.910001+00:00.hdf5`
 
 5. Start gleamviz. You should see the new simulations loaded. Run all of them and "Retrieve results" (do not export manually). Exit gleamviz.
 
-6. Import the gleamviz results into the HDF batch file.
-   `./do import_gleam_batch out/batch-2020-04-16T03:54:52.910001+00:00.hdf5`
+6. ./do import-gleam-batch out/batch-2020-04-16T03:54:52.910001+00:00.hdf5
+    will output to  out/batch-out.hdf5
    (Gleamviz must be stopped before that.) After this succeeds, you may delete the simulations from gleamviz.
 
 7. Generate web export (additional data are fetched from [config.yml](https://github.com/epidemics/epimodel/blob/master/config.yaml#L16))
 
-   `./do -C config-local.yaml web_export out/batch-2020-04-16T03:54:52.910001+00:00.hdf5 data/sources/estimates-JK-2020-04-15.csv`
+   `./do web-export out/batch-out.hdf5 data/sources/estimates-JK-2020-04-15.csv`
 
 8. Export the generated folder to web! Optionally, set a channel for testing first.
-   `./do web_upload out/export-2020-04-03T02:03:28.991629+00:00 -c ttest28`
+   `./do web-upload -d out/export-2020-04-03T02:03:28.991629+00:00 ttest28`
+
+Alternatively, steps 7 and 8 can be combined:
+
+`./do web-export out/batch-2020-04-16T03:54:52.910001+00:00.hdf5 data/sources/estimates-JK-2020-04-15.csv --upload ttest28`
+
+### Running pipeline with workflow commands
+
+An alternative way to run the pipeline is as follows:
+
+1. Update Johns Hopkins and Foretold data, generate batch file from estimates and basic Gleam XML definition and export Gleam simulation XML files to Gleamviz (not while gleamviz is running!):
+   `./do workflow-prepare-gleam -D 2020-04-15 -c JK default.xml estimates-2020-04-15.csv`
+
+2. Start gleamviz. You should see the new simulations loaded. Run all of them and "Retrieve results" (do not export manually). Exit gleamviz.
+
+3. Import the gleamviz results into the HDF batch file, generate web export and export the generated folder to web (Gleamviz must be stopped before that.) After this succeeds, you may delete the simulations from gleamviz.
+   `./do workflow-gleam-to-web out/batch-2020-04-16T03:54:52.910001+00:00.hdf5 data/sources/estimates-JK-2020-04-15.csv ttest28`
 
 ### Gleam Batch file
 
@@ -106,7 +125,7 @@ Has 2-3 dataframes:
 
 * `initial_compartments`: Indexed by `['SimulationID', 'Code']`, has the initial sizes of set compartments (columns Exposed, Infected).
 
-* `new_fraction`: After `import_gleam_batch` actually contains the modelled data for Infected and Recovered (columns). Indexed by `['SimulationID', 'Code', 'Date']`:
+* `new_fraction`: After `import-gleam-batch` actually contains the modelled data for Infected and Recovered (columns). Indexed by `['SimulationID', 'Code', 'Date']`:
   * `SimulationID`: corresponding simulation ID to be able to be able to map it to parameters in `simulations`,
   * `Code`: region code (ISOa2 for countries, e.g. `AE`),
   * `Date`: a date for which we model Infected and Recovered.

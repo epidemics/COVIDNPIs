@@ -1,9 +1,11 @@
+import re
 import enum
 import logging
 import weakref
 from collections import OrderedDict
 
 import pandas as pd
+import yaml
 
 from .utils import normalize_name
 
@@ -116,6 +118,14 @@ class Region:
     def children(self):
         return self._children
 
+    @property
+    def agg_children(self):
+        return self["agg_children"]
+
+    @property
+    def is_aggregate(self):
+        return bool(self.agg_children)
+
     def _region_prop(self, name):
         """Return the Region corresponding to code in `self[name]` (None if that is None)."""
         rds = self._rds()
@@ -205,13 +215,17 @@ class RegionDataset:
     @classmethod
     def load(cls, *paths):
         """
-        Create a RegionDataset and its Regions from the given CSV.
+        Create a RegionDataset and its Regions from the given CSV or YAML.
 
         Optionally also loads other CSVs with additional regions (e.g. GLEAM regions)
         """
         s = cls()
         cols = dict(cls.COLUMN_TYPES, Level="U")
+        yaml_paths = []
         for path in paths:
+            if re.search(r"\.ya?ml$", str(path), re.IGNORECASE):
+                yaml_paths.append(path)
+                continue
             log.debug(f"Loading regions from {path!r} ...")
             data = pd.read_csv(
                 path,
@@ -224,12 +238,116 @@ class RegionDataset:
             data["Level"] = data["Level"].map(lambda name: Level[name])
             s.data = s.data.append(data, verify_integrity=True)
         s._rebuild_index()
+        for path in yaml_paths:
+            s.add_aggregate_regions_yaml(path)
         return s
+
+    def add_aggregate_regions_yaml(self, yaml_file):
+        """
+        Adds aggregate regions from yaml file. Uses the same input
+        format as add_cusom_regions().
+
+        Example input file:
+        ---
+        PK-GB:
+          Name: 'Gilgit-Baltistan'
+          AggregateFrom:
+            G-CJL: 0.25
+            G-GIL: 1
+            G-KDU: 1
+        PK-ICT:
+          Name: 'Islamabad Capital Territory'
+          AggregateFrom:
+            G-ISB: 0.21
+        """
+        with open(yaml_file, "r") as fp:
+            self.add_aggregate_regions(yaml.safe_load(fp))
+
+    def add_aggregate_regions(self, aggregate_regions=dict):
+        """
+        Adds custom regions composed of existing regions from a config
+        dict. Dict keys are new region codes and values are other dicts
+        whose keys correspond to regions.csv fields. Any field not
+        specified will be aggregated from the children if possible or
+        left blank otherwise. The default Level value is "subregion".
+
+        The "AggregateFrom" key specifies other region codes and can be
+        a list or a dict. If a list, all specified regions are assumed
+        to be wholly contained in the custom region. If a dict, the
+        values define what portion of each is contained in the custom
+        region. These proportions are then used to weight aggregated
+        info such as Gleam traces.
+
+        See add_aggregate_regions_yaml() docstring for example input.
+        """
+        region_fields = (
+            "M49Code",
+            "ContinentCode",
+            "SubregionCode",
+            "CountryCode",
+            "CountryCodeISOa3",
+            "SubdivisionCode",
+        )
+
+        rows = []
+        for code, data in aggregate_regions.items():
+            agg_codes = data.get("AggregateFrom", [])
+            if isinstance(agg_codes, dict):
+                agg_weights = list(agg_codes.values())
+                agg_codes = list(agg_codes.keys())
+            else:
+                agg_weights = [1 for _ in agg_codes]
+            agg_children = [
+                (self[code], weight) for code, weight in zip(agg_codes, agg_weights)
+            ]
+
+            row = {k: v for k, v in data.items() if k in self.COLUMN_TYPES}
+            row["Code"] = code
+            row["Level"] = row.get("Level", Level.subregion)
+
+            # set superregion fields if not otherwise set
+            # and value is same for all included regions
+            for region_field in region_fields:
+                if region_field not in row:
+                    values = self.data.loc[agg_codes, region_field].unique()
+                    if len(values) == 1 and pd.notnull(values[0]):
+                        row[region_field] = values[0]
+
+            # average lat/lng
+            # this algo breaks down for regions that span 180º longitude
+            row["Lat"] = row.get("Lat") or sum(
+                child.Lat * weight for child, weight in agg_children
+            ) / sum(agg_weights)
+            row["Lon"] = row.get("Lon") or sum(
+                child.Lon * weight for child, weight in agg_children
+            ) / sum(agg_weights)
+
+            # sum population
+            row["Population"] = row.get("Population") or round(
+                sum(child.Population * weight for child, weight in agg_children)
+            )
+
+            # add extra data
+            row["agg_children"] = agg_children
+
+            rows.append(row)
+
+        data = pd.DataFrame(rows).set_index("Code")
+        if "agg_children" not in self.data:
+            self.data["agg_children"] = None
+        self.data = self.data.append(data, verify_integrity=True)
+        self._rebuild_index()
 
     @property
     def regions(self):
         """Iterator over all regions."""
         return self._code_index.values()
+
+    @property
+    def aggregate_regions(self):
+        return [
+            self[code] for code in self.data[pd.notnull(self.data.agg_children)].index
+        ]
 
     def __getitem__(self, code):
         """
@@ -294,6 +412,9 @@ class RegionDataset:
             regions = self.regions
         # Reconstruct the OtherNames column
         for r in regions:
+            # don't include aggregate regions
+            if r.is_aggregate:
+                continue
             names = set(r.AllNames)
             if r.Name in names:
                 names.remove(r.Name)
