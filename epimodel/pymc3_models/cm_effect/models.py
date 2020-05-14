@@ -621,10 +621,11 @@ class CMActive_Final(BaseCMModel):
             skipped_days = []
             for d in range(self.nDs):
                 if self.d.NewCases.mask[r, d] == False and d > self.CMDelayCut and not np.isnan(
-                        self.d.Confirmed.data[r, d]):
+                        self.d.Confirmed.data[r, d]) and d < (self.nDs-7):
                     observed.append(r * self.nDs + d)
                 else:
                     skipped_days.append(d)
+                    self.d.NewCases.mask[r, d] = True
 
             if len(skipped_days) > 0:
                 print(f"Skipped day {[(data.Ds[sk].day, data.Ds[sk].month) for sk in skipped_days]} for {data.Rs[r]}")
@@ -992,7 +993,7 @@ class CMCombined_Final(BaseCMModel):
             for d in range(self.nDs):
                 # if its not masked, after the cut, and not before 100 confirmed
                 if self.d.NewCases.mask[r, d] == False and d > self.CMDelayCut and not np.isnan(
-                        self.d.Confirmed.data[r, d]):
+                        self.d.Confirmed.data[r, d]) and d < (self.nDs-7):
                     observed_active.append(r * self.nDs + d)
                 else:
                     self.d.NewCases.mask[r, d] = True
@@ -1089,7 +1090,7 @@ class CMCombined_Final(BaseCMModel):
 
             # learn the output noise for this.
             # self.Phi_1 = pm.HalfNormal("Phi_1", 5)
-            self.Phi_1 = 30
+            self.Phi_1 = 20
 
             # effectively handle missing values ourselves
             self.ObservedCases = pm.NegativeBinomial(
@@ -1121,7 +1122,7 @@ class CMCombined_Final(BaseCMModel):
                 (self.nORs, self.nDs)))
 
             # self.Phi_2 = pm.HalfNormal("Phi_2", 5)
-            self.Phi_2 = 30
+            self.Phi_2 = 20
 
             # effectively handle missing values ourselves
             self.ObservedDeaths = pm.NegativeBinomial(
@@ -1622,7 +1623,6 @@ class CMCombined_Final(BaseCMModel):
                 ax.legend(prop={"size": 8}, loc="upper right", shadow=True, fancybox=True)
                 ax2.legend(prop={"size": 8}, loc="lower left", shadow=True, fancybox=True)
 
-
 class CMActive_Final_ICL(BaseCMModel):
     def __init__(
             self, data, name="", model=None
@@ -1760,15 +1760,17 @@ class CMActive_Final_ICL(BaseCMModel):
 
             self.Phi = pm.HalfNormal("Phi", 5)
 
-            self.NewCases = pm.Data("NewCases", self.d.NewCases.data.reshape((self.nORs * self.nDs,))[self.observed_days])
+            # self.NewCases = pm.Data("NewCases", self.d.NewCases.data.reshape((self.nORs * self.nDs,))[self.observed_days])
+            # self.NewCases = pm.Data("NewCases", self.d.NewCases)
 
             # effectively handle missing values ourselves
-            self.ObservedCases = pm.NegativeBinomial(
+            self.ObservedCases = NegativeBinomialIgnoreMasked(
                 "ObservedCases",
-                mu=self.ExpectedCases.reshape((self.nORs * self.nDs,))[self.observed_days],
+                mu=self.ExpectedCases,
                 alpha=self.Phi,
-                shape=(len(self.observed_days),),
-                observed= self.NewCases
+                shape= (self.nORs, self.nDs),
+                observed= self.d.NewCases.data,
+                mask= self.d.NewCases.mask
             )
 
     def plot_region_predictions(self, plot_style, save_fig=True, output_dir="./out"):
@@ -1953,7 +1955,6 @@ class CMActive_Final_ICL(BaseCMModel):
                 ax.legend(prop={"size": 8}, loc="center left")
                 ax2.legend(prop={"size": 8}, loc="lower left")
                 ax4.legend(lines + lines2, labels + labels2, prop={"size": 8})
-
 
 class CMDeath_Final_ICL(BaseCMModel):
     def __init__(
@@ -2349,6 +2350,15 @@ class CMDeath_Final_ICL(BaseCMModel):
                 ax2.legend(prop={"size": 8}, loc="lower left")
                 ax4.legend(lines + lines2, labels + labels2, prop={"size": 8})
 
+class NegativeBinomialIgnoreMasked(pm.NegativeBinomial):
+    def __init__(self, mu, alpha, mask, *args, **kwargs):
+        super().__init__(mu, alpha, *args, **kwargs)
+        self.mask = mask
+
+    def logp(self, value):
+
+        l = super().logp(value)
+        return T.switch(self.mask, 0, l)
 
 class CMCombined_Final_ICL(BaseCMModel):
     def __init__(
