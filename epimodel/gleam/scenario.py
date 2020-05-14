@@ -133,7 +133,7 @@ class SimulationSet:
             [self._definition_for_class_pair(*pair) for pair in index], index=index
         )
 
-    def _definition_for_class_pair(self, background_class, package_class):
+    def _definition_for_class_pair(self, package_class, background_class):
         p_df = self.package_df[self.package_df["Class"] == package_class]
         b_df = self.background_df[self.background_df["Class"] == background_class]
         return DefinitionGenerator.definition_from_config(

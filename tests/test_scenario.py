@@ -109,15 +109,18 @@ class TestSimulationSet(PandasTestCase):
 
     def get_config(self):
         """
-        Generates a simplified, invalid config that still has everything this class uses
+        Generates a simplified, invalid config that still has everything
+        this class uses. Order is important because of the way the test
+        filters this, but not important for SimulationSet itself.
         """
         return pd.DataFrame(
             [
                 ["AC AD", "Countermeasure package", "A"],
                 ["BC BD", "Countermeasure package", "B"],
+                ["AC AD BC BD", "Countermeasure package", None],
                 ["AC BC", "Background condition", "C"],
                 ["AD BD", "Background condition", "D"],
-                ["AC AD BC BD", None, None],
+                ["AC AD BC BD", None, None], # None is assumed background
             ],
             columns=["present_in", "Type", "Class"],
         )
@@ -133,4 +136,3 @@ class TestSimulationSet(PandasTestCase):
 
                 expected_output = config[config.present_in.str.contains("".join(pair))]
                 self.assert_array_equal(ss[pair], expected_output)
-                self.output.assert_called_with(expected_output)
