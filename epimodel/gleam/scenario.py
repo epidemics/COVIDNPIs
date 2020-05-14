@@ -32,10 +32,10 @@ class ConfigParser:
         "Class",
     ]
 
-    def __init__(self, rds=None, foretold_token=None, progress_bar=True):
+    def __init__(self, rds, foretold_token=None, progress_bar=True):
+        self.rds = rds
         self.foretold = ergo.Foretold(foretold_token) if foretold_token else None
         self.progress_bar = progress_bar
-        self.rds = rds or RegionDataset.load("epimodel/data/regions-gleam.csv")
         algorithms.estimate_missing_populations(rds)
 
     def get_config_from_csv(self, csv_file: str):
@@ -111,7 +111,9 @@ class SimulationSet:
     def _set_scenario_values(self, df):
         is_package = df.Type == "Countermeasure package"
         is_background = pd.isnull(df.Type) | (df.Type == "Background condition")
-        assert df[~is_package & ~is_background].empty
+        if not df[~is_package & ~is_background].empty:
+            bad_types = list(df[~is_package & ~is_background]['Type'].unique())
+            raise ValueError("input contains invalid Type values: {bad_types!r}")
 
         self.package_df = df[is_package]
         self.background_df = df[is_background]
@@ -173,12 +175,12 @@ class DefinitionGenerator:
     )
 
     @classmethod
-    def definition_from_config(cls, df: pd.DataFrame):
-        return cls(df).definition
+    def definition_from_config(cls, df: pd.DataFrame, default_xml=None):
+        return cls(df, default_xml).definition
 
-    def __init__(self, df: pd.DataFrame):
-        self.definition = GleamDefinition()
-        assert len(df.groupby(["Type", "Class"])) <= 2
+    def __init__(self, df: pd.DataFrame, default_xml=None):
+        self.definition = GleamDefinition(default_xml)
+        assert len(df.dropna(subset=["Type", "Class"]).groupby(["Type", "Class"])) <= 2
 
         self._parse_df(df)
 
@@ -214,7 +216,9 @@ class DefinitionGenerator:
         multipliers = self._prepare_multipliers(df[is_multiplier])
         if multipliers:
             df = df.copy()
-            for param, multiplier in multipliers:
+            for param, multiplier in multipliers.items():
+                if param not in self.COMPARTMENT_VARIABLES:
+                    raise ValueError("Cannot apply multiplier to {param!r}")
                 df.loc[df["Parameter"] == param, "Value"] *= multiplier
 
         self.parameters = df[is_parameter]

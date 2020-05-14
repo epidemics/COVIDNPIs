@@ -377,3 +377,31 @@ class TestDefinitionGenerator(PandasTestCase):
             config["End date"][1],
         )
         self.output.set_compartment_variable.assert_not_called()
+
+    # multipliers
+
+    def test_multiplier_affects_one_parameter(self):
+        config = pd.concat([
+            self.config_rows(
+                {"Value": 2.0, "Parameter": "beta multiplier"},
+                {"Value": 0.5, "Parameter": "mu"},
+                {"Value": 0.5, "Parameter": "beta"},
+            ),
+            self.config_exception({"mu": 1.0, "beta": 1.0}, ["FR"]),
+        ]).reset_index()
+        sc.DefinitionGenerator(config)
+        self.output.set_compartment_variable.assert_any_call("mu", 0.5)
+        self.output.set_compartment_variable.assert_any_call("beta", 1.0)
+        self.output.add_exception.assert_any_call(
+            (self.rds["FR"],),
+            {"mu": 1.0, "beta": 2.0},
+            config["Start date"][3],
+            config["End date"][3],
+        )
+
+    def test_invalid_multiplier(self):
+        config = self.config_rows(
+            {"Value": 2.0, "Parameter": "duration multiplier"},
+            {"Value": 90.0, "Parameter": "duration"},
+        )
+        self.assertRaises(ValueError, sc.DefinitionGenerator, config)
