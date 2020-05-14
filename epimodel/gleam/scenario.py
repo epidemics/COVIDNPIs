@@ -163,7 +163,7 @@ class DefinitionGenerator:
         "number of runs": "set_run_count",
         "airline traffic": "set_airline_traffic",
         "seasonality": "set_seasonality",
-        "commuting time": "set_commuting_time",
+        "commuting time": "set_commuting_rate",
     }
     COMPARTMENT_VARIABLES = (
         "beta",

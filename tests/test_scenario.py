@@ -197,11 +197,75 @@ class TestDefinitionGenerator(PandasTestCase):
         self.output.set_start_date.assert_not_called()
         self.output.set_end_date.assert_called_once_with(config["End date"][0])
 
-    def test_duration(self):
+    # global parameters
+
+    def test_name(self):
+        value = "GLEAMviz test run"
         config = self.config_row({
-            "Parameter": "duration",
-            "Value": 180.0,
+            "Parameter": "name",
+            "Value": value,
         })
 
         sc.DefinitionGenerator(config)
-        self.output.set_duration.assert_called_once_with(180.0)
+        self.output.set_name.assert_called_once_with(value)
+
+    def test_id(self):
+        value = "1234567.890"
+        config = self.config_row({
+            "Parameter": "id",
+            "Value": value,
+        })
+
+        sc.DefinitionGenerator(config)
+        self.output.set_id.assert_called_once_with(value)
+
+    def test_duration(self):
+        value = 180.0  # days
+        config = self.config_row({
+            "Parameter": "duration",
+            "Value": value,
+        })
+
+        sc.DefinitionGenerator(config)
+        self.output.set_duration.assert_called_once_with(value)
+
+    def test_number_of_runs(self):
+        value = 5
+        config = self.config_row({
+            "Parameter": "number of runs",
+            "Value": value,
+        })
+
+        sc.DefinitionGenerator(config)
+        self.output.set_run_count.assert_called_once_with(value)
+
+    def test_airline_traffic(self):
+        value = 0.3
+        config = self.config_row({
+            "Parameter": "airline traffic",
+            "Value": value,
+        })
+
+        sc.DefinitionGenerator(config)
+        self.output.set_airline_traffic.assert_called_once_with(value)
+
+    def test_seasonality(self):
+        value = 0.6
+        config = self.config_row({
+            "Parameter": "seasonality",
+            "Value": value,
+        })
+
+        sc.DefinitionGenerator(config)
+        self.output.set_seasonality.assert_called_once_with(value)
+
+    def test_commuting_time(self):
+        value = 7.5
+        config = self.config_row({
+            "Parameter": "commuting time",
+            "Value": value,
+        })
+
+        sc.DefinitionGenerator(config)
+        self.output.set_commuting_rate.assert_called_once_with(value)
+
