@@ -94,3 +94,43 @@ class TestConfigParser(PandasTestCase):
         question.quantile.assert_called()
 
         self.assertEqual(df["Value"].iloc[0], 1)
+
+
+class TestSimulationSet(PandasTestCase):
+    def_gen_patcher = patch("epimodel.gleam.scenario.DefinitionGenerator", spec=True)
+
+    def setUp(self):
+        self.DefinitionGenerator = self.def_gen_patcher.start()
+        self.output = Mock(side_effect=lambda x: x)
+        self.DefinitionGenerator.definition_from_config = self.output
+
+    def tearDown(self):
+        self.def_gen_patcher.stop()
+
+    def get_config(self):
+        """
+        Generates a simplified, invalid config that still has everything this class uses
+        """
+        return pd.DataFrame(
+            [
+                ["AC AD", "Countermeasure package", "A"],
+                ["BC BD", "Countermeasure package", "B"],
+                ["AC BC", "Background condition", "C"],
+                ["AD BD", "Background condition", "D"],
+                ["AC AD BC BD", None, None],
+            ],
+            columns=["present_in", "Type", "Class"],
+        )
+
+    def test_output(self):
+        config = self.get_config()
+        ss = sc.SimulationSet(config)
+
+        for package_class in ["A", "B"]:
+            for background_class in ["C", "D"]:
+                pair = (package_class, background_class)
+                self.assertIn(pair, ss)
+
+                expected_output = config[config.present_in.str.contains("".join(pair))]
+                self.assert_array_equal(ss[pair], expected_output)
+                self.output.assert_called_with(expected_output)

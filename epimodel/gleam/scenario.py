@@ -38,9 +38,6 @@ class ConfigParser:
         self.rds = rds or RegionDataset.load("epimodel/data/regions-gleam.csv")
         algorithms.estimate_missing_populations(rds)
 
-    def get_config_from_gsheet(self, gsheet_url):
-        return self.get_config(gsheet_to_df(gsheet_url))
-
     def get_config_from_csv(self, csv_file):
         return self.get_config(pd.read_csv(csv_file))
 
@@ -119,8 +116,8 @@ class SimulationSet:
         self.package_df = df[is_package]
         self.background_df = df[is_background]
 
-        self.package_classes = set(self.package_df["Class"].dropna())
-        self.background_classes = set(self.background_df["Class"].dropna())
+        self.package_classes = self.package_df["Class"].dropna().unique()
+        self.background_classes = self.background_df["Class"].dropna().unique()
 
         # rows with no class are applied to all simulations
         self.package_classless_df = self.package_df[pd.isnull(self.package_df["Class"])]
@@ -130,13 +127,13 @@ class SimulationSet:
 
     def _generate_scenario_definitions(self):
         index = pd.MultiIndex.from_product(
-            self.background_classes, self.package_classes
+            [self.package_classes, self.background_classes]
         )
         self.definitions = pd.Series(
             [self._definition_for_class_pair(*pair) for pair in index], index=index
         )
 
-    def _definition_for_class_pair(self, package_class, background_class):
+    def _definition_for_class_pair(self, background_class, package_class):
         p_df = self.package_df[self.package_df["Class"] == package_class]
         b_df = self.background_df[self.background_df["Class"] == background_class]
         return DefinitionGenerator.definition_from_config(
@@ -146,11 +143,19 @@ class SimulationSet:
             )
         )
 
-    def __getitem__(self, *classes):
+    def __getitem__(self, classes: tuple):
         return self.definitions[classes]
+
+    def __contains__(self, classes: tuple):
+        return classes in self.definitions.index
 
 
 class DefinitionGenerator:
+    """
+    Takes a simulation-specific config DataFrame and translates it into
+    a GleamDefinition object.
+    """
+
     GLOBAL_PARAMETERS = {
         "name": "set_name",
         "id": "set_id",
