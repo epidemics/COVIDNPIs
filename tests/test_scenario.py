@@ -10,7 +10,6 @@ import epimodel.gleam.scenario as sc
 
 
 class ConfigTestCase(PandasTestCase):
-
     @staticmethod
     def config_from_rows(*rows, columns=sc.ConfigParser.FIELDS):
         return pd.DataFrame(rows, columns=columns)
@@ -26,7 +25,6 @@ class ConfigTestCase(PandasTestCase):
 
 @pytest.mark.usefixtures("ut_datadir", "ut_rds")
 class TestConfigParser(ConfigTestCase):
-
     def config_exception(self, **overrides):
         return self.config_row(
             [
@@ -37,7 +35,9 @@ class TestConfigParser(ConfigTestCase):
                 "2021-05-01",
                 "Countermeasure package",
                 "Strong",
-            ], **overrides)
+            ],
+            **overrides,
+        )
 
     def test_output_format(self):
         parser = sc.ConfigParser(rds=self.rds)
@@ -167,32 +167,27 @@ class TestDefinitionGenerator(PandasTestCase):
         return config
 
     def test_run_dates(self):
-        config = self.config_row({
-            "Parameter": "run dates",
-            "Start date": "2020-04-14",
-            "End date": "2021-05-01",
-        })
-
+        config = self.config_row(
+            {
+                "Parameter": "run dates",
+                "Start date": "2020-04-14",
+                "End date": "2021-05-01",
+            }
+        )
         sc.DefinitionGenerator(config)
         self.output.set_start_date.assert_called_once_with(config["Start date"][0])
         self.output.set_end_date.assert_called_once_with(config["End date"][0])
 
     def test_run_dates_only_start(self):
-        config = self.config_row({
-            "Parameter": "run dates",
-            "Start date": "2020-04-14",
-        })
-
+        config = self.config_row(
+            {"Parameter": "run dates", "Start date": "2020-04-14",}
+        )
         sc.DefinitionGenerator(config)
         self.output.set_start_date.assert_called_once_with(config["Start date"][0])
         self.output.set_end_date.assert_not_called()
 
     def test_run_dates_only_end(self):
-        config = self.config_row({
-            "Parameter": "run dates",
-            "End date": "2021-05-01",
-        })
-
+        config = self.config_row({"Parameter": "run dates", "End date": "2021-05-01",})
         sc.DefinitionGenerator(config)
         self.output.set_start_date.assert_not_called()
         self.output.set_end_date.assert_called_once_with(config["End date"][0])
@@ -201,71 +196,70 @@ class TestDefinitionGenerator(PandasTestCase):
 
     def test_name(self):
         value = "GLEAMviz test run"
-        config = self.config_row({
-            "Parameter": "name",
-            "Value": value,
-        })
-
+        config = self.config_row({"Parameter": "name", "Value": value,})
         sc.DefinitionGenerator(config)
         self.output.set_name.assert_called_once_with(value)
 
     def test_id(self):
         value = "1234567.890"
-        config = self.config_row({
-            "Parameter": "id",
-            "Value": value,
-        })
-
+        config = self.config_row({"Parameter": "id", "Value": value,})
         sc.DefinitionGenerator(config)
         self.output.set_id.assert_called_once_with(value)
 
     def test_duration(self):
         value = 180.0  # days
-        config = self.config_row({
-            "Parameter": "duration",
-            "Value": value,
-        })
-
+        config = self.config_row({"Parameter": "duration", "Value": value,})
         sc.DefinitionGenerator(config)
         self.output.set_duration.assert_called_once_with(value)
 
     def test_number_of_runs(self):
         value = 5
-        config = self.config_row({
-            "Parameter": "number of runs",
-            "Value": value,
-        })
-
+        config = self.config_row({"Parameter": "number of runs", "Value": value,})
         sc.DefinitionGenerator(config)
         self.output.set_run_count.assert_called_once_with(value)
 
     def test_airline_traffic(self):
         value = 0.3
-        config = self.config_row({
-            "Parameter": "airline traffic",
-            "Value": value,
-        })
-
+        config = self.config_row({"Parameter": "airline traffic", "Value": value,})
         sc.DefinitionGenerator(config)
         self.output.set_airline_traffic.assert_called_once_with(value)
 
     def test_seasonality(self):
         value = 0.6
-        config = self.config_row({
-            "Parameter": "seasonality",
-            "Value": value,
-        })
-
+        config = self.config_row({"Parameter": "seasonality", "Value": value,})
         sc.DefinitionGenerator(config)
         self.output.set_seasonality.assert_called_once_with(value)
 
     def test_commuting_time(self):
         value = 7.5
-        config = self.config_row({
-            "Parameter": "commuting time",
-            "Value": value,
-        })
-
+        config = self.config_row({"Parameter": "commuting time", "Value": value,})
         sc.DefinitionGenerator(config)
         self.output.set_commuting_rate.assert_called_once_with(value)
 
+    # global compartment variables
+
+    def test_compartment_variable(self):
+        value = 0.3
+        config = self.config_row({"Parameter": "imu", "Value": value,})
+        sc.DefinitionGenerator(config)
+        self.output.set_compartment_variable.assert_called_once_with("imu", value)
+        self.output.add_exception.assert_not_called()
+
+    def test_partial_exception_fails_region(self):
+        config = self.config_row({"Region": "FR", "Parameter": "imu", "Value": 0.3,})
+        self.assertRaises(ValueError, sc.DefinitionGenerator, config)
+        self.output.set_compartment_variable.assert_not_called()
+        self.output.add_exception.assert_not_called()
+
+    def test_partial_exception_fails_dates(self):
+        config = self.config_row(
+            {
+                "Parameter": "imu",
+                "Value": 0.3,
+                "Start date": "2020-05-01",
+                "End date": "2020-06-01",
+            }
+        )
+        self.assertRaises(ValueError, sc.DefinitionGenerator, config)
+        self.output.set_compartment_variable.assert_not_called()
+        self.output.add_exception.assert_not_called()
