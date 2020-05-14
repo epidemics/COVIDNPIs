@@ -2,7 +2,7 @@ import tempfile
 import shutil
 import os
 from datetime import datetime
-from logging import getLogger
+import logging
 from pathlib import Path
 
 
@@ -15,7 +15,7 @@ from epimodel import Level, RegionDataset, algorithms, imports, read_csv_smart, 
 from epimodel.exports.epidemics_org import process_export, upload_export
 from epimodel.gleam import Batch, GleamDefinition, batch as batch_module
 
-log = getLogger(__name__)
+log = logging.getLogger(__name__)
 
 
 def default_from_config(task_name: str, param_name: str) -> dict:
@@ -109,7 +109,7 @@ class UpdateForetold(luigi.Task):
 
 
 class BaseDefinition(luigi.ExternalTask):
-    base_def: str = luigi.Parameter(default="data/config.xml")
+    base_def: str = luigi.Parameter(default="data/various/definition-basic-JK.xml")
 
     def output(self):
         return luigi.LocalTarget(self.base_def)
@@ -136,10 +136,8 @@ class ConfigYaml(luigi.ExternalTask):
 
 @inherits(BaseDefinition, CountryEstimates, RegionsDatasetTask, ConfigYaml)
 class GenerateGleamBatch(luigi.Task):
-    comment: str = luigi.Parameter(default=None)
-    output_suffix: str = luigi.DateSecondParameter(default=datetime.utcnow())
-    output_filename_prefix: str = luigi.Parameter(default="batch-")
-    output_directory: str = luigi.Parameter(default="data")
+    comment: str = luigi.Parameter(default="")
+    generated_batch_file: str = luigi.Parameter()
     start_date = luigi.DateParameter(default=datetime.utcnow())
     top = luigi.IntParameter(default=2000)
 
@@ -151,17 +149,11 @@ class GenerateGleamBatch(luigi.Task):
             "config_yaml": self.clone(ConfigYaml),
         }
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.output_path = Path(self.output_directory).joinpath(
-            f"{self.output_filename_prefix}-{self.output_suffix}.hdf5"
-        )
-
     def output(self):
-        return luigi.LocalTarget(self.output_path)
+        return luigi.LocalTarget(self.generated_batch_file)
 
     def run(self):
-        b = Batch.new(path=self.output_path)
+        b = Batch.new(path=self.generated_batch_file)
         log.info(f"New batch file {b.path}")
 
         base_def = self.input()["base_def"].path
@@ -196,19 +188,29 @@ class GenerateGleamBatch(luigi.Task):
 
 @inherits(RegionsDatasetTask, GenerateGleamBatch)
 class ExportGleamBatch(luigi.Task):
+    stamp_file = "ExportGleamBatch.success"
+
     exports_dir = luigi.Parameter(default="~/GLEAMviz/data/sims/")
     overwrite = luigi.BoolParameter(default=False)
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # if this file exist in the exports_dir, it's assumed that this tasks has finished
+        self.stamp_file_path = Path(self.exports_dir).joinpath(self.stamp_file)
+
     def run(self):
-        batch_file = self.input()["batch_file"]
+        batch_file = self.input()["batch_file"].path
         batch = Batch.open(batch_file)
         gdir = Path(self.exports_dir)
         log.info(
-            f"Creating GLEAM XML definitions for batch {self.batch_file} in dir {gdir} ..."
+            f"Creating GLEAM XML definitions for batch {batch_file} in dir {gdir} ..."
         )
         batch.export_definitions_to_gleam(
-            gdir.expanduser(), overwrite=self.overwrite, info_level="INFO"
+            gdir.expanduser(), overwrite=self.overwrite, info_level=logging.INFO
         )
+
+        # write a dummy stamp file to mark success
+        Path(self.stamp_file_path).touch()
 
     def requires(self):
         return {
@@ -217,9 +219,8 @@ class ExportGleamBatch(luigi.Task):
         }
 
     def output(self):
-        # TODO: this needs to be improved and actually catch the generated files and not just the
-        # default directory
-        return luigi.LocalTarget(self.exports_dir)
+        # TODO: improve to get the generated dirs
+        return luigi.LocalTarget(self.stamp_file_path)
 
 
 @requires(ExportGleamBatch)
@@ -227,7 +228,8 @@ class GleamvizResults(luigi.ExternalTask):
     """This is done manually by a user via Gleam software"""
 
     # I expect that this is something like "~/GLEAMviz/data/sims/some-batch-file.hdf5"
-    gleamviz_result = luigi.Parameter()
+    # Or maybe this is not even needed? Confused by the results from gleam
+    gleamviz_result = luigi.Parameter(default="blahlah")
 
     def output(self):
         return luigi.LocalTarget(self.gleamviz_result)
@@ -252,7 +254,7 @@ class ImportGleamBatch(luigi.Task):
 
         config_yaml = ConfigYaml.load(self.input()["config_yaml"].path)
         regions_dataset = RegionsDatasetTask.load_dilled_rds(
-            self.input()["regions_dataset"].path
+            self.input()["region_dataset"].path
         )
 
         # copy the gleamviz results into a temporary directory
@@ -287,7 +289,7 @@ class ImportGleamBatch(luigi.Task):
             resample=config_yaml["gleam_resample"],
             allow_unfinished=self.allow_missing,
             overwrite=True,
-            info_level="INFO",
+            info_level=logging.INFO,
         )
         # copy the result overwritten batch file to the result path
         shutil.copy2(tmp_batch_file, self.result_batch_file_path)
@@ -321,6 +323,7 @@ WEB_EXPORT_REQUIRED_TASKS = {
     "batch_file": ImportGleamBatch,
     "hopkins": JohnsHopkins,
     "foretold": UpdateForetold,
+    "regions_dataset": RegionsDatasetTask,
     "rates": Rates,
     "timezone": Timezones,
     "age_distribution": AgeDistributions,
@@ -329,8 +332,9 @@ WEB_EXPORT_REQUIRED_TASKS = {
 }
 
 
-@requires(*WEB_EXPORT_REQUIRED_TASKS.values())
+@inherits(*WEB_EXPORT_REQUIRED_TASKS.values())
 class WebExport(luigi.Task):
+    # TODO: currently files
     comment: str = luigi.Parameter(default="")
     pretty_print: bool = luigi.BoolParameter(default=False)
     web_export_directory: str = luigi.Parameter(default="web-exports")
@@ -367,7 +371,9 @@ class WebExport(luigi.Task):
         return luigi.LocalTarget(self.web_export_directory)
 
     def requires(self):
-        return {name: self.clone(task) for name, task in WEB_EXPORT_REQUIRED_TASKS}
+        return {
+            name: self.clone(task) for name, task in WEB_EXPORT_REQUIRED_TASKS.items()
+        }
 
 
 @requires(WebExport)
