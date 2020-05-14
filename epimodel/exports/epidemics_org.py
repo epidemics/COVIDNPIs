@@ -496,12 +496,15 @@ def add_aggregate_traces(aggregate_regions, cummulative_active_df):
         # combine weighted values and add to output
         additions.append(reg_cad.groupby(level=["SimulationID", "Date"]).sum())
 
-    # re-add Code index & combine results
-    additions_df = pd.concat(
-        additions, keys=[reg.Code for reg in aggregate_regions], names=["Code"]
-    ).reorder_levels(["SimulationID", "Code", "Date"])
+    if len(additions) > 0:
+        # re-add Code index & combine results
+        additions_df = pd.concat(
+            additions, keys=[reg.Code for reg in aggregate_regions], names=["Code"]
+        ).reorder_levels(["SimulationID", "Code", "Date"])
 
-    return cummulative_active_df.append(additions_df)
+        return cummulative_active_df.append(additions_df)
+    else:
+        return cummulative_active_df
 
 
 def process_export(
