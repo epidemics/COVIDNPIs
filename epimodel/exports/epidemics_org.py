@@ -14,7 +14,7 @@ import pandas as pd
 from tqdm import tqdm
 
 from ..gleam import Batch
-from ..regions import Region
+from ..regions import Region, RegionDataset, Level
 import epimodel
 
 log = logging.getLogger(__name__)
@@ -470,6 +470,43 @@ def aggregate_countries(
     return hopkins.drop(index=all_state_codes).append(pd.concat(to_append))
 
 
+def add_aggregate_traces(aggregate_regions, cummulative_active_df):
+    additions = []
+
+    for reg in aggregate_regions:
+        # compute aggregate weights
+        agg_codes = [child.Code for child, _ in reg.agg_children]
+        weights = pd.Series(
+            [child.Population * weight for child, weight in reg.agg_children],
+            index=agg_codes,
+        )
+        weights /= weights.sum()
+
+        log.info(
+            "Aggregating model traces for region %s using weights %r",
+            reg.Code,
+            weights.to_dict(),
+        )
+
+        # weight totals for each aggregated region
+        reg_cad = cummulative_active_df.loc[pd.IndexSlice[:, agg_codes], :].copy()
+        for child, weight in weights.items():
+            reg_cad.loc[pd.IndexSlice[:, child], :] *= weight
+
+        # combine weighted values and add to output
+        additions.append(reg_cad.groupby(level=["SimulationID", "Date"]).sum())
+
+    if len(additions) > 0:
+        # re-add Code index & combine results
+        additions_df = pd.concat(
+            additions, keys=[reg.Code for reg in aggregate_regions], names=["Code"]
+        ).reorder_levels(["SimulationID", "Code", "Date"])
+
+        return cummulative_active_df.append(additions_df)
+    else:
+        return cummulative_active_df
+
+
 def process_export(
     config, rds, debug, comment, batch_file, estimates, pretty_print
 ) -> None:
@@ -515,6 +552,11 @@ def process_export(
         keep_default_na=False,
         na_values=[""],
     ).pipe(aggregate_countries, config["state_to_country"], rds)
+
+    cummulative_active_df = add_aggregate_traces(
+        [reg for reg in rds.aggregate_regions if reg.Code in export_regions],
+        cummulative_active_df,
+    )
 
     analyze_data_consistency(
         debug, export_regions, cummulative_active_df, rates_df, hopkins_df, foretold_df,

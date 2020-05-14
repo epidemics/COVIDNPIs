@@ -106,7 +106,9 @@ def cli(ctx, debug, config):
 
     data_dir = Path(ctx.obj["CONFIG"]["data_dir"])
     ctx.obj["RDS"] = RegionDataset.load(
-        data_dir / "regions.csv", data_dir / "regions-gleam.csv"
+        data_dir / "regions.csv",
+        data_dir / "regions-gleam.csv",
+        data_dir / "regions-agg.yaml",
     )
     epimodel.algorithms.estimate_missing_populations(ctx.obj["RDS"])
 
