@@ -408,13 +408,15 @@ class WebExport(luigi.Task):
         estimates = self.input()["country_estimates"].path
 
         ex = process_export(
-            config_yaml,
             self.input(),
             regions_dataset,
             False,
             self.comment,
             batch_file,
             estimates,
+            config_yaml["export_regions"],
+            config_yaml["state_to_country"],
+            config_yaml["groups"],
         )
         ex.write(
             self.full_export_path,

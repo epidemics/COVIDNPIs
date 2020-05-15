@@ -483,15 +483,18 @@ def add_aggregate_traces(aggregate_regions, cummulative_active_df):
 
 
 def process_export(
-    config: dict,
     inputs: dict,
     rds: RegionDataset,
     debug,
     comment,
     batch_file,
     estimates,
+    export_regions: List[str],
+    state_to_country: List[str],
+    config_groups: List[dict],
+    resample: str = "1D",
 ) -> WebExport:
-    ex = WebExport(config["gleam_resample"], comment=comment)
+    ex = WebExport(resample, comment=comment)
 
     hopkins = inputs["hopkins"].path
     foretold = inputs["foretold"].path
@@ -499,7 +502,7 @@ def process_export(
     timezone = inputs["timezones"].path
     un_age_dist = inputs["age_distributions"].path
 
-    export_regions = sorted(config["export_regions"])
+    export_regions = sorted(export_regions)
 
     batch = Batch.open(batch_file)
     simulation_specs: pd.DataFrame = batch.hdf["simulations"]
@@ -532,7 +535,7 @@ def process_export(
         parse_dates=["Date"],
         keep_default_na=False,
         na_values=[""],
-    ).pipe(aggregate_countries, config["state_to_country"], rds)
+    ).pipe(aggregate_countries, state_to_country, rds)
 
     cummulative_active_df = add_aggregate_traces(
         [reg for reg in rds.aggregate_regions if reg.Code in export_regions],
@@ -550,7 +553,7 @@ def process_export(
         ex.new_region(
             reg,
             get_df_else_none(estimates_df, code),
-            config["groups"],
+            config_groups,
             cummulative_active_df.xs(key=code, level="Code").sort_index(level="Date"),
             simulation_specs,
             get_df_else_none(rates_df, code),
