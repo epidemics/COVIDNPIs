@@ -181,10 +181,6 @@ class GenerateGleamBatch(luigi.Task):
         log.info(f"Generated batch {b.path!r}:\n  {b.stats()}")
         b.close()
 
-        # todo: not sure about this
-        # if "invoked_by_subcommand" in ctx.parent.__dict__:
-        #    ctx.parent.batch_file = b.export_directory
-
 
 @inherits(RegionsDatasetTask, GenerateGleamBatch)
 class ExportGleamBatch(luigi.Task):
@@ -396,9 +392,8 @@ class WebUpload(luigi.Task):
 
     def run(self):
         main_data_file = self.input().path
-        base_dir = os.path.dirname(
-            main_data_file
-        )  # directory with all the exported outputs
+        # directory with all the exported outputs
+        base_dir = os.path.dirname(main_data_file)
         upload_export(base_dir, gs_prefix=Path(self.gs_prefix), channel=self.channel)
         self.is_complete = True
 
