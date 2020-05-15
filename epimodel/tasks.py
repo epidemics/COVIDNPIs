@@ -40,8 +40,8 @@ class GleamRegions(luigi.ExternalTask):
 
 @inherits(RegionsFile, GleamRegions)
 class RegionsDatasetTask(luigi.Task):
-    region_dataset = luigi.Parameter(
-        config_path=default_from_config("RegionsDatasetTask", "region_dataset")
+    regions_dataset = luigi.Parameter(
+        config_path=default_from_config("RegionsDatasetTask", "regions_dataset")
     )
 
     def run(self):
@@ -49,11 +49,11 @@ class RegionsDatasetTask(luigi.Task):
         gleams = self.input()["gleam_regions"].path
         rds = RegionDataset.load(regions, gleams)
         algorithms.estimate_missing_populations(rds)
-        with open(self.region_dataset, "wb") as ofile:
+        with open(self.regions_dataset, "wb") as ofile:
             dill.dump(rds, ofile)
 
     def output(self):
-        return luigi.LocalTarget(self.region_dataset)
+        return luigi.LocalTarget(self.regions_dataset)
 
     def requires(self):
         return {
@@ -183,7 +183,7 @@ class GenerateGleamBatch(luigi.Task):
 
         # todo: not sure about this
         # if "invoked_by_subcommand" in ctx.parent.__dict__:
-        #    ctx.parent.batch_file = b.path
+        #    ctx.parent.batch_file = b.export_directory
 
 
 @inherits(RegionsDatasetTask, GenerateGleamBatch)
@@ -196,7 +196,7 @@ class ExportGleamBatch(luigi.Task):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         # if this file exist in the exports_dir, it's assumed that this tasks has finished
-        self.stamp_file_path = Path(self.exports_dir).joinpath(self.stamp_file)
+        self.stamp_file_path = Path(self.exports_dir) / self.stamp_file
 
     def run(self):
         batch_file = self.input()["batch_file"].path
@@ -215,7 +215,7 @@ class ExportGleamBatch(luigi.Task):
     def requires(self):
         return {
             "batch_file": self.clone(GenerateGleamBatch),
-            "region_dataset": self.clone(RegionsDatasetTask),
+            "regions_dataset": self.clone(RegionsDatasetTask),
         }
 
     def output(self):
@@ -237,13 +237,13 @@ class GleamvizResults(luigi.ExternalTask):
 
 @inherits(GleamvizResults, RegionsDatasetTask, ConfigYaml)
 class ImportGleamBatch(luigi.Task):
-    allow_missing = luigi.BoolParameter(default=True)
-    result_batch_file_path = luigi.Parameter(default="data/result-batch-file.hdf5")
+    allow_missing: bool = luigi.BoolParameter(default=True)
+    result_batch_file_path: str = luigi.Parameter(default="data/result-batch-file.hdf5")
 
     def requires(self):
         return {
             "gleamviz_result": self.clone(GleamvizResults),
-            "region_dataset": self.clone(RegionsDatasetTask),
+            "regions_dataset": self.clone(RegionsDatasetTask),
             "config_yaml": self.clone(ConfigYaml),
         }
 
@@ -254,16 +254,16 @@ class ImportGleamBatch(luigi.Task):
 
         config_yaml = ConfigYaml.load(self.input()["config_yaml"].path)
         regions_dataset = RegionsDatasetTask.load_dilled_rds(
-            self.input()["region_dataset"].path
+            self.input()["regions_dataset"].path
         )
 
         # copy the gleamviz results into a temporary directory
         temp_dir = tempfile.TemporaryDirectory()
-        tmp_simulation_dir = os.path.join(temp_dir.name, "simulations")
+        tmp_simulation_dir = Path(temp_dir.name) / "simulations"
         shutil.copytree(simulation_directory, tmp_simulation_dir)
 
         # work only with the copied data from now on
-        tmp_batch_file = os.path.join(tmp_simulation_dir, os.path.basename(batch_file))
+        tmp_batch_file = Path(tmp_simulation_dir) / os.path.basename(batch_file)
         b = Batch.open(tmp_batch_file)
         d = regions_dataset.data
 
@@ -291,8 +291,8 @@ class ImportGleamBatch(luigi.Task):
             overwrite=True,
             info_level=logging.INFO,
         )
-        # copy the result overwritten batch file to the result path
-        shutil.copy2(tmp_batch_file, self.result_batch_file_path)
+        # copy the result overwritten batch file to the result export_directory
+        shutil.copy(tmp_batch_file, self.result_batch_file_path)
 
     def output(self):
         return luigi.LocalTarget(self.result_batch_file_path)
@@ -334,13 +334,23 @@ WEB_EXPORT_REQUIRED_TASKS = {
 
 @inherits(*WEB_EXPORT_REQUIRED_TASKS.values())
 class WebExport(luigi.Task):
-    # TODO: currently files
-    comment: str = luigi.Parameter(default="")
-    pretty_print: bool = luigi.BoolParameter(default=False)
-    web_export_directory: str = luigi.Parameter(default="web-exports")
-    gs_datafile_name: str = luigi.Parameter(default="data-v4.json")
+    export_name: str = luigi.Parameter(
+        description="Directory name with exported files inside web_export_directory"
+    )
+    pretty_print: bool = luigi.BoolParameter(
+        default=False, description="If true, result JSONs are indented by 4 spaces"
+    )
+    web_export_directory: str = luigi.Parameter(
+        default="web-exports", description="Root directory for all exports"
+    )
+    main_data_filename: str = luigi.Parameter(
+        default="data-v4.json",
+        description="The default name of the main JSON data file",
+    )
 
-    # full_export_path: str = luigi.Parameter()  # something which can be used in the output
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.full_export_path = Path(self.web_export_directory) / self.export_name
 
     def run(self):
         batch_file = self.input()["batch_file"].path
@@ -360,15 +370,14 @@ class WebExport(luigi.Task):
             self.pretty_print,
         )
         ex.write(
-            self.web_export_directory,
-            self.gs_datafile_name,
-            latest="latest",  # not sure this is being used
+            self.full_export_path,
+            Path(self.main_data_filename),
+            latest="latest",
             pretty_print=self.pretty_print,
         )
 
     def output(self):
-        # TODO: not enough - we need a specific export dir
-        return luigi.LocalTarget(self.web_export_directory)
+        return luigi.LocalTarget(self.full_export_path / self.main_data_filename)
 
     def requires(self):
         return {
@@ -384,7 +393,7 @@ class WebUpload(luigi.WrapperTask):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.gs_path = Path(self.gs_prefix).joinpath(Path(self.dir_to_upload).parts[-1])
+        self.gs_path = Path(self.gs_prefix) / Path(self.dir_to_upload).parts[-1]
 
     def run(self):
         upload_export(

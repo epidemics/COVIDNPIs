@@ -15,7 +15,7 @@ log = logging.getLogger(__name__)
 class GleamDefinition:
     def __init__(self, file):
         """
-        Load gleam `definition.xml` from a file (path or a file-like object).
+        Load gleam `definition.xml` from a file (export_directory or a file-like object).
         """
         ET.register_namespace("", "http://www.gleamviz.org/xmlns/gleamviz_v4_0")
         self.ns = {"gv": "http://www.gleamviz.org/xmlns/gleamviz_v4_0"}

@@ -1,6 +1,7 @@
 import datetime
 import getpass
 import json
+import os
 import logging
 import shutil
 import socket
@@ -70,25 +71,23 @@ class WebExport:
         return er
 
     def write(
-        self, path, main_data_filename, name=None, latest=None, pretty_print=False
+        self,
+        export_directory: Path,
+        main_data_filename: Path,
+        latest=None,
+        pretty_print=False,
     ):
-        if name is None:
-            name = f"export-{self.created.isoformat()}"
-            if self.comment:
-                name += self.comment
         indent = None
         if pretty_print:
             indent = 4
-        name = name.replace(" ", "_").replace(":", "-")
-        outdir = Path(path)
-        assert (not outdir.exists()) or outdir.is_dir()
-        exdir = Path(path) / name
-        log.info(f"Writing WebExport to {exdir} ...")
-        exdir.mkdir(exist_ok=False, parents=True)
+
+        os.makedirs(export_directory, exists_ok=False)
+
+        log.info(f"Writing WebExport to {export_directory} ...")
         for rc, er in tqdm(list(self.export_regions.items()), desc="Writing regions"):
             fname = f"extdata-{rc}.json"
             er.data_url = f"{fname}"
-            with open(exdir / fname, "wt") as f:
+            with open(export_directory / fname, "wt") as f:
                 json.dump(
                     er.data_ext,
                     f,
@@ -97,7 +96,7 @@ class WebExport:
                     separators=(",", ":"),
                     indent=indent,
                 )
-        with open(exdir / main_data_filename, "wt") as f:
+        with open(export_directory / main_data_filename, "wt") as f:
             json.dump(
                 self.to_json(),
                 f,
@@ -106,12 +105,12 @@ class WebExport:
                 separators=(",", ":"),
                 indent=indent,
             )
-        log.info(f"Exported {len(self.export_regions)} regions to {exdir}")
+        log.info(f"Exported {len(self.export_regions)} regions to {export_directory}")
         if latest is not None:
-            latestdir = outdir / latest
+            latestdir = os.path.dirname(export_directory) / latest
             if latestdir.exists():
                 shutil.rmtree(latestdir)
-            shutil.copytree(exdir, latestdir)
+            shutil.copytree(export_directory, latestdir)
             log.info(f"Copied export to {latestdir}")
 
 
