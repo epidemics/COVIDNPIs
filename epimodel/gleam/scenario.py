@@ -192,10 +192,8 @@ class DefinitionGenerator:
 
     def __init__(self, df: pd.DataFrame, default_xml=None, classes=None):
         self.definition = GleamDefinition(default_xml)
-        assert len(df.dropna(subset=["Type", "Class"]).groupby(["Type", "Class"])) <= 2
 
         self._parse_df(df)
-
         self._set_global_parameters()
         self._set_global_compartment_variables()
         self._set_exceptions()
@@ -205,7 +203,7 @@ class DefinitionGenerator:
         else:
             self._set_name_from_classes(classes)
 
-    def _set_name_from_classes(self, classes):
+    def _set_name_from_classes(self, classes=None):
         name = self.definition.get_name() or self.definition.get_timestamp()
         self.definition.set_name(f"{name} ({' + '.join(classes)})")
 

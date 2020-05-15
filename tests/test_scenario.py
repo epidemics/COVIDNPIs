@@ -141,7 +141,7 @@ class TestSimulationSet(PandasTestCase):
 
     def setUp(self):
         self.DefinitionGenerator = self.def_gen_patcher.start()
-        self.DefinitionGenerator.definition_from_config = Mock(side_effect=lambda x: x)
+        self.DefinitionGenerator.definition_from_config = Mock(side_effect=lambda x, classes: x)
 
     def tearDown(self):
         self.def_gen_patcher.stop()
