@@ -121,25 +121,17 @@ class Batch:
 
         TODO: Potentially have a nicer interface than list-of-tuples
         """
-        last_id = 0
-        rows = []
-        for definition, name, group, key in sims_def_name_group_key:
-            d = definition.copy()
-            last_id = max(int(time.time() * 1000), last_id + 1)
-            gv2id = f"{last_id}.{GLEAM_ID_SUFFIX}"
-            d.set_id(gv2id)
-            s = io.BytesIO()
-            d.save(s)
-            rows.append(
-                {
-                    "SimulationID": gv2id,
-                    "Name": name,
-                    "Group": group,
-                    "Key": key,
-                    "StartDate": d.get_start_date().isoformat(),
-                    "DefinitionXML": s.getvalue().decode("ascii"),
-                }
-            )
+        rows = [
+            {
+                "SimulationID": definition.get_id_str(),
+                "Name": name,
+                "Group": group,
+                "Key": key,
+                "StartDate": definition.get_start_date_str(),
+                "DefinitionXML": definition.to_xml_string(),
+            }
+            for definition, name, group, key in sims_def_name_group_key
+        ]
         data = pd.DataFrame(rows).set_index("SimulationID", verify_integrity=True)
         self.hdf.put("simulations", data, format="table", complib="bzip2", complevel=9)
 

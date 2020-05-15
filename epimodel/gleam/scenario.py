@@ -1,12 +1,13 @@
 from uuid import UUID
 from collections import namedtuple
 import re
+from typing import Tuple
 
 import numpy as np
 import pandas as pd
 
 from tqdm import tqdm
-from epimodel import RegionDataset, Level, algorithms
+from epimodel import RegionDataset, Region, Level, algorithms
 from .definition import GleamDefinition
 
 try:
@@ -34,7 +35,6 @@ class ConfigParser:
     ]
     STR_PARAMS = [
         "name",
-        "id",
     ]
 
     def __init__(self, rds, foretold_token=None, progress_bar=True):
@@ -86,19 +86,23 @@ class ConfigParser:
         mean = np.sum(ys) / len(qs)
         return mean
 
-    def _get_region(self, region: str):
-        if pd.isnull(region):
+    def _get_region(self, code_or_name: str):
+        if pd.isnull(code_or_name):
             return None
 
-        # try code first
-        if region in self.rds:
-            return self.rds[region]
+        # Try code first
+        if code_or_name in self.rds:
+            region = self.rds[code_or_name]
+        else:
+            # Try code_or_name. Match Gleam regions first.
+            matches = self.rds.find_all_by_name(code_or_name, levels=tuple(Level))
+            if not matches:
+                raise ValueError(f"No region found for {code_or_name!r}.")
+            region = matches[0]
 
-        # If this fails, assume name. Match Gleam regions first.
-        matches = self.rds.find_all_by_name(region, levels=tuple(Level))
-        if not matches:
-            raise Exception(f"No corresponding region found for {region!r}.")
-        return matches[0]
+        if pd.isnull(region.GleamID):
+            raise ValueError(f"Region {region!r} has no GleamID")
+        return region
 
     def _progress_bar(self, enum, desc=None):
         if self.progress_bar:
@@ -114,6 +118,7 @@ class SimulationSet:
     """
 
     def __init__(self, df: pd.DataFrame):
+        self._prepare_ids(df)
         self._set_scenario_values(df)
         self._generate_scenario_definitions()
 
@@ -125,6 +130,26 @@ class SimulationSet:
 
     def __iter__(self):
         return self.definitions.iteritems()
+
+    def add_to_batch(self, batch):
+        batch.set_simulations(
+            [
+                (def_gen.definition, "PLACEHOLDER", pacakge, background)
+                for (package, background), def_gen in self
+            ]
+        )
+
+    def _prepare_ids(self, df):
+        """
+        IDs are bit-shifted so every 2-class combo has a unique id when
+        the two ids are added. This is then added to the base_id to make
+        the resulting id sufficiently large and unique.
+        """
+        self.base_id = int(pd.Timestamp.utcnow().timestamp() * 1000)
+        self.ids = {klass: 1 << i for i, klass in enumerate(df["Class"].unique())}
+
+    def _id_for_class_pair(self, class1: str, class2: str):
+        return self.base_id + self.ids[class1] + self.ids[class2]
 
     def _set_scenario_values(self, df):
         is_package = df.Type == "Countermeasure package"
@@ -161,6 +186,7 @@ class SimulationSet:
             pd.concat(
                 [p_df, self.package_classless_df, b_df, self.background_classless_df]
             ),
+            id=self._id_for_class_pair(package_class, background_class),
             classes=(package_class, background_class),
         )
 
@@ -187,8 +213,9 @@ class DefinitionGenerator:
         "imu",
     )
 
-    def __init__(self, df: pd.DataFrame, default_xml=None, classes=None):
+    def __init__(self, df: pd.DataFrame, id, classes=None, default_xml=None):
         self.definition = GleamDefinition(default_xml)
+        self.definition.set_id(id)
 
         self._parse_df(df)
         self._set_global_parameters()

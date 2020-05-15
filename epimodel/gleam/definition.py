@@ -14,6 +14,7 @@ log = logging.getLogger(__name__)
 
 
 class GleamDefinition:
+    GLEAM_ID_SUFFIX = ".574"  # Magic? Or arbtrary?
     DEFAULT_XML_FILE = (
         Path(__file__).parent.parent.parent / "data/default_gleam_definition.xml"
     )
@@ -49,7 +50,7 @@ class GleamDefinition:
         log.debug(f"Written Gleam definition to {file!r}")
 
     def to_xml_string(self):
-        return ET.tostring(self.root, encoding="utf-8", method="xml")
+        return self.save(io.BytesIO()).decode("ascii")
 
     ### Testing methids
 
@@ -57,7 +58,7 @@ class GleamDefinition:
         assert isinstance(other, self.__class__)
         self._etree_assert_eq(self.root, other.root)
 
-    def _etree_assert_eq(self, e1, e2, path='/'):
+    def _etree_assert_eq(self, e1, e2, path="/"):
         """
         Recursive equality assertion, based on:
         https://stackoverflow.com/questions/7905380/testing-equivalence-of-xml-etree-elementtree
@@ -71,7 +72,8 @@ class GleamDefinition:
             assert len(e1) == len(e2)
         except AssertionError:
             raise AssertionError(
-                f"{e1!r} != {e2!r} at path {path}\n\n%s\n\n%s" % (
+                f"{e1!r} != {e2!r} at path {path}\n\n%s\n\n%s"
+                % (
                     ET.tostring(e1, encoding="utf-8", method="xml"),
                     ET.tostring(e2, encoding="utf-8", method="xml"),
                 )
@@ -196,12 +198,15 @@ class GleamDefinition:
             f"beta={self.get_variable('beta')}"
         )
 
-    def get_id(self) -> str:
+    def get_id(self) -> int:
+        return int(self.get_id_str().replace(self.GLEAM_ID_SUFFIX, ""))
+
+    def get_id_str(self) -> str:
         return self.definition_node.get("id")
 
-    def set_id(self, val: str):
-        assert isinstance(val, str)
-        return self.definition_node.set("id", val)
+    def set_id(self, val: int):
+        assert isinstance(int)
+        return self.definition_node.set("id", f"{val}{self.GLEAM_ID_SUFFIX}")
 
     def get_timestamp(self) -> datetime:
         return pd.Timestamp(self.get_timestamp_str())
@@ -214,7 +219,10 @@ class GleamDefinition:
         self.timestamp_node.text = timestamp.strftime("%Y-%m-%dT%T")
 
     def get_start_date(self) -> datetime:
-        return utc_date(self.parameter_node.get("startDate"))
+        return utc_date(self.get_start_date_str())
+
+    def get_start_date_str(self) -> str:
+        return self.parameter_node.get("startDate")
 
     def set_start_date(self, date: Union[str, date, datetime]):
         self.parameter_node.set("startDate", utc_date(date).date().isoformat())
