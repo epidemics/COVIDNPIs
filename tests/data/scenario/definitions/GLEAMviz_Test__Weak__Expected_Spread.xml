@@ -1,0 +1,48 @@
+<simulation xmlns="http://www.gleamviz.org/xmlns/gleamviz_v4_0">
+  <definition id="1234567.890" name="GLEAMviz Test (Weak + Expected Spread)" type="multi-run">
+    <compartmentalModel>
+      <compartments>
+        <compartment color="#51b2b7" id="Susceptible" isCarrier="false" isCommuter="true" isSecondary="false" isTraveller="true" x="409" y="35" />
+        <compartment color="#f59123" id="Exposed" isCarrier="true" isCommuter="true" isSecondary="true" isTraveller="true" x="218" y="158" />
+        <compartment color="#ff5127" id="Infectious" isCarrier="true" isCommuter="false" isSecondary="false" isTraveller="false" x="218" y="291" />
+        <compartment color="#89c443" id="Recovered" isCarrier="false" isCommuter="true" isSecondary="false" isTraveller="true" x="218" y="430" />
+      </compartments>
+      <ratioTransitions>
+        <ratioTransition labelPosition="0.5" ratio="epsilon" source="Exposed" target="Infectious" />
+        <ratioTransition labelPosition="0.5" ratio="mu" source="Infectious" target="Recovered" />
+        <ratioTransition labelPosition="0.5" ratio="imu" source="Recovered" target="Susceptible" />
+      </ratioTransitions>
+      <infections>
+        <infection source="Susceptible" target="Exposed">
+          <infector ratio="beta" source="Infectious" x="130" y="0" />
+        </infection>
+      </infections>
+      <variables>
+        <variable name="beta" value="1.50" />
+        <variable name="epsilon" value="0.2" />
+        <variable name="mu" value="0.5" />
+        <variable name="imu" value="0" />
+      </variables>
+    </compartmentalModel>
+    <parameters commutingModel="gravity" commutingRate="7" duration="261" flightsTimeAggregation="month" occupancyRate="90" outbreakSize="1" runCount="5" seasonalityAlphaMin="0.35" seasonalityEnabled="true" secondaryEvents="1" startDate="2020-04-15" />
+    <notes />
+    <initialCompartments>
+    </initialCompartments>
+    <seeds>
+    </seeds>
+    <resultCompartments>
+      <id>Susceptible</id>
+      <id>Exposed</id>
+      <id>Infectious</id>
+      <id>Recovered</id>
+    </resultCompartments>
+    <exceptions><exception basins="" continents="" countries="163" from="2020-04-14" hemispheres="" regions="" till="2021-05-01"><variable name="beta" value="1.0" /><variable name="epsilon" value="1.0" /></exception>
+</exceptions></definition>
+  <metadata>
+    <creationDate>2020-05-01T00:00:00</creationDate>
+    <clientVersion>7.0.4</clientVersion>
+  </metadata>
+  <extradata>
+    <userVariableOrder>beta epsilon mu imu</userVariableOrder>
+  </extradata>
+</simulation>

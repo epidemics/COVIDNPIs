@@ -7,14 +7,37 @@ import numpy as np
 
 from epimodel import Region, RegionDataset
 import epimodel.gleam.scenario as sc
+from epimodel.gleam.definition import GleamDefinition
 
 
 @pytest.mark.usefixtures("ut_datadir", "ut_rds")
 class TestScenarioIntegration(PandasTestCase):
+    timestamp_patcher = patch("pandas.Timestamp", autospec=True)
+
+    def setUp(self):
+        self.timestamp = pd.Timestamp('2020-05-01')
+        self.Timestamp = self.timestamp_patcher.start()
+        self.Timestamp.return_value = self.timestamp
+
+    def tearDown(self):
+        self.timestamp_patcher.stop()
+
     def test_integration(self):
         parser = sc.ConfigParser(rds=self.rds)
         df = parser.get_config_from_csv(self.datadir / "scenario/config.csv")
         simulations = sc.SimulationSet(df)
+        for classes, definition in simulations:
+            file_path = (
+                "scenario/definitions/GLEAMviz_Test__%s__%s.xml" % classes
+            ).replace(" ", "_")
+
+            ### Uncomment the following line and run this test if you
+            ### need to reset the files, but be sure to manually check
+            ### the output afterwards to ensure it's correct.
+            # definition.save(self.datadir / file_path)
+
+            expected = GleamDefinition(self.datadir / file_path)
+            definition.assert_equal(expected)
 
 
 @pytest.mark.usefixtures("ut_datadir", "ut_rds")
@@ -114,7 +137,7 @@ class TestConfigParser(PandasTestCase):
 
 
 class TestSimulationSet(PandasTestCase):
-    def_gen_patcher = patch("epimodel.gleam.scenario.DefinitionGenerator", spec=True)
+    def_gen_patcher = patch("epimodel.gleam.scenario.DefinitionGenerator", autospec=True)
 
     def setUp(self):
         self.DefinitionGenerator = self.def_gen_patcher.start()
@@ -156,7 +179,7 @@ class TestSimulationSet(PandasTestCase):
 
 @pytest.mark.usefixtures("ut_rds")
 class TestDefinitionGenerator(PandasTestCase):
-    definition_patcher = patch("epimodel.gleam.scenario.GleamDefinition", spec=True)
+    definition_patcher = patch("epimodel.gleam.scenario.GleamDefinition", autospec=True)
 
     def setUp(self):
         self.GleamDefinition = self.definition_patcher.start()

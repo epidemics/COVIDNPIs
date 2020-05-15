@@ -27,7 +27,8 @@ class GleamDefinition:
         self.tree = ET.parse(xml_file or self.DEFAULT_XML_FILE)
         self.root = self.tree.getroot()
 
-        self.set_timestamp()
+        if not self.get_timestamp_str():
+            self.set_timestamp()
 
     def copy(self):
         return copy.deepcopy(self)
@@ -49,6 +50,37 @@ class GleamDefinition:
 
     def to_xml_string(self):
         return ET.tostring(self.root, encoding="utf-8", method="xml")
+
+    ### Testing methids
+
+    def assert_equal(self, other):
+        assert isinstance(other, self.__class__)
+        self._etree_assert_eq(self.root, other.root)
+
+    def _etree_assert_eq(self, e1, e2, path='/'):
+        """
+        Recursive equality assertion, based on:
+        https://stackoverflow.com/questions/7905380/testing-equivalence-of-xml-etree-elementtree
+        """
+        try:
+            tag = self._strip_tag(e1)
+            assert tag == self._strip_tag(e2)
+            assert e1.text == e2.text
+            assert e1.tail == e2.tail
+            assert e1.attrib == e2.attrib
+            assert len(e1) == len(e2)
+        except AssertionError:
+            raise AssertionError(
+                f"{e1!r} != {e2!r} at path {path}\n\n%s\n\n%s" % (
+                    ET.tostring(e1, encoding="utf-8", method="xml"),
+                    ET.tostring(e2, encoding="utf-8", method="xml"),
+                )
+            )
+        for c1, c2 in zip(e1, e2):
+            self._etree_assert_eq(c1, c2, path=f"{path}{tag}/")
+
+    def _strip_tag(self, element):
+        return element.tag.replace("{%s}" % self.ns["gv"], "")
 
     ### Main nodes
 
