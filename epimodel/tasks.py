@@ -92,7 +92,7 @@ class UpdateForetold(luigi.Task):
     )
     foretold_channel: str = luigi.Parameter(
         config_path=default_from_config("UpdateForetold", "foretold_channel"),
-        description="The secret to fetch data from Foretold via API"
+        description="The secret to fetch data from Foretold via API",
     )
 
     def run(self):
@@ -135,7 +135,9 @@ class ConfigYaml(luigi.ExternalTask):
 
 @inherits(BaseDefinition, CountryEstimates, RegionsDatasetTask, ConfigYaml)
 class GenerateGleamBatch(luigi.Task):
-    generated_batch_file: str = luigi.Parameter(description="Output path of the generated batch file for gleam")
+    generated_batch_file: str = luigi.Parameter(
+        description="Output path of the generated batch file for gleam"
+    )
     comment: str = luigi.Parameter(default="")
     start_date: datetime = luigi.DateParameter(default=datetime.utcnow())
     top: int = luigi.IntParameter(default=2000)
@@ -189,7 +191,8 @@ class ExportGleamBatch(luigi.Task):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # if this file exist in the exports_dir, it's assumed that this tasks has finished
+        # if this file exist in the exports_dir,
+        # it's assumed that this tasks has finished
         self.stamp_file_path = Path(self.exports_dir) / self.stamp_file
 
     def run(self):
@@ -384,8 +387,8 @@ class WebUpload(luigi.Task):
     gs_prefix: str = luigi.Parameter(default="gs://static-covid/static/v4/")
     channel: str = luigi.Parameter(default="main")
 
-    # this together with setting this in self.run and self.complete guarantees
-    # that this task always run
+    # this together with setting this in self.run and evaluating in self.complete
+    # guarantees that this task always run
     is_complete = False
 
     def run(self):
