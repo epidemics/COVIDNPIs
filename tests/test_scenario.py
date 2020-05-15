@@ -10,15 +10,22 @@ import epimodel.gleam.scenario as sc
 
 
 @pytest.mark.usefixtures("ut_datadir", "ut_rds")
+class TestScenarioIntegration(PandasTestCase):
+    def test_integration(self):
+        parser = sc.ConfigParser(rds=self.rds)
+        df = parser.get_config_from_csv(self.datadir / "scenario/config.csv")
+        simulations = sc.SimulationSet(df)
+
+
+@pytest.mark.usefixtures("ut_datadir", "ut_rds")
 class TestConfigParser(PandasTestCase):
     @staticmethod
-    def config_from_list(row):
-        config = pd.DataFrame(columns=sc.ConfigParser.FIELDS)
-        config.loc[2] = row
+    def config_from_rows(*rows):
+        config = pd.DataFrame(rows, columns=sc.ConfigParser.FIELDS)
         return config
 
     def config_exception(self, **kwargs):
-        config = self.config_from_list(
+        config = self.config_from_rows(
             [
                 "PK",
                 "0.35",
@@ -35,7 +42,7 @@ class TestConfigParser(PandasTestCase):
 
     def test_output_format(self):
         parser = sc.ConfigParser(rds=self.rds)
-        df = parser.get_config_from_csv(self.datadir / "scenario_config.csv")
+        df = parser.get_config_from_csv(self.datadir / "scenario/config.csv")
 
         self.assert_array_equal(
             df.columns, sc.ConfigParser.FIELDS, "output columns do not match"
@@ -56,7 +63,6 @@ class TestConfigParser(PandasTestCase):
         # Column types
         self.assert_dtype(df["Region"], "object")
         self.assertIsInstance(df["Region"].dropna().iloc[0], Region)
-        self.assert_dtype(df["Value"], "float")
         self.assert_dtype(df["Start date"], "M")
         self.assert_dtype(df["End date"], "M")
 
@@ -69,6 +75,17 @@ class TestConfigParser(PandasTestCase):
         parser = sc.ConfigParser(rds=self.rds)
         df = parser.get_config(self.config_exception(Region="France"))
         self.assertEqual(df["Region"].iloc[0], self.rds["FR"])
+
+    def test_converts_values_selectively(self):
+        parser = sc.ConfigParser(rds=self.rds)
+        df = parser.get_config(
+            self.config_from_rows(
+                ["", "test name", "name", "", "", "", ""],
+                ["", "test.id", "id", "", "", "", ""],
+                ["", "0.5", "beta", "", "", "", ""],
+            )
+        )
+        self.assert_array_equal(df["Value"], pd.Series(["test name", "test.id", 0.5]))
 
     @patch("epimodel.gleam.scenario.ergo")
     def test_foretold_lookup(self, ergo):
@@ -381,14 +398,16 @@ class TestDefinitionGenerator(PandasTestCase):
     # multipliers
 
     def test_multiplier_affects_one_parameter(self):
-        config = pd.concat([
-            self.config_rows(
-                {"Value": 2.0, "Parameter": "beta multiplier"},
-                {"Value": 0.5, "Parameter": "mu"},
-                {"Value": 0.5, "Parameter": "beta"},
-            ),
-            self.config_exception({"mu": 1.0, "beta": 1.0}, ["FR"]),
-        ]).reset_index()
+        config = pd.concat(
+            [
+                self.config_rows(
+                    {"Value": 2.0, "Parameter": "beta multiplier"},
+                    {"Value": 0.5, "Parameter": "mu"},
+                    {"Value": 0.5, "Parameter": "beta"},
+                ),
+                self.config_exception({"mu": 1.0, "beta": 1.0}, ["FR"]),
+            ]
+        ).reset_index()
         sc.DefinitionGenerator(config)
         self.output.set_compartment_variable.assert_any_call("mu", 0.5)
         self.output.set_compartment_variable.assert_any_call("beta", 1.0)

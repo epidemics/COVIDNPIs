@@ -3,6 +3,7 @@ from datetime import datetime, date
 import logging
 import xml.etree.ElementTree as ET
 from typing import Iterable, Union, Callable
+from pathlib import Path
 
 import pandas as pd
 
@@ -13,15 +14,17 @@ log = logging.getLogger(__name__)
 
 
 class GleamDefinition:
-    DEFAULT_XML_FILE = "data/default_gleam_definition.xml"
+    DEFAULT_XML_FILE = (
+        Path(__file__).parent.parent.parent / "data/default_gleam_definition.xml"
+    )
 
-    def __init__(self, file=DEFAULT_XML_FILE):
+    def __init__(self, xml_file=None):
         """
         Load gleam `definition.xml` from a file (path or a file-like object).
         """
         ET.register_namespace("", "http://www.gleamviz.org/xmlns/gleamviz_v4_0")
         self.ns = {"gv": "http://www.gleamviz.org/xmlns/gleamviz_v4_0"}
-        self.tree = ET.parse(file)
+        self.tree = ET.parse(xml_file or self.DEFAULT_XML_FILE)
         self.root = self.tree.getroot()
 
         self.set_timestamp()
@@ -43,6 +46,9 @@ class GleamDefinition:
     def save(self, file):
         self.tree.write(file)  # , default_namespace=self.ns['gv'])
         log.debug(f"Written Gleam definition to {file!r}")
+
+    def to_xml_string(self):
+        return ET.tostring(self.root, encoding="utf-8", method="xml")
 
     ### Main nodes
 
@@ -166,7 +172,10 @@ class GleamDefinition:
         return self.definition_node.set("id", val)
 
     def get_timestamp(self) -> datetime:
-        return pd.Timestamp(self.timestamp_node.text)
+        return pd.Timestamp(self.get_timestamp_str())
+
+    def get_timestamp_str(self) -> str:
+        return self.timestamp_node.text
 
     def set_timestamp(self, timestamp=None):
         timestamp = pd.Timestamp(timestamp or "now")
@@ -182,19 +191,19 @@ class GleamDefinition:
         """Return the number of days to simulate."""
         return int(self.parameter_node.get("duration"))
 
-    def set_duration(self, duration: int):
+    def set_duration(self, duration: Union[int, float]):
         """Set duration in days."""
-        assert isinstance(duration, int)
-        self.parameter_node.set("duration", str(duration))
+        assert isinstance(duration, (int, float))
+        self.parameter_node.set("duration", str(round(duration)))
 
     def get_run_count(self) -> int:
         """Set number of simulations to run."""
         return int(self.parameter_node.get("runCount"))
 
-    def set_run_count(self, run_count: int):
+    def set_run_count(self, run_count: Union[int, float]):
         """Set number of simulations to run."""
-        assert isinstance(run_count, int)
-        self.parameter_node.set("runCount", str(run_count))
+        assert isinstance(run_count, (int, float))
+        self.parameter_node.set("runCount", str(int(run_count)))
 
     def get_end_date(self) -> datetime:
         return self.get_start_date() + pd.DateOffset(self.get_duration())
@@ -202,7 +211,9 @@ class GleamDefinition:
     def set_end_date(self, date: Union[str, date, datetime]):
         """ Note: this must be set *after* start_date
             or it may change unexpectedly """
-        self.set_duration(utc_date(date) - self.get_start_date())
+        self.set_duration(
+            (utc_date(date) - self.get_start_date()) / pd.Timedelta(days=1)
+        )
 
     ### Global Parameters
 

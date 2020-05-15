@@ -31,6 +31,10 @@ class ConfigParser:
         "Type",
         "Class",
     ]
+    STR_PARAMS = [
+        "name",
+        "id",
+    ]
 
     def __init__(self, rds, foretold_token=None, progress_bar=True):
         self.rds = rds
@@ -46,8 +50,12 @@ class ConfigParser:
         df = df[pd.notnull(df["Parameter"])][self.FIELDS].copy()
         df["Start date"] = pd.to_datetime(df["Start date"])
         df["End date"] = pd.to_datetime(df["End date"])
-        df["Value"] = self._values_to_float(df["Value"])
         df["Region"] = df["Region"].apply(self._get_region)
+
+        is_str_value = df["Parameter"].isin(self.STR_PARAMS)
+        df.loc[~is_str_value, "Value"] = self._values_to_float(
+            df.loc[~is_str_value, "Value"]
+        )
         return df
 
     def _values_to_float(self, values: pd.Series):
@@ -108,11 +116,20 @@ class SimulationSet:
         self._set_scenario_values(df)
         self._generate_scenario_definitions()
 
+    def __getitem__(self, classes: tuple):
+        return self.definitions[classes]
+
+    def __contains__(self, classes: tuple):
+        return classes in self.definitions.index
+
+    def __iter__(self):
+        return self.definitions.iteritems()
+
     def _set_scenario_values(self, df):
         is_package = df.Type == "Countermeasure package"
         is_background = pd.isnull(df.Type) | (df.Type == "Background condition")
         if not df[~is_package & ~is_background].empty:
-            bad_types = list(df[~is_package & ~is_background]['Type'].unique())
+            bad_types = list(df[~is_package & ~is_background]["Type"].unique())
             raise ValueError("input contains invalid Type values: {bad_types!r}")
 
         self.package_df = df[is_package]
@@ -142,14 +159,9 @@ class SimulationSet:
             # ensure that package exceptions come before background conditions
             pd.concat(
                 [p_df, self.package_classless_df, b_df, self.background_classless_df]
-            )
+            ),
+            classes=(package_class, background_class),
         )
-
-    def __getitem__(self, classes: tuple):
-        return self.definitions[classes]
-
-    def __contains__(self, classes: tuple):
-        return classes in self.definitions.index
 
 
 class DefinitionGenerator:
@@ -175,10 +187,10 @@ class DefinitionGenerator:
     )
 
     @classmethod
-    def definition_from_config(cls, df: pd.DataFrame, default_xml=None):
-        return cls(df, default_xml).definition
+    def definition_from_config(cls, df: pd.DataFrame, default_xml=None, classes=None):
+        return cls(df, default_xml, classes).definition
 
-    def __init__(self, df: pd.DataFrame, default_xml=None):
+    def __init__(self, df: pd.DataFrame, default_xml=None, classes=None):
         self.definition = GleamDefinition(default_xml)
         assert len(df.dropna(subset=["Type", "Class"]).groupby(["Type", "Class"])) <= 2
 
@@ -188,8 +200,14 @@ class DefinitionGenerator:
         self._set_global_compartment_variables()
         self._set_exceptions()
 
-        if "name" not in df.Parameter:
+        if classes is None and "name" not in df.Parameter:
             self.definition.set_default_name()
+        else:
+            self._set_name_from_classes(classes)
+
+    def _set_name_from_classes(self, classes):
+        name = self.definition.get_name() or self.definition.get_timestamp()
+        self.definition.set_name(f"{name} ({' + '.join(classes)})")
 
     def _parse_df(self, df: pd.DataFrame):
         has_exception_fields = pd.notnull(df[["Region", "Start date", "End date"]])
