@@ -165,7 +165,7 @@ class CountryEstimates(luigi.ExternalTask):
 
 
 class ConfigYaml(luigi.ExternalTask):
-    config_yaml: str = luigi.Parameter(default=_prefix_cfg("config.yaml"))
+    path: str = luigi.Parameter(default=_prefix_cfg("config.yaml"))
 
     @staticmethod
     def load(path):
@@ -173,7 +173,7 @@ class ConfigYaml(luigi.ExternalTask):
             return yaml.safe_load(f)
 
     def output(self):
-        return luigi.LocalTarget(self.config_yaml)
+        return luigi.LocalTarget(self.path)
 
 
 class GenerateGleamBatch(luigi.Task):
@@ -203,7 +203,7 @@ class GenerateGleamBatch(luigi.Task):
     def output(self):
         return luigi.LocalTarget(self._full_output_path)
 
-    def run(self):
+    def _run(self):
         b = Batch.new(path=self._full_output_path)
         logger.info(f"New batch file {b.path}")
 
@@ -214,7 +214,7 @@ class GenerateGleamBatch(luigi.Task):
         country_estimates = self.input()["country_estimates"].path
         rds = RegionsDatasetTask.load_dilled_rds(self.input()["regions_dataset"].path)
         logger.info(f"Reading estimates from CSV {country_estimates} ...")
-        est = read_csv_smart(self.country_estimates, rds, levels=Level.country)
+        est = read_csv_smart(country_estimates, rds, levels=Level.country)
         start_date = (
             utils.utc_date(self.start_date) if self.start_date else d.get_start_date()
         )
@@ -230,6 +230,15 @@ class GenerateGleamBatch(luigi.Task):
         )
         logger.info(f"Generated batch {b.path!r}:\n  {b.stats()}")
         b.close()
+
+    def run(self):
+        # cleaning up in the case of incomplete runs
+        try:
+            self._run()
+        except:
+            if os.path.exists(self._full_output_path):
+                os.remove(self._full_output_path)
+
 
 
 class ExportGleamBatch(luigi.Task):
@@ -445,7 +454,7 @@ class WebExport(luigi.Task):
 
 @requires(WebExport)
 class WebUpload(luigi.Task):
-    gs_prefix: str = luigi.Parameter(default="gs://static-covid/static/v4/deletemebb")
+    gs_prefix: str = luigi.Parameter(default="gs://static-covid/static/v4/")
     channel: str = luigi.Parameter(default="test")
 
     # this together with setting this in self.run and evaluating in self.complete
