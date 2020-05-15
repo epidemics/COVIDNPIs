@@ -1,13 +1,14 @@
-#!/usr/bin/sh
+#!/usr/bin/env bash
 # assuming that:
 # * you have cloned the epimodel repository
 # * you are in the root
 # * you have installed project dependencies via `poetry install`
 
+# You need to replace <TOKEN> with a foretold_channel
 FORETOLD_TOKEN=<TOKEN>
 
-#CONTINUE="read -p Press-enter"
-CONTINUE="echo"
+CONTINUE="read -p Press-enter"
+# CONTINUE="echo"
 
 OUTPUT_DIRECTORY=example/data/out
 rm -rf $OUTPUT_DIRECTORY
