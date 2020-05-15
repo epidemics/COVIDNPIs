@@ -23,8 +23,6 @@ def default_from_config(task_name: str, param_name: str) -> dict:
 
 
 class RegionsFile(luigi.ExternalTask):
-    # TODO: we can use config_path to fetch defaults from the luigi.cfg
-    # TODO: or use the default in parameter. Now we use both for different tasks
     regions = luigi.Parameter(default="data/regions.csv")
 
     def output(self):
@@ -93,7 +91,8 @@ class UpdateForetold(luigi.Task):
         config_path=default_from_config("UpdateForetold", "foretold_output")
     )
     foretold_channel: str = luigi.Parameter(
-        config_path=default_from_config("UpdateForetold", "foretold_channel")
+        config_path=default_from_config("UpdateForetold", "foretold_channel"),
+        description="The secret to fetch data from Foretold via API"
     )
 
     def run(self):
@@ -136,8 +135,8 @@ class ConfigYaml(luigi.ExternalTask):
 
 @inherits(BaseDefinition, CountryEstimates, RegionsDatasetTask, ConfigYaml)
 class GenerateGleamBatch(luigi.Task):
+    generated_batch_file: str = luigi.Parameter(description="Output path of the generated batch file for gleam")
     comment: str = luigi.Parameter(default="")
-    generated_batch_file: str = luigi.Parameter()
     start_date: datetime = luigi.DateParameter(default=datetime.utcnow())
     top: int = luigi.IntParameter(default=2000)
 
@@ -160,7 +159,6 @@ class GenerateGleamBatch(luigi.Task):
         log.info(f"Reading base GLEAM definition {base_def} ...")
         d = GleamDefinition(base_def)
 
-        # TODO: This should be somewhat more versatile
         country_estimates = self.input()["country_estimates"].path
         rds = RegionsDatasetTask.load_dilled_rds(self.input()["regions_dataset"].path)
         log.info(f"Reading estimates from CSV {country_estimates} ...")
@@ -215,7 +213,7 @@ class ExportGleamBatch(luigi.Task):
         }
 
     def output(self):
-        # TODO: improve to get the generated dirs
+        # TODO: improve this to actually capture gleamviz generated directories
         return luigi.LocalTarget(self.stamp_file_path)
 
 
@@ -225,7 +223,7 @@ class GleamvizResults(luigi.ExternalTask):
 
     # I expect that this is something like "~/GLEAMviz/data/sims/some-batch-file.hdf5"
     # Or maybe this is not even needed? Confused by the results from gleam
-    gleamviz_result = luigi.Parameter(default="blahlah")
+    gleamviz_result = luigi.Parameter()
 
     def output(self):
         return luigi.LocalTarget(self.gleamviz_result)
@@ -324,7 +322,7 @@ WEB_EXPORT_REQUIRED_TASKS = {
     "timezone": Timezones,
     "age_distribution": AgeDistributions,
     "config_yaml": ConfigYaml,
-    "country_estimates": CountryEstimates,  # "estimates" in click - is the same?
+    "country_estimates": CountryEstimates,
 }
 
 
