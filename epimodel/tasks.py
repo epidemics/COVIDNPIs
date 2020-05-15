@@ -35,8 +35,13 @@ class GleamRegions(luigi.ExternalTask):
     def output(self):
         return luigi.LocalTarget(self.gleams)
 
+class RegionsAggregates(luigi.ExternalTask):
+    aggregates = luigi.Parameter(default="data/regions-agg.yaml")
 
-@inherits(RegionsFile, GleamRegions)
+    def output(self):
+        return luigi.LocalTarget(self.aggregates)
+
+@inherits(RegionsFile, GleamRegions, RegionsAggregates)
 class RegionsDatasetTask(luigi.Task):
     regions_dataset: str = luigi.Parameter(
         config_path=default_from_config("RegionsDatasetTask", "regions_dataset")
@@ -45,6 +50,7 @@ class RegionsDatasetTask(luigi.Task):
     def run(self):
         regions = self.input()["region_file"].path
         gleams = self.input()["gleam_regions"].path
+        aggregates = self.input()["aggregates"].path
         rds = RegionDataset.load(regions, gleams)
         algorithms.estimate_missing_populations(rds)
         with open(self.regions_dataset, "wb") as ofile:
@@ -57,6 +63,7 @@ class RegionsDatasetTask(luigi.Task):
         return {
             "region_file": self.clone(RegionsFile),
             "gleam_regions": self.clone(GleamRegions),
+            "aggregates": self.clone(RegionsAggregates),
         }
 
     @staticmethod
