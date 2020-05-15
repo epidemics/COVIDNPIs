@@ -319,10 +319,8 @@ def upload_export(dir_to_export: Path, gs_prefix: str, channel: str):
 
 
 def types_to_json(obj):
-    if isinstance(obj, (np.float16, np.float32, np.float64, np.float128)):
-        return float(obj)
-    if isinstance(obj, np.int64):
-        return int(obj)
+    if isinstance(obj, np.generic):
+        return obj.item()
     if isinstance(obj, datetime.datetime):
         return obj.isoformat()
     if isinstance(obj, Enum):
