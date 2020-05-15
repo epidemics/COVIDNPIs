@@ -1,6 +1,5 @@
 Region,Value,Parameter,Start date,End date,Type,Class,Trace
 ,GLEAMviz Test,name,,,,,
-,"1234567.890",id,,,,,
 ,,run dates,2020-04-15,2021-01-01,,,
 ,5,number of runs,,,,,
 ,0.35,seasonality,,,Background condition,,

@@ -16,7 +16,7 @@ def test_batch_new_open(tmp_path):
 
 def test_gleam_def(datadir):
     d = epimodel.gleam.GleamDefinition(datadir / "test_definition.xml")
-    assert d.get_id() == "1585188102568.574"
+    assert d.get_id_str() == "1585188102568.574"
     assert float(d.get_variable("beta")) == pytest.approx(1.01)
     assert d.get_traffic_occupancy() == 20
     assert d.get_start_date().isoformat() == "2020-03-25T00:00:00+00:00"

@@ -134,7 +134,7 @@ class SimulationSet:
     def add_to_batch(self, batch):
         batch.set_simulations(
             [
-                (def_gen.definition, "PLACEHOLDER", pacakge, background)
+                (def_gen.definition, "PLACEHOLDER", package, background)
                 for (package, background), def_gen in self
             ]
         )
@@ -146,7 +146,7 @@ class SimulationSet:
         the resulting id sufficiently large and unique.
         """
         self.base_id = int(pd.Timestamp.utcnow().timestamp() * 1000)
-        self.ids = {klass: 1 << i for i, klass in enumerate(df["Class"].unique())}
+        self.ids = {klass: 1 << i for i, klass in enumerate(sorted(df["Class"].dropna().unique()))}
 
     def _id_for_class_pair(self, class1: str, class2: str):
         return self.base_id + self.ids[class1] + self.ids[class2]
@@ -199,7 +199,6 @@ class DefinitionGenerator:
 
     GLOBAL_PARAMETERS = {
         "name": "set_name",
-        "id": "set_id",
         "duration": "set_duration",
         "number of runs": "set_run_count",
         "airline traffic": "set_airline_traffic",
@@ -213,9 +212,10 @@ class DefinitionGenerator:
         "imu",
     )
 
-    def __init__(self, df: pd.DataFrame, id, classes=None, default_xml=None):
+    def __init__(self, df: pd.DataFrame, id=None, classes=None, default_xml=None):
         self.definition = GleamDefinition(default_xml)
-        self.definition.set_id(id)
+        if id is not None:
+            self.definition.set_id(id)
 
         self._parse_df(df)
         self._set_global_parameters()

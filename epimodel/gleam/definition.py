@@ -1,3 +1,4 @@
+import io
 import copy
 from datetime import datetime, date
 import logging
@@ -50,7 +51,9 @@ class GleamDefinition:
         log.debug(f"Written Gleam definition to {file!r}")
 
     def to_xml_string(self):
-        return self.save(io.BytesIO()).decode("ascii")
+        b = io.BytesIO()
+        self.save(b)
+        return b.getvalue().decode("ascii")
 
     ### Testing methids
 
@@ -205,17 +208,20 @@ class GleamDefinition:
         return self.definition_node.get("id")
 
     def set_id(self, val: int):
-        assert isinstance(int)
+        assert isinstance(val, int)
         return self.definition_node.set("id", f"{val}{self.GLEAM_ID_SUFFIX}")
 
     def get_timestamp(self) -> datetime:
-        return pd.Timestamp(self.get_timestamp_str())
+        return pd.Timestamp(self.get_timestamp_str(), tz="UTC")
 
     def get_timestamp_str(self) -> str:
         return self.timestamp_node.text
 
     def set_timestamp(self, timestamp=None):
-        timestamp = pd.Timestamp(timestamp or "now")
+        if timestamp is None:
+            timestamp = pd.Timestamp.utcnow()
+        else:
+            timestamp = pd.Timestamp(timestamp, tz="UTC")
         self.timestamp_node.text = timestamp.strftime("%Y-%m-%dT%T")
 
     def get_start_date(self) -> datetime:

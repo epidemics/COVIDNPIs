@@ -12,13 +12,13 @@ from epimodel.gleam.definition import GleamDefinition
 
 @pytest.mark.usefixtures("ut_datadir", "ut_rds")
 class TestScenarioIntegration(PandasTestCase):
-    timestamp_patcher = patch("pandas.Timestamp", autospec=True)
+    timestamp_patcher = patch("pandas.Timestamp.utcnow", autospec=True)
 
     def setUp(self):
         # patch timestamp to be constant for consistent test results
-        self.timestamp = pd.Timestamp('2020-05-01')
-        self.Timestamp = self.timestamp_patcher.start()
-        self.Timestamp.return_value = self.timestamp
+        self.timestamp = pd.Timestamp("2020-05-01", tz='UTC')
+        self.utcnow = self.timestamp_patcher.start()
+        self.utcnow.return_value = self.timestamp
 
     def tearDown(self):
         self.timestamp_patcher.stop()
@@ -103,11 +103,10 @@ class TestConfigParser(PandasTestCase):
         df = parser.get_config(
             self.config_from_rows(
                 ["", "test name", "name", "", "", "", ""],
-                ["", "test.id", "id", "", "", "", ""],
                 ["", "0.5", "beta", "", "", "", ""],
             )
         )
-        self.assert_array_equal(df["Value"], pd.Series(["test name", "test.id", 0.5]))
+        self.assert_array_equal(df["Value"], pd.Series(["test name", 0.5]))
 
     @patch("epimodel.gleam.scenario.ergo")
     def test_foretold_lookup(self, ergo):
@@ -136,11 +135,13 @@ class TestConfigParser(PandasTestCase):
 
 
 class TestSimulationSet(PandasTestCase):
-    def_gen_patcher = patch("epimodel.gleam.scenario.DefinitionGenerator", autospec=True)
+    def_gen_patcher = patch(
+        "epimodel.gleam.scenario.DefinitionGenerator", autospec=True
+    )
 
     def setUp(self):
         self.DefinitionGenerator = self.def_gen_patcher.start()
-        self.DefinitionGenerator.side_effect=lambda df, classes: df
+        self.DefinitionGenerator.side_effect = lambda df, id, classes: (df, id, classes)
 
     def tearDown(self):
         self.def_gen_patcher.stop()
@@ -167,13 +168,19 @@ class TestSimulationSet(PandasTestCase):
         config = self.get_config()
         ss = sc.SimulationSet(config)
 
+        ids = set()
         for package_class in ["A", "B"]:
             for background_class in ["C", "D"]:
                 pair = (package_class, background_class)
                 self.assertIn(pair, ss)
 
                 expected_output = config[config.present_in.str.contains("".join(pair))]
-                self.assert_array_equal(ss[pair], expected_output)
+                output, id, classes = ss[pair]
+                self.assert_array_equal(output, expected_output)
+                self.assertEqual(classes, pair)
+                self.assertIsInstance(id, int)
+                ids.add(id)
+        self.assertEqual(len(ids), 4, "not all ids are unique")
 
 
 @pytest.mark.usefixtures("ut_rds")
@@ -183,9 +190,18 @@ class TestDefinitionGenerator(PandasTestCase):
     def setUp(self):
         self.GleamDefinition = self.definition_patcher.start()
         self.output = self.GleamDefinition.return_value
+        self._definition_name = None
+        self.output.set_name.side_effect = self._set_definition_name
+        self.output.get_name.side_effect = self._get_definition_name
 
     def tearDown(self):
         self.definition_patcher.stop()
+
+    def _set_definition_name(self, name):
+        self._definition_name = name
+
+    def _get_definition_name(self):
+        return self._definition_name
 
     def config_rows(self, *rows):
         return pd.concat([self.config_row(row) for row in rows]).reset_index()
@@ -219,6 +235,21 @@ class TestDefinitionGenerator(PandasTestCase):
             )
         )
 
+    # configuration
+
+    def test_id(self):
+        config = self.config_row({"Parameter": "epsilon", "value": 0.5})
+        sc.DefinitionGenerator(config, id=123)
+        self.output.set_id.assert_called_once_with(123)
+
+    def test_name_with_classes(self):
+        config = self.config_row({"Parameter": "name", "Value": "Test",})
+        def_gen = sc.DefinitionGenerator(config, classes=('A', 'B'))
+        self.output.set_name.assert_called_with("Test (A + B)")
+        self.assertAlmostEqual(def_gen.filename, 'Test__A__B.xml')
+
+    # run dates
+
     def test_run_dates(self):
         config = self.config_row(
             {
@@ -248,16 +279,10 @@ class TestDefinitionGenerator(PandasTestCase):
     # global parameters
 
     def test_name(self):
-        value = "GLEAMviz test run"
+        value = "GLEAMviz test"
         config = self.config_row({"Parameter": "name", "Value": value,})
         sc.DefinitionGenerator(config)
-        self.output.set_name.assert_called_once_with(value)
-
-    def test_id(self):
-        value = "1234567.890"
-        config = self.config_row({"Parameter": "id", "Value": value,})
-        sc.DefinitionGenerator(config)
-        self.output.set_id.assert_called_once_with(value)
+        self.output.set_name.assert_called_with(value)
 
     def test_duration(self):
         value = 180.0  # days
