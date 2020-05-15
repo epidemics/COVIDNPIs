@@ -2,10 +2,10 @@
 # assuming that:
 # * you have cloned the epimodel repository
 # * you are in the root
-# * you have installed project dependencies via `poetry install`
+# * you have installed project dependencies via 'poetry install'
 
 # You need to replace <TOKEN> with a foretold_channel
-FORETOLD_TOKEN=<TOKEN>
+FORETOLD_TOKEN="<TOKEN>"
 
 CONTINUE="read -p Press-enter"
 # CONTINUE="echo"
@@ -15,13 +15,13 @@ rm -rf $OUTPUT_DIRECTORY
 mkdir -p $OUTPUT_DIRECTORY
 
 LUIGI="luigi --local-scheduler --module epimodel.tasks"
-echo "The main way how to operate the pipeline is via the `luigi` tool. It loads"
+echo "The main way how to operate the pipeline is via the 'luigi' tool. It loads"
 echo "the tasks definition from epimodel.tasks where all inputs, dependencies and outputs"
 echo "are defined:"
 echo $LUIGI
 $CONTINUE
 
-echo "All outputs are stored in the $OUTPUT_DIRECTORY. This is defined in the `luigi.cfg`"
+echo "All outputs are stored in the $OUTPUT_DIRECTORY. This is defined in the 'luigi.cfg'"
 echo "under [Configuration]:output_directory setting. [Configuration]:manual_input specifies"
 echo "where to load the manual input files created out of this pipeline. For most of the tasks"
 echo "you can override paths manually (or can be added to be able to do so)"
@@ -50,7 +50,7 @@ echo ""
 echo "This may not be always what you want. To force luigi to trigger the run again"
 echo "you have to either delete the file or (if the task definition allows it) change"
 echo "the output."
-echo "Let's remove the output `$OUTPUT_DIRECTORY/john-hopkins.csv`"
+echo "Let's remove the output '$OUTPUT_DIRECTORY/john-hopkins.csv'"
 echo ""
 echo "rm $OUTPUT_DIRECTORY/john-hopkins.csv"
 $CONTINUE
