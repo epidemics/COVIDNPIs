@@ -287,7 +287,6 @@ def assert_valid_json(file, minify=False):
 
 
 def upload_export(dir_to_export, gs_prefix, channel: str):
-    # TODO: I almost certainly broke something
     CMD = [
         "gsutil",
         "-m",
@@ -315,8 +314,6 @@ def upload_export(dir_to_export, gs_prefix, channel: str):
     cmd = CMD + ["-Z", "-R", exdir, gcs_path]
     log.debug(f"Running {cmd!r}")
     subprocess.run(cmd, check=True)
-
-    log.info(f"Main file: {exdir.parts[-1]}/data-v4.json")
 
     if channel != "main":
         log.info(f"Custom web URL: http://epidemicforecasting.org/?channel={channel}")

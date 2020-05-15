@@ -1,10 +1,9 @@
-import tempfile
-import shutil
-import os
-from datetime import datetime
 import logging
+import os
+import shutil
+import tempfile
+from datetime import datetime
 from pathlib import Path
-
 
 import dill
 import luigi
@@ -13,7 +12,8 @@ from luigi.util import inherits, requires
 
 from epimodel import Level, RegionDataset, algorithms, imports, read_csv_smart, utils
 from epimodel.exports.epidemics_org import process_export, upload_export
-from epimodel.gleam import Batch, GleamDefinition, batch as batch_module
+from epimodel.gleam import Batch, GleamDefinition
+from epimodel.gleam import batch as batch_module
 
 log = logging.getLogger(__name__)
 
@@ -40,7 +40,7 @@ class GleamRegions(luigi.ExternalTask):
 
 @inherits(RegionsFile, GleamRegions)
 class RegionsDatasetTask(luigi.Task):
-    regions_dataset = luigi.Parameter(
+    regions_dataset: str = luigi.Parameter(
         config_path=default_from_config("RegionsDatasetTask", "regions_dataset")
     )
 
@@ -138,8 +138,8 @@ class ConfigYaml(luigi.ExternalTask):
 class GenerateGleamBatch(luigi.Task):
     comment: str = luigi.Parameter(default="")
     generated_batch_file: str = luigi.Parameter()
-    start_date = luigi.DateParameter(default=datetime.utcnow())
-    top = luigi.IntParameter(default=2000)
+    start_date: datetime = luigi.DateParameter(default=datetime.utcnow())
+    top: int = luigi.IntParameter(default=2000)
 
     def requires(self):
         return {
@@ -190,7 +190,7 @@ class GenerateGleamBatch(luigi.Task):
 class ExportGleamBatch(luigi.Task):
     stamp_file = "ExportGleamBatch.success"
 
-    exports_dir = luigi.Parameter(default="~/GLEAMviz/data/sims/")
+    exports_dir: str = luigi.Parameter(default="~/GLEAMviz/data/sims/")
     overwrite = luigi.BoolParameter(default=False)
 
     def __init__(self, *args, **kwargs):
@@ -386,19 +386,24 @@ class WebExport(luigi.Task):
 
 
 @requires(WebExport)
-class WebUpload(luigi.WrapperTask):
+class WebUpload(luigi.Task):
     gs_prefix: str = luigi.Parameter(default="gs://static-covid/static/v4/")
     channel: str = luigi.Parameter(default="main")
-    dir_to_upload: str = luigi.Parameter()  # WebExport.full_export_path and self.input() instead
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.gs_path = Path(self.gs_prefix) / Path(self.dir_to_upload).parts[-1]
+    # this together with setting this in self.run and self.complete guarantees
+    # that this task always run
+    is_complete = False
 
     def run(self):
-        upload_export(
-            self.dir_to_upload, gs_prefix=Path(self.gs_prefix), channel=self.channel
-        )
+        main_data_file = self.input().path
+        base_dir = os.path.dirname(
+            main_data_file
+        )  # directory with all the exported outputs
+        upload_export(base_dir, gs_prefix=Path(self.gs_prefix), channel=self.channel)
+        self.is_complete = True
+
+    def complete(self):
+        return self.is_complete
 
     # def output(self):
     # TODO: could be done fancy via GCS, but that
