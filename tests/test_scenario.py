@@ -15,6 +15,7 @@ class TestScenarioIntegration(PandasTestCase):
     timestamp_patcher = patch("pandas.Timestamp", autospec=True)
 
     def setUp(self):
+        # patch timestamp to be constant for consistent test results
         self.timestamp = pd.Timestamp('2020-05-01')
         self.Timestamp = self.timestamp_patcher.start()
         self.Timestamp.return_value = self.timestamp
@@ -26,18 +27,16 @@ class TestScenarioIntegration(PandasTestCase):
         parser = sc.ConfigParser(rds=self.rds)
         df = parser.get_config_from_csv(self.datadir / "scenario/config.csv")
         simulations = sc.SimulationSet(df)
-        for classes, definition in simulations:
-            file_path = (
-                "scenario/definitions/GLEAMviz_Test__%s__%s.xml" % classes
-            ).replace(" ", "_")
+        for classes, def_gen in simulations:
+            dir = self.datadir / "scenario/definitions"
 
             ### Uncomment the following line and run this test if you
             ### need to reset the files, but be sure to manually check
             ### the output afterwards to ensure it's correct.
-            # definition.save(self.datadir / file_path)
+            # def_gen.save_to_dir(dir)
 
-            expected = GleamDefinition(self.datadir / file_path)
-            definition.assert_equal(expected)
+            expected = GleamDefinition(dir / def_gen.filename)
+            def_gen.definition.assert_equal(expected)
 
 
 @pytest.mark.usefixtures("ut_datadir", "ut_rds")
@@ -141,7 +140,7 @@ class TestSimulationSet(PandasTestCase):
 
     def setUp(self):
         self.DefinitionGenerator = self.def_gen_patcher.start()
-        self.DefinitionGenerator.definition_from_config = Mock(side_effect=lambda x, classes: x)
+        self.DefinitionGenerator.side_effect=lambda df, classes: df
 
     def tearDown(self):
         self.def_gen_patcher.stop()

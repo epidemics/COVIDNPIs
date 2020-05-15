@@ -1,5 +1,6 @@
 from uuid import UUID
 from collections import namedtuple
+import re
 
 import numpy as np
 import pandas as pd
@@ -155,7 +156,7 @@ class SimulationSet:
     def _definition_for_class_pair(self, package_class: str, background_class: str):
         p_df = self.package_df[self.package_df["Class"] == package_class]
         b_df = self.background_df[self.background_df["Class"] == background_class]
-        return DefinitionGenerator.definition_from_config(
+        return DefinitionGenerator(
             # ensure that package exceptions come before background conditions
             pd.concat(
                 [p_df, self.package_classless_df, b_df, self.background_classless_df]
@@ -186,10 +187,6 @@ class DefinitionGenerator:
         "imu",
     )
 
-    @classmethod
-    def definition_from_config(cls, df: pd.DataFrame, default_xml=None, classes=None):
-        return cls(df, default_xml, classes).definition
-
     def __init__(self, df: pd.DataFrame, default_xml=None, classes=None):
         self.definition = GleamDefinition(default_xml)
 
@@ -203,9 +200,19 @@ class DefinitionGenerator:
         else:
             self._set_name_from_classes(classes)
 
+    @property
+    def filename(self):
+        nonplussed = self.definition.get_name().replace(" + ", "__")
+        return "%s.xml" % re.sub(r"\W", "_", nonplussed).strip("_")
+
+    def save_to_dir(self, dir):
+        self.definition.save(dir / self.filename)
+
     def _set_name_from_classes(self, classes=None):
         name = self.definition.get_name() or self.definition.get_timestamp()
-        self.definition.set_name(f"{name} ({' + '.join(classes)})")
+        if classes:
+            name = f"{name} ({' + '.join(classes)})"
+        self.definition.set_name(name)
 
     def _parse_df(self, df: pd.DataFrame):
         has_exception_fields = pd.notnull(df[["Region", "Start date", "End date"]])
