@@ -134,12 +134,12 @@ python-versions = "*"
 version = "3.0.4"
 
 [[package]]
-category = "main"
+category = "dev"
 description = "Composable command line interface toolkit"
 name = "click"
 optional = false
 python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*"
-version = "7.1.1"
+version = "7.1.2"
 
 [[package]]
 category = "main"
@@ -149,6 +149,20 @@ name = "colorama"
 optional = false
 python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*"
 version = "0.4.3"
+
+[[package]]
+category = "main"
+description = "Colored terminal output for Python's logging module"
+name = "coloredlogs"
+optional = false
+python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*"
+version = "14.0"
+
+[package.dependencies]
+humanfriendly = ">=7.1"
+
+[package.extras]
+cron = ["capturer (>=2.4)"]
 
 [[package]]
 category = "main"
@@ -231,6 +245,17 @@ version = "2.10.0"
 [package.dependencies]
 numpy = ">=1.7"
 six = "*"
+
+[[package]]
+category = "main"
+description = "Human friendly output for text interfaces using Python"
+name = "humanfriendly"
+optional = false
+python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*"
+version = "8.2"
+
+[package.dependencies]
+pyreadline = "*"
 
 [[package]]
 category = "dev"
@@ -893,6 +918,15 @@ version = "2.4.7"
 
 [[package]]
 category = "main"
+description = "A python implmementation of GNU readline."
+marker = "sys_platform == \"win32\""
+name = "pyreadline"
+optional = false
+python-versions = "*"
+version = "2.1"
+
+[[package]]
+category = "main"
 description = "Generic API for dispatch to Pyro backends."
 name = "pyro-api"
 optional = true
@@ -1353,7 +1387,7 @@ pymc3 = ["pymc3", "jupyter", "seaborn"]
 pyro = ["pyro-ppl", "jupyter", "seaborn"]
 
 [metadata]
-content-hash = "9adadf7c067e0a6b353ceaf7b333799fa02677a4db780dd77a1923a64cdf723f"
+content-hash = "b69bdcf3081cb92b134549f93682d20b15a99c22d733478131b9d6007145f430"
 python-versions = ">=3.6.9"
 
 [metadata.files]
@@ -1420,12 +1454,16 @@ chardet = [
     {file = "chardet-3.0.4.tar.gz", hash = "sha256:84ab92ed1c4d4f16916e05906b6b75a6c0fb5db821cc65e70cbd64a3e2a5eaae"},
 ]
 click = [
-    {file = "click-7.1.1-py2.py3-none-any.whl", hash = "sha256:e345d143d80bf5ee7534056164e5e112ea5e22716bbb1ce727941f4c8b471b9a"},
-    {file = "click-7.1.1.tar.gz", hash = "sha256:8a18b4ea89d8820c5d0c7da8a64b2c324b4dabb695804dbfea19b9be9d88c0cc"},
+    {file = "click-7.1.2-py2.py3-none-any.whl", hash = "sha256:dacca89f4bfadd5de3d7489b7c8a566eee0d3676333fbb50030263894c38c0dc"},
+    {file = "click-7.1.2.tar.gz", hash = "sha256:d2b5255c7c6349bc1bd1e59e08cd12acbbd63ce649f2588755783aa94dfb6b1a"},
 ]
 colorama = [
     {file = "colorama-0.4.3-py2.py3-none-any.whl", hash = "sha256:7d73d2a99753107a36ac6b455ee49046802e59d9d076ef8e47b61499fa29afff"},
     {file = "colorama-0.4.3.tar.gz", hash = "sha256:e96da0d330793e2cb9485e9ddfd918d456036c7149416295932478192f4436a1"},
+]
+coloredlogs = [
+    {file = "coloredlogs-14.0-py2.py3-none-any.whl", hash = "sha256:346f58aad6afd48444c2468618623638dadab76e4e70d5e10822676f2d32226a"},
+    {file = "coloredlogs-14.0.tar.gz", hash = "sha256:a1fab193d2053aa6c0a97608c4342d031f1f93a3d1218432c59322441d31a505"},
 ]
 cycler = [
     {file = "cycler-0.10.0-py2.py3-none-any.whl", hash = "sha256:1d8a5ae1ff6c5cf9b93e8811e581232ad8920aeec647c37316ceac982b08cb2d"},
@@ -1487,6 +1525,10 @@ h5py = [
     {file = "h5py-2.10.0-cp38-cp38-win32.whl", hash = "sha256:6ef7ab1089e3ef53ca099038f3c0a94d03e3560e6aff0e9d6c64c55fb13fc681"},
     {file = "h5py-2.10.0-cp38-cp38-win_amd64.whl", hash = "sha256:769e141512b54dee14ec76ed354fcacfc7d97fea5a7646b709f7400cf1838630"},
     {file = "h5py-2.10.0.tar.gz", hash = "sha256:84412798925dc870ffd7107f045d7659e60f5d46d1c70c700375248bf6bf512d"},
+]
+humanfriendly = [
+    {file = "humanfriendly-8.2-py2.py3-none-any.whl", hash = "sha256:e78960b31198511f45fd455534ae7645a6207d33e512d2e842c766d15d9c8080"},
+    {file = "humanfriendly-8.2.tar.gz", hash = "sha256:bf52ec91244819c780341a3438d5d7b09f431d3f113a475147ac9b7b167a3d12"},
 ]
 identify = [
     {file = "identify-1.4.14-py2.py3-none-any.whl", hash = "sha256:2bb8760d97d8df4408f4e805883dad26a2d076f04be92a10a3e43f09c6060742"},
@@ -1820,6 +1862,11 @@ pymc3 = [
 pyparsing = [
     {file = "pyparsing-2.4.7-py2.py3-none-any.whl", hash = "sha256:ef9d7589ef3c200abe66653d3f1ab1033c3c419ae9b9bdb1240a85b024efc88b"},
     {file = "pyparsing-2.4.7.tar.gz", hash = "sha256:c203ec8783bf771a155b207279b9bccb8dea02d8f0c9e5f8ead507bc3246ecc1"},
+]
+pyreadline = [
+    {file = "pyreadline-2.1.win-amd64.exe", hash = "sha256:9ce5fa65b8992dfa373bddc5b6e0864ead8f291c94fbfec05fbd5c836162e67b"},
+    {file = "pyreadline-2.1.win32.exe", hash = "sha256:65540c21bfe14405a3a77e4c085ecfce88724743a4ead47c66b84defcf82c32e"},
+    {file = "pyreadline-2.1.zip", hash = "sha256:4530592fc2e85b25b1a9f79664433da09237c1a270e4d78ea5aa3a2c7229e2d1"},
 ]
 pyro-api = [
     {file = "pyro-api-0.1.1.tar.gz", hash = "sha256:bf3942773a9982908e907d2bbc70a27bd3f5bc3eb7c7b6a8db5bb81bcc3d0d66"},

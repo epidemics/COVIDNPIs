@@ -15,7 +15,7 @@ from epimodel.exports.epidemics_org import process_export, upload_export
 from epimodel.gleam import Batch, GleamDefinition
 from epimodel.gleam import batch as batch_module
 
-log = logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
 
 
 def default_from_config(task_name: str, param_name: str) -> dict:
@@ -35,11 +35,13 @@ class GleamRegions(luigi.ExternalTask):
     def output(self):
         return luigi.LocalTarget(self.gleams)
 
+
 class RegionsAggregates(luigi.ExternalTask):
     aggregates = luigi.Parameter(default="data/regions-agg.yaml")
 
     def output(self):
         return luigi.LocalTarget(self.aggregates)
+
 
 @inherits(RegionsFile, GleamRegions, RegionsAggregates)
 class RegionsDatasetTask(luigi.Task):
@@ -79,12 +81,11 @@ class JohnsHopkins(luigi.Task):
     )
 
     def run(self):
-        log.info("Downloading and parsing CSSE ...")
         rds = RegionsDatasetTask.load_dilled_rds(self.input().path)
         csse = imports.import_johns_hopkins(rds)
         dest = self.hopkins_output
         csse.to_csv(dest)
-        log.info(
+        logger.info(
             f"Saved CSSE to {dest}, last day is {csse.index.get_level_values(1).max()}"
         )
 
@@ -103,12 +104,12 @@ class UpdateForetold(luigi.Task):
     )
 
     def run(self):
-        log.info("Downloading and parsing foretold")
+        logger.info("Downloading and parsing foretold")
         rds = RegionsDatasetTask.load_dilled_rds(self.input().path)
         foretold = imports.import_foretold(rds, self.foretold_channel)
         dest = self.foretold_output
         foretold.to_csv(dest, float_format="%.7g")
-        log.info(f"Saved Foretold to {dest}")
+        logger.info(f"Saved Foretold to {dest}")
 
     def output(self):
         return luigi.LocalTarget(self.foretold_output)
@@ -162,20 +163,20 @@ class GenerateGleamBatch(luigi.Task):
 
     def run(self):
         b = Batch.new(path=self.generated_batch_file)
-        log.info(f"New batch file {b.path}")
+        logger.info(f"New batch file {b.path}")
 
         base_def = self.input()["base_def"].path
-        log.info(f"Reading base GLEAM definition {base_def} ...")
+        logger.info(f"Reading base GLEAM definition {base_def} ...")
         d = GleamDefinition(base_def)
 
         country_estimates = self.input()["country_estimates"].path
         rds = RegionsDatasetTask.load_dilled_rds(self.input()["regions_dataset"].path)
-        log.info(f"Reading estimates from CSV {country_estimates} ...")
+        logger.info(f"Reading estimates from CSV {country_estimates} ...")
         est = read_csv_smart(self.country_estimates, rds, levels=Level.country)
         start_date = (
             utils.utc_date(self.start_date) if self.start_date else d.get_start_date()
         )
-        log.info(f"Generating scenarios with start_date {start_date.ctime()} ...")
+        logger.info(f"Generating scenarios with start_date {start_date.ctime()} ...")
         batch_module.generate_simulations(
             b,
             d,
@@ -185,7 +186,7 @@ class GenerateGleamBatch(luigi.Task):
             start_date=start_date,
             top=self.top,
         )
-        log.info(f"Generated batch {b.path!r}:\n  {b.stats()}")
+        logger.info(f"Generated batch {b.path!r}:\n  {b.stats()}")
         b.close()
 
 
@@ -206,7 +207,7 @@ class ExportGleamBatch(luigi.Task):
         batch_file = self.input()["batch_file"].path
         batch = Batch.open(batch_file)
         gdir = Path(self.exports_dir)
-        log.info(
+        logger.info(
             f"Creating GLEAM XML definitions for batch {batch_file} in dir {gdir} ..."
         )
         batch.export_definitions_to_gleam(
@@ -283,7 +284,7 @@ class ImportGleamBatch(luigi.Task):
             if r.GleamID != "":
                 regions.add(r)
 
-        log.info(
+        logger.info(
             f"Importing results for {len(regions)} from GLEAM into {batch_file} ..."
         )
         b.import_results_from_gleam(
