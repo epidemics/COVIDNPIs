@@ -18,26 +18,49 @@ from epimodel.gleam import batch as batch_module
 logger = logging.getLogger(__name__)
 
 
+class Configuration(luigi.Config):
+    """
+    That these cannot be overriden from CLI due to how luigi evaluates class
+    parameters.
+
+    These can be changed in the config though and will take effect.
+    """
+
+    input_directory: str = luigi.Parameter(
+        description="Directory with manually created input files"
+    )
+    output_directory: str = luigi.Parameter(
+        description="Directory where tasks are going to produce outputs"
+    )
+
+
+CONFIG = Configuration()
+
+
 def default_from_config(task_name: str, param_name: str) -> dict:
     return dict(section=task_name, name=param_name)
 
 
+def _prefix_cfg(filename: str, par_attrib="input_directory") -> str:
+    return (Path(getattr(CONFIG, par_attrib)) / filename).as_posix()
+
+
 class RegionsFile(luigi.ExternalTask):
-    regions = luigi.Parameter(default="data/regions.csv")
+    regions = luigi.Parameter(default=_prefix_cfg("regions.csv"))
 
     def output(self):
         return luigi.LocalTarget(self.regions)
 
 
 class GleamRegions(luigi.ExternalTask):
-    gleams = luigi.Parameter(default="data/regions-gleam.csv")
+    gleams = luigi.Parameter(default=_prefix_cfg("regions-gleam.csv"))
 
     def output(self):
         return luigi.LocalTarget(self.gleams)
 
 
 class RegionsAggregates(luigi.ExternalTask):
-    aggregates = luigi.Parameter(default="data/regions-agg.yaml")
+    aggregates = luigi.Parameter(default=_prefix_cfg("regions-agg.yaml"))
 
     def output(self):
         return luigi.LocalTarget(self.aggregates)
@@ -46,14 +69,14 @@ class RegionsAggregates(luigi.ExternalTask):
 @inherits(RegionsFile, GleamRegions, RegionsAggregates)
 class RegionsDatasetTask(luigi.Task):
     regions_dataset: str = luigi.Parameter(
-        config_path=default_from_config("RegionsDatasetTask", "regions_dataset")
+        default=_prefix_cfg("region_dataset.pk", "output_directory")
     )
 
     def run(self):
         regions = self.input()["region_file"].path
         gleams = self.input()["gleam_regions"].path
         aggregates = self.input()["aggregates"].path
-        rds = RegionDataset.load(regions, gleams)
+        rds = RegionDataset.load(regions, gleams, aggregates)
         algorithms.estimate_missing_populations(rds)
         with open(self.regions_dataset, "wb") as ofile:
             dill.dump(rds, ofile)
@@ -74,27 +97,33 @@ class RegionsDatasetTask(luigi.Task):
             return dill.load(ifile)
 
 
-@requires(RegionsDatasetTask)
 class JohnsHopkins(luigi.Task):
+    _output_directory: str = luigi.Parameter(default=CONFIG.output_directory)
     hopkins_output: str = luigi.Parameter(
         config_path=default_from_config("JohnsHopkins", "hopkins_output")
     )
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._full_output_path = Path(self._output_directory) / self.hopkins_output
+
     def run(self):
         rds = RegionsDatasetTask.load_dilled_rds(self.input().path)
         csse = imports.import_johns_hopkins(rds)
-        dest = self.hopkins_output
-        csse.to_csv(dest)
+        csse.to_csv(self._full_output_path)
         logger.info(
-            f"Saved CSSE to {dest}, last day is {csse.index.get_level_values(1).max()}"
+            f"Saved CSSE to {self._full_output_path}, last day is {csse.index.get_level_values(1).max()}"
         )
 
     def output(self):
-        return luigi.LocalTarget(self.hopkins_output)
+        return luigi.LocalTarget(self._full_output_path)
+
+    def requires(self):
+        return RegionsDatasetTask()
 
 
-@requires(RegionsDatasetTask)
 class UpdateForetold(luigi.Task):
+    _output_directory: str = luigi.Parameter(default=CONFIG.output_directory)
     foretold_output: str = luigi.Parameter(
         config_path=default_from_config("UpdateForetold", "foretold_output")
     )
@@ -103,34 +132,40 @@ class UpdateForetold(luigi.Task):
         description="The secret to fetch data from Foretold via API",
     )
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._full_output_path = Path(self._output_directory) / self.foretold_output
+
     def run(self):
         logger.info("Downloading and parsing foretold")
         rds = RegionsDatasetTask.load_dilled_rds(self.input().path)
         foretold = imports.import_foretold(rds, self.foretold_channel)
-        dest = self.foretold_output
-        foretold.to_csv(dest, float_format="%.7g")
-        logger.info(f"Saved Foretold to {dest}")
+        foretold.to_csv(self._full_output_path, float_format="%.7g")
+        logger.info(f"Saved Foretold to {self._full_output_path}")
 
     def output(self):
-        return luigi.LocalTarget(self.foretold_output)
+        return luigi.LocalTarget(self._full_output_path)
+
+    def requires(self):
+        return RegionsDatasetTask()
 
 
 class BaseDefinition(luigi.ExternalTask):
-    base_def: str = luigi.Parameter(default="data/various/definition-basic-JK.xml")
+    base_def: str = luigi.Parameter(default=_prefix_cfg("definition.xml"))
 
     def output(self):
         return luigi.LocalTarget(self.base_def)
 
 
 class CountryEstimates(luigi.ExternalTask):
-    country_estimates: str = luigi.Parameter(default="data/country_estimates.csv")
+    country_estimates: str = luigi.Parameter(default=_prefix_cfg("estimates.csv"))
 
     def output(self):
         return luigi.LocalTarget(self.country_estimates)
 
 
 class ConfigYaml(luigi.ExternalTask):
-    config_yaml: str = luigi.Parameter(default="config.yaml")
+    config_yaml: str = luigi.Parameter(default=_prefix_cfg("config.yaml"))
 
     @staticmethod
     def load(path):
@@ -141,14 +176,21 @@ class ConfigYaml(luigi.ExternalTask):
         return luigi.LocalTarget(self.config_yaml)
 
 
-@inherits(BaseDefinition, CountryEstimates, RegionsDatasetTask, ConfigYaml)
 class GenerateGleamBatch(luigi.Task):
-    generated_batch_file: str = luigi.Parameter(
-        description="Output path of the generated batch file for gleam"
+    _output_directory: str = luigi.Parameter(default=CONFIG.output_directory)
+    generated_batch_filename: str = luigi.Parameter(
+        default="batch.hdf5",
+        description="Output filename of the generated batch file for gleam",
     )
     comment: str = luigi.Parameter(default="")
     start_date: datetime = luigi.DateParameter(default=datetime.utcnow())
     top: int = luigi.IntParameter(default=2000)
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._full_output_path = (
+            Path(self._output_directory) / self.generated_batch_filename
+        )
 
     def requires(self):
         return {
@@ -159,10 +201,10 @@ class GenerateGleamBatch(luigi.Task):
         }
 
     def output(self):
-        return luigi.LocalTarget(self.generated_batch_file)
+        return luigi.LocalTarget(self._full_output_path)
 
     def run(self):
-        b = Batch.new(path=self.generated_batch_file)
+        b = Batch.new(path=self._full_output_path)
         logger.info(f"New batch file {b.path}")
 
         base_def = self.input()["base_def"].path
@@ -190,12 +232,18 @@ class GenerateGleamBatch(luigi.Task):
         b.close()
 
 
-@inherits(RegionsDatasetTask, GenerateGleamBatch)
 class ExportGleamBatch(luigi.Task):
-    stamp_file = "ExportGleamBatch.success"
-
-    exports_dir: str = luigi.Parameter(default="~/GLEAMviz/data/sims/")
+    exports_dir: str = luigi.Parameter(
+        default=_prefix_cfg("gleamviz", "output_directory"),
+        description=(
+            "Where to output the gleamviz input files. Can be "
+            "set directly to '~/GLEAMviz/data/sims/' if you "
+            "do not want to copy it there manually later on"
+        ),
+    )
     overwrite = luigi.BoolParameter(default=False)
+
+    stamp_file = "ExportGleamBatch.success"
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -206,44 +254,50 @@ class ExportGleamBatch(luigi.Task):
     def run(self):
         batch_file = self.input()["batch_file"].path
         batch = Batch.open(batch_file)
-        gdir = Path(self.exports_dir)
         logger.info(
-            f"Creating GLEAM XML definitions for batch {batch_file} in dir {gdir} ..."
+            f"Creating GLEAM XML definitions for batch {batch_file} in dir {self.exports_dir} ..."
         )
         batch.export_definitions_to_gleam(
-            gdir.expanduser(), overwrite=self.overwrite, info_level=logging.INFO
+            Path(self.exports_dir).expanduser(),
+            overwrite=self.overwrite,
+            info_level=logging.INFO,
         )
 
         # write a dummy stamp file to mark success
         Path(self.stamp_file_path).touch()
 
     def requires(self):
-        return {
-            "batch_file": self.clone(GenerateGleamBatch),
-            "regions_dataset": self.clone(RegionsDatasetTask),
-        }
+        return {"batch_file": self.clone(GenerateGleamBatch)}
 
     def output(self):
-        # TODO: improve this to actually capture gleamviz generated directories
+        # TODO: improve this to actually capture gleamviz input directories
         return luigi.LocalTarget(self.stamp_file_path)
 
 
-@requires(ExportGleamBatch)
 class GleamvizResults(luigi.ExternalTask):
     """This is done manually by a user via Gleam software"""
 
-    # I expect that this is something like "~/GLEAMviz/data/sims/some-batch-file.hdf5"
+    # TODO: I expect that this is usually something like "~/GLEAMviz/data/sims/some-batch-file.hdf5"
     # Or maybe this is not even needed? Confused by the results from gleam
     gleamviz_result = luigi.Parameter()
 
     def output(self):
         return luigi.LocalTarget(self.gleamviz_result)
 
+    def requires(self):
+        return ExportGleamBatch()
 
-@inherits(GleamvizResults, RegionsDatasetTask, ConfigYaml)
+
 class ImportGleamBatch(luigi.Task):
+    _output_directory: str = luigi.Parameter(default=CONFIG.output_directory)
     allow_missing: bool = luigi.BoolParameter(default=True)
-    result_batch_file_path: str = luigi.Parameter(default="data/result-batch-file.hdf5")
+    result_batch_file_path: str = luigi.Parameter(default="result-batch-file.hdf5")
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._full_output_path = (
+            Path(self._output_directory) / self.result_batch_file_path
+        )
 
     def requires(self):
         return {
@@ -289,55 +343,39 @@ class ImportGleamBatch(luigi.Task):
         )
         b.import_results_from_gleam(
             Path(tmp_simulation_dir),
-            Path(tmp_batch_file),
             regions,
             resample=config_yaml["gleam_resample"],
             allow_unfinished=self.allow_missing,
-            overwrite=True,
             info_level=logging.INFO,
         )
         # copy the result overwritten batch file to the result export_directory
-        shutil.copy(tmp_batch_file, self.result_batch_file_path)
+        shutil.copy(tmp_batch_file, self._full_output_path)
 
     def output(self):
-        return luigi.LocalTarget(self.result_batch_file_path)
+        return luigi.LocalTarget(self._full_output_path)
 
 
 class Rates(luigi.ExternalTask):
-    rates: str = luigi.Parameter(default="data/rates.csv")
+    rates: str = luigi.Parameter(default=_prefix_cfg("rates.csv"))
 
     def output(self):
         return luigi.LocalTarget(self.rates)
 
 
 class Timezones(luigi.ExternalTask):
-    timezones: str = luigi.Parameter(default="data/timezones.csv")
+    timezones: str = luigi.Parameter(default=_prefix_cfg("timezones.csv"))
 
     def output(self):
         return luigi.LocalTarget(self.timezones)
 
 
 class AgeDistributions(luigi.ExternalTask):
-    age_distributions: str = luigi.Parameter(default="data/various/age_dist_un.csv")
+    age_distributions: str = luigi.Parameter(default=_prefix_cfg("age_dist_un.csv"))
 
     def output(self):
         return luigi.LocalTarget(self.age_distributions)
 
 
-WEB_EXPORT_REQUIRED_TASKS = {
-    "batch_file": ImportGleamBatch,
-    "hopkins": JohnsHopkins,
-    "foretold": UpdateForetold,
-    "regions_dataset": RegionsDatasetTask,
-    "rates": Rates,
-    "timezone": Timezones,
-    "age_distribution": AgeDistributions,
-    "config_yaml": ConfigYaml,
-    "country_estimates": CountryEstimates,
-}
-
-
-@inherits(*WEB_EXPORT_REQUIRED_TASKS.values())
 class WebExport(luigi.Task):
     export_name: str = luigi.Parameter(
         description="Directory name with exported files inside web_export_directory"
@@ -346,11 +384,15 @@ class WebExport(luigi.Task):
         default=False, description="If true, result JSONs are indented by 4 spaces"
     )
     web_export_directory: str = luigi.Parameter(
-        default="web-exports", description="Root directory for all exports"
+        default=_prefix_cfg("web-exports", "output_directory"),
+        description="Root subdirectory for all exports",
     )
     main_data_filename: str = luigi.Parameter(
         default="data-v4.json",
         description="The default name of the main JSON data file",
+    )
+    comment: str = luigi.Parameter(
+        default="", description="Comment to the export",
     )
 
     def __init__(self, *args, **kwargs):
@@ -385,9 +427,18 @@ class WebExport(luigi.Task):
         return luigi.LocalTarget(self.full_export_path / self.main_data_filename)
 
     def requires(self):
-        return {
-            name: self.clone(task) for name, task in WEB_EXPORT_REQUIRED_TASKS.items()
+        all_tasks = {
+            "batch_file": ImportGleamBatch,
+            "hopkins": JohnsHopkins,
+            "foretold": UpdateForetold,
+            "regions_dataset": RegionsDatasetTask,
+            "rates": Rates,
+            "timezone": Timezones,
+            "age_distribution": AgeDistributions,
+            "config_yaml": ConfigYaml,
+            "country_estimates": CountryEstimates,
         }
+        return {name: self.clone(task) for name, task in all_tasks.items()}
 
 
 @requires(WebExport)

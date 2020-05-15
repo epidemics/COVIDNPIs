@@ -152,7 +152,6 @@ class Batch:
     def import_results_from_gleam(
         self,
         sims_dir: Path,
-        results_batch_file_path: Path,
         regions,
         *,
         allow_unfinished=False,
