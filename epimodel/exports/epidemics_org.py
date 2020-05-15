@@ -81,7 +81,7 @@ class WebExport:
         if pretty_print:
             indent = 4
 
-        os.makedirs(export_directory, exists_ok=False)
+        os.makedirs(export_directory, exist_ok=False)
 
         log.info(f"Writing WebExport to {export_directory} ...")
         for rc, er in tqdm(list(self.export_regions.items()), desc="Writing regions"):
@@ -107,7 +107,7 @@ class WebExport:
             )
         log.info(f"Exported {len(self.export_regions)} regions to {export_directory}")
         if latest is not None:
-            latestdir = os.path.dirname(export_directory) / latest
+            latestdir = Path(os.path.dirname(export_directory)) / latest
             if latestdir.exists():
                 shutil.rmtree(latestdir)
             shutil.copytree(export_directory, latestdir)
@@ -286,7 +286,7 @@ def assert_valid_json(file, minify=False):
             )
 
 
-def upload_export(dir_to_export, gs_prefix, channel: str):
+def upload_export(dir_to_export: Path, gs_prefix: str, channel: str):
     CMD = [
         "gsutil",
         "-m",
@@ -296,10 +296,9 @@ def upload_export(dir_to_export, gs_prefix, channel: str):
         "-a",
         "public-read",
     ]
-    exdir = Path(dir_to_export)
-    assert exdir.is_dir()
+    assert dir_to_export.is_dir()
 
-    for json_file in exdir.iterdir():
+    for json_file in dir_to_export.iterdir():
         if json_file.suffix != ".json":
             continue
         try:
@@ -308,10 +307,10 @@ def upload_export(dir_to_export, gs_prefix, channel: str):
             log.error(f"Error in JSON file {json_file}")
             raise
 
-    release_name = exdir.parts[-1]
-    gcs_path = gs_prefix.joinpath(channel).joinpath(release_name)
-    log.info(f"Uploading data folder {exdir} to {gcs_path} ...")
-    cmd = CMD + ["-Z", "-R", exdir, gcs_path]
+    release_name = dir_to_export.parts[-1]
+    gcs_path = os.path.join(gs_prefix, channel, release_name)
+    log.info(f"Uploading data folder {dir_to_export} to {gcs_path} ...")
+    cmd = CMD + ["-Z", "-R", dir_to_export.as_posix(), gcs_path]
     log.debug(f"Running {cmd!r}")
     subprocess.run(cmd, check=True)
 
@@ -484,15 +483,21 @@ def add_aggregate_traces(aggregate_regions, cummulative_active_df):
 
 
 def process_export(
-    config, rds, debug, comment, batch_file, estimates, pretty_print
+    config: dict,
+    inputs: dict,
+    rds: RegionDataset,
+    debug,
+    comment,
+    batch_file,
+    estimates,
 ) -> WebExport:
     ex = WebExport(config["gleam_resample"], comment=comment)
 
-    hopkins = get_extra_path(config, "john_hopkins")
-    foretold = get_extra_path(config, "foretold")
-    rates = get_extra_path(config, "rates")
-    timezone = get_extra_path(config, "timezones")
-    un_age_dist = get_extra_path(config, "un_age_dist")
+    hopkins = inputs["hopkins"].path
+    foretold = inputs["foretold"].path
+    rates = inputs["rates"].path
+    timezone = inputs["timezones"].path
+    un_age_dist = inputs["age_distributions"].path
 
     export_regions = sorted(config["export_regions"])
 

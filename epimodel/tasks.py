@@ -409,12 +409,12 @@ class WebExport(luigi.Task):
 
         ex = process_export(
             config_yaml,
+            self.input(),
             regions_dataset,
             False,
             self.comment,
             batch_file,
             estimates,
-            self.pretty_print,
         )
         ex.write(
             self.full_export_path,
@@ -433,8 +433,8 @@ class WebExport(luigi.Task):
             "foretold": UpdateForetold,
             "regions_dataset": RegionsDatasetTask,
             "rates": Rates,
-            "timezone": Timezones,
-            "age_distribution": AgeDistributions,
+            "timezones": Timezones,
+            "age_distributions": AgeDistributions,
             "config_yaml": ConfigYaml,
             "country_estimates": CountryEstimates,
         }
@@ -443,18 +443,19 @@ class WebExport(luigi.Task):
 
 @requires(WebExport)
 class WebUpload(luigi.Task):
-    gs_prefix: str = luigi.Parameter(default="gs://static-covid/static/v4/")
-    channel: str = luigi.Parameter(default="main")
+    gs_prefix: str = luigi.Parameter(default="gs://static-covid/static/v4/deletemebb")
+    channel: str = luigi.Parameter(default="test")
 
     # this together with setting this in self.run and evaluating in self.complete
     # guarantees that this task always run
+    # could be replaced by "stamp_file" approach
     is_complete = False
 
     def run(self):
         main_data_file = self.input().path
         # directory with all the exported outputs
         base_dir = os.path.dirname(main_data_file)
-        upload_export(base_dir, gs_prefix=Path(self.gs_prefix), channel=self.channel)
+        upload_export(Path(base_dir), gs_prefix=self.gs_prefix, channel=self.channel)
         self.is_complete = True
 
     def complete(self):
