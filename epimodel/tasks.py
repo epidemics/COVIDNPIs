@@ -32,6 +32,10 @@ class Configuration(luigi.Config):
     output_directory: str = luigi.Parameter(
         description="Directory where tasks are going to produce outputs"
     )
+    gleam_resample: str = luigi.Parameter(
+        default="1D",
+        description="Subsampling of imported data (see Pandas `df.resample`)",
+    )
 
 
 CONFIG = Configuration()
@@ -128,8 +132,7 @@ class UpdateForetold(luigi.Task):
         config_path=default_from_config("UpdateForetold", "foretold_output")
     )
     foretold_channel: str = luigi.Parameter(
-        config_path=default_from_config("UpdateForetold", "foretold_channel"),
-        description="The secret to fetch data from Foretold via API",
+        default="", description="The secret to fetch data from Foretold via API",
     )
 
     def __init__(self, *args, **kwargs):
@@ -137,6 +140,14 @@ class UpdateForetold(luigi.Task):
         self._full_output_path = Path(self._output_directory) / self.foretold_output
 
     def run(self):
+        if (
+            not isinstance(self.foretold_channel, str)
+            or len(self.foretold_channel) < 20
+        ):
+            raise ValueError(
+                "Foretold channel is either not a string or is too short to be valid"
+            )
+
         logger.info("Downloading and parsing foretold")
         rds = RegionsDatasetTask.load_dilled_rds(self.input().path)
         foretold = imports.import_foretold(rds, self.foretold_channel)
@@ -240,34 +251,35 @@ class GenerateGleamBatch(luigi.Task):
                 os.remove(self._full_output_path)
 
 
+class GenerateSimulationDefinitions(luigi.Task):
+    """Formerly ExportGleamBatch"""
 
-class ExportGleamBatch(luigi.Task):
-    exports_dir: str = luigi.Parameter(
+    simulations_dir: str = luigi.Parameter(
         default=_prefix_cfg("gleamviz", "output_directory"),
         description=(
             "Where to output the gleamviz input files. Can be "
-            "set directly to '~/GLEAMviz/data/sims/' if you "
+            "set directly to '~/GLEAMviz/data/simulations/' if you "
             "do not want to copy it there manually later on"
         ),
     )
     overwrite = luigi.BoolParameter(default=False)
 
-    stamp_file = "ExportGleamBatch.success"
+    stamp_file = "GenerateSimulationDefinitions.success"
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # if this file exist in the exports_dir,
+        # if this file exist in the simulations_dir,
         # it's assumed that this tasks has finished
-        self.stamp_file_path = Path(self.exports_dir) / self.stamp_file
+        self.stamp_file_path = Path(self.simulations_dir) / self.stamp_file
 
     def run(self):
-        batch_file = self.input()["batch_file"].path
+        batch_file = self.input().path
         batch = Batch.open(batch_file)
         logger.info(
-            f"Creating GLEAM XML definitions for batch {batch_file} in dir {self.exports_dir} ..."
+            f"Creating GLEAM XML definitions for batch {batch_file} in dir {self.simulations_dir} ..."
         )
         batch.export_definitions_to_gleam(
-            Path(self.exports_dir).expanduser(),
+            Path(self.simulations_dir).expanduser(),
             overwrite=self.overwrite,
             info_level=logging.INFO,
         )
@@ -276,7 +288,7 @@ class ExportGleamBatch(luigi.Task):
         Path(self.stamp_file_path).touch()
 
     def requires(self):
-        return {"batch_file": self.clone(GenerateGleamBatch)}
+        return GenerateGleamBatch()
 
     def output(self):
         # TODO: improve this to actually capture gleamviz input directories
@@ -286,52 +298,59 @@ class ExportGleamBatch(luigi.Task):
 class GleamvizResults(luigi.ExternalTask):
     """This is done manually by a user via Gleam software"""
 
-    # TODO: I expect that this is usually something like "~/GLEAMviz/data/sims/some-batch-file.hdf5"
-    # Or maybe this is not even needed? Confused by the results from gleam
-    gleamviz_result = luigi.Parameter()
+    single_result = luigi.Parameter(
+        description=(
+            "A path to any one `results.h5` gleamviz files you downloaded "
+            "via 'retrieve results' in the gleam software. For example, it "
+            "could be something like "
+            "'~/GLEAMviz/data/simulations/82131231323.ghv5/results.h5'"
+        )
+    )
 
     def output(self):
-        return luigi.LocalTarget(self.gleamviz_result)
+        return luigi.LocalTarget(self.single_result)
 
     def requires(self):
-        return ExportGleamBatch()
+        return GenerateSimulationDefinitions()
 
 
-class ImportGleamBatch(luigi.Task):
+@inherits(GleamvizResults)
+class ExtractSimulationsResults(luigi.Task):
+    """Formerly ImportGleamBatch"""
+
     _output_directory: str = luigi.Parameter(default=CONFIG.output_directory)
     allow_missing: bool = luigi.BoolParameter(default=True)
-    result_batch_file_path: str = luigi.Parameter(default="result-batch-file.hdf5")
+    models_file: str = luigi.Parameter(
+        default="gleam-models.hdf5",
+        description="Name of the output HDF file with all traces",
+    )
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self._full_output_path = (
-            Path(self._output_directory) / self.result_batch_file_path
-        )
+        self._full_output_path = Path(self._output_directory) / self.models_file
 
     def requires(self):
         return {
             "gleamviz_result": self.clone(GleamvizResults),
-            "regions_dataset": self.clone(RegionsDatasetTask),
-            "config_yaml": self.clone(ConfigYaml),
+            "batch_file": GenerateGleamBatch(),
+            "regions_dataset": RegionsDatasetTask(),
+            "config_yaml": ConfigYaml(),
         }
 
     def run(self):
-        batch_file = self.input()["gleamviz_result"].path
-        # assuming batch file is in the gleamviz results dir
-        simulation_directory = os.path.dirname(batch_file)
+        batch_file = self.input()["batch_file"].path
+
+        simulation_directory = os.path.dirname(self.input()["gleamviz_result"].path)
 
         config_yaml = ConfigYaml.load(self.input()["config_yaml"].path)
         regions_dataset = RegionsDatasetTask.load_dilled_rds(
             self.input()["regions_dataset"].path
         )
 
-        # copy the gleamviz results into a temporary directory
+        # copy the batch file into a temporary one
         temp_dir = tempfile.TemporaryDirectory()
-        tmp_simulation_dir = Path(temp_dir.name) / "simulations"
-        shutil.copytree(simulation_directory, tmp_simulation_dir)
-
-        # work only with the copied data from now on
-        tmp_batch_file = Path(tmp_simulation_dir) / os.path.basename(batch_file)
+        tmp_batch_file = Path(temp_dir.name) / "batch.hdf"
+        shutil.copy(batch_file, tmp_batch_file)
         b = Batch.open(tmp_batch_file)
         d = regions_dataset.data
 
@@ -351,9 +370,9 @@ class ImportGleamBatch(luigi.Task):
             f"Importing results for {len(regions)} from GLEAM into {batch_file} ..."
         )
         b.import_results_from_gleam(
-            Path(tmp_simulation_dir),
+            Path(simulation_directory),
             regions,
-            resample=config_yaml["gleam_resample"],
+            resample=CONFIG.gleam_resample,
             allow_unfinished=self.allow_missing,
             info_level=logging.INFO,
         )
@@ -409,7 +428,7 @@ class WebExport(luigi.Task):
         self.full_export_path = Path(self.web_export_directory) / self.export_name
 
     def run(self):
-        batch_file = self.input()["batch_file"].path
+        models = self.input()["models"].path
         config_yaml = ConfigYaml.load(self.input()["config_yaml"].path)
         regions_dataset = RegionsDatasetTask.load_dilled_rds(
             self.input()["regions_dataset"].path
@@ -421,11 +440,12 @@ class WebExport(luigi.Task):
             regions_dataset,
             False,
             self.comment,
-            batch_file,
+            models,
             estimates,
             config_yaml["export_regions"],
             config_yaml["state_to_country"],
             config_yaml["groups"],
+            CONFIG.gleam_resample,
         )
         ex.write(
             self.full_export_path,
@@ -438,24 +458,27 @@ class WebExport(luigi.Task):
         return luigi.LocalTarget(self.full_export_path / self.main_data_filename)
 
     def requires(self):
-        all_tasks = {
-            "batch_file": ImportGleamBatch,
-            "hopkins": JohnsHopkins,
-            "foretold": UpdateForetold,
-            "regions_dataset": RegionsDatasetTask,
-            "rates": Rates,
-            "timezones": Timezones,
-            "age_distributions": AgeDistributions,
-            "config_yaml": ConfigYaml,
-            "country_estimates": CountryEstimates,
+        return {
+            "models": ExtractSimulationsResults(),
+            "hopkins": JohnsHopkins(),
+            "foretold": UpdateForetold(),
+            "regions_dataset": RegionsDatasetTask(),
+            "rates": Rates(),
+            "timezones": Timezones(),
+            "age_distributions": AgeDistributions(),
+            "config_yaml": ConfigYaml(),
+            "country_estimates": CountryEstimates(),
         }
-        return {name: self.clone(task) for name, task in all_tasks.items()}
 
 
-@requires(WebExport)
+# @requires(WebExport)  # this would require gleamviz-result parameter, I think
+# it's not needed and the cost of adding the parameter is a good price
 class WebUpload(luigi.Task):
-    gs_prefix: str = luigi.Parameter(default="gs://static-covid/static/v4/")
+    gs_prefix: str = luigi.Parameter(default="gs://static-covid/static/v4")
     channel: str = luigi.Parameter(default="test")
+    main_data_file: str = luigi.Parameter(
+        description="Path to the main datafile from web-export"
+    )
 
     # this together with setting this in self.run and evaluating in self.complete
     # guarantees that this task always run
@@ -463,9 +486,9 @@ class WebUpload(luigi.Task):
     is_complete = False
 
     def run(self):
-        main_data_file = self.input().path
+        # main_data_file = self.input().path
         # directory with all the exported outputs
-        base_dir = os.path.dirname(main_data_file)
+        base_dir = os.path.dirname(self.main_data_file)
         upload_export(Path(base_dir), gs_prefix=self.gs_prefix, channel=self.channel)
         self.is_complete = True
 

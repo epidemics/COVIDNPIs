@@ -492,7 +492,7 @@ def process_export(
     export_regions: List[str],
     state_to_country: List[str],
     config_groups: List[dict],
-    resample: str = "1D",
+    resample: str,
 ) -> WebExport:
     ex = WebExport(resample, comment=comment)
 

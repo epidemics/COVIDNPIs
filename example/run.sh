@@ -7,14 +7,16 @@
 # You need to replace <TOKEN> with a foretold_channel
 FORETOLD_TOKEN="<TOKEN>"
 
-CONTINUE="read -p Press-enter"
-# CONTINUE="echo"
+#CONTINUE="read -p Press-enter"
+CONTINUE="echo"
+
+LUIGI="luigi --local-scheduler --module epimodel.tasks"
 
 OUTPUT_DIRECTORY=example/data/out
 rm -rf $OUTPUT_DIRECTORY
 mkdir -p $OUTPUT_DIRECTORY
 
-LUIGI="luigi --local-scheduler --module epimodel.tasks"
+
 echo "The main way how to operate the pipeline is via the 'luigi' tool. It loads"
 echo "the tasks definition from epimodel.tasks where all inputs, dependencies and outputs"
 echo "are defined:"
@@ -77,6 +79,12 @@ $LUIGI JohnsHopkins --hopkins-output john-hopkins-2.csv
 ls -la $OUTPUT_DIRECTORY/john-hopkins-2.csv
 
 echo ""
+echo "Paramters can be set on the command line or via config or env variables"
+echo "In the UpdateForetold, we need to pass foretold_channel"
+echo "Set this variable at the top of the file - you can ask in Slack for it"
+$LUIGI UpdateForetold --foretold-channel $FORETOLD_TOKEN
+
+echo ""
 echo "If you wanted to change a parameter of some upstream task of the task you want to run"
 echo "you prefix it with the upstream task name. For example, RegionDatasetTask is an upstream"
 echo "task of the JohnsHopkins and output of RegionDatasetTask is fed into JohnsHopkins"
@@ -93,24 +101,34 @@ $LUIGI GenerateGleamBatch
 
 echo ""
 
-$CONTINUE
-echo "$LUIGI ExportGleamBatch"
+SIM_DIR="$OUTPUT_DIRECTORY/simulations"
+mkdir -p $SIM_DIR
+CMD_GSD="$LUIGI GenerateSimulationDefinitions --simulations-dir $SIM_DIR"
+echo "$CMD_GSD"
 echo ""
+$CMD_GSD
 
-$LUIGI ExportGleamBatch
 
-
-echo "Now faking the results of ImportGleamBatch in $OUTPUT_DIRECTORY/output-import-gleam.hdf5"
-echo "TODO: this needs more info from testing with gleam"
-echo "Set FORETOLD_TOKEN for foretold to be able to execute this"
+FIRST_SIM_DIR=$(ls -1 $SIM_DIR | head -1)
+RESULTS_FAKE=$SIM_DIR/$FIRST_SIM_DIR/results.h5
+echo "Now faking the results of ImportGleamBatch in $RESULTS_FAKE"
+touch $RESULTS_FAKE
+CMD_ESR="$LUIGI ExtractSimulationsResults --single-result $RESULTS_FAKE"
+echo "$CMD_ESR"
+echo "CAUTION: This is going to fail if you haven't retrieved GLEAMviz results"
 $CONTINUE
-cp example/data/manual_input/output-import-gleam.hdf5 $OUTPUT_DIRECTORY/
+$CMD_ESR
+
+echo "With some example file though, we can continue to the export for testing purposes"
+echo "Faking creation of the output models file from the failed task above"
+echo "cp example/data/manual_input/example-models-file.hdf5 $OUTPUT_DIRECTORY/"
+cp example/data/manual_input/example-models-file.hdf5 $OUTPUT_DIRECTORY/
+$CONTINUE
 $LUIGI WebExport \
-  --UpdateForetold-foretold-channel $FORETOLD_TOKEN \
-  --GleamvizResults-gleamviz-result output-import-gleam.hdf5 \
-  --ImportGleamBatch-result-batch-file output-import-gleam.hdf5 \
+  --ExtractSimulationsResults-single-result $RESULTS_FAKE  \
+  --ExtractSimulationsResults-models-file example-models-file.hdf5 \
   --export-name test-output
 
 echo "And finally upload:"
 $CONTINUE
-$LUIGI WebUpload --export-name myout3 --gs-prefix gs://static-covid/static/v4/deleteme
+$LUIGI WebUpload --gs-prefix gs://static-covid/static/v4/deleteme --main-data-file $OUTPUT_DIRECTORY/web-exports/test-output/data-v4.json
