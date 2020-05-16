@@ -4,6 +4,7 @@ from . import PandasTestCase
 
 import pandas as pd
 import numpy as np
+import yaml
 
 from epimodel import Region, RegionDataset
 import epimodel.gleam.scenario as sc
@@ -24,9 +25,11 @@ class TestScenarioIntegration(PandasTestCase):
         self.timestamp_patcher.stop()
 
     def test_integration(self):
+        with open(self.datadir / "scenario/config.yaml", "r") as fp:
+            config = yaml.safe_load(fp)["scenarios"]
         parser = sc.ConfigParser(rds=self.rds)
-        df = parser.get_config_from_csv(self.datadir / "scenario/config.csv")
-        simulations = sc.SimulationSet(df)
+        df = parser.get_config_from_csv(self.datadir / config["parameters"])
+        simulations = sc.SimulationSet(config, df)
         for classes, def_gen in simulations:
             dir = self.datadir / "scenario/definitions"
 
@@ -54,7 +57,7 @@ class TestConfigParser(PandasTestCase):
                 "beta",
                 "2020-04-14",
                 "2021-05-01",
-                "Countermeasure package",
+                "group",
                 "Strong",
             ]
         )
@@ -64,7 +67,7 @@ class TestConfigParser(PandasTestCase):
 
     def test_output_format(self):
         parser = sc.ConfigParser(rds=self.rds)
-        df = parser.get_config_from_csv(self.datadir / "scenario/config.csv")
+        df = parser.get_config_from_csv(self.datadir / "scenario/parameters.csv")
 
         self.assert_array_equal(
             df.columns, sc.ConfigParser.FIELDS, "output columns do not match"
@@ -147,6 +150,13 @@ class TestSimulationSet(PandasTestCase):
         self.def_gen_patcher.stop()
 
     def get_config(self):
+        return {
+            "name": "Test",
+            "groups": [{"name": "A"}, {"name": "B"},],
+            "traces": [{"name": "C"},{"name": "D"},],
+        }
+
+    def get_params(self):
         """
         Generates a simplified, invalid config that still has everything
         this class uses. Order is important because of the way the test
@@ -154,19 +164,22 @@ class TestSimulationSet(PandasTestCase):
         """
         return pd.DataFrame(
             [
-                ["AC AD", "Countermeasure package", "A"],
-                ["BC BD", "Countermeasure package", "B"],
-                ["AC AD BC BD", "Countermeasure package", None],
-                ["AC BC", "Background condition", "C"],
-                ["AD BD", "Background condition", "D"],
-                ["AC AD BC BD", None, None],  # None is assumed background
+                ["AC AD", "group", "A"],
+                ["BC BD", "group", "B"],
+                ["AC AD BC BD", "group", None],
+                ["AC BC", "trace", "C"],
+                ["AC AD BC BD", None, None],
             ],
             columns=["present_in", "Type", "Class"],
         )
 
     def test_output(self):
         config = self.get_config()
-        ss = sc.SimulationSet(config)
+        params = self.get_params()
+        ss = sc.SimulationSet(config, params)
+
+        # None is assumed trace
+        params["Type"].fillna('trace', inplace=True)
 
         ids = set()
         for package_class in ["A", "B"]:
@@ -174,7 +187,7 @@ class TestSimulationSet(PandasTestCase):
                 pair = (package_class, background_class)
                 self.assertIn(pair, ss)
 
-                expected_output = config[config.present_in.str.contains("".join(pair))]
+                expected_output = params[params.present_in.str.contains("".join(pair))]
                 output, id, classes = ss[pair]
                 self.assert_array_equal(output, expected_output)
                 self.assertEqual(classes, pair)
@@ -190,18 +203,9 @@ class TestDefinitionGenerator(PandasTestCase):
     def setUp(self):
         self.GleamDefinition = self.definition_patcher.start()
         self.output = self.GleamDefinition.return_value
-        self._definition_name = None
-        self.output.set_name.side_effect = self._set_definition_name
-        self.output.get_name.side_effect = self._get_definition_name
 
     def tearDown(self):
         self.definition_patcher.stop()
-
-    def _set_definition_name(self, name):
-        self._definition_name = name
-
-    def _get_definition_name(self):
-        return self._definition_name
 
     def config_rows(self, *rows):
         return pd.concat([self.config_row(row) for row in rows]).reset_index()
@@ -239,14 +243,16 @@ class TestDefinitionGenerator(PandasTestCase):
 
     def test_id(self):
         config = self.config_row({"Parameter": "epsilon", "value": 0.5})
-        sc.DefinitionGenerator(config, id=123)
+        def_gen = sc.DefinitionGenerator(config, id=123)
         self.output.set_id.assert_called_once_with(123)
+
+        self.output.get_id_str.return_value = '123.574'
+        self.assertEqual(def_gen.filename, '123.574.xml')
 
     def test_name_with_classes(self):
         config = self.config_row({"Parameter": "name", "Value": "Test",})
-        def_gen = sc.DefinitionGenerator(config, classes=('A', 'B'))
+        sc.DefinitionGenerator(config, classes=('A', 'B'))
         self.output.set_name.assert_called_with("Test (A + B)")
-        self.assertAlmostEqual(def_gen.filename, 'Test__A__B.xml')
 
     # run dates
 

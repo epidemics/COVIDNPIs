@@ -9,6 +9,7 @@ import pandas as pd
 from tqdm import tqdm
 from epimodel import RegionDataset, Region, Level, algorithms
 from .definition import GleamDefinition
+from .batch import Batch
 
 try:
     import ergo
@@ -113,81 +114,91 @@ class ConfigParser:
 class SimulationSet:
     """
     generates a matrix of different simulations from the config df based
-    on the cartesian product of Countermeasure packages X Background
-    conditions
+    on the cartesian product of groups X traces
     """
 
-    def __init__(self, df: pd.DataFrame):
-        self._prepare_ids(df)
-        self._set_scenario_values(df)
+    def __init__(self, config: dict, parameters: pd.DataFrame):
+        self.config = config
+
+        self._store_classes()
+        self._prepare_ids()
+        self._store_parameters(parameters)
+
         self._generate_scenario_definitions()
 
-    def __getitem__(self, classes: tuple):
+    def __getitem__(self, classes: Tuple[str, str]):
         return self.definitions[classes]
 
-    def __contains__(self, classes: tuple):
+    def __contains__(self, classes: Tuple[str, str]):
         return classes in self.definitions.index
 
     def __iter__(self):
         return self.definitions.iteritems()
 
-    def add_to_batch(self, batch):
+    def add_to_batch(self, batch: Batch):
         batch.set_simulations(
             [
-                (def_gen.definition, "PLACEHOLDER", package, background)
-                for (package, background), def_gen in self
+                (def_gen.definition, "PLACEHOLDER", group, trace)
+                for (group, trace), def_gen in self
             ]
         )
 
-    def _prepare_ids(self, df):
+    def _store_classes(self):
+        self.groups = [group["name"] for group in self.config['groups']]
+        self.traces = [trace["name"] for trace in self.config['traces']]
+
+    def _prepare_ids(self):
         """
-        IDs are bit-shifted so every 2-class combo has a unique id when
-        the two ids are added. This is then added to the base_id to make
-        the resulting id sufficiently large and unique.
+        IDs are bit-shifted so every 2-class combo has a unique result
+        when the ids are added. This is then added to the base_id to
+        make the resulting id sufficiently large and unique.
         """
         self.base_id = int(pd.Timestamp.utcnow().timestamp() * 1000)
-        self.ids = {klass: 1 << i for i, klass in enumerate(sorted(df["Class"].dropna().unique()))}
+        # create one list so all ids are unique
+        ids = [1 << i for i in range(len(self.groups) + len(self.traces))]
+        # split the list into separate dicts
+        self.group_ids = dict(zip(self.groups, ids[:len(self.groups)]))
+        self.trace_ids = dict(zip(self.traces, ids[len(self.groups):]))
 
-    def _id_for_class_pair(self, class1: str, class2: str):
-        return self.base_id + self.ids[class1] + self.ids[class2]
+    def _id_for_class_pair(self, group: str, trace: str):
+        return self.base_id + self.group_ids[group] + self.trace_ids[trace]
 
-    def _set_scenario_values(self, df):
-        is_package = df.Type == "Countermeasure package"
-        is_background = pd.isnull(df.Type) | (df.Type == "Background condition")
-        if not df[~is_package & ~is_background].empty:
-            bad_types = list(df[~is_package & ~is_background]["Type"].unique())
+    def _store_parameters(self, df: pd.DataFrame):
+        # assume unspecified types are traces
+        df = df.copy()
+        df['Type'] = df["Type"].fillna("trace")
+
+        is_group = df["Type"] == "group"
+        is_trace = df["Type"] == "trace"
+        if not df[~is_group & ~is_trace].empty:
+            bad_types = list(df[~is_group & ~is_trace]["Type"].unique())
             raise ValueError("input contains invalid Type values: {bad_types!r}")
 
-        self.package_df = df[is_package]
-        self.background_df = df[is_background]
-
-        self.package_classes = self.package_df["Class"].dropna().unique()
-        self.background_classes = self.background_df["Class"].dropna().unique()
+        self.group_df = df[is_group]
+        self.trace_df = df[is_trace]
 
         # rows with no class are applied to all simulations
-        self.package_classless_df = self.package_df[pd.isnull(self.package_df["Class"])]
-        self.background_classless_df = self.background_df[
-            pd.isnull(self.background_df["Class"])
-        ]
+        self.all_groups_df = self.group_df[pd.isnull(self.group_df["Class"])]
+        self.all_classes_df = self.trace_df[pd.isnull(self.trace_df["Class"])]
 
     def _generate_scenario_definitions(self):
         index = pd.MultiIndex.from_product(
-            [self.package_classes, self.background_classes]
+            [self.groups, self.traces]
         )
         self.definitions = pd.Series(
             [self._definition_for_class_pair(*pair) for pair in index], index=index
         )
 
-    def _definition_for_class_pair(self, package_class: str, background_class: str):
-        p_df = self.package_df[self.package_df["Class"] == package_class]
-        b_df = self.background_df[self.background_df["Class"] == background_class]
+    def _definition_for_class_pair(self, group: str, trace: str):
+        group_df = self.group_df[self.group_df["Class"] == group]
+        trace_df = self.trace_df[self.trace_df["Class"] == trace]
         return DefinitionGenerator(
-            # ensure that package exceptions come before background conditions
+            # ensure that group exceptions come before trace exceptions
             pd.concat(
-                [p_df, self.package_classless_df, b_df, self.background_classless_df]
+                [group_df, self.all_groups_df, trace_df, self.all_classes_df]
             ),
-            id=self._id_for_class_pair(package_class, background_class),
-            classes=(package_class, background_class),
+            id=self._id_for_class_pair(group, trace),
+            classes=(group, trace),
         )
 
 
@@ -229,8 +240,7 @@ class DefinitionGenerator:
 
     @property
     def filename(self):
-        nonplussed = self.definition.get_name().replace(" + ", "__")
-        return "%s.xml" % re.sub(r"\W", "_", nonplussed).strip("_")
+        return f"{self.definition.get_id_str()}.xml"
 
     def save_to_dir(self, dir):
         self.definition.save(dir / self.filename)
