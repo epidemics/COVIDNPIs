@@ -3,14 +3,14 @@ scenarios:
   name: "Testing"
   parameters: "scenario/parameters.csv"
   groups:
-    - name: Weak exceptions
+    - name: Weak Exceptions
       description: Parameters with high values
-    - name: Strong exceptions
+    - name: Strong Exceptions
       description: Parameters with low values
   traces:
-    - name: "Expected spread"
+    - name: "Expected Spread"
       description: No beta multiplier in parameters
-    - name: "Faster spread"
+    - name: "Faster Spread"
       description: Small beta multiplier in parameters
   compartment_multipliers:
     Infectious: 1.0

@@ -1,5 +1,5 @@
 <simulation xmlns="http://www.gleamviz.org/xmlns/gleamviz_v4_0">
-  <definition id="1588291200005.574" name="GLEAMviz Test (Weak exceptions + Expected Spread)" type="multi-run">
+  <definition id="1588291200005.574" name="GLEAMviz Test (Weak Exceptions + Expected Spread)" type="multi-run">
     <compartmentalModel>
       <compartments>
         <compartment color="#51b2b7" id="Susceptible" isCarrier="false" isCommuter="true" isSecondary="false" isTraveller="true" x="409" y="35" />
@@ -36,8 +36,10 @@
       <id>Infectious</id>
       <id>Recovered</id>
     </resultCompartments>
-    <exceptions><exception basins="" continents="" countries="163" from="2020-04-14" hemispheres="" regions="" till="2021-05-01"><variable name="beta" value="1.0" /><variable name="epsilon" value="1.0" /></exception>
-</exceptions></definition>
+    <exceptions>
+      <exception basins="" continents="" countries="163" from="2020-04-14" hemispheres="" regions="" till="2021-05-01"><variable name="beta" value="1.0" /><variable name="epsilon" value="1.0" /></exception>
+    </exceptions>
+  </definition>
   <metadata>
     <creationDate>2020-05-01T00:00:00</creationDate>
     <clientVersion>7.0.4</clientVersion>

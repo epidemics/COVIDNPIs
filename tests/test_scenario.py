@@ -182,9 +182,9 @@ class TestSimulationSet(PandasTestCase):
         params["Type"].fillna('trace', inplace=True)
 
         ids = set()
-        for package_class in ["A", "B"]:
-            for background_class in ["C", "D"]:
-                pair = (package_class, background_class)
+        for group in ["A", "B"]:
+            for trace in ["C", "D"]:
+                pair = (group, trace)
                 self.assertIn(pair, ss)
 
                 expected_output = params[params.present_in.str.contains("".join(pair))]
@@ -194,6 +194,7 @@ class TestSimulationSet(PandasTestCase):
                 self.assertIsInstance(id, int)
                 ids.add(id)
         self.assertEqual(len(ids), 4, "not all ids are unique")
+        assert False
 
 
 @pytest.mark.usefixtures("ut_rds")
@@ -251,6 +252,7 @@ class TestDefinitionGenerator(PandasTestCase):
 
     def test_name_with_classes(self):
         config = self.config_row({"Parameter": "name", "Value": "Test",})
+        self.output.get_name.return_value = 'Test'
         sc.DefinitionGenerator(config, classes=('A', 'B'))
         self.output.set_name.assert_called_with("Test (A + B)")
 

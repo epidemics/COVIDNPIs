@@ -69,11 +69,12 @@ class GleamDefinition:
         try:
             tag = self._strip_tag(e1)
             assert tag == self._strip_tag(e2)
-            assert e1.text == e2.text
-            assert e1.tail == e2.tail
+            assert (e1.text or "").strip() == (e2.text or "").strip()
+            assert (e1.tail or "").strip() == (e2.tail or "").strip()
             assert e1.attrib == e2.attrib
             assert len(e1) == len(e2)
         except AssertionError:
+            # import pdb; pdb.set_trace()
             raise AssertionError(
                 f"{e1!r} != {e2!r} at path {path}\n\n%s\n\n%s"
                 % (
@@ -118,7 +119,9 @@ class GleamDefinition:
 
     def clear_exceptions(self):
         """Remove all exceptions from the XML."""
-        self.exceptions_node.clear()
+        enode = self.exceptions_node
+        enode.clear()
+        enode.tail = "\n  "
 
     def add_exception(
         self, regions: Iterable[Region], variables: dict, start=None, end=None
@@ -131,6 +134,13 @@ class GleamDefinition:
         NB: This is not changed if you change the simulation start/end later!
         """
         enode = self.exceptions_node
+
+        # formatting
+        enode.text = "\n      "
+        last_child = enode.find("exception[last()]")
+        if last_child:
+            last_child.tail = "\n      "
+
         attrs = dict(basins="", continents="", countries="", hemispheres="", regions="")
         if start is None:
             start = self.get_start_date()
@@ -151,7 +161,7 @@ class GleamDefinition:
         ex = ET.SubElement(enode, "exception", attrs)
         for vn, vv in variables.items():
             ET.SubElement(ex, "variable", dict(name=str(vn), value=str(vv)))
-        ex.tail = "\n"
+        ex.tail = "\n    "
 
     ### Seed compartments
 
