@@ -117,12 +117,13 @@ class SimulationSet:
     on the cartesian product of groups X traces
     """
 
-    def __init__(self, config: dict, parameters: pd.DataFrame):
+    def __init__(self, config: dict, parameters: pd.DataFrame, estimates: pd.DataFrame):
         self.config = config
 
         self._store_classes()
         self._prepare_ids()
         self._store_parameters(parameters)
+        self._store_estimates(estimates)
 
         self._generate_scenario_definitions()
 
@@ -136,6 +137,7 @@ class SimulationSet:
         return self.definitions.iteritems()
 
     def add_to_batch(self, batch: Batch):
+        batch.set_initial_compartments(self.estimates)
         batch.set_simulations(
             [
                 (def_gen.definition, "PLACEHOLDER", group, trace)
@@ -181,6 +183,20 @@ class SimulationSet:
         self.all_groups_df = self.group_df[pd.isnull(self.group_df["Class"])]
         self.all_classes_df = self.trace_df[pd.isnull(self.trace_df["Class"])]
 
+    def _store_estimates(self, estimates: pd.DataFrame):
+        # Estimate infections in subregions
+        infectious = estimates["Infectious_mean"].astype("float")
+        algorithms.distribute_down_with_population(infectious, rds)
+
+        # Create compartment sizes
+        mults = self.config["compartment_multipliers"]
+        mult_sum = sum(mults.values())
+        infectious = np.minimum(
+            infectious, rds.data.Population * self.config["compartments_max_fraction"] / mult_sum
+        )
+        infectious = infectious.dropna()
+        self.estimates = pd.DataFrame({n: infectious * m for n, m in mults.items()})
+
     def _generate_scenario_definitions(self):
         index = pd.MultiIndex.from_product([self.groups, self.traces])
         self.definitions = pd.Series(
@@ -193,6 +209,7 @@ class SimulationSet:
         return DefinitionGenerator(
             # ensure that group exceptions come before trace exceptions
             pd.concat([group_df, self.all_groups_df, trace_df, self.all_classes_df]),
+            estimates=self.estimates,
             id=self._id_for_class_pair(group, trace),
             classes=(group, trace),
         )
@@ -219,17 +236,18 @@ class DefinitionGenerator:
         "imu",
     )
 
-    def __init__(self, df: pd.DataFrame, id=None, classes=None, default_xml=None):
+    def __init__(self, parameters: pd.DataFrame, estimates: pd.DataFrame, id=None, classes=None, default_xml=None):
         self.definition = GleamDefinition(default_xml)
         if id is not None:
             self.definition.set_id(id)
 
-        self._parse_df(df)
+        self._parse_parameters(parameters)
         self._set_global_parameters()
         self._set_global_compartment_variables()
         self._set_exceptions()
+        self._set_estimates(estimates)
 
-        if classes is None and "name" not in df.Parameter:
+        if classes is None and "name" not in parameters.Parameter:
             self.definition.set_default_name()
         else:
             self._set_name_from_classes(classes)
@@ -247,7 +265,7 @@ class DefinitionGenerator:
             name = f"{name} ({' + '.join(classes)})"
         self.definition.set_name(name)
 
-    def _parse_df(self, df: pd.DataFrame):
+    def _parse_parameters(self, df: pd.DataFrame):
         has_exception_fields = pd.notnull(df[["Region", "Start date", "End date"]])
         has_compartment_param = df["Parameter"].isin(self.COMPARTMENT_VARIABLES)
 
@@ -297,6 +315,10 @@ class DefinitionGenerator:
         self.definition.clear_exceptions()
         for _, row in self.exceptions.iterrows():
             self.definition.add_exception(*row)
+
+    def _set_estimates(self, estimates: pd.DataFrame):
+        self.definition.clear_seeds()
+        self.definition.add_seeds(rds, estimates, top=top)
 
     def _prepare_exceptions(self, exceptions: pd.DataFrame) -> pd.DataFrame:
         """
