@@ -144,8 +144,8 @@ class SimulationSet:
         )
 
     def _store_classes(self):
-        self.groups = [group["name"] for group in self.config['groups']]
-        self.traces = [trace["name"] for trace in self.config['traces']]
+        self.groups = [group["name"] for group in self.config["groups"]]
+        self.traces = [trace["name"] for trace in self.config["traces"]]
 
     def _prepare_ids(self):
         """
@@ -157,8 +157,8 @@ class SimulationSet:
         # create one list so all ids are unique
         ids = [1 << i for i in range(len(self.groups) + len(self.traces))]
         # split the list into separate dicts
-        self.group_ids = dict(zip(self.groups, ids[:len(self.groups)]))
-        self.trace_ids = dict(zip(self.traces, ids[len(self.groups):]))
+        self.group_ids = dict(zip(self.groups, ids[: len(self.groups)]))
+        self.trace_ids = dict(zip(self.traces, ids[len(self.groups) :]))
 
     def _id_for_class_pair(self, group: str, trace: str):
         return self.base_id + self.group_ids[group] + self.trace_ids[trace]
@@ -166,7 +166,7 @@ class SimulationSet:
     def _store_parameters(self, df: pd.DataFrame):
         # assume unspecified types are traces
         df = df.copy()
-        df['Type'] = df["Type"].fillna("trace")
+        df["Type"] = df["Type"].fillna("trace")
 
         is_group = df["Type"] == "group"
         is_trace = df["Type"] == "trace"
@@ -182,9 +182,7 @@ class SimulationSet:
         self.all_classes_df = self.trace_df[pd.isnull(self.trace_df["Class"])]
 
     def _generate_scenario_definitions(self):
-        index = pd.MultiIndex.from_product(
-            [self.groups, self.traces]
-        )
+        index = pd.MultiIndex.from_product([self.groups, self.traces])
         self.definitions = pd.Series(
             [self._definition_for_class_pair(*pair) for pair in index], index=index
         )
@@ -194,9 +192,7 @@ class SimulationSet:
         trace_df = self.trace_df[self.trace_df["Class"] == trace]
         return DefinitionGenerator(
             # ensure that group exceptions come before trace exceptions
-            pd.concat(
-                [group_df, self.all_groups_df, trace_df, self.all_classes_df]
-            ),
+            pd.concat([group_df, self.all_groups_df, trace_df, self.all_classes_df]),
             id=self._id_for_class_pair(group, trace),
             classes=(group, trace),
         )

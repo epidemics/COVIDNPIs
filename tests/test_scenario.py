@@ -17,7 +17,7 @@ class TestScenarioIntegration(PandasTestCase):
 
     def setUp(self):
         # patch timestamp to be constant for consistent test results
-        self.timestamp = pd.Timestamp("2020-05-01", tz='UTC')
+        self.timestamp = pd.Timestamp("2020-05-01", tz="UTC")
         self.utcnow = self.timestamp_patcher.start()
         self.utcnow.return_value = self.timestamp
 
@@ -51,15 +51,7 @@ class TestConfigParser(PandasTestCase):
 
     def config_exception(self, **kwargs):
         config = self.config_from_rows(
-            [
-                "PK",
-                "0.35",
-                "beta",
-                "2020-04-14",
-                "2021-05-01",
-                "group",
-                "Strong",
-            ]
+            ["PK", "0.35", "beta", "2020-04-14", "2021-05-01", "group", "Strong",]
         )
         for k, v in kwargs.items():
             config.loc[:, k] = v
@@ -153,7 +145,7 @@ class TestSimulationSet(PandasTestCase):
         return {
             "name": "Test",
             "groups": [{"name": "A"}, {"name": "B"},],
-            "traces": [{"name": "C"},{"name": "D"},],
+            "traces": [{"name": "C"}, {"name": "D"},],
         }
 
     def get_params(self):
@@ -179,7 +171,7 @@ class TestSimulationSet(PandasTestCase):
         ss = sc.SimulationSet(config, params)
 
         # None is assumed trace
-        params["Type"].fillna('trace', inplace=True)
+        params["Type"].fillna("trace", inplace=True)
 
         ids = set()
         for group in ["A", "B"]:
@@ -247,13 +239,13 @@ class TestDefinitionGenerator(PandasTestCase):
         def_gen = sc.DefinitionGenerator(config, id=123)
         self.output.set_id.assert_called_once_with(123)
 
-        self.output.get_id_str.return_value = '123.574'
-        self.assertEqual(def_gen.filename, '123.574.xml')
+        self.output.get_id_str.return_value = "123.574"
+        self.assertEqual(def_gen.filename, "123.574.xml")
 
     def test_name_with_classes(self):
         config = self.config_row({"Parameter": "name", "Value": "Test",})
-        self.output.get_name.return_value = 'Test'
-        sc.DefinitionGenerator(config, classes=('A', 'B'))
+        self.output.get_name.return_value = "Test"
+        sc.DefinitionGenerator(config, classes=("A", "B"))
         self.output.set_name.assert_called_with("Test (A + B)")
 
     # run dates
