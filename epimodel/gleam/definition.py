@@ -123,8 +123,16 @@ class GleamDefinition:
         enode.clear()
         enode.tail = "\n  "
 
+    def format_exceptions(self):
+        self._format_list_node(self.exceptions_node)
+
     def add_exception(
-        self, regions: Iterable[Region], variables: dict, start=None, end=None
+        self,
+        regions: Iterable[Region],
+        variables: dict,
+        start=None,
+        end=None,
+        format=False,
     ):
         """
         Add a single exception restricted to `regions` and given dates.
@@ -133,14 +141,6 @@ class GleamDefinition:
         Default `start` is the simulation start, default `end` is the simulation end.
         NB: This is not changed if you change the simulation start/end later!
         """
-        enode = self.exceptions_node
-
-        # formatting
-        enode.text = "\n      "
-        last_child = enode.find("exception[last()]")
-        if last_child:
-            last_child.tail = "\n      "
-
         attrs = dict(basins="", continents="", countries="", hemispheres="", regions="")
         if start is None:
             start = self.get_start_date()
@@ -158,15 +158,22 @@ class GleamDefinition:
                 Level.subregion: "regions",
             }[r.Level]
             attrs[tn] = (attrs[tn] + f" {r.GleamID}").strip()
-        ex = ET.SubElement(enode, "exception", attrs)
+        ex = ET.SubElement(self.exceptions_node, "exception", attrs)
         for vn, vv in variables.items():
             ET.SubElement(ex, "variable", dict(name=str(vn), value=str(vv)))
-        ex.tail = "\n    "
+
+        if format:
+            self.format_exceptions()
 
     ### Seed compartments
 
     def clear_seeds(self):
-        self.seeds_node.clear()
+        seeds_node = self.seeds_node
+        seeds_node.clear()
+        seeds_node.tail = "\n    "
+
+    def format_seeds(self):
+        self._format_list_node(self.seeds_node)
 
     def add_seeds(self, rds: RegionDataset, compartments: pd.DataFrame, top=None):
         """
@@ -188,12 +195,50 @@ class GleamDefinition:
                     continue
                 assert not pd.isnull(r.GleamID)
 
-                seed = ET.SubElement(
+                ET.SubElement(
                     seeds_node,
                     "seed",
                     {"number": str(int(s)), "compartment": c, "city": str(r.GleamID)},
                 )
-                seed.tail = "\n"
+
+        self.format_seeds()
+
+    def add_seed(self, region, compartments: dict, format=False):
+        """
+        Add seed populations from `sizes` to `compartment`.
+
+        Only considers Level.gleam_basin regions from `sizes`.
+        `sizes` must be indexed by `Code`. `rds` must have the gleam
+        regions loaded.
+        """
+        assert region.level == Level.gleam_basin
+        assert pd.notnull(region.GleamID)
+
+        for compartment, size in compartments:
+            ET.SubElement(
+                self.seeds_node,
+                "seed",
+                {
+                    "number": str(int(size)),
+                    "compartment": compartment,
+                    "city": str(region.GleamID),
+                },
+            )
+
+        if format:
+            self.format_seeds()
+
+    ### Formatting
+
+    def _format_list_node(self, node, depth=2):
+        short_tail = f"\n{'  ' * depth}"
+        long_tail = f"{short_tail}  "
+        node.text = long_tail
+        for child in node:
+            child.tail = long_tail
+        last_child = enode.find("seed[last()]")
+        if last_child:
+            last_child.tail = short_tail
 
     ### General attributes
 

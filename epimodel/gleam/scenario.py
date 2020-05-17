@@ -243,8 +243,8 @@ class SimulationSet:
 
 class DefinitionGenerator:
     """
-    Takes a simulation-specific config DataFrame and translates it into
-    a GleamDefinition object.
+    Takes DataFrames for parameters and exceptions, and translates them
+    into a fully-formed GleamDefinition object.
     """
 
     GLOBAL_PARAMETERS = {
@@ -344,14 +344,27 @@ class DefinitionGenerator:
         for _, row in self.compartments.iterrows():
             self.definition.set_compartment_variable(*row)
 
+    def _set_estimates(self, estimates: pd.DataFrame):
+        self.definition.clear_seeds()
+        for _, row in self._prepare_estimates(estimates).iterrows():
+            self.definition.add_seed(*row)
+        self.definition.format_seeds()
+
+    def _prepare_estimates(self, estimates: pd.DataFrame):
+        return pd.DataFrame(
+            {
+                "region": estimates["Region"],
+                "compartments": estimates.drop(columns="Region").to_dict(
+                    orient="records"
+                ),
+            }
+        )
+
     def _set_exceptions(self):
         self.definition.clear_exceptions()
         for _, row in self.exceptions.iterrows():
             self.definition.add_exception(*row)
-
-    def _set_estimates(self, estimates: pd.DataFrame):
-        self.definition.clear_seeds()
-        self.definition.add_seeds(rds, estimates, top=top)
+        self.definition.format_exceptions()
 
     def _prepare_exceptions(self, exceptions: pd.DataFrame) -> pd.DataFrame:
         """
