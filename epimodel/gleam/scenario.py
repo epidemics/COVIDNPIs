@@ -19,13 +19,13 @@ except ModuleNotFoundError:
     pass
 
 
-class ConfigParser:
+class InputParser:
     """
     encapsulates credentials and logic for loading spreadsheet data and
     formatting it for use by the rest of the scenario classes
     """
 
-    FIELDS = [
+    PARAM_FIELDS = [
         "Region",
         "Value",
         "Parameter",
@@ -33,6 +33,11 @@ class ConfigParser:
         "End date",
         "Type",
         "Class",
+    ]
+    ESTIMATE_FIELDS = [
+        "Region",
+        "Population",
+        "Infectious",
     ]
     STR_PARAMS = [
         "name",
@@ -44,12 +49,32 @@ class ConfigParser:
         self.progress_bar = progress_bar
         algorithms.estimate_missing_populations(rds)
 
-    def get_config_from_csv(self, csv_file: str):
-        return self.get_config(pd.read_csv(csv_file))
+    def format_estimates_df(self, raw_estimates: pd.DataFrame):
+        est = raw_estimates.replace({"": None}).dropna(subset=["Name"])
 
-    def get_config(self, df: pd.DataFrame):
-        df = df.replace({"": None})
-        df = df[pd.notnull(df["Parameter"])][self.FIELDS].copy()
+        # distribute_down_with_population requires specifically-formatted input
+        infectious = pd.DataFrame(
+            {
+                "Region": est["Name"]
+                .apply(self._get_region)
+                .apply(lambda reg: reg.Code),
+                "Infectious": est["Infectious_mean"].astype("float"),
+            }
+        ).set_index("Region")["Infectious"]
+
+        # modifies series in-place, adding to the index
+        algorithms.distribute_down_with_population(infectious, self.rds)
+
+        df = pd.DataFrame(infectious).reset_index()
+        df["Region"] = df["Region"].apply(self._get_region)
+        df["Population"] = df["Region"].apply(lambda reg: reg.Population)
+
+        return df[self.ESTIMATE_FIELDS].dropna()
+
+    def format_parameters_df(self, raw_parameters: pd.DataFrame):
+        df = raw_parameters.replace({"": None})[self.PARAM_FIELDS].dropna(
+            subset=["Parameter"]
+        )
         df["Start date"] = pd.to_datetime(df["Start date"])
         df["End date"] = pd.to_datetime(df["End date"])
         df["Region"] = df["Region"].apply(self._get_region)
@@ -184,18 +209,19 @@ class SimulationSet:
         self.all_classes_df = self.trace_df[pd.isnull(self.trace_df["Class"])]
 
     def _store_estimates(self, estimates: pd.DataFrame):
-        # Estimate infections in subregions
-        infectious = estimates["Infectious_mean"].astype("float")
-        algorithms.distribute_down_with_population(infectious, rds)
-
         # Create compartment sizes
-        mults = self.config["compartment_multipliers"]
-        mult_sum = sum(mults.values())
+        multipliers = self.config["compartment_multipliers"]
         infectious = np.minimum(
-            infectious, rds.data.Population * self.config["compartments_max_fraction"] / mult_sum
+            estimates["Infectious"],
+            estimates["Population"]
+            * self.config["compartments_max_fraction"]
+            / sum(multipliers.values()),
         )
-        infectious = infectious.dropna()
-        self.estimates = pd.DataFrame({n: infectious * m for n, m in mults.items()})
+
+        # Apply compartment multipliers
+        self.estimates = pd.DataFrame(estimates["Region"])
+        for compartment, multiplier in multipliers.items():
+            self.estimates[compartment] = (infectious * multiplier).astype("int")
 
     def _generate_scenario_definitions(self):
         index = pd.MultiIndex.from_product([self.groups, self.traces])
@@ -236,7 +262,14 @@ class DefinitionGenerator:
         "imu",
     )
 
-    def __init__(self, parameters: pd.DataFrame, estimates: pd.DataFrame, id=None, classes=None, default_xml=None):
+    def __init__(
+        self,
+        parameters: pd.DataFrame,
+        estimates: pd.DataFrame,
+        id=None,
+        classes=None,
+        default_xml=None,
+    ):
         self.definition = GleamDefinition(default_xml)
         if id is not None:
             self.definition.set_id(id)
