@@ -8,7 +8,7 @@ from pathlib import Path
 import dill
 import luigi
 import yaml
-from luigi.util import inherits, requires
+from luigi.util import inherits
 
 from epimodel import Level, RegionDataset, algorithms, imports, read_csv_smart, utils
 from epimodel.exports.epidemics_org import process_export, upload_export
