@@ -19,23 +19,6 @@ from epimodel.gleam import batch as batch_module
 logger = logging.getLogger(__name__)
 
 
-class OutputDirectory(luigi.Task):
-    """Creates the default output directory"""
-
-    path: str = luigi.Parameter(
-        description=(
-            "A path to the output directory. All tasks having "
-            "some outputs are by default outputing to this directory."
-        )
-    )
-
-    def output(self):
-        return luigi.LocalTarget(self.path)
-
-    def run(self):
-        os.makedirs(self.path, exist_ok=True)
-
-
 class RegionsFile(luigi.ExternalTask):
     """Default regions database used for various country handling"""
 
@@ -77,21 +60,15 @@ class RegionsDatasetTask(luigi.Task):
         description="Output filename of the exported data.",
     )
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        output_dir = self.input()["output_directory"].path
-        self._full_output_path = Path(output_dir, self.regions_dataset)
-
     def requires(self):
         return {
             "region_file": RegionsFile(),
             "gleam_regions": GleamRegions(),
             "aggregates": RegionsAggregates(),
-            "output_directory": OutputDirectory(),
         }
 
     def output(self):
-        return luigi.LocalTarget(self._full_output_path)
+        return luigi.LocalTarget(self.regions_dataset)
 
     def run(self):
         regions = self.input()["region_file"].path
@@ -99,7 +76,7 @@ class RegionsDatasetTask(luigi.Task):
         aggregates = self.input()["aggregates"].path
         rds = RegionDataset.load(regions, gleams, aggregates)
         algorithms.estimate_missing_populations(rds)
-        with open(self._full_output_path, "wb") as ofile:
+        with open(self.regions_dataset, "wb") as ofile:
             dill.dump(rds, ofile)
 
     @staticmethod
@@ -115,13 +92,8 @@ class JohnsHopkins(luigi.Task):
         description="Output filename of the exported data relative to config output dir.",
     )
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        output_dir = self.input()["output_directory"].path
-        self._full_output_path = Path(output_dir, self.hopkins_output)
-
     def requires(self):
-        return {"regions": RegionsDatasetTask(), "output_directory": OutputDirectory()}
+        return {"regions": RegionsDatasetTask()}
 
     def output(self):
         return luigi.LocalTarget(self._full_output_path)
@@ -129,9 +101,9 @@ class JohnsHopkins(luigi.Task):
     def run(self):
         rds = RegionsDatasetTask.load_dilled_rds(self.input()["regions"].path)
         csse = imports.import_johns_hopkins(rds)
-        csse.to_csv(self._full_output_path)
+        csse.to_csv(self.hopkins_output)
         logger.info(
-            f"Saved CSSE to {self._full_output_path}, last day is {csse.index.get_level_values(1).max()}"
+            f"Saved CSSE to {self.hopkins_output}, last day is {csse.index.get_level_values(1).max()}"
         )
 
 
@@ -147,16 +119,13 @@ class UpdateForetold(luigi.Task):
         default="", description="The secret to fetch data from Foretold via API",
     )
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        output_dir = self.input()["output_directory"].path
-        self._full_output_path = Path(output_dir, self.foretold_output)
-
     def requires(self):
-        return {"regions": RegionsDatasetTask(), "output_directory": OutputDirectory()}
+        return {
+            "regions": RegionsDatasetTask(),
+        }
 
     def output(self):
-        return luigi.LocalTarget(self._full_output_path)
+        return luigi.LocalTarget(self.foretold_output)
 
     def run(self):
         if (
@@ -170,8 +139,8 @@ class UpdateForetold(luigi.Task):
         logger.info("Downloading and parsing foretold")
         rds = RegionsDatasetTask.load_dilled_rds(self.input()["regions"].path)
         foretold = imports.import_foretold(rds, self.foretold_channel)
-        foretold.to_csv(self._full_output_path, float_format="%.7g")
-        logger.info(f"Saved Foretold to {self._full_output_path}")
+        foretold.to_csv(self.foretold_output, float_format="%.7g")
+        logger.info(f"Saved Foretold to {self.foretold_output}")
 
 
 class BaseDefinition(luigi.ExternalTask):
@@ -242,18 +211,12 @@ class GenerateGleamBatch(luigi.Task):
         default=datetime.utcnow(), description="Start date of the simulations"
     )
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        output_dir = self.input()["output_directory"].path
-        self._full_output_path = Path(output_dir, self.generated_batch_filename)
-
     def requires(self):
         return {
             "base_def": self.clone(BaseDefinition),
             "country_estimates": self.clone(CountryEstimates),
             "regions_dataset": self.clone(RegionsDatasetTask),
             "config_yaml": self.clone(ConfigYaml),
-            "output_directory": OutputDirectory(),
         }
 
     def output(self):
@@ -264,11 +227,11 @@ class GenerateGleamBatch(luigi.Task):
         try:
             self._run()
         except:
-            if os.path.exists(self._full_output_path):
-                os.remove(self._full_output_path)
+            if os.path.exists(self.generated_batch_filename):
+                os.remove(self.generated_batch_filename)
 
     def _run(self):
-        b = Batch.new(path=self._full_output_path)
+        b = Batch.new(path=self.generated_batch_filename)
         logger.info(f"New batch file {b.path}")
 
         base_def = self.input()["base_def"].path
@@ -377,18 +340,12 @@ class ExtractSimulationsResults(luigi.Task):
     )
     allow_missing: bool = luigi.BoolParameter(default=True)
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        output_dir = self.input()["output_directory"].path
-        self._full_output_path = Path(output_dir, self.models_file)
-
     def requires(self):
         return {
             "gleamviz_result": self.clone(GleamvizResults),
             "batch_file": GenerateGleamBatch(),
             "regions_dataset": RegionsDatasetTask(),
             "config_yaml": ConfigYaml(),
-            "output_directory": OutputDirectory(),
         }
 
     def output(self):
@@ -434,7 +391,7 @@ class ExtractSimulationsResults(luigi.Task):
             info_level=logging.INFO,
         )
         # copy the result overwritten batch file to the result export_directory
-        shutil.copy(tmp_batch_file, self._full_output_path)
+        shutil.copy(tmp_batch_file, self.models_file)
 
 
 class Rates(luigi.ExternalTask):
@@ -474,7 +431,7 @@ class WebExport(luigi.Task):
         description="If true, result JSONs are indented by 4 spaces"
     )
     web_export_directory: str = luigi.Parameter(
-        description="Root subdirectory for all exports. Relative to OutputDirectory.",
+        description="Root subdirectory for all exports.",
     )
     main_data_filename: str = luigi.Parameter(
         description="The default name of the main JSON data file",
@@ -484,9 +441,7 @@ class WebExport(luigi.Task):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         output_dir = self.input()["output_directory"].path
-        self.full_export_path = Path(
-            output_dir, self.web_export_directory, self.export_name
-        )
+        self.full_export_path = Path(self.web_export_directory, self.export_name)
 
     def requires(self):
         return {
@@ -499,7 +454,6 @@ class WebExport(luigi.Task):
             "age_distributions": AgeDistributions(),
             "config_yaml": ConfigYaml(),
             "country_estimates": CountryEstimates(),
-            "output_directory": OutputDirectory(),
         }
 
     def output(self):
