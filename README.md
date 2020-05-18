@@ -42,19 +42,13 @@ poetry install -E pymc3
 poetry install -E pyro
 ```
 
-
-## Development
-
-* Use Poetry for dependency management.
-* We enforce [black](https://github.com/psf/black) formatting (with the default style).
-* Use `pytest` for testing, add tests for your code
-* Use pull requests for both this and the data repository.
-
+## Running the pipeline
 We are using [luigi](https://luigi.readthedocs.io/en/stable/index.html) as the workflow framework. This
 readme doesn't include description of how to use `luigi` so please refer to the project documentation
 to understand how to tweak this.
 
-## Running the pipeline
+There is an example of the usage with explanations in `test/example-run.sh` if you want to see a more.
+
 ### Example with faked data
 This example skips the `UpdateForetold` and `ExtractSimulationsResults` task by providing their output.
 In reality, you want to actually run gleamviz in between and provide Foretold channel to get data via API.
@@ -75,18 +69,18 @@ You provide all file inputs, foretold_channel and parameters, tweak configs to y
 
 1. `./luigi GenerateSimulationDefinitions`
 2. run gleamviz with the simulations created above, retrieve results via it's UI, close it
-3. 
+3. export the data using
     ./luigi WebExport \
     --export-name my-export \
     --ExtractSimulationResults-single-result ~/GLEAMviz/data/simulations/82131231323.ghv5/results.h5 
+4. upload the resulted data using `./luigi WebUpload` task
 
 ### Actually using it
-1. add `foretold_channel` in `luigi.cfg` to `[UpdateForetold]` section (you can get it from others on slack)
+1. add `foretold_channel` in `luigi.cfg` to `[UpdateForetold]` section. This is a secret and you can get it from others on slack
 2. adjust `config.yaml` to your liking, such as scenarios to model or countries to export
 3. change `[Configuration].output_directory` to some empty or non-existing folder
 4. provide data for any of the ExternalTasks, such as `BaseDefinition`, `ConfigYaml`, `CountryEstimates` and others (see the `epimodel/tasks.py`). If you want to see what does your task depends on, use `luigi-deps-tree` as mentioned above.
 5. deal with gleamviz and knowing where it's simulation directory is on your installation
-
 
 ### Getting help
 See `epimodel/tasks.py` where the whole pipeline is defined. Read the docstrings and paramter descriptions
@@ -104,3 +98,11 @@ $ luigi-deps-tree --module epimodel.tasks JohnsHopkins --RegionsDatasetTask-regi
       |--[GleamRegions-{'gleams': 'manual_input/regions-gleam.csv'} (COMPLETE)]
       └─--[RegionsAggregates-{'aggregates': 'manual_input/regions-agg.yaml'} (COMPLETE)]
 ```
+
+## Development
+
+* Use Poetry for dependency management.
+* We enforce [black](https://github.com/psf/black) formatting (with the default style).
+* Use `pytest` for testing, add tests for your code
+* Use pull requests for both this and the data repository.
+
