@@ -352,24 +352,7 @@ class DefinitionBuilder:
             self.definition.set_compartment_variable(*row)
 
     def _set_estimates(self, estimates: pd.DataFrame):
-        self.definition.clear_seeds()
-        for _, row in self._prepare_estimates(estimates).iterrows():
-            self.definition.add_seed(*row)
-        self.definition.format_seeds()
-
-    def _prepare_estimates(self, estimates: pd.DataFrame):
-        estimates = estimates.copy()
-        # sort by GleamID for deterministic order
-        estimates["GleamID"] = estimates["Region"].apply(lambda reg: reg.GleamID)
-        estimates.sort_values(by="GleamID", inplace=True)
-        return pd.DataFrame(
-            {
-                "region": estimates["Region"],
-                "compartments": estimates.drop(columns=["Region", "GleamID"]).to_dict(
-                    orient="records"
-                ),
-            }
-        )
+        self.definition.set_seeds(estimates)
 
     def _set_exceptions(self):
         self.definition.clear_exceptions()

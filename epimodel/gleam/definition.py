@@ -61,7 +61,7 @@ class GleamDefinition:
         assert isinstance(other, self.__class__)
         self._etree_assert_eq(self.root, other.root)
 
-    def _etree_assert_eq(self, e1, e2, path="/"):
+    def _etree_assert_eq(self, e1: ET.Element, e2: ET.Element, path="/"):
         """
         Recursive equality assertion, based on:
         https://stackoverflow.com/questions/7905380/testing-equivalence-of-xml-etree-elementtree
@@ -176,41 +176,49 @@ class GleamDefinition:
     def format_seeds(self):
         self._format_list_node(self.seeds_node)
 
-    def add_seeds(self, rds: RegionDataset, compartments: pd.DataFrame, top=None):
+    def set_seeds(self, estimates: pd.DataFrame, rds=None):
         """
-        Add seed populations from `sizes` to `compartment`.
+        Estimates must be a DataFrame with a `Region` column containing
+        Region objects. All other columns are compartment names
+        containing the total number of people in that compartment for
+        that region.
 
-        Only considers Level.gleam_basin regions from `sizes`.
-        `sizes` must be indexed by `Code`. `rds` must have the gleam
-        regions loaded.
+        Alternately, you can leave out the the `Region` column and key
+        the DataFrame by region code instead, but you must also pass an
+        `rds` argument.
+
+        All regions must be Gleam basins.
         """
-        assert isinstance(rds, RegionDataset)
-        assert isinstance(compartments, pd.DataFrame)
-        seeds_node = self.seeds_node
-        for c in compartments.columns:
-            sizes = compartments[c].sort_values(ascending=False)
-            sl = slice(None) if top is None else slice(0, top)
-            for rc, s in list(sizes.items())[sl]:
-                r = rds[rc]
-                if r.Level != Level.gleam_basin:
-                    continue
-                assert not pd.isnull(r.GleamID)
+        estimates = estimates.copy()
 
-                ET.SubElement(
-                    seeds_node,
-                    "seed",
-                    {"number": str(int(s)), "compartment": c, "city": str(r.GleamID)},
-                )
+        if "Region" not in estimates:
+            estimates["Region"] = [rds[code] for code in estimates.index]
 
+        # sort by GleamID for deterministic order
+        estimates["GleamID"] = estimates["Region"].apply(lambda reg: reg.GleamID)
+        estimates.sort_values(by="GleamID", inplace=True)
+        seeds = pd.DataFrame(
+            {
+                "region": estimates["Region"],
+                "compartments": estimates.drop(columns=["Region", "GleamID"]).apply(
+                    lambda row: {
+                        compartment: population
+                        for compartment, population in row.iteritems()
+                        if pd.notnull(population)
+                    },
+                    axis=1,
+                ),
+            }
+        )
+
+        self.clear_seeds()
+        for _, seed in seeds.iterrows():
+            self.add_seed(*seed)
         self.format_seeds()
 
-    def add_seed(self, region, compartments: dict, format=False):
+    def add_seed(self, region: Region, compartments: dict, format=False):
         """
-        Add seed populations from `sizes` to `compartment`.
-
-        Only considers Level.gleam_basin regions from `sizes`.
-        `sizes` must be indexed by `Code`. `rds` must have the gleam
-        regions loaded.
+        Add seed populations for a gleam_basin.
         """
         assert region.Level == Level.gleam_basin
         assert pd.notnull(region.GleamID)
@@ -231,7 +239,7 @@ class GleamDefinition:
 
     ### Formatting
 
-    def _format_list_node(self, node, depth=2):
+    def _format_list_node(self, node: ET.Element, depth=2):
         short_tail = f"\n{'  ' * depth}"
         long_tail = f"{short_tail}  "
         node.text = long_tail
@@ -246,7 +254,7 @@ class GleamDefinition:
     def get_name(self):
         return self.definition_node.attrib["name"]
 
-    def set_name(self, val):
+    def set_name(self, val: str):
         assert isinstance(val, str)
         self.definition_node.attrib["name"] = val
 

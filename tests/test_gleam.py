@@ -23,16 +23,15 @@ def test_gleam_def(datadir):
     assert d.get_seasonality() == pytest.approx(0.85)
 
 
-def test_add_seeds_add_export_sims(regions_gleam, datadir, tmp_path):
+def test_set_seeds_add_export_sims(regions_gleam, datadir, tmp_path):
     d = epimodel.gleam.GleamDefinition(datadir / "test_definition.xml")
     b = epimodel.gleam.Batch.new(dir=tmp_path)
 
     i_df = pd.DataFrame(
         {"Infectious": [1, 2, 3], "Exposed": [4, 5, np.nan]},
-        index=["G-AAA", "G-AAB", "CZ"],
+        index=["G-MLA", "G-KGL", "G-KME"],
     )
-    d.clear_seeds()
-    d.add_seeds(regions_gleam, i_df)
+    d.set_seeds(i_df, regions_gleam)
 
     b.set_simulations([(d, "Name1", "MEDIUM", "WEAK_WEAK")])
     b.set_initial_compartments(i_df)

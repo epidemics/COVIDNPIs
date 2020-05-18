@@ -92,7 +92,7 @@ class TestInputParser(PandasTestCase):
 
         for region in df["Region"]:
             self.assertEqual(region.Level, Level.gleam_basin)
-        self.assertEqual(df.Infectious.sum(), 200)
+        self.assert_almost_equal(df.Infectious.sum(), 200)
 
     def test_params_output_format(self):
         parser = sc.InputParser(rds=self.rds)
@@ -357,34 +357,20 @@ class TestDefinitionBuilder(PandasTestCase):
 
     # estimates
 
-    def test_add_seeds(self):
+    def test_set_seeds(self):
         estimates = self.estimates_rows(
             {"Region": self.rds["G-MLA"], "Exposed": 100, "Infectious": 10}
         )
         self.init_only_estimates(estimates)
-        self.output.add_seed.assert_called_once_with(
-            self.rds["G-MLA"], {"Exposed": 100, "Infectious": 10}
-        )
+        self.output.set_seeds.assert_called_once_with(estimates)
 
-    def test_add_multiple_seeds(self):
-        """
-        seeds are sorted by GleamID
-        """
-        regions = [
-            Mock(GleamID=1, Level=Level.gleam_basin, autospec=Region),
-            Mock(GleamID=2, Level=Level.gleam_basin, autospec=Region),
-        ]
+    def test_set_multiple_seeds(self):
         estimates = self.estimates_rows(
-            {"Region": regions[1], "Exposed": 50, "Infectious": 5},
-            {"Region": regions[0], "Exposed": 100, "Infectious": 10},
+            {"Region": self.rds["G-KGL"], "Exposed": 100, "Infectious": 10},
+            {"Region": self.rds["G-KME"], "Exposed": 50, "Infectious": 5},
         )
         self.init_only_estimates(estimates)
-        self.output.add_seed.assert_has_calls(
-            [
-                call(regions[0], {"Exposed": 100, "Infectious": 10}),
-                call(regions[1], {"Exposed": 50, "Infectious": 5}),
-            ]
-        )
+        self.output.set_seeds.assert_called_once_with(estimates)
 
     # configuration
 

@@ -94,9 +94,16 @@ class Batch:
 
     def set_initial_compartments(self, initial_df):
         """
-        `initial_df` must be indexed by `Code` and columns should be
+        `initial_df` should be indexed by `Code` and columns should be
         compartment names.
+
+        Alternately, it can have a `Region` column containing Region
+        objects, which will then be used to obtain the `Code` index.
         """
+        if "Region" in initial_df:
+            codes = initial_df["Region"].apply(lambda reg: reg.Code)
+            initialdf = initial_df.drop(columns=["Region"]).set_index(codes)
+
         self.hdf.put(
             "initial_compartments",
             initial_df.astype("float32"),
