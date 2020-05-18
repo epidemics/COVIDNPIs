@@ -71,9 +71,11 @@ You provide all file inputs, foretold_channel and parameters, tweak configs to y
 2. run gleamviz with the simulations created above, retrieve results via it's UI, close it
 3. export the data using
 
+    ```
     ./luigi WebExport \
     --export-name my-export \
     --ExtractSimulationResults-single-result ~/GLEAMviz/data/simulations/82131231323.ghv5/results.h5 
+    ```
 
 4. upload the resulted data using `./luigi WebUpload` task
 
