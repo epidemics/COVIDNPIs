@@ -59,9 +59,9 @@ class GleamDefinition:
 
     def assert_equal(self, other):
         assert isinstance(other, self.__class__)
-        self._etree_assert_eq(self.root, other.root)
+        self.etree_assert_equal(self.root, other.root)
 
-    def _etree_assert_eq(self, e1: ET.Element, e2: ET.Element, path="/"):
+    def etree_assert_equal(self, e1: ET.Element, e2: ET.Element, path="/"):
         """
         Recursive equality assertion, based on:
         https://stackoverflow.com/questions/7905380/testing-equivalence-of-xml-etree-elementtree
@@ -84,7 +84,7 @@ class GleamDefinition:
                 )
             )
         for c1, c2 in zip(e1, e2):
-            self._etree_assert_eq(c1, c2, path=f"{path}{tag}/")
+            self.etree_assert_equal(c1, c2, path=f"{path}{tag}/")
 
     def _strip_tag(self, element):
         return element.tag.replace("{%s}" % self.ns["gv"], "")
