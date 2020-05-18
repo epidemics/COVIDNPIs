@@ -20,10 +20,9 @@ logger = logging.getLogger(__name__)
 
 class Configuration(luigi.Config):
     """
-    That these cannot be overriden from CLI due to how luigi evaluates class
-    parameters.
+    These cannot be overriden from CLI due to how luigi evaluates class parameters!
 
-    These can be changed in the config though and will take effect.
+    These can be changed in `luigi.cfg` config.
     """
 
     input_directory: str = luigi.Parameter(
@@ -36,6 +35,12 @@ class Configuration(luigi.Config):
         default="1D",
         description="Subsampling of imported data (see Pandas `df.resample`)",
     )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        # create the output directory if it doesn't exist
+        os.makedirs(self.output_directory, exist_ok=True)
 
 
 CONFIG = Configuration()
@@ -50,21 +55,30 @@ def _prefix_cfg(filename: str, par_attrib="input_directory") -> str:
 
 
 class RegionsFile(luigi.ExternalTask):
-    regions = luigi.Parameter(default=_prefix_cfg("regions.csv"))
+    regions = luigi.Parameter(
+        default=_prefix_cfg("regions.csv"),
+        description="Input filename relative to the config directory",
+    )
 
     def output(self):
         return luigi.LocalTarget(self.regions)
 
 
 class GleamRegions(luigi.ExternalTask):
-    gleams = luigi.Parameter(default=_prefix_cfg("regions-gleam.csv"))
+    gleams = luigi.Parameter(
+        default=_prefix_cfg("regions-gleam.csv"),
+        description="Input filename relative to the config directory",
+    )
 
     def output(self):
         return luigi.LocalTarget(self.gleams)
 
 
 class RegionsAggregates(luigi.ExternalTask):
-    aggregates = luigi.Parameter(default=_prefix_cfg("regions-agg.yaml"))
+    aggregates = luigi.Parameter(
+        default=_prefix_cfg("regions-agg.yaml"),
+        description="Input filename relative to the config directory",
+    )
 
     def output(self):
         return luigi.LocalTarget(self.aggregates)
@@ -72,8 +86,12 @@ class RegionsAggregates(luigi.ExternalTask):
 
 @inherits(RegionsFile, GleamRegions, RegionsAggregates)
 class RegionsDatasetTask(luigi.Task):
+    """Combines several inputs into a RegionDataset object used in several
+    downstream tasks for handling ISO codes and others"""
+
     regions_dataset: str = luigi.Parameter(
-        default=_prefix_cfg("region_dataset.pk", "output_directory")
+        default=_prefix_cfg("region_dataset.pk", "output_directory"),
+        description="Output filename of the exported data.",
     )
 
     def requires(self):
@@ -102,9 +120,12 @@ class RegionsDatasetTask(luigi.Task):
 
 
 class JohnsHopkins(luigi.Task):
+    """Downloads data from Johns Hopkins github and exports them as CSV"""
+
     _output_directory: str = luigi.Parameter(default=CONFIG.output_directory)
     hopkins_output: str = luigi.Parameter(
-        config_path=default_from_config("JohnsHopkins", "hopkins_output")
+        config_path=default_from_config("JohnsHopkins", "hopkins_output"),
+        description="Output filename of the exported data relative to config output dir.",
     )
 
     def __init__(self, *args, **kwargs):
@@ -127,9 +148,14 @@ class JohnsHopkins(luigi.Task):
 
 
 class UpdateForetold(luigi.Task):
+    """Exports prediction data form the Foretold platform and
+    dumps them into a CSV. These are part of the inputs to the gleamviz model.
+    """
+
     _output_directory: str = luigi.Parameter(default=CONFIG.output_directory)
     foretold_output: str = luigi.Parameter(
-        config_path=default_from_config("UpdateForetold", "foretold_output")
+        config_path=default_from_config("UpdateForetold", "foretold_output"),
+        description="Output filename of the exported data relative to output dir.",
     )
     foretold_channel: str = luigi.Parameter(
         default="", description="The secret to fetch data from Foretold via API",
@@ -162,24 +188,38 @@ class UpdateForetold(luigi.Task):
 
 
 class BaseDefinition(luigi.ExternalTask):
-    base_def: str = luigi.Parameter(default=_prefix_cfg("definition.xml"))
+    """Base 'template' XML definition for gleamviz simulations."""
+
+    base_def: str = luigi.Parameter(
+        default=_prefix_cfg("definition.xml"),
+        description="Path to the input file relative to the configuration input directory",
+    )
 
     def output(self):
         return luigi.LocalTarget(self.base_def)
 
 
 class CountryEstimates(luigi.ExternalTask):
-    country_estimates: str = luigi.Parameter(default=_prefix_cfg("estimates.csv"))
+    """Estimates created manually by forecasters"""
+
+    country_estimates: str = luigi.Parameter(
+        default=_prefix_cfg("estimates.csv"),
+        description="Path to the input file relative to the configuration input directory",
+    )
 
     def output(self):
         return luigi.LocalTarget(self.country_estimates)
 
 
 class ConfigYaml(luigi.ExternalTask):
-    path: str = luigi.Parameter(default=_prefix_cfg("config.yaml"))
+
+    yaml_config_path: str = luigi.Parameter(
+        default=_prefix_cfg("config.yaml"),
+        description="Path to the input file relative to the configuration input directory",
+    )
 
     def output(self):
-        return luigi.LocalTarget(self.path)
+        return luigi.LocalTarget(self.yaml_config_path)
 
     @staticmethod
     def load(path):
@@ -188,14 +228,22 @@ class ConfigYaml(luigi.ExternalTask):
 
 
 class GenerateGleamBatch(luigi.Task):
-    _output_directory: str = luigi.Parameter(default=CONFIG.output_directory)
+    """Generates a an HDF file similar to what gleamviz outputs."""
+
+    _output_directory: str = luigi.Parameter(
+        default=CONFIG.output_directory,
+        description="Output directory prefix for the output file",
+    )
     generated_batch_filename: str = luigi.Parameter(
         default="batch.hdf5",
-        description="Output filename of the generated batch file for gleam",
+        description="Output filename of the generated batch file for gleam relative to `_output_directory`",
     )
-    comment: str = luigi.Parameter(default="")
-    start_date: datetime = luigi.DateParameter(default=datetime.utcnow())
-    top: int = luigi.IntParameter(default=2000)
+    start_date: datetime = luigi.DateParameter(
+        default=datetime.utcnow(), description="Start date of the simulations"
+    )
+    top: int = luigi.IntParameter(
+        default=2000, description="Upper limit for seed compartments."
+    )
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -252,7 +300,11 @@ class GenerateGleamBatch(luigi.Task):
 
 
 class GenerateSimulationDefinitions(luigi.Task):
-    """Formerly ExportGleamBatch"""
+    """
+    Creates definitions for simulations which can be used for gleamviz. It
+    must not be run when Gleamviz is running otherwise it won't be visible.
+
+    Formerly ExportGleamBatch"""
 
     simulations_dir: str = luigi.Parameter(
         default=_prefix_cfg("gleamviz", "output_directory"),
@@ -296,7 +348,9 @@ class GenerateSimulationDefinitions(luigi.Task):
 
 
 class GleamvizResults(luigi.ExternalTask):
-    """This is done manually by a user via Gleam software"""
+    """This is done manually by a user via Gleam software. You should see the new
+    simulations loaded. Run all of them and "Retrieve results"
+    (do not export manually). Exit gleamviz."""
 
     single_result = luigi.Parameter(
         description=(
@@ -316,7 +370,12 @@ class GleamvizResults(luigi.ExternalTask):
 
 @inherits(GleamvizResults)
 class ExtractSimulationsResults(luigi.Task):
-    """Formerly ImportGleamBatch"""
+    """
+    Exports data from the gleamviz results. Gleamviz must be stopped before that.
+
+    After this succeeds, you may delete the simulations from gleamviz.
+    Formerly ImportGleamBatch
+    """
 
     _output_directory: str = luigi.Parameter(default=CONFIG.output_directory)
     allow_missing: bool = luigi.BoolParameter(default=True)
@@ -405,6 +464,8 @@ class AgeDistributions(luigi.ExternalTask):
 
 
 class WebExport(luigi.Task):
+    """Generates export used by the website."""
+
     export_name: str = luigi.Parameter(
         description="Directory name with exported files inside web_export_directory"
     )
@@ -420,7 +481,7 @@ class WebExport(luigi.Task):
         description="The default name of the main JSON data file",
     )
     comment: str = luigi.Parameter(
-        default="", description="Comment to the export",
+        default="", description="Optional comment to the export",
     )
 
     def __init__(self, *args, **kwargs):
@@ -474,8 +535,16 @@ class WebExport(luigi.Task):
 # @requires(WebExport)  # this would require gleamviz-result parameter, I think
 # it's not needed and the cost of adding the parameter is a good price
 class WebUpload(luigi.Task):
-    gs_prefix: str = luigi.Parameter(default="gs://static-covid/static/v4")
-    channel: str = luigi.Parameter(default="test")
+    """Uploads the exported files into GCS bucket"""
+
+    gs_prefix: str = luigi.Parameter(
+        default="gs://static-covid/static/v4",
+        description="A GCS default path for the export",
+    )
+    channel: str = luigi.Parameter(
+        default="test",
+        description="channel to load the data to, basically a subdirectory in gcs_path",
+    )
     main_data_file: str = luigi.Parameter(
         description="Path to the main datafile from web-export"
     )
