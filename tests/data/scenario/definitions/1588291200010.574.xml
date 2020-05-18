@@ -27,6 +27,8 @@
     <parameters commutingModel="gravity" commutingRate="7" duration="261" flightsTimeAggregation="month" occupancyRate="90" outbreakSize="1" runCount="5" seasonalityAlphaMin="0.35" seasonalityEnabled="true" secondaryEvents="1" startDate="2020-04-15" />
     <notes />
     <initialCompartments>
+      <initialCompartment compartment="Infectious" fraction="36" />
+      <initialCompartment compartment="Exposed" fraction="64" />
     </initialCompartments>
     <seeds>
       <seed city="1543" compartment="Infectious" number="1954" />

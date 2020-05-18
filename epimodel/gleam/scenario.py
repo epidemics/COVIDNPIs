@@ -352,6 +352,7 @@ class DefinitionBuilder:
 
     def _set_estimates(self, estimates: pd.DataFrame):
         self.definition.set_seeds(estimates)
+        self.definition.set_initial_compartments_from_estimates(estimates)
 
     def _set_exceptions(self):
         self.definition.clear_exceptions()

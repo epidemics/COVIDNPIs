@@ -105,6 +105,10 @@ class GleamDefinition:
         )
 
     @property
+    def initial_compartments_node(self):
+        return self.find_one("./gv:definition/gv:initialCompartments")
+
+    @property
     def exceptions_node(self) -> ET.Element:
         return self.find_one("./gv:definition/gv:exceptions")
 
@@ -236,6 +240,50 @@ class GleamDefinition:
 
         if format:
             self.format_seeds()
+
+    ### Initial Compartments
+
+    def clear_initial_compartments(self):
+        cnode = self.initial_compartments_node
+        cnode.clear()
+        cnode.tail = "\n    "
+
+    def format_initial_compartments(self):
+        self._format_list_node(self.initial_compartments_node)
+
+    def set_initial_compartments_from_estimates(self, estimates):
+        """
+        Determines compartment proportions from same DataFrame format as
+        used in set_seeds and uses this to set_initial_compartments.
+        """
+        if "Region" in estimates:
+            estimates = estimates.drop(columns=["Region"])
+        compartments = estimates.sum()
+        total_compartments = compartments.sum()
+        compartments = (compartments / compartments.sum() * 100).dropna().apply(round)
+
+        # ensure everything adds up to 100
+        while compartments.sum() < 100:
+            compartments[compartments.idxmax()] += 1
+        while compartments.sum() > 100:
+            compartments[compartments.idxmax()] -= 1
+
+        self.set_initial_compartments(compartments.to_dict())
+
+    def set_initial_compartments(self, compartments):
+        assert sum(int(v) for v in compartments.values()) == 100
+
+        self.clear_initial_compartments()
+        ic_node = self.initial_compartments_node
+
+        for compartment, percentage in compartments.items():
+            ET.SubElement(
+                ic_node,
+                "initialCompartment",
+                {"compartment": compartment, "fraction": str(int(percentage))},
+            )
+
+        self.format_initial_compartments()
 
     ### Formatting
 

@@ -21,8 +21,15 @@ class TestScenarioIntegration(PandasTestCase):
         self.utcnow = self.timestamp_patcher.start()
         self.utcnow.return_value = self.timestamp
 
+        self.xml_patcher = patch(
+            "epimodel.gleam.definition.GleamDefinition.DEFAULT_XML_FILE",
+            self.datadir / "default_gleam_definition.xml",
+        )
+        self.xml_patcher.start()
+
     def tearDown(self):
         self.timestamp_patcher.stop()
+        self.xml_patcher.stop()
 
     def test_integration(self):
         with open(self.datadir / "scenario/config.yaml", "r") as fp:
@@ -44,6 +51,7 @@ class TestScenarioIntegration(PandasTestCase):
             ### need to reset the files, but be sure to manually check
             ### the output afterwards to ensure it's correct.
             # def_builder.save_to_dir(dir)
+            # with open(dir / def_builder.filename, 'a') as fp: fp.write("\n")
 
             expected = GleamDefinition(dir / def_builder.filename)
             def_builder.definition.assert_equal(expected)

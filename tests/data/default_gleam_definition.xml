@@ -1,5 +1,5 @@
 <simulation xmlns="http://www.gleamviz.org/xmlns/gleamviz_v4_0">
-  <definition id="1588291200005.574" name="GLEAMviz Test (Weak Exceptions + Expected Spread)" type="multi-run">
+  <definition id="1585188102568.574" name="default" type="multi-run">
     <compartmentalModel>
       <compartments>
         <compartment color="#51b2b7" id="Susceptible" isCarrier="false" isCommuter="true" isSecondary="false" isTraveller="true" x="409" y="35" />
@@ -18,25 +18,29 @@
         </infection>
       </infections>
       <variables>
-        <variable name="beta" value="1.50" />
+        <variable name="beta" value="1.285" />
         <variable name="epsilon" value="0.2" />
         <variable name="mu" value="0.5" />
         <variable name="imu" value="0" />
       </variables>
     </compartmentalModel>
-    <parameters commutingModel="gravity" commutingRate="7" duration="261" flightsTimeAggregation="month" occupancyRate="90" outbreakSize="1" runCount="5" seasonalityAlphaMin="0.35" seasonalityEnabled="true" secondaryEvents="1" startDate="2020-04-15" />
+    <parameters
+      startDate="2020-03-25"
+      duration="365"
+      runCount="3"
+      occupancyRate="20"
+      seasonalityEnabled="true"
+      seasonalityAlphaMin="0.85"
+      commutingModel="gravity"
+      commutingRate="7"
+      flightsTimeAggregation="month"
+      secondaryEvents="1"
+      outbreakSize="1"
+    />
     <notes />
     <initialCompartments>
-      <initialCompartment compartment="Infectious" fraction="36" />
-      <initialCompartment compartment="Exposed" fraction="64" />
     </initialCompartments>
     <seeds>
-      <seed city="1543" compartment="Infectious" number="1954" />
-      <seed city="1543" compartment="Exposed" number="3518" />
-      <seed city="1544" compartment="Infectious" number="45" />
-      <seed city="1544" compartment="Exposed" number="81" />
-      <seed city="655" compartment="Infectious" number="574" />
-      <seed city="655" compartment="Exposed" number="1033" />
     </seeds>
     <resultCompartments>
       <id>Susceptible</id>
@@ -45,11 +49,10 @@
       <id>Recovered</id>
     </resultCompartments>
     <exceptions>
-      <exception basins="" continents="" countries="163" from="2020-04-14" hemispheres="" regions="" till="2021-05-01"><variable name="beta" value="1.0" /><variable name="epsilon" value="1.0" /></exception>
     </exceptions>
   </definition>
   <metadata>
-    <creationDate>2020-05-01T00:00:00</creationDate>
+    <creationDate></creationDate>
     <clientVersion>7.0.4</clientVersion>
   </metadata>
   <extradata>
