@@ -57,8 +57,8 @@ This by default uses data in `data/inputs` and exports data to `data/outputs/exa
 # `poetry shell`  # if you haven't done already
 ./luigi WebExport \
     --export-name test-export \
-    --UpdateForetold--output-directory data-dir/inputs/fixtures \
-    --ExtractSimulationsResults--output-directory data-dir/inputs/fixtures \
+    --UpdateForetold-foretold-output data-dir/inputs/fixtures/foretold.csv \
+    --ExtractSimulationsResults-models-file data-dir/inputs/fixtures/gleam-models.hdf5 \
     --ExtractSimulationsResults-single-result this-is-now-ignored
 ```
 

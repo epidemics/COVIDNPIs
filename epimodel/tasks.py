@@ -96,7 +96,7 @@ class JohnsHopkins(luigi.Task):
         return {"regions": RegionsDatasetTask()}
 
     def output(self):
-        return luigi.LocalTarget(self._full_output_path)
+        return luigi.LocalTarget(self.hopkins_output)
 
     def run(self):
         rds = RegionsDatasetTask.load_dilled_rds(self.input()["regions"].path)
@@ -349,7 +349,7 @@ class ExtractSimulationsResults(luigi.Task):
         }
 
     def output(self):
-        return luigi.LocalTarget(self._full_output_path)
+        return luigi.LocalTarget(self.models_file)
 
     def run(self):
         batch_file = self.input()["batch_file"].path
@@ -440,7 +440,6 @@ class WebExport(luigi.Task):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        output_dir = self.input()["output_directory"].path
         self.full_export_path = Path(self.web_export_directory, self.export_name)
 
     def requires(self):
