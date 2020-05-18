@@ -229,6 +229,7 @@ class GenerateGleamBatch(luigi.Task):
         except:
             if os.path.exists(self.generated_batch_filename):
                 os.remove(self.generated_batch_filename)
+            raise
 
     def _run(self):
         b = Batch.new(path=self.generated_batch_filename)
