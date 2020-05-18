@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import numpy as np
 import pandas as pd
 import pytest
@@ -7,7 +9,7 @@ from epimodel.utils import utc_date
 
 
 def test_batch_new_open(tmp_path):
-    b = epimodel.gleam.Batch.new(dir=tmp_path)
+    b = epimodel.gleam.Batch.new(path=Path(tmp_path, "batch.hdf"))
     path = b.path
     b.close()
     b2 = epimodel.gleam.Batch.open(path)
@@ -25,7 +27,7 @@ def test_gleam_def(datadir):
 
 def test_add_seeds_add_export_sims(regions_gleam, datadir, tmp_path):
     d = epimodel.gleam.GleamDefinition(datadir / "test_definition.xml")
-    b = epimodel.gleam.Batch.new(dir=tmp_path)
+    b = epimodel.gleam.Batch.new(path=Path(tmp_path, "batch.hdf"))
 
     i_df = pd.DataFrame(
         {"Infectious": [1, 2, 3], "Exposed": [4, 5, np.nan]},
