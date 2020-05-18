@@ -74,6 +74,7 @@ class GleamDefinition:
             assert e1.attrib == e2.attrib
             assert len(e1) == len(e2)
         except AssertionError:
+            # useful for debugging mismatches
             # import pdb; pdb.set_trace()
             raise AssertionError(
                 f"{e1!r} != {e2!r} at path {path}\n\n%s\n\n%s"
@@ -237,8 +238,7 @@ class GleamDefinition:
         for child in node:
             child.tail = long_tail
         last_child = node.find("./*[last()]")
-        # import pdb; pdb.set_trace()
-        if last_child:
+        if last_child is not None:
             last_child.tail = short_tail
 
     ### General attributes
