@@ -68,6 +68,8 @@ This by default uses data in `data/inputs` and exports data to `data/outputs/exa
     --ExtractSimulationsResults-single-result this-is-now-ignored
 ```
 
+After the pipeline finishes, you should see the results in `data-dir/outputs/example/`
+
 ### The usual flow
 You provide all file inputs, foretold_channel and parameters, tweak configs to your liking and then:
 
