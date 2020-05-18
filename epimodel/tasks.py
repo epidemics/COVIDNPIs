@@ -116,7 +116,7 @@ class UpdateForetold(luigi.Task):
         description="Output filename of the exported data relative to output dir.",
     )
     foretold_channel: str = luigi.Parameter(
-        default="", description="The secret to fetch data from Foretold via API",
+        description="The secret to fetch data from Foretold via API",
     )
 
     def requires(self):
