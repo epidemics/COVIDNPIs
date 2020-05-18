@@ -77,7 +77,7 @@ You provide all file inputs, foretold_channel and parameters, tweak configs to y
     --ExtractSimulationResults-single-result ~/GLEAMviz/data/simulations/82131231323.ghv5/results.h5 
     ```
 
-4. upload the resulted data using `./luigi WebUpload` task
+4. upload the result data using `./luigi WebUpload` task
 
 ### Actually using it
 1. add `foretold_channel` in `luigi.cfg` to `[UpdateForetold]` section. This is a secret and you can get it from others on slack
