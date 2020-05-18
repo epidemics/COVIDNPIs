@@ -103,10 +103,20 @@ class Region:
     def __eq__(self, other):
         return isinstance(other, Region) and self.Code == other.Code
 
+    def __ge__(self, other):
+        if isinstance(other, self.__class__):
+            return self.Code >= other.Code
+        return super() >= other
+
     def __gt__(self, other):
         if isinstance(other, self.__class__):
             return self.Code > other.Code
         return super() > other
+
+    def __le__(self, other):
+        if isinstance(other, self.__class__):
+            return self.Code <= other.Code
+        return super() <= other
 
     def __lt__(self, other):
         if isinstance(other, self.__class__):

@@ -6,7 +6,7 @@ import pandas as pd
 import numpy as np
 import yaml
 
-from epimodel import Region, RegionDataset, Level
+from epimodel import Region, Level
 import epimodel.gleam.scenario as sc
 from epimodel.gleam.definition import GleamDefinition
 

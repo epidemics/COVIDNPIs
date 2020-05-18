@@ -7,16 +7,15 @@ import numpy as np
 import pandas as pd
 
 from tqdm import tqdm
-from epimodel import RegionDataset, Region, Level, algorithms
+from epimodel import RegionDataset, Level, algorithms
 from .definition import GleamDefinition
 from .batch import Batch
 
 try:
     import ergo
 except ModuleNotFoundError:
-    ergo = None
     # foretold functionality optional
-    pass
+    ergo = None
 
 
 class InputParser:
@@ -42,7 +41,7 @@ class InputParser:
         "name",
     ]
 
-    def __init__(self, rds, foretold_token=None, progress_bar=True):
+    def __init__(self, rds: RegionDataset, foretold_token=None, progress_bar=True):
         self.rds = rds
         self.foretold = ergo.Foretold(foretold_token) if foretold_token else None
         self.progress_bar = progress_bar
@@ -200,7 +199,7 @@ class SimulationSet:
         is_trace = df["Type"] == "trace"
         if not df[~is_group & ~is_trace].empty:
             bad_types = list(df[~is_group & ~is_trace]["Type"].unique())
-            raise ValueError("input contains invalid Type values: {bad_types!r}")
+            raise ValueError(f"input contains invalid Type values: {bad_types!r}")
 
         self.group_df = df[is_group]
         self.trace_df = df[is_trace]

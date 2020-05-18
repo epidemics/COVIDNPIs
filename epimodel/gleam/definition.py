@@ -3,7 +3,7 @@ import copy
 from datetime import datetime, date
 import logging
 import xml.etree.ElementTree as ET
-from typing import Iterable, Union, Callable
+from typing import Iterable, Union
 from pathlib import Path
 
 import pandas as pd
