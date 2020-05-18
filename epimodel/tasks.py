@@ -55,6 +55,7 @@ def _prefix_cfg(filename: str, par_attrib="input_directory") -> str:
 
 
 class RegionsFile(luigi.ExternalTask):
+    """Default regions database used for various country handling"""
     regions = luigi.Parameter(
         default=_prefix_cfg("regions.csv"),
         description="Input filename relative to the config directory",
@@ -65,6 +66,7 @@ class RegionsFile(luigi.ExternalTask):
 
 
 class GleamRegions(luigi.ExternalTask):
+    """Definition of Gleamviz regions"""
     gleams = luigi.Parameter(
         default=_prefix_cfg("regions-gleam.csv"),
         description="Input filename relative to the config directory",
@@ -75,6 +77,7 @@ class GleamRegions(luigi.ExternalTask):
 
 
 class RegionsAggregates(luigi.ExternalTask):
+    """Aggregates used for locations like Balochistan and others"""
     aggregates = luigi.Parameter(
         default=_prefix_cfg("regions-agg.yaml"),
         description="Input filename relative to the config directory",
@@ -212,6 +215,8 @@ class CountryEstimates(luigi.ExternalTask):
 
 
 class ConfigYaml(luigi.ExternalTask):
+    """Configuration yaml used mostly to customize the gleamviz pipeline and to generate
+    the definitions for the simulations"""
 
     yaml_config_path: str = luigi.Parameter(
         default=_prefix_cfg("config.yaml"),
@@ -230,7 +235,7 @@ class ConfigYaml(luigi.ExternalTask):
 class GenerateGleamBatch(luigi.Task):
     """Generates a an HDF file similar to what gleamviz outputs.
 
-        Has 2-3 dataframes:
+        The HDF has 2-3 dataframes:
 
         * `simulations`: indexed by `SimulationID`, contains information
         about what simulation ID had what parameters, and the XML definition file.
@@ -461,6 +466,7 @@ class ExtractSimulationsResults(luigi.Task):
 
 
 class Rates(luigi.ExternalTask):
+    """Rates for number of critical beds and hospital capacity"""
     rates: str = luigi.Parameter(default=_prefix_cfg("rates.csv"))
 
     def output(self):
@@ -468,6 +474,7 @@ class Rates(luigi.ExternalTask):
 
 
 class Timezones(luigi.ExternalTask):
+    """Timezones per country"""
     timezones: str = luigi.Parameter(default=_prefix_cfg("timezones.csv"))
 
     def output(self):
@@ -475,6 +482,7 @@ class Timezones(luigi.ExternalTask):
 
 
 class AgeDistributions(luigi.ExternalTask):
+    """Distributions of ages in given countries"""
     age_distributions: str = luigi.Parameter(default=_prefix_cfg("age_dist_un.csv"))
 
     def output(self):

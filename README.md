@@ -90,11 +90,13 @@ You provide all file inputs, foretold_channel and parameters, tweak configs to y
 
 
 ### Getting help
-See `epimodel/tasks.py` docstrings and to discover all available tasks.
+See `epimodel/tasks.py` where the whole pipeline is defined. Read the docstrings and paramter descriptions
+to understand and discover all available tasks, their inputs, outputs and their configuration.
 
 You can also use `./luigi <TaskName> --help` to get information about the parameters of the task.
 
 `luigi-deps-tree --module epimodel.tasks <TaskName>` enables you to visualize the dependencies and what is and isn't completed. For example:
+
 ```
 $ luigi-deps-tree --module epimodel.tasks JohnsHopkins --RegionsDatasetTask-regions-dataset something
 └─--[JohnsHopkins-{'_output_directory': 'out', 'hopkins_output': 'john-hopkins.csv'} (COMPLETE)]
