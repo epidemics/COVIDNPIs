@@ -36,7 +36,6 @@ class InputParser:
     ]
     ESTIMATE_FIELDS = [
         "Region",
-        "Population",
         "Infectious",
     ]
     STR_PARAMS = [
@@ -67,9 +66,11 @@ class InputParser:
 
         df = pd.DataFrame(infectious).reset_index()
         df["Region"] = df["Region"].apply(self._get_region)
-        df["Population"] = df["Region"].apply(lambda reg: reg.Population)
+        is_gleam_basin = df["Region"].apply(
+            lambda region: region.Level == Level.gleam_basin
+        )
 
-        return df[self.ESTIMATE_FIELDS].dropna()
+        return df[is_gleam_basin][self.ESTIMATE_FIELDS].dropna()
 
     def parse_parameters_df(self, raw_parameters: pd.DataFrame):
         df = raw_parameters.replace({"": None})[self.PARAMETER_FIELDS].dropna(
@@ -215,15 +216,17 @@ class SimulationSet:
 
         # Create compartment sizes
         multipliers = self.config["compartment_multipliers"]
-        infectious = np.minimum(
-            estimates["Infectious"],
-            estimates["Population"]
+        infectious = estimates["Infectious"]
+        max_infectious = (
+            estimates["Region"].apply(lambda reg: reg.Population)
             * self.config["compartments_max_fraction"]
-            / sum(multipliers.values()),
+            / sum(multipliers.values())
         )
+        max_infectious.fillna(infectious, inplace=True)
+        infectious = np.minimum(infectious, max_infectious)
 
         # Apply compartment multipliers
-        self.estimates = pd.DataFrame(estimates["Region"])
+        self.estimates = estimates[["Region"]].copy()
         for compartment, multiplier in multipliers.items():
             self.estimates[compartment] = (infectious * multiplier).astype("int")
 

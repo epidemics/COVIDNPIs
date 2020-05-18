@@ -6,7 +6,7 @@ import pandas as pd
 import numpy as np
 import yaml
 
-from epimodel import Region, RegionDataset
+from epimodel import Region, RegionDataset, Level
 import epimodel.gleam.scenario as sc
 from epimodel.gleam.definition import GleamDefinition
 
@@ -29,8 +29,12 @@ class TestScenarioIntegration(PandasTestCase):
             config = yaml.safe_load(fp)["scenarios"]
 
         parser = sc.InputParser(rds=self.rds)
-        params = parser.parse_parameters_df(pd.read_csv(self.datadir / config["parameters"]))
-        estimates = parser.parse_estimates_df(pd.read_csv(self.datadir / config["estimates"]))
+        params = parser.parse_parameters_df(
+            pd.read_csv(self.datadir / config["parameters"])
+        )
+        estimates = parser.parse_estimates_df(
+            pd.read_csv(self.datadir / config["estimates"])
+        )
 
         simulations = sc.SimulationSet(config, params, estimates)
         for classes, def_builder in simulations:
@@ -48,8 +52,18 @@ class TestScenarioIntegration(PandasTestCase):
 @pytest.mark.usefixtures("ut_datadir", "ut_rds")
 class TestInputParser(PandasTestCase):
     @staticmethod
+    def estimates_input_from_rows(*rows):
+        rows = [row + [None, None] for row in rows]
+        estimates = pd.DataFrame.from_records(
+            rows, columns=["Name", "Infectious_mean", "Beta1", "Beta2"]
+        )
+        return estimates
+
+    @staticmethod
     def params_input_from_rows(*rows):
-        params = pd.DataFrame(rows, columns=sc.InputParser.PARAMETER_FIELDS)
+        params = pd.DataFrame.from_records(
+            rows, columns=sc.InputParser.PARAMETER_FIELDS
+        )
         return params
 
     def exception_params_input(self, **kwargs):
@@ -62,9 +76,23 @@ class TestInputParser(PandasTestCase):
 
     def test_estimates_output_format(self):
         parser = sc.InputParser(rds=self.rds)
-        df = parser.parse_estimates_df(
-            pd.read_csv(self.datadir / "estimates.csv")
-        )
+        df = parser.parse_estimates_df(pd.read_csv(self.datadir / "estimates.csv"))
+
+        self.assert_dtype(df["Region"], "object")
+        self.assertIsInstance(df["Region"].iloc[0], Region)
+        self.assert_dtype(df["Infectious"], "float")
+
+    def test_estimates_distribute_down(self):
+        """
+        Estimates should get spread down to regions at the gleam_basin level
+        """
+        raw_estimates = self.estimates_input_from_rows(["BE", "100"], ["MA", "100"])
+        parser = sc.InputParser(rds=self.rds)
+        df = parser.parse_estimates_df(raw_estimates)
+
+        for region in df["Region"]:
+            self.assertEqual(region.Level, Level.gleam_basin)
+        self.assertEqual(df.Infectious.sum(), 200)
 
     def test_params_output_format(self):
         parser = sc.InputParser(rds=self.rds)
@@ -140,8 +168,11 @@ class TestInputParser(PandasTestCase):
         self.assertEqual(df["Value"].iloc[0], 1)
 
 
+@pytest.mark.usefixtures("ut_rds")
 class TestSimulationSet(PandasTestCase):
-    def_builder_patcher = patch("epimodel.gleam.scenario.DefinitionBuilder", autospec=True)
+    def_builder_patcher = patch(
+        "epimodel.gleam.scenario.DefinitionBuilder", autospec=True
+    )
 
     def setUp(self):
         self.DefinitionBuilder = self.def_builder_patcher.start()
@@ -157,12 +188,8 @@ class TestSimulationSet(PandasTestCase):
         """
         return parameters, estimates, id, classes
 
-    def get_config(self):
-        return {
-            "name": "Test",
-            "groups": [{"name": "A"}, {"name": "B"},],
-            "traces": [{"name": "C"}, {"name": "D"},],
-        }
+    def get_estimates(self, *rows):
+        return pd.DataFrame.from_records(rows, columns=sc.InputParser.ESTIMATE_FIELDS)
 
     def get_params(self):
         """
@@ -182,29 +209,89 @@ class TestSimulationSet(PandasTestCase):
         )
 
     def test_params_output(self):
-        config = self.get_config()
+        config = {
+            "name": "Test Params",
+            "groups": [{"name": "A"}, {"name": "B"},],
+            "traces": [{"name": "C"}, {"name": "D"},],
+            "compartment_multipliers": {"Infectious": 1.0,},
+            "compartments_max_fraction": 1.0,
+        }
         params = self.get_params()
-        ss = sc.SimulationSet(config, params, estimates=pd.DataFrame(columns=sc.InputParser.ESTIMATE_FIELDS))
+        estimates = self.get_estimates([self.rds["G-MXP"], 100])
+
+        ss = sc.SimulationSet(config, params, estimates)
 
         # None is assumed trace
         params["Type"].fillna("trace", inplace=True)
 
         ids = set()
+
         for group in ["A", "B"]:
             for trace in ["C", "D"]:
                 pair = (group, trace)
                 self.assertIn(pair, ss)
 
-                params, estimates, id, classes = ss[pair]
                 expected_params = params[params.present_in.str.contains("".join(pair))]
-                expected_estimates = pd.DataFrame(columns=["Region"])
 
-                self.assert_array_equal(params, expected_params)
-                self.assert_array_equal(estimates, expected_estimates)
+                out_params, out_estimates, id, classes = ss[pair]
+                self.assert_array_equal(out_params, expected_params)
+                self.assert_array_equal(out_estimates, estimates)
                 self.assertEqual(classes, pair)
                 self.assertIsInstance(id, int)
                 ids.add(id)
         self.assertEqual(len(ids), 4, "not all ids are unique")
+
+    def test_prepare_estimates(self):
+        config = {
+            "name": "Test Exposed",
+            "groups": [{"name": "A"},],
+            "traces": [{"name": "C"},],
+            "compartment_multipliers": {"Infectious": 1.0, "Exposed": 1.8,},
+            "compartments_max_fraction": 1.0,
+        }
+
+        # mock each gleam_basin in Belgium
+        regions = [Mock(autospec=region) for region in self.rds["BE"].children]
+        regions[0].Population = np.nan  # ensure null population is handled
+        regions[1].Population = 1000
+        regions[2].Population = 10000
+
+        params = self.get_params()
+        params = params[params.present_in.str.contains("AC")]
+        estimates = self.get_estimates(*([region, 100] for region in regions))
+
+        ss = sc.SimulationSet(config, params, estimates)
+
+        expected_estimates = estimates.copy()
+        expected_estimates["Exposed"] = 180
+        out_estimates = ss[("A", "C")][1]
+        self.assert_array_equal(out_estimates, expected_estimates)
+
+    def test_prepare_estimates_max_fraction(self):
+        config = {
+            "name": "Test Exposed",
+            "groups": [{"name": "A"},],
+            "traces": [{"name": "C"},],
+            "compartment_multipliers": {"Infectious": 1.0, "Exposed": 9.0,},
+            "compartments_max_fraction": 0.5,
+        }
+        region = Mock(autospec=self.rds["G-MLA"])
+        region.Population = 100
+
+        params = self.get_params()
+        params = params[params.present_in.str.contains("AC")]
+        estimates = self.get_estimates([region, 10])
+
+        ss = sc.SimulationSet(config, params, estimates)
+
+        # total estimate == population
+        # compartments_max_fraction == 0.5 * population
+        # so output will be half of input
+        expected_estimates = self.get_estimates([region, 5])
+        expected_estimates["Exposed"] = 45
+
+        out_estimates = ss[("A", "C")][1]
+        self.assert_array_equal(out_estimates, expected_estimates)
 
 
 @pytest.mark.usefixtures("ut_rds")
@@ -219,7 +306,7 @@ class TestDefinitionBuilder(PandasTestCase):
         self.definition_patcher.stop()
 
     def estimates_rows(self, *rows):
-        return pd.DataFrame(rows)
+        return pd.DataFrame.from_records(rows)
 
     def params_rows(self, *rows):
         return pd.concat([self.params_row(row) for row in rows]).reset_index()
@@ -285,10 +372,12 @@ class TestDefinitionBuilder(PandasTestCase):
             {"Region": self.rds["DE"], "Exposed": 50, "Infectious": 5},
         )
         self.init_only_estimates(estimates)
-        self.output.add_seed.assert_has_calls([
-            call(self.rds["FR"], {"Exposed": 100, "Infectious": 10}),
-            call(self.rds["DE"], {"Exposed": 50, "Infectious": 5}),
-        ])
+        self.output.add_seed.assert_has_calls(
+            [
+                call(self.rds["FR"], {"Exposed": 100, "Infectious": 10}),
+                call(self.rds["DE"], {"Exposed": 50, "Infectious": 5}),
+            ]
+        )
 
     # configuration
 

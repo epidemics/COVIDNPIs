@@ -48,5 +48,6 @@ class PandasTestCase(NumpyTestCase):
             name = "series"
 
         self.assertTrue(
-            np.issubdtype(series.dtype, dtype), f"{name} is not dtype {dtype.name!r}"
+            np.issubdtype(series.dtype, dtype),
+            f"{name} dtype {series.dtype.name!r} != {dtype.name!r}",
         )
