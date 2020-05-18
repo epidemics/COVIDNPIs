@@ -228,7 +228,25 @@ class ConfigYaml(luigi.ExternalTask):
 
 
 class GenerateGleamBatch(luigi.Task):
-    """Generates a an HDF file similar to what gleamviz outputs."""
+    """Generates a an HDF file similar to what gleamviz outputs.
+
+        Has 2-3 dataframes:
+
+        * `simulations`: indexed by `SimulationID`, contains information
+        about what simulation ID had what parameters, and the XML definition file.
+
+        * `initial_compartments`: Indexed by `['SimulationID', 'Code']`, has the
+        initial sizes of set compartments (columns Exposed, Infected).
+
+        * `new_fraction`: After `import-gleam-batch` actually contains the
+        modelled data for Infected and Recovered (columns). Indexed by `['SimulationID', 'Code', 'Date']`:
+          * `SimulationID`: corresponding simulation ID to be able to be
+          able to map it to parameters in `simulations`,
+          * `Code`: region code (ISOa2 for countries, e.g. `AE`),
+          * `Date`: a date for which we model Infected and Recovered.
+          Note that the values are *new* elements in the compartment for
+          given day (or in case of resampled dates, in the period since last sample).
+    """
 
     _output_directory: str = luigi.Parameter(
         default=CONFIG.output_directory,

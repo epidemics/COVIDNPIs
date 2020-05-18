@@ -13,28 +13,35 @@ Please use the [covid](https://github.com/epidemics/covid/issues/new/choose) rep
 * Algorithms and imports assuming common dataframe structure (with `Code` and optionally `Date` row index).
 * All dates are UTC timestamps, stored in ISO format with TZ.
 * Most of the data is stored in [epimodel-covid-data](https://github.com/epidemics/epimodel-covid-data) repo for asynchronous updates.
+
+
+## Contributing
+
+For the contribution details and project management, please see [this specification](https://www.notion.so/Development-project-management-476f3c53b0f24171a78146365072d82e).
+
+
 ## Install
 
 * [Get Poetry](https://python-poetry.org/docs/#installation)
 * Clone this repository.
 * Install the dependencies and this lib `poetry install` (creates a virtual env by default).
-* Clone the [epimodel-covid-data](https://github.com/epidemics/epimodel-covid-data/) repository.
 
 ```sh
 ## Clone the repositories (or use their https://... withou github login)
 git clone git@github.com:epidemics/epimodel.git
 cd epimodel
-git clone git@github.com:epidemics/epimodel-covid-data.git data
 
 ## Install packages
-poetry install  # Best run it outside virtualenv - poetry will create its own
+poetry install  # poetry creates its own virtualenv
+
+poetry shell # activating the virtualenv (if not active already)
+poetry run luigi  # running a command in the virtualenv
+
 # Alternatively, you can also install PyMC3 or Pyro, and jupyter (in both cases):
 poetry install -E pymc3
 poetry install -E pyro
-
-poetry shell # One way to enter the virtualenv (if not active already)
-poetry run jupyter notebook  # For example
 ```
+
 
 ## Development
 
@@ -47,31 +54,7 @@ We are using [luigi](https://luigi.readthedocs.io/en/stable/index.html) as the w
 readme doesn't include description of how to use `luigi` so please refer to the project documentation
 to understand how to tweak this.
 
-## Contributing
-
-For the contribution details and project management, please see [this specification](https://www.notion.so/Development-project-management-476f3c53b0f24171a78146365072d82e).
-
-## Running pipeline to get web export
-
-Assuming you've installed deps via `poetry install` and you are in the root epimodel repo.
-
 ## Running the pipeline
-
-### Getting help
-Read `epimodel/tasks.py` docstrings and to discover all available tasks.
-
-You can also use `./luigi <TaskName> --help` to get information about the parameters of the task.
-
-`luigi-deps-tree --module epimodel.tasks <TaskName>` enables you to visualize the dependencies and what is and isn't completed. For example:
-```
-$ luigi-deps-tree --module epimodel.tasks JohnsHopkins --RegionsDatasetTask-regions-dataset something
-└─--[JohnsHopkins-{'_output_directory': 'out', 'hopkins_output': 'john-hopkins.csv'} (COMPLETE)]
-   └─--[RegionsDatasetTask-{'regions': 'manual_input/regions.csv', 'gleams': 'manual_input/regions-gleam.csv', 'aggregates': 'manual_input/regions-agg.yaml', 'regions_dataset': 'something'} (PENDING)]
-      |--[RegionsFile-{'regions': 'manual_input/regions.csv'} (COMPLETE)]
-      |--[GleamRegions-{'gleams': 'manual_input/regions-gleam.csv'} (COMPLETE)]
-      └─--[RegionsAggregates-{'aggregates': 'manual_input/regions-agg.yaml'} (COMPLETE)]
-```
-
 ### Example with faked data
 This example skips the `UpdateForetold` and `ExtractSimulationsResults` task by providing their output.
 In reality, you want to actually run gleamviz in between and provide Foretold channel to get data via API.
@@ -102,16 +85,18 @@ You provide all file inputs, foretold_channel and parameters, tweak configs to y
 4. provide data for any of the ExternalTasks, such as `BaseDefinition`, `ConfigYaml`, `CountryEstimates` and others (see the `epimodel/tasks.py`). If you want to see what does your task depends on, use `luigi-deps-tree` as mentioned above.
 5. deal with gleamviz and knowing where it's simulation directory is on your installation
 
-### Gleam Batch file
 
-Has 2-3 dataframes:
+### Getting help
+See `epimodel/tasks.py` docstrings and to discover all available tasks.
 
-* `simulations`: indexed by `SimulationID`, contains information about what simulation ID had what parameters, and the XML definition file.
+You can also use `./luigi <TaskName> --help` to get information about the parameters of the task.
 
-* `initial_compartments`: Indexed by `['SimulationID', 'Code']`, has the initial sizes of set compartments (columns Exposed, Infected).
-
-* `new_fraction`: After `import-gleam-batch` actually contains the modelled data for Infected and Recovered (columns). Indexed by `['SimulationID', 'Code', 'Date']`:
-  * `SimulationID`: corresponding simulation ID to be able to be able to map it to parameters in `simulations`,
-  * `Code`: region code (ISOa2 for countries, e.g. `AE`),
-  * `Date`: a date for which we model Infected and Recovered.
-  Note that the values are *new* elements in the compartment for given day (or in case of resampled dates, in the period since last sample).
+`luigi-deps-tree --module epimodel.tasks <TaskName>` enables you to visualize the dependencies and what is and isn't completed. For example:
+```
+$ luigi-deps-tree --module epimodel.tasks JohnsHopkins --RegionsDatasetTask-regions-dataset something
+└─--[JohnsHopkins-{'_output_directory': 'out', 'hopkins_output': 'john-hopkins.csv'} (COMPLETE)]
+   └─--[RegionsDatasetTask-{'regions': 'manual_input/regions.csv', 'gleams': 'manual_input/regions-gleam.csv', 'aggregates': 'manual_input/regions-agg.yaml', 'regions_dataset': 'something'} (PENDING)]
+      |--[RegionsFile-{'regions': 'manual_input/regions.csv'} (COMPLETE)]
+      |--[GleamRegions-{'gleams': 'manual_input/regions-gleam.csv'} (COMPLETE)]
+      └─--[RegionsAggregates-{'aggregates': 'manual_input/regions-agg.yaml'} (COMPLETE)]
+```
