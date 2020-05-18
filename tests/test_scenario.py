@@ -359,23 +359,30 @@ class TestDefinitionBuilder(PandasTestCase):
 
     def test_add_seeds(self):
         estimates = self.estimates_rows(
-            {"Region": self.rds["FR"], "Exposed": 100, "Infectious": 10}
+            {"Region": self.rds["G-MLA"], "Exposed": 100, "Infectious": 10}
         )
         self.init_only_estimates(estimates)
         self.output.add_seed.assert_called_once_with(
-            self.rds["FR"], {"Exposed": 100, "Infectious": 10}
+            self.rds["G-MLA"], {"Exposed": 100, "Infectious": 10}
         )
 
     def test_add_multiple_seeds(self):
+        """
+        seeds are sorted by GleamID
+        """
+        regions = [
+            Mock(GleamID=1, Level=Level.gleam_basin, autospec=Region),
+            Mock(GleamID=2, Level=Level.gleam_basin, autospec=Region),
+        ]
         estimates = self.estimates_rows(
-            {"Region": self.rds["FR"], "Exposed": 100, "Infectious": 10},
-            {"Region": self.rds["DE"], "Exposed": 50, "Infectious": 5},
+            {"Region": regions[1], "Exposed": 50, "Infectious": 5},
+            {"Region": regions[0], "Exposed": 100, "Infectious": 10},
         )
         self.init_only_estimates(estimates)
         self.output.add_seed.assert_has_calls(
             [
-                call(self.rds["FR"], {"Exposed": 100, "Infectious": 10}),
-                call(self.rds["DE"], {"Exposed": 50, "Infectious": 5}),
+                call(regions[0], {"Exposed": 100, "Infectious": 10}),
+                call(regions[1], {"Exposed": 50, "Infectious": 5}),
             ]
         )
 

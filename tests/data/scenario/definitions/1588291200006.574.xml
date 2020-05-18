@@ -29,6 +29,12 @@
     <initialCompartments>
     </initialCompartments>
     <seeds>
+      <seed city="1543" compartment="Infectious" number="1954" />
+      <seed city="1543" compartment="Exposed" number="3518" />
+      <seed city="1544" compartment="Infectious" number="45" />
+      <seed city="1544" compartment="Exposed" number="81" />
+      <seed city="655" compartment="Infectious" number="574" />
+      <seed city="655" compartment="Exposed" number="1033" />
     </seeds>
     <resultCompartments>
       <id>Susceptible</id>

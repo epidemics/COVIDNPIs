@@ -358,10 +358,14 @@ class DefinitionBuilder:
         self.definition.format_seeds()
 
     def _prepare_estimates(self, estimates: pd.DataFrame):
+        estimates = estimates.copy()
+        # sort by GleamID for deterministic order
+        estimates["GleamID"] = estimates["Region"].apply(lambda reg: reg.GleamID)
+        estimates.sort_values(by="GleamID", inplace=True)
         return pd.DataFrame(
             {
                 "region": estimates["Region"],
-                "compartments": estimates.drop(columns="Region").to_dict(
+                "compartments": estimates.drop(columns=["Region", "GleamID"]).to_dict(
                     orient="records"
                 ),
             }

@@ -214,7 +214,7 @@ class GleamDefinition:
         assert region.Level == Level.gleam_basin
         assert pd.notnull(region.GleamID)
 
-        for compartment, size in compartments:
+        for compartment, size in compartments.items():
             ET.SubElement(
                 self.seeds_node,
                 "seed",
@@ -236,7 +236,8 @@ class GleamDefinition:
         node.text = long_tail
         for child in node:
             child.tail = long_tail
-        last_child = node.find("seed[last()]")
+        last_child = node.find("./*[last()]")
+        # import pdb; pdb.set_trace()
         if last_child:
             last_child.tail = short_tail
 
