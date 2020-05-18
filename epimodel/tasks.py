@@ -9,7 +9,6 @@ import dill
 import luigi
 import yaml
 from luigi.util import inherits
-from luigi.configuration import get_config
 
 from epimodel import Level, RegionDataset, algorithms, imports, read_csv_smart, utils
 from epimodel.exports.epidemics_org import process_export, upload_export
@@ -340,6 +339,7 @@ class ExtractSimulationsResults(luigi.Task):
         description="Name of the output HDF file with all traces",
     )
     allow_missing: bool = luigi.BoolParameter(default=True)
+    resample: bool = luigi.Parameter(description="Default pandas resample for dates")
 
     def requires(self):
         return {
@@ -387,7 +387,7 @@ class ExtractSimulationsResults(luigi.Task):
         b.import_results_from_gleam(
             Path(simulation_directory),
             regions,
-            resample=get_config()["DEFAULT"]["gleam_resample"],
+            resample=self.resample,
             allow_unfinished=self.allow_missing,
             info_level=logging.INFO,
         )
@@ -438,6 +438,7 @@ class WebExport(luigi.Task):
         description="The default name of the main JSON data file",
     )
     comment: str = luigi.Parameter(description="Optional comment to the export",)
+    resample: str = luigi.Parameter(description="Pandas dataseries resample")
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -477,7 +478,7 @@ class WebExport(luigi.Task):
             config_yaml["export_regions"],
             config_yaml["state_to_country"],
             config_yaml["groups"],
-            get_config()["DEFAULT"]["gleam_resample"],
+            self.resample,
         )
         ex.write(
             self.full_export_path,
