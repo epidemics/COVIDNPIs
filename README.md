@@ -75,11 +75,10 @@ You provide all file inputs, foretold_channel and parameters, tweak configs to y
 
 1. `./luigi GenerateSimulationDefinitions`
 2. run gleamviz with the simulations created above, retrieve results via it's UI, close it
-3. ```
+3. 
     ./luigi WebExport \
     --export-name my-export \
-    --ExtractSimulationResults-single-result ~/GLEAMviz/data/simulations/82131231323.ghv5/results.h5
-  ```
+    --ExtractSimulationResults-single-result ~/GLEAMviz/data/simulations/82131231323.ghv5/results.h5 
 
 ### Actually using it
 1. add `foretold_channel` in `luigi.cfg` to `[UpdateForetold]` section (you can get it from others on slack)
