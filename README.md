@@ -60,11 +60,12 @@ This example skips the `UpdateForetold` and `ExtractSimulationsResults` task by 
 In reality, you want to actually run gleamviz in between and provide Foretold channel to get data via API.
 This by default uses data in `data/inputs` and exports data to `data/outputs/example`.
 ```
+# `poetry shell`  # if you haven't done already
 ./luigi WebExport \
     --export-name test-export \
-    --UpdateForetold--output-directory data/inputs/fixtures \
-    --ExtractSimulationsResults--output-directory data/inputs/fixtures \
-    --ExtractSimulationsResults-single-result this-is-ignored
+    --UpdateForetold--output-directory data-dir/inputs/fixtures \
+    --ExtractSimulationsResults--output-directory data-dir/inputs/fixtures \
+    --ExtractSimulationsResults-single-result this-is-now-ignored
 ```
 
 ### The usual flow
