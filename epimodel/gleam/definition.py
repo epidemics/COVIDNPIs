@@ -211,7 +211,7 @@ class GleamDefinition:
         `sizes` must be indexed by `Code`. `rds` must have the gleam
         regions loaded.
         """
-        assert region.level == Level.gleam_basin
+        assert region.Level == Level.gleam_basin
         assert pd.notnull(region.GleamID)
 
         for compartment, size in compartments:
@@ -236,7 +236,7 @@ class GleamDefinition:
         node.text = long_tail
         for child in node:
             child.tail = long_tail
-        last_child = enode.find("seed[last()]")
+        last_child = node.find("seed[last()]")
         if last_child:
             last_child.tail = short_tail
 

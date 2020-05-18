@@ -1,5 +1,5 @@
 import pytest
-from unittest.mock import Mock, patch
+from unittest.mock import Mock, patch, call
 from . import PandasTestCase
 
 import pandas as pd
@@ -27,42 +27,53 @@ class TestScenarioIntegration(PandasTestCase):
     def test_integration(self):
         with open(self.datadir / "scenario/config.yaml", "r") as fp:
             config = yaml.safe_load(fp)["scenarios"]
-        parser = sc.ConfigParser(rds=self.rds)
-        df = parser.get_config_from_csv(self.datadir / config["parameters"])
-        simulations = sc.SimulationSet(config, df)
-        for classes, def_gen in simulations:
+
+        parser = sc.InputParser(rds=self.rds)
+        params = parser.parse_parameters_df(pd.read_csv(self.datadir / config["parameters"]))
+        estimates = parser.parse_estimates_df(pd.read_csv(self.datadir / config["estimates"]))
+
+        simulations = sc.SimulationSet(config, params, estimates)
+        for classes, def_builder in simulations:
             dir = self.datadir / "scenario/definitions"
 
             ### Uncomment the following line and run this test if you
             ### need to reset the files, but be sure to manually check
             ### the output afterwards to ensure it's correct.
-            # def_gen.save_to_dir(dir)
+            # def_builder.save_to_dir(dir)
 
-            expected = GleamDefinition(dir / def_gen.filename)
-            def_gen.definition.assert_equal(expected)
+            expected = GleamDefinition(dir / def_builder.filename)
+            def_builder.definition.assert_equal(expected)
 
 
 @pytest.mark.usefixtures("ut_datadir", "ut_rds")
-class TestConfigParser(PandasTestCase):
+class TestInputParser(PandasTestCase):
     @staticmethod
-    def config_from_rows(*rows):
-        config = pd.DataFrame(rows, columns=sc.ConfigParser.FIELDS)
-        return config
+    def params_input_from_rows(*rows):
+        params = pd.DataFrame(rows, columns=sc.InputParser.PARAMETER_FIELDS)
+        return params
 
-    def config_exception(self, **kwargs):
-        config = self.config_from_rows(
+    def exception_params_input(self, **kwargs):
+        params = self.params_input_from_rows(
             ["PK", "0.35", "beta", "2020-04-14", "2021-05-01", "group", "Strong",]
         )
         for k, v in kwargs.items():
-            config.loc[:, k] = v
-        return config
+            params.loc[:, k] = v
+        return params
 
-    def test_output_format(self):
-        parser = sc.ConfigParser(rds=self.rds)
-        df = parser.get_config_from_csv(self.datadir / "scenario/parameters.csv")
+    def test_estimates_output_format(self):
+        parser = sc.InputParser(rds=self.rds)
+        df = parser.parse_estimates_df(
+            pd.read_csv(self.datadir / "estimates.csv")
+        )
+
+    def test_params_output_format(self):
+        parser = sc.InputParser(rds=self.rds)
+        df = parser.parse_parameters_df(
+            pd.read_csv(self.datadir / "scenario/parameters.csv")
+        )
 
         self.assert_array_equal(
-            df.columns, sc.ConfigParser.FIELDS, "output columns do not match"
+            df.columns, sc.InputParser.PARAMETER_FIELDS, "output columns do not match"
         )
         self.assertFalse(
             pd.isnull(df["Parameter"]).any(), "output has null parameter names"
@@ -84,19 +95,19 @@ class TestConfigParser(PandasTestCase):
         self.assert_dtype(df["End date"], "M")
 
     def test_find_region_by_code(self):
-        parser = sc.ConfigParser(rds=self.rds)
-        df = parser.get_config(self.config_exception(Region="FR"))
+        parser = sc.InputParser(rds=self.rds)
+        df = parser.parse_parameters_df(self.exception_params_input(Region="FR"))
         self.assertEqual(df["Region"].iloc[0], self.rds["FR"])
 
     def test_find_region_by_name(self):
-        parser = sc.ConfigParser(rds=self.rds)
-        df = parser.get_config(self.config_exception(Region="France"))
+        parser = sc.InputParser(rds=self.rds)
+        df = parser.parse_parameters_df(self.exception_params_input(Region="France"))
         self.assertEqual(df["Region"].iloc[0], self.rds["FR"])
 
     def test_converts_values_selectively(self):
-        parser = sc.ConfigParser(rds=self.rds)
-        df = parser.get_config(
-            self.config_from_rows(
+        parser = sc.InputParser(rds=self.rds)
+        df = parser.parse_parameters_df(
+            self.params_input_from_rows(
                 ["", "test name", "name", "", "", "", ""],
                 ["", "0.5", "beta", "", "", "", ""],
             )
@@ -118,9 +129,9 @@ class TestConfigParser(PandasTestCase):
         foretold.get_question = Mock(return_value=question)
         ergo.Foretold = Mock(return_value=foretold)
 
-        parser = sc.ConfigParser(rds=self.rds, foretold_token="ABC", progress_bar=False)
+        parser = sc.InputParser(rds=self.rds, foretold_token="ABC", progress_bar=False)
 
-        df = parser.get_config(self.config_exception(Value=QUESTION_ID))
+        df = parser.parse_parameters_df(self.exception_params_input(Value=QUESTION_ID))
 
         ergo.Foretold.assert_called_once_with("ABC")
         foretold.get_question.assert_called_once_with(QUESTION_ID)
@@ -130,16 +141,21 @@ class TestConfigParser(PandasTestCase):
 
 
 class TestSimulationSet(PandasTestCase):
-    def_gen_patcher = patch(
-        "epimodel.gleam.scenario.DefinitionGenerator", autospec=True
-    )
+    def_builder_patcher = patch("epimodel.gleam.scenario.DefinitionBuilder", autospec=True)
 
     def setUp(self):
-        self.DefinitionGenerator = self.def_gen_patcher.start()
-        self.DefinitionGenerator.side_effect = lambda df, id, classes: (df, id, classes)
+        self.DefinitionBuilder = self.def_builder_patcher.start()
+        self.DefinitionBuilder.side_effect = self._return_inputs
 
     def tearDown(self):
-        self.def_gen_patcher.stop()
+        self.def_builder_patcher.stop()
+
+    def _return_inputs(self, parameters, estimates, id, classes):
+        """
+        return inputs instead of DefinitionBuilder instance for easy
+        inspection of test results
+        """
+        return parameters, estimates, id, classes
 
     def get_config(self):
         return {
@@ -165,10 +181,10 @@ class TestSimulationSet(PandasTestCase):
             columns=["present_in", "Type", "Class"],
         )
 
-    def test_output(self):
+    def test_params_output(self):
         config = self.get_config()
         params = self.get_params()
-        ss = sc.SimulationSet(config, params)
+        ss = sc.SimulationSet(config, params, estimates=pd.DataFrame(columns=sc.InputParser.ESTIMATE_FIELDS))
 
         # None is assumed trace
         params["Type"].fillna("trace", inplace=True)
@@ -179,18 +195,20 @@ class TestSimulationSet(PandasTestCase):
                 pair = (group, trace)
                 self.assertIn(pair, ss)
 
-                expected_output = params[params.present_in.str.contains("".join(pair))]
-                output, id, classes = ss[pair]
-                self.assert_array_equal(output, expected_output)
+                params, estimates, id, classes = ss[pair]
+                expected_params = params[params.present_in.str.contains("".join(pair))]
+                expected_estimates = pd.DataFrame(columns=["Region"])
+
+                self.assert_array_equal(params, expected_params)
+                self.assert_array_equal(estimates, expected_estimates)
                 self.assertEqual(classes, pair)
                 self.assertIsInstance(id, int)
                 ids.add(id)
         self.assertEqual(len(ids), 4, "not all ids are unique")
-        assert False
 
 
 @pytest.mark.usefixtures("ut_rds")
-class TestDefinitionGenerator(PandasTestCase):
+class TestDefinitionBuilder(PandasTestCase):
     definition_patcher = patch("epimodel.gleam.scenario.GleamDefinition", autospec=True)
 
     def setUp(self):
@@ -200,10 +218,13 @@ class TestDefinitionGenerator(PandasTestCase):
     def tearDown(self):
         self.definition_patcher.stop()
 
-    def config_rows(self, *rows):
-        return pd.concat([self.config_row(row) for row in rows]).reset_index()
+    def estimates_rows(self, *rows):
+        return pd.DataFrame(rows)
 
-    def config_row(self, row):
+    def params_rows(self, *rows):
+        return pd.concat([self.params_row(row) for row in rows]).reset_index()
+
+    def params_row(self, row):
         if row.get("Region") is not None:
             row["Region"] = self.rds[row["Region"]]
         if row.get("Start date") is not None:
@@ -211,14 +232,14 @@ class TestDefinitionGenerator(PandasTestCase):
         if row.get("End date") is not None:
             row["End date"] = pd.to_datetime(row["End date"])
 
-        config = pd.DataFrame(columns=sc.ConfigParser.FIELDS)
-        config.loc[0] = pd.Series(row)
-        return config
+        params = pd.DataFrame(columns=sc.InputParser.PARAMETER_FIELDS)
+        params.loc[0] = pd.Series(row)
+        return params
 
-    def config_exception(
+    def params_exception(
         self, variables: dict, regions=["FR"], start="2020-05-01", end="2020-06-01"
     ):
-        return self.config_rows(
+        return self.params_rows(
             *(
                 {
                     "Region": region,
@@ -232,115 +253,152 @@ class TestDefinitionGenerator(PandasTestCase):
             )
         )
 
+    @staticmethod
+    def init_only_estimates(estimates, id=None, classes=None):
+        return sc.DefinitionBuilder(
+            pd.DataFrame(columns=sc.InputParser.PARAMETER_FIELDS),
+            estimates,
+            id,
+            classes,
+        )
+
+    @staticmethod
+    def init_only_params(params, id=None, classes=None):
+        return sc.DefinitionBuilder(
+            params, pd.DataFrame(columns=["Region"]), id, classes
+        )
+
+    # estimates
+
+    def test_add_seeds(self):
+        estimates = self.estimates_rows(
+            {"Region": self.rds["FR"], "Exposed": 100, "Infectious": 10}
+        )
+        self.init_only_estimates(estimates)
+        self.output.add_seed.assert_called_once_with(
+            self.rds["FR"], {"Exposed": 100, "Infectious": 10}
+        )
+
+    def test_add_multiple_seeds(self):
+        estimates = self.estimates_rows(
+            {"Region": self.rds["FR"], "Exposed": 100, "Infectious": 10},
+            {"Region": self.rds["DE"], "Exposed": 50, "Infectious": 5},
+        )
+        self.init_only_estimates(estimates)
+        self.output.add_seed.assert_has_calls([
+            call(self.rds["FR"], {"Exposed": 100, "Infectious": 10}),
+            call(self.rds["DE"], {"Exposed": 50, "Infectious": 5}),
+        ])
+
     # configuration
 
     def test_id(self):
-        config = self.config_row({"Parameter": "epsilon", "value": 0.5})
-        def_gen = sc.DefinitionGenerator(config, id=123)
+        params = self.params_row({"Parameter": "epsilon", "value": 0.5})
+        def_builder = self.init_only_params(params, id=123)
         self.output.set_id.assert_called_once_with(123)
 
         self.output.get_id_str.return_value = "123.574"
-        self.assertEqual(def_gen.filename, "123.574.xml")
+        self.assertEqual(def_builder.filename, "123.574.xml")
 
     def test_name_with_classes(self):
-        config = self.config_row({"Parameter": "name", "Value": "Test",})
+        params = self.params_row({"Parameter": "name", "Value": "Test",})
         self.output.get_name.return_value = "Test"
-        sc.DefinitionGenerator(config, classes=("A", "B"))
+        self.init_only_params(params, classes=("A", "B"))
         self.output.set_name.assert_called_with("Test (A + B)")
 
     # run dates
 
     def test_run_dates(self):
-        config = self.config_row(
+        params = self.params_row(
             {
                 "Parameter": "run dates",
                 "Start date": "2020-04-14",
                 "End date": "2021-05-01",
             }
         )
-        sc.DefinitionGenerator(config)
-        self.output.set_start_date.assert_called_once_with(config["Start date"][0])
-        self.output.set_end_date.assert_called_once_with(config["End date"][0])
+        self.init_only_params(params)
+        self.output.set_start_date.assert_called_once_with(params["Start date"][0])
+        self.output.set_end_date.assert_called_once_with(params["End date"][0])
 
     def test_run_dates_only_start(self):
-        config = self.config_row(
+        params = self.params_row(
             {"Parameter": "run dates", "Start date": "2020-04-14",}
         )
-        sc.DefinitionGenerator(config)
-        self.output.set_start_date.assert_called_once_with(config["Start date"][0])
+        self.init_only_params(params)
+        self.output.set_start_date.assert_called_once_with(params["Start date"][0])
         self.output.set_end_date.assert_not_called()
 
     def test_run_dates_only_end(self):
-        config = self.config_row({"Parameter": "run dates", "End date": "2021-05-01",})
-        sc.DefinitionGenerator(config)
+        params = self.params_row({"Parameter": "run dates", "End date": "2021-05-01",})
+        self.init_only_params(params)
         self.output.set_start_date.assert_not_called()
-        self.output.set_end_date.assert_called_once_with(config["End date"][0])
+        self.output.set_end_date.assert_called_once_with(params["End date"][0])
 
     # global parameters
 
     def test_name(self):
         value = "GLEAMviz test"
-        config = self.config_row({"Parameter": "name", "Value": value,})
-        sc.DefinitionGenerator(config)
+        params = self.params_row({"Parameter": "name", "Value": value,})
+        self.init_only_params(params)
         self.output.set_name.assert_called_with(value)
 
     def test_duration(self):
         value = 180.0  # days
-        config = self.config_row({"Parameter": "duration", "Value": value,})
-        sc.DefinitionGenerator(config)
+        params = self.params_row({"Parameter": "duration", "Value": value,})
+        self.init_only_params(params)
         self.output.set_duration.assert_called_once_with(value)
 
     def test_number_of_runs(self):
         value = 5
-        config = self.config_row({"Parameter": "number of runs", "Value": value,})
-        sc.DefinitionGenerator(config)
+        params = self.params_row({"Parameter": "number of runs", "Value": value,})
+        self.init_only_params(params)
         self.output.set_run_count.assert_called_once_with(value)
 
     def test_airline_traffic(self):
         value = 0.3
-        config = self.config_row({"Parameter": "airline traffic", "Value": value,})
-        sc.DefinitionGenerator(config)
+        params = self.params_row({"Parameter": "airline traffic", "Value": value,})
+        self.init_only_params(params)
         self.output.set_airline_traffic.assert_called_once_with(value)
 
     def test_seasonality(self):
         value = 0.6
-        config = self.config_row({"Parameter": "seasonality", "Value": value,})
-        sc.DefinitionGenerator(config)
+        params = self.params_row({"Parameter": "seasonality", "Value": value,})
+        self.init_only_params(params)
         self.output.set_seasonality.assert_called_once_with(value)
 
     def test_commuting_time(self):
         value = 7.5
-        config = self.config_row({"Parameter": "commuting time", "Value": value,})
-        sc.DefinitionGenerator(config)
+        params = self.params_row({"Parameter": "commuting time", "Value": value,})
+        self.init_only_params(params)
         self.output.set_commuting_rate.assert_called_once_with(value)
 
     def test_duplicate_parameter_fails(self):
-        config = pd.concat(
+        params = pd.concat(
             [
-                self.config_row({"Parameter": "id", "Value": "abc",}),
-                self.config_row({"Parameter": "id", "Value": "123",}),
+                self.params_row({"Parameter": "id", "Value": "abc",}),
+                self.params_row({"Parameter": "id", "Value": "123",}),
             ]
         )
-        self.assertRaises(ValueError, sc.DefinitionGenerator, config)
+        self.assertRaises(ValueError, self.init_only_params, params)
         self.output.set_id.assert_not_called()
 
     # global compartment variables
 
     def test_compartment_variable(self):
         value = 0.3
-        config = self.config_row({"Parameter": "imu", "Value": value,})
-        sc.DefinitionGenerator(config)
+        params = self.params_row({"Parameter": "imu", "Value": value,})
+        self.init_only_params(params)
         self.output.set_compartment_variable.assert_called_once_with("imu", value)
         self.output.add_exception.assert_not_called()
 
     def test_partial_exception_fails_region(self):
-        config = self.config_row({"Region": "FR", "Parameter": "imu", "Value": 0.3,})
-        self.assertRaises(ValueError, sc.DefinitionGenerator, config)
+        params = self.params_row({"Region": "FR", "Parameter": "imu", "Value": 0.3,})
+        self.assertRaises(ValueError, self.init_only_params, params)
         self.output.set_compartment_variable.assert_not_called()
         self.output.add_exception.assert_not_called()
 
     def test_partial_exception_fails_dates(self):
-        config = self.config_row(
+        params = self.params_row(
             {
                 "Parameter": "imu",
                 "Value": 0.3,
@@ -348,126 +406,126 @@ class TestDefinitionGenerator(PandasTestCase):
                 "End date": "2020-06-01",
             }
         )
-        self.assertRaises(ValueError, sc.DefinitionGenerator, config)
+        self.assertRaises(ValueError, self.init_only_params, params)
         self.output.set_compartment_variable.assert_not_called()
         self.output.add_exception.assert_not_called()
 
     # exceptions
 
     def test_single_exception(self):
-        config = self.config_exception({"imu": 0.3})
-        sc.DefinitionGenerator(config)
+        params = self.params_exception({"imu": 0.3})
+        self.init_only_params(params)
         self.output.add_exception.assert_called_once_with(
-            (config["Region"][0],),
+            (params["Region"][0],),
             {"imu": 0.3},
-            config["Start date"][0],
-            config["End date"][0],
+            params["Start date"][0],
+            params["End date"][0],
         )
         self.output.set_compartment_variable.assert_not_called()
 
     def test_multivariate_exception(self):
-        config = self.config_exception({"beta": 0.8, "imu": 0.3})
-        sc.DefinitionGenerator(config)
+        params = self.params_exception({"beta": 0.8, "imu": 0.3})
+        self.init_only_params(params)
         self.output.add_exception.assert_called_once_with(
-            (config["Region"][0],),
+            (params["Region"][0],),
             {"beta": 0.8, "imu": 0.3},
-            config["Start date"][0],
-            config["End date"][0],
+            params["Start date"][0],
+            params["End date"][0],
         )
         self.output.set_compartment_variable.assert_not_called()
 
     def test_multi_region_exception(self):
-        config = self.config_exception({"imu": 0.3}, ["FR", "PK"])
-        sc.DefinitionGenerator(config)
+        params = self.params_exception({"imu": 0.3}, ["FR", "PK"])
+        self.init_only_params(params)
         self.output.add_exception.assert_called_once_with(
             (self.rds["FR"], self.rds["PK"]),
             {"imu": 0.3},
-            config["Start date"][0],
-            config["End date"][0],
+            params["Start date"][0],
+            params["End date"][0],
         )
         self.output.set_compartment_variable.assert_not_called()
 
     def test_multivariate_multi_region_exception(self):
-        config = self.config_exception({"beta": 0.8, "imu": 0.3}, ["FR", "PK"])
-        sc.DefinitionGenerator(config)
+        params = self.params_exception({"beta": 0.8, "imu": 0.3}, ["FR", "PK"])
+        self.init_only_params(params)
         self.output.add_exception.assert_called_once_with(
             (self.rds["FR"], self.rds["PK"]),
             {"beta": 0.8, "imu": 0.3},
-            config["Start date"][0],
-            config["End date"][0],
+            params["Start date"][0],
+            params["End date"][0],
         )
         self.output.set_compartment_variable.assert_not_called()
 
     def test_multiple_exceptions(self):
-        config = pd.concat(
+        params = pd.concat(
             [
-                self.config_exception({"beta": 0.8, "imu": 0.3}, ["FR", "PK"]),
-                self.config_exception({"beta": 0.5, "imu": 0.2}, ["DE", "GB"]),
+                self.params_exception({"beta": 0.8, "imu": 0.3}, ["FR", "PK"]),
+                self.params_exception({"beta": 0.5, "imu": 0.2}, ["DE", "GB"]),
             ]
         ).reset_index()
-        sc.DefinitionGenerator(config)
+        self.init_only_params(params)
         self.output.add_exception.assert_any_call(
             (self.rds["FR"], self.rds["PK"]),
             {"beta": 0.8, "imu": 0.3},
-            config["Start date"][0],
-            config["End date"][0],
+            params["Start date"][0],
+            params["End date"][0],
         )
         self.output.add_exception.assert_any_call(
             (self.rds["DE"], self.rds["GB"]),
             {"beta": 0.5, "imu": 0.2},
-            config["Start date"][0],
-            config["End date"][0],
+            params["Start date"][0],
+            params["End date"][0],
         )
         self.output.set_compartment_variable.assert_not_called()
 
     def test_multiple_exception_dates(self):
-        config = pd.concat(
+        params = pd.concat(
             [
-                self.config_exception({"mu": 0.5}, ["FR"], "2020-05-01", "2020-06-01"),
-                self.config_exception({"mu": 0.5}, ["FR"], "2020-06-01", "2020-07-01"),
+                self.params_exception({"mu": 0.5}, ["FR"], "2020-05-01", "2020-06-01"),
+                self.params_exception({"mu": 0.5}, ["FR"], "2020-06-01", "2020-07-01"),
             ]
         ).reset_index()
-        sc.DefinitionGenerator(config)
+        self.init_only_params(params)
         self.output.add_exception.assert_any_call(
             (self.rds["FR"],),
             {"mu": 0.5},
-            config["Start date"][0],
-            config["End date"][0],
+            params["Start date"][0],
+            params["End date"][0],
         )
         self.output.add_exception.assert_any_call(
             (self.rds["FR"],),
             {"mu": 0.5},
-            config["Start date"][1],
-            config["End date"][1],
+            params["Start date"][1],
+            params["End date"][1],
         )
         self.output.set_compartment_variable.assert_not_called()
 
     # multipliers
 
     def test_multiplier_affects_one_parameter(self):
-        config = pd.concat(
+        params = pd.concat(
             [
-                self.config_rows(
+                self.params_rows(
                     {"Value": 2.0, "Parameter": "beta multiplier"},
                     {"Value": 0.5, "Parameter": "mu"},
                     {"Value": 0.5, "Parameter": "beta"},
                 ),
-                self.config_exception({"mu": 1.0, "beta": 1.0}, ["FR"]),
+                self.params_exception({"mu": 1.0, "beta": 1.0}, ["FR"]),
             ]
         ).reset_index()
-        sc.DefinitionGenerator(config)
+        self.init_only_params(params)
         self.output.set_compartment_variable.assert_any_call("mu", 0.5)
         self.output.set_compartment_variable.assert_any_call("beta", 1.0)
         self.output.add_exception.assert_any_call(
             (self.rds["FR"],),
             {"mu": 1.0, "beta": 2.0},
-            config["Start date"][3],
-            config["End date"][3],
+            params["Start date"][3],
+            params["End date"][3],
         )
 
     def test_invalid_multiplier(self):
-        config = self.config_rows(
+        params = self.params_rows(
             {"Value": 2.0, "Parameter": "duration multiplier"},
             {"Value": 90.0, "Parameter": "duration"},
         )
-        self.assertRaises(ValueError, sc.DefinitionGenerator, config)
+        self.assertRaises(ValueError, self.init_only_params, params)

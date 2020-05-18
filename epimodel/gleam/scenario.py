@@ -25,7 +25,7 @@ class InputParser:
     formatting it for use by the rest of the scenario classes
     """
 
-    PARAM_FIELDS = [
+    PARAMETER_FIELDS = [
         "Region",
         "Value",
         "Parameter",
@@ -49,7 +49,7 @@ class InputParser:
         self.progress_bar = progress_bar
         algorithms.estimate_missing_populations(rds)
 
-    def format_estimates_df(self, raw_estimates: pd.DataFrame):
+    def parse_estimates_df(self, raw_estimates: pd.DataFrame):
         est = raw_estimates.replace({"": None}).dropna(subset=["Name"])
 
         # distribute_down_with_population requires specifically-formatted input
@@ -71,8 +71,8 @@ class InputParser:
 
         return df[self.ESTIMATE_FIELDS].dropna()
 
-    def format_parameters_df(self, raw_parameters: pd.DataFrame):
-        df = raw_parameters.replace({"": None})[self.PARAM_FIELDS].dropna(
+    def parse_parameters_df(self, raw_parameters: pd.DataFrame):
+        df = raw_parameters.replace({"": None})[self.PARAMETER_FIELDS].dropna(
             subset=["Parameter"]
         )
         df["Start date"] = pd.to_datetime(df["Start date"])
@@ -165,8 +165,8 @@ class SimulationSet:
         batch.set_initial_compartments(self.estimates)
         batch.set_simulations(
             [
-                (def_gen.definition, "PLACEHOLDER", group, trace)
-                for (group, trace), def_gen in self
+                (def_builder.definition, "PLACEHOLDER", group, trace)
+                for (group, trace), def_builder in self
             ]
         )
 
@@ -209,6 +209,10 @@ class SimulationSet:
         self.all_classes_df = self.trace_df[pd.isnull(self.trace_df["Class"])]
 
     def _store_estimates(self, estimates: pd.DataFrame):
+        if estimates.empty:
+            self.estimates = pd.DataFrame(columns=["Region"])
+            return
+
         # Create compartment sizes
         multipliers = self.config["compartment_multipliers"]
         infectious = np.minimum(
@@ -232,7 +236,7 @@ class SimulationSet:
     def _definition_for_class_pair(self, group: str, trace: str):
         group_df = self.group_df[self.group_df["Class"] == group]
         trace_df = self.trace_df[self.trace_df["Class"] == trace]
-        return DefinitionGenerator(
+        return DefinitionBuilder(
             # ensure that group exceptions come before trace exceptions
             pd.concat([group_df, self.all_groups_df, trace_df, self.all_classes_df]),
             estimates=self.estimates,
@@ -241,7 +245,7 @@ class SimulationSet:
         )
 
 
-class DefinitionGenerator:
+class DefinitionBuilder:
     """
     Takes DataFrames for parameters and exceptions, and translates them
     into a fully-formed GleamDefinition object.
