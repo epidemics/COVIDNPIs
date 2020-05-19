@@ -18,28 +18,6 @@ def test_batch_new_open(tmp_path):
     b2.close()
 
 
-def test_set_seeds_add_export_sims(regions_gleam, datadir, tmp_path):
-    d = GleamDefinition(datadir / "test_definition.xml")
-    b = epimodel.gleam.Batch.new(path=tmp_path / "batch.hdf")
-
-    i_df = pd.DataFrame(
-        {"Infectious": [1, 2, 3], "Exposed": [4, 5, np.nan]},
-        index=["G-MLA", "G-KGL", "G-KME"],
-    )
-    d.set_seeds(i_df, regions_gleam)
-
-    b.set_simulations([(d, "Name1", "MEDIUM", "WEAK_WEAK")])
-    b.set_initial_compartments(i_df)
-    path = b.path
-    b.close()
-
-    b2 = epimodel.gleam.Batch.open(path)
-    assert len(b2.hdf["simulations"]) == 1
-    assert len(b2.hdf["initial_compartments"]) == 3
-    b2.export_definitions_to_gleam(tmp_path)
-    b2.close()
-
-
 @pytest.mark.usefixtures("ut_datadir", "ut_rds")
 class TestGleamDefinition(PandasTestCase):
     def setUp(self):

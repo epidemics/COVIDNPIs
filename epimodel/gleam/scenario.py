@@ -1,6 +1,6 @@
 from uuid import UUID
 from collections import namedtuple
-from typing import Tuple, Union, Optional
+from typing import Tuple, Optional
 from pathlib import Path
 
 import numpy as np
@@ -10,35 +10,12 @@ from tqdm import tqdm
 from epimodel.colabutils import get_csv_or_sheet
 from epimodel import RegionDataset, Level, algorithms
 from .definition import GleamDefinition
-from .batch import Batch
 
 try:
     import ergo
 except ModuleNotFoundError:
     # foretold functionality optional
     ergo = None
-
-
-def generate_simulations(
-    config: dict,
-    default_xml_path: Union[str, Path],
-    estimates_path: Union[str, Path],
-    rds: RegionDataset,
-    batch: Batch,
-    foretold_token: Optional[str] = None,
-    progress_bar: bool = True,
-):
-    config = config["scenarios"]
-
-    raw_parameters = get_csv_or_sheet(config["parameters"])
-    raw_estimates = pd.read_csv(estimates_path)
-
-    parser = InputParser(rds, foretold_token, progress_bar)
-    parameters = parser.parse_parameters_df(raw_parameters)
-    estimates = parser.parse_estimates_df(raw_estimates)
-
-    simulations = SimulationSet(config, parameters, estimates, default_xml_path)
-    simulations.add_to_batch(batch)
 
 
 class InputParser:
@@ -163,10 +140,10 @@ class SimulationSet:
         config: dict,
         parameters: pd.DataFrame,
         estimates: pd.DataFrame,
-        default_xml_path: Optional[str] = None,
+        base_xml_path: Optional[str] = None,
     ):
         self.config = config
-        self.default_xml_path = default_xml_path
+        self.base_xml_path = base_xml_path
 
         self._store_classes()
         self._prepare_ids()
@@ -184,14 +161,8 @@ class SimulationSet:
     def __iter__(self):
         return self.definitions.iteritems()
 
-    def add_to_batch(self, batch: Batch):
-        batch.set_initial_compartments(self.estimates)
-        batch.set_simulations(
-            [
-                (def_builder.definition, "PLACEHOLDER", group, trace)
-                for (group, trace), def_builder in self
-            ]
-        )
+    def iterdefinitions(self):
+        return self.definitions.apply(lambda db: db.definition).iteritems()
 
     def _store_classes(self):
         self.groups = [group["name"] for group in self.config["groups"]]
@@ -268,7 +239,7 @@ class SimulationSet:
             id=self._id_for_class_pair(group, trace),
             name=self.config.get("name"),
             classes=(group, trace),
-            xml_path=self.default_xml_path,
+            xml_path=self.base_xml_path,
         )
 
 

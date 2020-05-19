@@ -240,12 +240,11 @@ class GenerateGleamBatch(luigi.Task):
         rds = RegionsDatasetTask.load_dilled_rds(self.input()["regions_dataset"].path)
 
         logger.info(f"Generating scenarios...")
-        generate_simulations(
+        batch.generate_simulations(
             ConfigYaml.load(self.input()["config_yaml"].path),
             self.input()["base_def"].path,
             self.input()["country_estimates"].path,
             self.rds,
-            batch,
         )
         logger.info(f"Generated batch scenarios {batch.path!r}:\n  {b.stats()}")
         batch.close()

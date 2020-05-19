@@ -47,7 +47,7 @@ class TestScenarioIntegration(PandasTestCase):
             config,
             params,
             estimates,
-            default_xml_path=self.datadir / "default_gleam_definition.xml",
+            base_xml_path=self.datadir / "default_gleam_definition.xml",
         )
         for classes, def_builder in simulations:
             dir = self.datadir / "scenario/definitions"
@@ -62,8 +62,7 @@ class TestScenarioIntegration(PandasTestCase):
             def_builder.definition.assert_equal(expected)
 
         # check Batch integration
-        simulations.add_to_batch(self.batch)
-
+        self.batch.set_simulations(simulations)
         self.batch.export_definitions_to_gleam(self.tmp_path)
 
         # ensure Batch outputs correctly
@@ -83,12 +82,10 @@ class TestScenarioIntegration(PandasTestCase):
             self.datadir / config["scenarios"]["parameters"]
         )
 
-        default_xml_path = self.datadir / "default_gleam_definition.xml"
+        base_xml_path = self.datadir / "default_gleam_definition.xml"
         estimates_path = self.datadir / "estimates.csv"
 
-        sc.generate_simulations(
-            config, default_xml_path, estimates_path, self.rds, self.batch
-        )
+        self.batch.generate_simulations(config, base_xml_path, estimates_path, self.rds)
 
         # ensure that the batch was updated
         self.assertEqual(len(self.batch.hdf["simulations"]), 4)

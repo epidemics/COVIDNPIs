@@ -1,14 +1,16 @@
 import logging
 from pathlib import Path
-from typing import List, Tuple
+from typing import List, Union
 
 import numpy as np
 import pandas as pd
 import tables
 from scipy.stats import lognorm, norm
 
-from ..regions import Level
+from epimodel.regions import Level, RegionDataset
 from .definition import GleamDefinition
+from .scenario import InputParser, SimulationSet
+from epimodel.colabutils import get_csv_or_sheet
 
 log = logging.getLogger(__name__)
 
@@ -80,6 +82,26 @@ class Batch:
         hdf = pd.HDFStore(path, "w")
         return cls(hdf, path, _direct=False)
 
+    def generate_simulations(
+        self,
+        config: dict,
+        base_xml_path: Union[str, Path],
+        estimates_path: Union[str, Path],
+        rds: RegionDataset,
+        progress_bar: bool = True,
+    ):
+        config = config["scenarios"]
+
+        raw_parameters = get_csv_or_sheet(config["parameters"])
+        raw_estimates = pd.read_csv(estimates_path)
+
+        parser = InputParser(rds, progress_bar=progress_bar)
+        parameters = parser.parse_parameters_df(raw_parameters)
+        estimates = parser.parse_estimates_df(raw_estimates)
+
+        simulations = SimulationSet(config, parameters, estimates, base_xml_path)
+        self.set_simulations(simulations)
+
     def set_initial_compartments(self, initial_df):
         """
         `initial_df` should be indexed by `Code` and columns should be
@@ -106,31 +128,23 @@ class Batch:
         """
         self.hdf.close()
 
-    def set_simulations(
-        self, sims_def_name_group_key: List[Tuple[GleamDefinition, str, str, str]]
-    ):
+    def set_simulations(self, simulations: SimulationSet):
         """
-        Write simulation records.
-
-        Each element of `sims_def_group_key` is `(definition, name, group, key)`.
-        In addiMakes the ID unique, adds the initial compartments clearing any old seeds,
-        records the simulation and seeds in the HDF file.
-
-        TODO: Potentially have a nicer interface than list-of-tuples
+        Import simulation records from SimulationSet object.
         """
         rows = [
             {
                 "SimulationID": definition.get_id_str(),
-                "Name": name,
                 "Group": group,
-                "Key": key,
+                "Trace": trace,
                 "StartDate": definition.get_start_date_str(),
                 "DefinitionXML": definition.to_xml_string(),
             }
-            for definition, name, group, key in sims_def_name_group_key
+            for (group, trace), definition in simulations.iterdefinitions()
         ]
         data = pd.DataFrame(rows).set_index("SimulationID", verify_integrity=True)
         self.hdf.put("simulations", data, format="table", complib="bzip2", complevel=9)
+        self.set_initial_compartments(simulations.estimates)
 
     def export_definitions_to_gleam(
         self, sims_dir, sim_ids=None, overwrite=False, info_level=logging.DEBUG
