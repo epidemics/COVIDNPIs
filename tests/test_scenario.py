@@ -59,7 +59,7 @@ class TestScenarioIntegration(PandasTestCase):
             def_builder.definition.assert_equal(expected)
 
         # check Batch integration
-        batch = Batch.new(dir=self.tmp_path)
+        batch = Batch.new(path=self.tmp_path / "batch.hdf")
         simulations.add_to_batch(batch)
 
         batch.export_definitions_to_gleam(self.tmp_path)

@@ -1,6 +1,7 @@
 import datetime
 import getpass
 import json
+import os
 import logging
 import shutil
 import socket
@@ -70,25 +71,23 @@ class WebExport:
         return er
 
     def write(
-        self, path, main_data_filename, name=None, latest=None, pretty_print=False
+        self,
+        export_directory: Path,
+        main_data_filename: Path,
+        latest=None,
+        pretty_print=False,
     ):
-        if name is None:
-            name = f"export-{self.created.isoformat()}"
-            if self.comment:
-                name += self.comment
         indent = None
         if pretty_print:
             indent = 4
-        name = name.replace(" ", "_").replace(":", "-")
-        outdir = Path(path)
-        assert (not outdir.exists()) or outdir.is_dir()
-        exdir = Path(path) / name
-        log.info(f"Writing WebExport to {exdir} ...")
-        exdir.mkdir(exist_ok=False, parents=True)
+
+        os.makedirs(export_directory, exist_ok=False)
+
+        log.info(f"Writing WebExport to {export_directory} ...")
         for rc, er in tqdm(list(self.export_regions.items()), desc="Writing regions"):
             fname = f"extdata-{rc}.json"
             er.data_url = f"{fname}"
-            with open(exdir / fname, "wt") as f:
+            with open(export_directory / fname, "wt") as f:
                 json.dump(
                     er.data_ext,
                     f,
@@ -97,7 +96,7 @@ class WebExport:
                     separators=(",", ":"),
                     indent=indent,
                 )
-        with open(exdir / main_data_filename, "wt") as f:
+        with open(export_directory / main_data_filename, "wt") as f:
             json.dump(
                 self.to_json(),
                 f,
@@ -106,12 +105,12 @@ class WebExport:
                 separators=(",", ":"),
                 indent=indent,
             )
-        log.info(f"Exported {len(self.export_regions)} regions to {exdir}")
+        log.info(f"Exported {len(self.export_regions)} regions to {export_directory}")
         if latest is not None:
-            latestdir = outdir / latest
+            latestdir = Path(os.path.dirname(export_directory)) / latest
             if latestdir.exists():
                 shutil.rmtree(latestdir)
-            shutil.copytree(exdir, latestdir)
+            shutil.copytree(export_directory, latestdir)
             log.info(f"Copied export to {latestdir}")
 
 
@@ -287,8 +286,7 @@ def assert_valid_json(file, minify=False):
             )
 
 
-def upload_export(dir_to_export, config, channel="test"):
-    """The 'upload' subcommand"""
+def upload_export(dir_to_export: Path, gs_prefix: str, channel: str):
     CMD = [
         "gsutil",
         "-m",
@@ -298,46 +296,23 @@ def upload_export(dir_to_export, config, channel="test"):
         "-a",
         "public-read",
     ]
-    gs_prefix = config["gs_prefix"].rstrip("/")
-    gs_url = config["gs_url_prefix"].rstrip("/")
-    exdir = Path(dir_to_export)
-    assert exdir.is_dir()
+    assert dir_to_export.is_dir()
 
-    uploaddir = Path(config["output_dir"]) / config["output_uploads"]
-    if not uploaddir.exists():
-        uploaddir.mkdir()
-    channeldir = uploaddir / channel
-
-    if channeldir.exists():
-        shutil.rmtree(channeldir)
-
-    shutil.copytree(exdir, channeldir)
-    log.info(f"Copied export to {channeldir} for uploading")
-
-    datafile = config["gs_datafile_name"]
-    # Backwards compatibility
-    old_filename = "data-CHANNEL-v4.json"
-    old_path = channeldir / old_filename
-    if old_path.exists():
-        old_path.rename(channeldir / datafile)
-
-    for json_file in channeldir.iterdir():
+    for json_file in dir_to_export.iterdir():
         if json_file.suffix != ".json":
             continue
         try:
             assert_valid_json(json_file, minify=True)
-        except Exception as e:
+        except Exception:
             log.error(f"Error in JSON file {json_file}")
-            raise e
+            raise
 
-    log.info(
-        f"Uploading data folder {channeldir} to {gs_prefix}/{channeldir.parts[-1]} ..."
-    )
-    cmd = CMD + ["-Z", "-R", channeldir, gs_prefix]
+    release_name = dir_to_export.parts[-1]
+    gcs_path = os.path.join(gs_prefix, channel, release_name)
+    log.info(f"Uploading data folder {dir_to_export} to {gcs_path} ...")
+    cmd = CMD + ["-Z", "-R", dir_to_export.as_posix(), gcs_path]
     log.debug(f"Running {cmd!r}")
     subprocess.run(cmd, check=True)
-
-    log.info(f"File URL: {gs_url}/{channeldir.parts[-1]}/{datafile}")
 
     if channel != "main":
         log.info(f"Custom web URL: http://epidemicforecasting.org/?channel={channel}")
@@ -508,17 +483,26 @@ def add_aggregate_traces(aggregate_regions, cummulative_active_df):
 
 
 def process_export(
-    config, rds, debug, comment, batch_file, estimates, pretty_print
-) -> None:
-    ex = WebExport(config["gleam_resample"], comment=comment)
+    inputs: dict,
+    rds: RegionDataset,
+    debug,
+    comment,
+    batch_file,
+    estimates,
+    export_regions: List[str],
+    state_to_country: List[str],
+    config_groups: List[dict],
+    resample: str,
+) -> WebExport:
+    ex = WebExport(resample, comment=comment)
 
-    hopkins = get_extra_path(config, "john_hopkins")
-    foretold = get_extra_path(config, "foretold")
-    rates = get_extra_path(config, "rates")
-    timezone = get_extra_path(config, "timezones")
-    un_age_dist = get_extra_path(config, "un_age_dist")
+    hopkins = inputs["hopkins"].path
+    foretold = inputs["foretold"].path
+    rates = inputs["rates"].path
+    timezone = inputs["timezones"].path
+    un_age_dist = inputs["age_distributions"].path
 
-    export_regions = sorted(config["export_regions"])
+    export_regions = sorted(export_regions)
 
     batch = Batch.open(batch_file)
     simulation_specs: pd.DataFrame = batch.hdf["simulations"]
@@ -551,7 +535,7 @@ def process_export(
         parse_dates=["Date"],
         keep_default_na=False,
         na_values=[""],
-    ).pipe(aggregate_countries, config["state_to_country"], rds)
+    ).pipe(aggregate_countries, state_to_country, rds)
 
     cummulative_active_df = add_aggregate_traces(
         [reg for reg in rds.aggregate_regions if reg.Code in export_regions],
@@ -569,7 +553,7 @@ def process_export(
         ex.new_region(
             reg,
             get_df_else_none(estimates_df, code),
-            config["groups"],
+            config_groups,
             cummulative_active_df.xs(key=code, level="Code").sort_index(level="Date"),
             simulation_specs,
             get_df_else_none(rates_df, code),
@@ -578,10 +562,4 @@ def process_export(
             get_df_list(timezone_df, code),
             get_df_else_none(un_age_dist_df, m49),
         )
-
-    ex.write(
-        config["output_dir"],
-        config["gs_datafile_name"],
-        latest=config["output_latest"],
-        pretty_print=pretty_print,
-    )
+    return ex
