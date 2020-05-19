@@ -17,6 +17,14 @@ from epimodel.gleam import batch as batch_module
 
 logger = logging.getLogger(__name__)
 
+# TODO: could be done in tasks so they are forgiving/creating the
+# directory tree by themselves
+default_config = luigi.configuration.get_config()["DEFAULT"]
+output_dir = default_config.get("output_directory")
+if output_dir:
+    logger.debug("Creating the output directory %s", output_dir)
+    os.makedirs(output_dir, exist_ok=True)
+
 
 class RegionsFile(luigi.ExternalTask):
     """Default regions database used for various country handling"""
@@ -509,9 +517,12 @@ class WebUpload(luigi.Task):
     def run(self):
         # main_data_file = self.input().path
         # directory with all the exported outputs
-        upload_export(
-            Path(self.exported_data), gs_prefix=self.gs_prefix, channel=self.channel
-        )
+        export_path = Path(self.exported_data)
+        if not export_path.exists():
+            raise IOError(
+                f"'{export_path}' directory does not exist. Provide existing directory."
+            )
+        upload_export(export_path, gs_prefix=self.gs_prefix, channel=self.channel)
         self.is_complete = True
 
     def complete(self):

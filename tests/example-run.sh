@@ -7,14 +7,14 @@
 # * you have installed project dependencies via 'poetry install'
 
 # You need to replace <TOKEN> with a foretold_channel
-FORETOLD_TOKEN="<TOKEN>"
+FORETOLD_TOKEN=""
 
 #CONTINUE="read -p Press-enter"
 CONTINUE="echo"
 
 LUIGI="luigi --local-scheduler --module epimodel.tasks"
 
-OUTPUT_DIRECTORY=example/data/out
+OUTPUT_DIRECTORY=data-dir/outputs/example-1
 rm -rf $OUTPUT_DIRECTORY
 mkdir -p $OUTPUT_DIRECTORY
 
@@ -77,7 +77,7 @@ echo ""
 echo "In this case, we could achieve the same with the --hopkins-output parameter":
 echo "$LUIGI JohnsHopkins --hopkins-output john-hopkins-2.csv"
 $CONTINUE
-$LUIGI JohnsHopkins --hopkins-output john-hopkins-2.csv
+$LUIGI JohnsHopkins --hopkins-output $OUTPUT_DIRECTORY/john-hopkins-2.csv
 ls -la $OUTPUT_DIRECTORY/john-hopkins-2.csv
 
 echo ""
@@ -122,15 +122,14 @@ $CONTINUE
 $CMD_ESR
 
 echo "With some example file though, we can continue to the export for testing purposes"
-echo "Faking creation of the output models file from the failed task above"
-echo "cp example/data/manual_input/example-models-file.hdf5 $OUTPUT_DIRECTORY/"
-cp example/data/manual_input/example-models-file.hdf5 $OUTPUT_DIRECTORY/
+echo "Using a cached dummy failed for the demonstration purposes"
 $CONTINUE
 $LUIGI WebExport \
   --ExtractSimulationsResults-single-result $RESULTS_FAKE  \
-  --ExtractSimulationsResults-models-file example-models-file.hdf5 \
-  --export-name test-output
+  --ExtractSimulationsResults-models-file data-dir/inputs/fixtures/gleam-models.hdf5 \
+  --export-name test-output \
+  --web-export-directory $OUTPUT_DIRECTORY/web-exports
 
 echo "And finally upload:"
 $CONTINUE
-$LUIGI WebUpload --gs-prefix gs://static-covid/static/v4/deleteme --main-data-file $OUTPUT_DIRECTORY/web-exports/test-output/data-v4.json
+$LUIGI WebUpload --gs-prefix gs://static-covid/static/v4/deleteme --exported-data $OUTPUT_DIRECTORY/web-exports/test-output
