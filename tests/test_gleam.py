@@ -147,6 +147,8 @@ class TestGleamDefinition(PandasTestCase):
 
     def test_set_initial_compartments_from_estimates(self):
         estimates = self.get_estimates()
+        # these numbers will round to 99% total, so this test ensures
+        # the function handles that possibility
         estimates["Infectious"] = 70
         estimates["Exposed"] = 100
         estimates["Recovered"] = 130

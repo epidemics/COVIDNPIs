@@ -8,7 +8,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from ..regions import Level, RegionDataset, Region
+from ..regions import Level, Region
 from ..utils import utc_date
 
 log = logging.getLogger(__name__)

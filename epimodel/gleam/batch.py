@@ -100,7 +100,7 @@ class Batch:
         """
         if "Region" in initial_df:
             codes = initial_df["Region"].apply(lambda reg: reg.Code)
-            initialdf = initial_df.drop(columns=["Region"]).set_index(codes)
+            initial_df = initial_df.drop(columns=["Region"]).set_index(codes)
 
         self.hdf.put(
             "initial_compartments",

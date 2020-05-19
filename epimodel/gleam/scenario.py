@@ -1,6 +1,5 @@
 from uuid import UUID
 from collections import namedtuple
-import re
 from typing import Tuple
 
 import numpy as np
