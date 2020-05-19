@@ -22,19 +22,15 @@ class TestScenarioIntegration(PandasTestCase):
         self.utcnow = self.timestamp_patcher.start()
         self.utcnow.return_value = self.timestamp
 
-        self.default_xml_context = GleamDefinition.default_xml_path(
-            self.datadir / "default_gleam_definition.xml"
-        )
-        self.default_xml_context.__enter__()
-
     def tearDown(self):
         self.timestamp_patcher.stop()
-        self.default_xml_context.__exit__(None, None, None)
+
+    def get_config(self):
+        with open(self.datadir / "scenario/config.yaml", "r") as fp:
+            return yaml.safe_load(fp)
 
     def test_integration(self):
-        with open(self.datadir / "scenario/config.yaml", "r") as fp:
-            config = yaml.safe_load(fp)["scenarios"]
-
+        config = self.get_config()["scenarios"]
         parser = sc.InputParser(rds=self.rds)
         params = parser.parse_parameters_df(
             pd.read_csv(self.datadir / config["parameters"])
@@ -44,7 +40,12 @@ class TestScenarioIntegration(PandasTestCase):
         )
 
         # check created definitions
-        simulations = sc.SimulationSet(config, params, estimates)
+        simulations = sc.SimulationSet(
+            config,
+            params,
+            estimates,
+            default_xml_path=self.datadir / "default_gleam_definition.xml",
+        )
         for classes, def_builder in simulations:
             dir = self.datadir / "scenario/definitions"
 
@@ -74,6 +75,23 @@ class TestScenarioIntegration(PandasTestCase):
 
             with open(test_path, "r") as tfp, open(batch_path, "r") as bfp:
                 self.assertEqual(tfp.read(), bfp.read())
+
+    def test_generate_simulations(self):
+        config = self.get_config()
+        config["scenarios"]["parameters"] = (
+            self.datadir / config["scenarios"]["parameters"]
+        )
+        config["scenarios"]["estimates"] = (
+            self.datadir / config["scenarios"]["estimates"]
+        )
+
+        default_xml_path = self.datadir / "default_gleam_definition.xml"
+        batch = Batch.new(path=self.tmp_path / "batch.hdf")
+
+        sc.generate_simulations(config, default_xml_path, self.rds, batch)
+
+        # ensure that the batch was updated
+        self.assertEqual(len(batch.hdf["simulations"]), 4)
 
 
 @pytest.mark.usefixtures("ut_datadir", "ut_rds")
@@ -198,7 +216,7 @@ class TestSimulationSet(PandasTestCase):
     def tearDown(self):
         self.def_builder_patcher.stop()
 
-    def _return_inputs(self, parameters, estimates, id, name, classes):
+    def _return_inputs(self, parameters, estimates, id, name, classes, xml_path):
         """
         return inputs instead of DefinitionBuilder instance for easy
         inspection of test results
@@ -312,7 +330,7 @@ class TestSimulationSet(PandasTestCase):
         self.assert_array_equal(out_estimates, expected_estimates)
 
 
-@pytest.mark.usefixtures("ut_rds")
+@pytest.mark.usefixtures("ut_datadir", "ut_rds")
 class TestDefinitionBuilder(PandasTestCase):
     definition_patcher = patch("epimodel.gleam.scenario.GleamDefinition", autospec=True)
 
@@ -359,8 +377,9 @@ class TestDefinitionBuilder(PandasTestCase):
             )
         )
 
-    @staticmethod
-    def init_def_builder(params=None, estimates=None, id=None, name=None, classes=None):
+    def init_def_builder(
+        self, params=None, estimates=None, id=None, name=None, classes=None
+    ):
         if params is None:
             params = pd.DataFrame(columns=sc.InputParser.PARAMETER_FIELDS)
         if estimates is None:
@@ -371,7 +390,14 @@ class TestDefinitionBuilder(PandasTestCase):
             name = "Testing"
         if classes is None:
             classes = ("A", "B")
-        return sc.DefinitionBuilder(params, estimates, id, name, classes)
+        return sc.DefinitionBuilder(
+            params,
+            estimates,
+            id,
+            name,
+            classes,
+            self.datadir / "default_gleam_definition.xml",
+        )
 
     # estimates
 

@@ -1,3 +1,6 @@
+import re
+import pandas as pd
+
 import gspread
 from oauth2client.client import GoogleCredentials
 
@@ -24,3 +27,12 @@ def _get_worksheet_by_id(spreadsheet, worksheet_id):
         if worksheet.id == worksheet_id:
             return worksheet
     raise gspread.WorksheetNotFound(f"id {worksheet_id}")
+
+
+def get_csv_or_sheet(path):
+    if re.search("\.csv$", str(path), re.IGNORECASE):
+        return pd.read_csv(path)
+    elif re.match("https://docs.google.com/spreadsheets/[\w/?#=]+$", str(path)):
+        return import_gsheet_as_df(path)
+    else:
+        return ValueError(f"{path!r} not recognized as CSV or Google sheet")

@@ -17,25 +17,14 @@ log = logging.getLogger(__name__)
 
 class GleamDefinition:
     GLEAM_ID_SUFFIX = ".574"  # Magic? Or arbtrary?
-    _default_xml_path = None
 
-    @classmethod
-    @contextmanager
-    def default_xml_path(cls, path):
-        prev_path = cls._default_xml_path
-        try:
-            cls._default_xml_path = path
-            yield path
-        finally:
-            cls._default_xml_path = prev_path
-
-    def __init__(self, xml_path=None):
+    def __init__(self, xml_path: str):
         """
         Load gleam `definition.xml` from a file (export_directory or a file-like object).
         """
         ET.register_namespace("", "http://www.gleamviz.org/xmlns/gleamviz_v4_0")
         self.ns = {"gv": "http://www.gleamviz.org/xmlns/gleamviz_v4_0"}
-        self.tree = ET.parse(xml_path or self._default_xml_path)
+        self.tree = ET.parse(xml_path)
         self.root = self.tree.getroot()
 
         if not self.get_timestamp_str():

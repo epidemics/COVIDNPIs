@@ -1,11 +1,12 @@
 from uuid import UUID
 from collections import namedtuple
-from typing import Tuple
+from typing import Tuple, Optional
 
 import numpy as np
 import pandas as pd
 
 from tqdm import tqdm
+from epimodel.colabutils import get_csv_or_sheet
 from epimodel import RegionDataset, Level, algorithms
 from .definition import GleamDefinition
 from .batch import Batch
@@ -15,6 +16,27 @@ try:
 except ModuleNotFoundError:
     # foretold functionality optional
     ergo = None
+
+
+def generate_simulations(
+    config: dict,
+    default_xml_path: str,
+    rds: RegionDataset,
+    batch: Batch,
+    foretold_token: Optional[str] = None,
+    progress_bar: bool = True,
+):
+    config = config["scenarios"]
+
+    raw_parameters = get_csv_or_sheet(config["parameters"])
+    raw_estimates = get_csv_or_sheet(config["estimates"])
+
+    parser = InputParser(rds, foretold_token, progress_bar)
+    parameters = parser.parse_parameters_df(raw_parameters)
+    estimates = parser.parse_estimates_df(raw_estimates)
+
+    simulations = SimulationSet(config, parameters, estimates, default_xml_path)
+    simulations.add_to_batch(batch)
 
 
 class InputParser:
@@ -134,8 +156,15 @@ class SimulationSet:
     on the cartesian product of groups X traces
     """
 
-    def __init__(self, config: dict, parameters: pd.DataFrame, estimates: pd.DataFrame):
+    def __init__(
+        self,
+        config: dict,
+        parameters: pd.DataFrame,
+        estimates: pd.DataFrame,
+        default_xml_path: Optional[str] = None,
+    ):
         self.config = config
+        self.default_xml_path = default_xml_path
 
         self._store_classes()
         self._prepare_ids()
@@ -237,6 +266,7 @@ class SimulationSet:
             id=self._id_for_class_pair(group, trace),
             name=self.config.get("name"),
             classes=(group, trace),
+            xml_path=self.default_xml_path,
         )
 
 
@@ -268,8 +298,9 @@ class DefinitionBuilder:
         id: int,
         name: str,
         classes: Tuple[str, str],
+        xml_path: str,
     ):
-        self.definition = GleamDefinition()
+        self.definition = GleamDefinition(xml_path)
         self.definition.set_id(id)
         self._set_name(name, classes)
 
