@@ -50,7 +50,7 @@
   </definition>
   <metadata>
     <creationDate>2020-05-01T00:00:00</creationDate>
-    <clientVersion>7.0.4</clientVersion>
+    <clientVersion>7.0</clientVersion>
   </metadata>
   <extradata>
     <userVariableOrder>beta epsilon mu imu</userVariableOrder>

@@ -47,7 +47,7 @@ class TestScenarioIntegration(PandasTestCase):
         for classes, def_builder in simulations:
             dir = self.datadir / "scenario/definitions"
 
-            ### Uncomment the following line and run this test if you
+            ### Uncomment the following lines and run this test if you
             ### need to reset the files, but be sure to manually check
             ### the output afterwards to ensure it's correct.
             # def_builder.save_to_dir(dir)
