@@ -3,7 +3,7 @@ import copy
 from datetime import datetime, date
 import logging
 import xml.etree.ElementTree as ET
-from typing import Iterable, Union
+from typing import Iterable, Union, Optional
 from pathlib import Path
 
 import pandas as pd
@@ -17,13 +17,27 @@ log = logging.getLogger(__name__)
 class GleamDefinition:
     GLEAM_ID_SUFFIX = ".574"  # Magic? Or arbtrary?
 
-    def __init__(self, xml_path: Union[str, Path]):
+    @classmethod
+    def from_xml_string(cls, xml_string):
+        return cls(xml_string=xml_string)
+
+    def __init__(
+        self,
+        xml_path: Optional[Union[str, Path]] = None,
+        xml_string: Optional[str] = None,
+    ):
         """
         Load gleam `definition.xml` from a file (export_directory or a file-like object).
         """
         ET.register_namespace("", "http://www.gleamviz.org/xmlns/gleamviz_v4_0")
         self.ns = {"gv": "http://www.gleamviz.org/xmlns/gleamviz_v4_0"}
-        self.tree = ET.parse(xml_path)
+        if xml_path is not None:
+            self.tree = ET.parse(xml_path)
+        elif xml_string is not None:
+            self.tree = ET.ElementTree(ET.fromstring(xml_string))
+        else:
+            raise ValueError("Must give either an 'xml_path' or 'xml_string' argument")
+
         self.root = self.tree.getroot()
 
         if not self.get_timestamp_str():

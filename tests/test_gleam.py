@@ -43,6 +43,15 @@ class TestGleamDefinition(PandasTestCase):
         self.assertEqual(self.defn.get_start_date(), utc_date("2020-03-25"))
         self.assert_approx_equal(self.defn.get_seasonality(), 0.85)
 
+    def test_load_from_xml_string(self):
+        with open(self.datadir / "test_definition.xml") as xml_file:
+            defn = GleamDefinition.from_xml_string(xml_file.read())
+        self.assertEqual(defn.get_id(), 1585188102568)
+        self.assert_approx_equal(defn.get_variable("beta"), 1.01)
+        self.assertEqual(defn.get_traffic_occupancy(), 20)
+        self.assertEqual(defn.get_start_date(), utc_date("2020-03-25"))
+        self.assert_approx_equal(defn.get_seasonality(), 0.85)
+
     def test_set_start_duration(self):
         self.defn.set_start_date("2020-10-11")
         self.defn.set_duration(11)
