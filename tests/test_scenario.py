@@ -13,7 +13,8 @@ import epimodel.gleam.scenario as sc
 
 @pytest.mark.usefixtures("ut_datadir", "ut_rds", "ut_tmp_path")
 class TestScenarioIntegration(PandasTestCase):
-    timestamp_patcher = patch("pandas.Timestamp.utcnow", autospec=True)
+    # don't use autospec here b/c it messes up in some envs
+    timestamp_patcher = patch("pandas.Timestamp.utcnow")
 
     def setUp(self):
         # patch timestamp to be constant for consistent test results
