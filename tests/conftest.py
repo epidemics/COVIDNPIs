@@ -1,7 +1,6 @@
 from pathlib import Path
-
 import pytest
-
+from _pytest.tmpdir import _mk_tmp
 import epimodel
 
 
@@ -32,6 +31,14 @@ def ut_datadir(request):
 def ut_rds(request, ut_datadir):
     cls = request.cls
     cls.rds = _regions_gleam(cls.datadir)
+
+@pytest.fixture(scope="class")
+def ut_tmp_path(request, tmp_path_factory):
+    """
+    pytest provides no class-scoped tmp_path. This function copies the
+    implementation, but it must use private modules to do so.
+    """
+    request.cls.tmp_path = _mk_tmp(request, tmp_path_factory)
 
 
 # shared logic

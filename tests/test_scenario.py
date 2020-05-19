@@ -2,16 +2,17 @@ import pytest
 from unittest.mock import Mock, patch, call
 from . import PandasTestCase
 
+from glob import glob
+import yaml
 import pandas as pd
 import numpy as np
-import yaml
 
 from epimodel import Region, Level
+from epimodel.gleam import Batch, GleamDefinition
 import epimodel.gleam.scenario as sc
-from epimodel.gleam.definition import GleamDefinition
 
 
-@pytest.mark.usefixtures("ut_datadir", "ut_rds")
+@pytest.mark.usefixtures("ut_datadir", "ut_rds", "ut_tmp_path")
 class TestScenarioIntegration(PandasTestCase):
     timestamp_patcher = patch("pandas.Timestamp.utcnow", autospec=True)
 
@@ -43,6 +44,7 @@ class TestScenarioIntegration(PandasTestCase):
             pd.read_csv(self.datadir / config["estimates"])
         )
 
+        # check created definitions
         simulations = sc.SimulationSet(config, params, estimates)
         for classes, def_builder in simulations:
             dir = self.datadir / "scenario/definitions"
@@ -55,6 +57,26 @@ class TestScenarioIntegration(PandasTestCase):
 
             expected = GleamDefinition(dir / def_builder.filename)
             def_builder.definition.assert_equal(expected)
+
+        # check Batch integration
+        batch = Batch.new(dir=self.tmp_path)
+        simulations.add_to_batch(batch)
+
+        batch.export_definitions_to_gleam(self.tmp_path)
+        batch.close()
+
+        # ensure Batch outputs correctly
+        for _, def_builder in simulations:
+            def_builder.save_to_dir(self.tmp_path)
+            id_str = def_builder.definition.get_id_str()
+
+            test_path = self.tmp_path / def_builder.filename
+            batch_path = self.tmp_path / f"{id_str}.gvh5/definition.xml"
+
+            with open(test_path, "r") as tfp, open(batch_path, "r") as bfp:
+                self.assertEqual(tfp.read(), bfp.read())
+
+
 
 
 @pytest.mark.usefixtures("ut_datadir", "ut_rds")
