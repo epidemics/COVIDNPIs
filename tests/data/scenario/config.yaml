@@ -1,6 +1,6 @@
 ---
 scenarios:
-  name: "Testing"
+  name: "GLEAMviz Test"
   parameters: "scenario/parameters.csv"
   estimates: "estimates.csv"
   groups:

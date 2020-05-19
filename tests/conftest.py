@@ -32,6 +32,7 @@ def ut_rds(request, ut_datadir):
     cls = request.cls
     cls.rds = _regions_gleam(cls.datadir)
 
+
 @pytest.fixture(scope="class")
 def ut_tmp_path(request, tmp_path_factory):
     """

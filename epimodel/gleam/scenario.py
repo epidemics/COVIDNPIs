@@ -36,9 +36,6 @@ class InputParser:
         "Region",
         "Infectious",
     ]
-    STR_PARAMS = [
-        "name",
-    ]
 
     def __init__(self, rds: RegionDataset, foretold_token=None, progress_bar=True):
         self.rds = rds
@@ -77,11 +74,7 @@ class InputParser:
         df["Start date"] = pd.to_datetime(df["Start date"])
         df["End date"] = pd.to_datetime(df["End date"])
         df["Region"] = df["Region"].apply(self._get_region)
-
-        is_str_value = df["Parameter"].isin(self.STR_PARAMS)
-        df.loc[~is_str_value, "Value"] = self._values_to_float(
-            df.loc[~is_str_value, "Value"]
-        )
+        df["Value"] = self._values_to_float(df["Value"])
         return df
 
     def _values_to_float(self, values: pd.Series):
@@ -242,6 +235,7 @@ class SimulationSet:
             pd.concat([group_df, self.all_groups_df, trace_df, self.all_classes_df]),
             estimates=self.estimates,
             id=self._id_for_class_pair(group, trace),
+            name=self.config.get("name"),
             classes=(group, trace),
         )
 
@@ -271,24 +265,19 @@ class DefinitionBuilder:
         self,
         parameters: pd.DataFrame,
         estimates: pd.DataFrame,
-        id=None,
-        classes=None,
-        default_xml=None,
+        id: int,
+        name: str,
+        classes: Tuple[str, str],
     ):
-        self.definition = GleamDefinition(default_xml)
-        if id is not None:
-            self.definition.set_id(id)
+        self.definition = GleamDefinition()
+        self.definition.set_id(id)
+        self._set_name(name, classes)
 
         self._parse_parameters(parameters)
         self._set_global_parameters()
         self._set_global_compartment_variables()
         self._set_exceptions()
         self._set_estimates(estimates)
-
-        if classes is None and "name" not in parameters.Parameter:
-            self.definition.set_default_name()
-        else:
-            self._set_name_from_classes(classes)
 
     @property
     def filename(self):
@@ -297,11 +286,8 @@ class DefinitionBuilder:
     def save_to_dir(self, dir):
         self.definition.save(dir / self.filename)
 
-    def _set_name_from_classes(self, classes=None):
-        name = self.definition.get_name() or self.definition.get_timestamp()
-        if classes:
-            name = f"{name} ({' + '.join(classes)})"
-        self.definition.set_name(name)
+    def _set_name(self, name: str, classes: Tuple[str, str]):
+        self.definition.set_name(f"{name} ({' + '.join(classes)})")
 
     def _parse_parameters(self, df: pd.DataFrame):
         has_exception_fields = pd.notnull(df[["Region", "Start date", "End date"]])
