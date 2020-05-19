@@ -7,7 +7,6 @@ import numpy as np
 import pandas as pd
 
 from tqdm import tqdm
-from epimodel.colabutils import get_csv_or_sheet
 from epimodel import RegionDataset, Level, algorithms
 from .definition import GleamDefinition
 
@@ -153,16 +152,17 @@ class SimulationSet:
         self._generate_scenario_definitions()
 
     def __getitem__(self, classes: Tuple[str, str]):
-        return self.definitions[classes]
+        return self.builders[classes]
 
     def __contains__(self, classes: Tuple[str, str]):
-        return classes in self.definitions.index
+        return classes in self.builders.index
 
     def __iter__(self):
-        return self.definitions.iteritems()
+        return self.builders.iteritems()
 
-    def iterdefinitions(self):
-        return self.definitions.apply(lambda db: db.definition).iteritems()
+    @property
+    def definitions(self):
+        return self.builders.apply(lambda builder: builder.definition)
 
     def _store_classes(self):
         self.groups = [group["name"] for group in self.config["groups"]]
@@ -225,7 +225,7 @@ class SimulationSet:
 
     def _generate_scenario_definitions(self):
         index = pd.MultiIndex.from_product([self.groups, self.traces])
-        self.definitions = pd.Series(
+        self.builders = pd.Series(
             [self._definition_for_class_pair(*pair) for pair in index], index=index
         )
 

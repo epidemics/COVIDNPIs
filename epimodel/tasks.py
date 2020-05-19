@@ -12,7 +12,7 @@ from luigi.util import inherits
 
 from epimodel import Level, RegionDataset, algorithms, imports, read_csv_smart, utils
 from epimodel.exports.epidemics_org import process_export, upload_export
-from epimodel.gleam import Batch, GleamDefinition, generate_simulations
+from epimodel.gleam import Batch
 
 logger = logging.getLogger(__name__)
 
@@ -466,9 +466,7 @@ class WebExport(luigi.Task):
             self.comment,
             models,
             estimates,
-            config_yaml["export_regions"],
-            config_yaml["state_to_country"],
-            config_yaml["groups"],
+            config_yaml,
             self.resample,
         )
         ex.write(

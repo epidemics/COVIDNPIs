@@ -26,12 +26,14 @@ class WebExport:
     Document holding one data export to web. Contains a subset of Regions.
     """
 
-    def __init__(self, date_resample: str, comment=None):
+    def __init__(self, config, date_resample: str, comment=None):
         self.created = datetime.datetime.now().astimezone(datetime.timezone.utc)
         self.created_by = f"{getpass.getuser()}@{socket.gethostname()}"
         self.comment = comment
         self.date_resample = date_resample
         self.export_regions: Dict[str, WebExportRegion] = {}
+        self.groups = config["scenarios"]["groups"]
+        self.traces = config["scenarios"]["traces"]
 
     def to_json(self):
         return {
@@ -46,9 +48,8 @@ class WebExport:
         self,
         region,
         current_estimate: Optional[pd.DataFrame],
-        groups,
         models: pd.DataFrame,
-        simulation_spec: pd.DataFrame,
+        simulation_specs: pd.DataFrame,
         rates: Optional[pd.DataFrame],
         hopkins: Optional[pd.DataFrame],
         foretold: Optional[pd.DataFrame],
@@ -58,9 +59,10 @@ class WebExport:
         er = WebExportRegion(
             region,
             current_estimate,
-            groups,
+            self.groups,
+            self.traces,
             models,
-            simulation_spec,
+            simulation_specs,
             rates,
             hopkins,
             foretold,
@@ -119,9 +121,10 @@ class WebExportRegion:
         self,
         region: Region,
         current_estimate: Optional[pd.DataFrame],
-        groups,
+        groups: List[dict],
+        traces: List[dict],
         models: pd.DataFrame,
-        simulations_spec: pd.DataFrame,
+        simulation_specs: pd.DataFrame,
         rates: Optional[pd.DataFrame],
         hopkins: Optional[pd.DataFrame],
         foretold: Optional[pd.DataFrame],
@@ -133,12 +136,15 @@ class WebExportRegion:
         assert isinstance(region, Region)
         self.region = region
         self.current_estimate = current_estimate
+        self.groups = groups
+        self.traces = traces
+
         # Any per-region data. Large ones should go to data_ext.
         self.data = self.extract_smallish_data(
             rates, hopkins, foretold, timezones, un_age_dist
         )
         # Extended data to be written in a separate per-region file
-        self.data_ext = self.extract_external_data(models, simulations_spec, groups)
+        self.data_ext = self.extract_external_data(models, simulation_specs)
         # Relative URL of the extended data file, set on write
         self.data_url = None
 
@@ -207,9 +213,8 @@ class WebExportRegion:
                 raise KeyError("Date indexes of two simulations differ!")
         return first
 
-    @staticmethod
     def extract_external_data(
-        models: pd.DataFrame, simulation_spec: pd.DataFrame, groups,
+        self, models: pd.DataFrame, simulation_specs: pd.DataFrame,
     ) -> Dict[str, Any]:
         d: Dict[str, Any] = {
             "date_index": [
@@ -217,26 +222,36 @@ class WebExportRegion:
             ]
         }
         traces = []
-        for simulation_id, simulation_def in simulation_spec.iterrows():
+        for simulation_id, simulation_def in simulation_specs.iterrows():
             trace_data = models.loc[simulation_id]
             trace = {
                 "group": simulation_def["Group"],
-                "key": simulation_def["Key"],
-                "name": simulation_def["Name"],
+                "key": simulation_def["Trace"],
+                "name": self._get_trace_description(simulation_def["Trace"]),
                 # note that all of these are from the cummulative DF
                 "infected": trace_data.loc[:, "Infected"].tolist(),
                 "recovered": trace_data.loc[:, "Recovered"].tolist(),
                 "active": trace_data.loc[:, "Active"].tolist(),
             }
-
             traces.append(trace)
 
         d["traces"] = traces
 
-        stats = WebExportRegion.get_stats(models, simulation_spec)
+        stats = WebExportRegion.get_stats(models, simulation_specs)
         d["statistics"] = stats
 
+        # add group key for API backwards compatibility
+        groups = []
+        for group in self.groups:
+            api_group = dict(group)
+            api_group["group"] = api_group["name"]
+
         return {"scenarios": groups, "models": d}
+
+    def _get_trace_description(self, name):
+        for trace in self.traces:
+            if trace["name"] == name:
+                return trace["description"]
 
     def to_json(self):
         d = {
@@ -489,12 +504,10 @@ def process_export(
     comment,
     batch_file,
     estimates,
-    export_regions: List[str],
-    state_to_country: List[str],
-    config_groups: List[dict],
+    config: dict,
     resample: str,
 ) -> WebExport:
-    ex = WebExport(resample, comment=comment)
+    ex = WebExport(config, resample, comment=comment)
 
     hopkins = inputs["hopkins"].path
     foretold = inputs["foretold"].path
@@ -502,7 +515,7 @@ def process_export(
     timezone = inputs["timezones"].path
     un_age_dist = inputs["age_distributions"].path
 
-    export_regions = sorted(export_regions)
+    export_regions = sorted(config["export_regions"])
 
     batch = Batch.open(batch_file)
     simulation_specs: pd.DataFrame = batch.hdf["simulations"]
@@ -535,7 +548,7 @@ def process_export(
         parse_dates=["Date"],
         keep_default_na=False,
         na_values=[""],
-    ).pipe(aggregate_countries, state_to_country, rds)
+    ).pipe(aggregate_countries, config["state_to_country"], rds)
 
     cummulative_active_df = add_aggregate_traces(
         [reg for reg in rds.aggregate_regions if reg.Code in export_regions],
@@ -553,7 +566,6 @@ def process_export(
         ex.new_region(
             reg,
             get_df_else_none(estimates_df, code),
-            config_groups,
             cummulative_active_df.xs(key=code, level="Code").sort_index(level="Date"),
             simulation_specs,
             get_df_else_none(rates_df, code),

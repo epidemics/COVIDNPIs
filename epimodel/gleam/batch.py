@@ -14,7 +14,7 @@ from epimodel.colabutils import get_csv_or_sheet
 
 log = logging.getLogger(__name__)
 
-SIMULATION_COLUMNS = ["Name", "Group", "Key", "StartDate", "DefinitionXML"]
+SIMULATION_COLUMNS = ["Name", "Group", "StartDate", "DefinitionXML"]
 
 LEVEL_TO_GTYPE = {
     Level.country: "country",
@@ -132,6 +132,7 @@ class Batch:
         """
         Import simulation records from SimulationSet object.
         """
+
         rows = [
             {
                 "SimulationID": definition.get_id_str(),
@@ -140,7 +141,7 @@ class Batch:
                 "StartDate": definition.get_start_date_str(),
                 "DefinitionXML": definition.to_xml_string(),
             }
-            for (group, trace), definition in simulations.iterdefinitions()
+            for (group, trace), definition in simulations.definitions.iteritems()
         ]
         data = pd.DataFrame(rows).set_index("SimulationID", verify_integrity=True)
         self.hdf.put("simulations", data, format="table", complib="bzip2", complevel=9)
