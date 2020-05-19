@@ -10,7 +10,7 @@ import luigi
 import yaml
 from luigi.util import inherits
 
-from epimodel import Level, RegionDataset, algorithms, imports, read_csv_smart, utils
+from epimodel import Level, RegionDataset, algorithms, imports
 from epimodel.exports.epidemics_org import process_export, upload_export
 from epimodel.gleam import Batch
 
@@ -244,7 +244,7 @@ class GenerateGleamBatch(luigi.Task):
             ConfigYaml.load(self.input()["config_yaml"].path),
             self.input()["base_def"].path,
             self.input()["country_estimates"].path,
-            self.rds,
+            rds,
         )
         logger.info(f"Generated batch scenarios {batch.path!r}:\n  {b.stats()}")
         batch.close()
