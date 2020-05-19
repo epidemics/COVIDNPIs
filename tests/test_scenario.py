@@ -39,7 +39,7 @@ class TestScenarioIntegration(PandasTestCase):
             pd.read_csv(self.datadir / config["parameters"])
         )
         estimates = parser.parse_estimates_df(
-            pd.read_csv(self.datadir / config["estimates"])
+            pd.read_csv(self.datadir / "estimates.csv")
         )
 
         # check created definitions
@@ -82,13 +82,11 @@ class TestScenarioIntegration(PandasTestCase):
         config["scenarios"]["parameters"] = (
             self.datadir / config["scenarios"]["parameters"]
         )
-        config["scenarios"]["estimates"] = (
-            self.datadir / config["scenarios"]["estimates"]
-        )
 
         default_xml_path = self.datadir / "default_gleam_definition.xml"
+        estimates_path = self.datadir / "estimates.csv"
 
-        sc.generate_simulations(config, default_xml_path, self.rds, self.batch)
+        sc.generate_simulations(config, default_xml_path, estimates_path, self.rds, self.batch)
 
         # ensure that the batch was updated
         self.assertEqual(len(self.batch.hdf["simulations"]), 4)

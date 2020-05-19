@@ -12,8 +12,7 @@ from luigi.util import inherits
 
 from epimodel import Level, RegionDataset, algorithms, imports, read_csv_smart, utils
 from epimodel.exports.epidemics_org import process_export, upload_export
-from epimodel.gleam import Batch, GleamDefinition
-from epimodel.gleam import batch as batch_module
+from epimodel.gleam import Batch, GleamDefinition, generate_simulations
 
 logger = logging.getLogger(__name__)
 
@@ -213,10 +212,6 @@ class GenerateGleamBatch(luigi.Task):
     generated_batch_filename: str = luigi.Parameter(
         description="Output filename of the generated batch file for gleam",
     )
-    top: int = luigi.IntParameter(description="Upper limit for seed compartments.")
-    start_date: datetime = luigi.DateParameter(
-        default=datetime.utcnow(), description="Start date of the simulations"
-    )
 
     def requires(self):
         return {
@@ -239,32 +234,21 @@ class GenerateGleamBatch(luigi.Task):
             raise
 
     def _run(self):
-        b = Batch.new(path=self.generated_batch_filename)
-        logger.info(f"New batch file {b.path}")
-
-        base_def = self.input()["base_def"].path
-        logger.info(f"Reading base GLEAM definition {base_def} ...")
-        d = GleamDefinition(base_def)
-
-        country_estimates = self.input()["country_estimates"].path
+        batch = Batch.new(path=self.generated_batch_filename)
+        logger.info(f"New batch file {batch.path}")
+        logger.info(f"Loading RegionsDataset...")
         rds = RegionsDatasetTask.load_dilled_rds(self.input()["regions_dataset"].path)
-        logger.info(f"Reading estimates from CSV {country_estimates} ...")
-        est = read_csv_smart(country_estimates, rds, levels=Level.country)
-        start_date = (
-            utils.utc_date(self.start_date) if self.start_date else d.get_start_date()
+
+        logger.info(f"Generating scenarios...")
+        generate_simulations(
+            ConfigYaml.load(self.input()["config_yaml"].path),
+            self.input()["base_def"].path,
+            self.input()["country_estimates"].path,
+            self.rds,
+            batch
         )
-        logger.info(f"Generating scenarios with start_date {start_date.ctime()} ...")
-        batch_module.generate_simulations(
-            b,
-            d,
-            est,
-            rds=rds,
-            config=ConfigYaml.load(self.input()["config_yaml"].path),
-            start_date=start_date,
-            top=self.top,
-        )
-        logger.info(f"Generated batch {b.path!r}:\n  {b.stats()}")
-        b.close()
+        logger.info(f"Generated batch scenarios {batch.path!r}:\n  {b.stats()}")
+        batch.close()
 
 
 class GenerateSimulationDefinitions(luigi.Task):

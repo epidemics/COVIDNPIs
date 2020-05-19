@@ -1,6 +1,7 @@
 from uuid import UUID
 from collections import namedtuple
-from typing import Tuple, Optional
+from typing import Tuple, Union, Optional
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
@@ -20,7 +21,8 @@ except ModuleNotFoundError:
 
 def generate_simulations(
     config: dict,
-    default_xml_path: str,
+    default_xml_path: Union[str, Path],
+    estimates_path: Union[str, Path],
     rds: RegionDataset,
     batch: Batch,
     foretold_token: Optional[str] = None,
@@ -29,7 +31,7 @@ def generate_simulations(
     config = config["scenarios"]
 
     raw_parameters = get_csv_or_sheet(config["parameters"])
-    raw_estimates = get_csv_or_sheet(config["estimates"])
+    raw_estimates = pd.read_csv(estimates_path)
 
     parser = InputParser(rds, foretold_token, progress_bar)
     parameters = parser.parse_parameters_df(raw_parameters)
