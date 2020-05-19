@@ -11,7 +11,6 @@ import theano.tensor as T
 import theano.tensor.signal.conv as C
 from pymc3 import Model
 
-
 log = logging.getLogger(__name__)
 sns.set_style("ticks")
 
@@ -319,7 +318,6 @@ class CMDeath_Final(BaseCMModel):
         self.ORs = copy.deepcopy(self.d.Rs)
         self.predict_all_days = True
 
-
     def build_model(self):
         with self.model:
             self.CM_Alpha = pm.Normal("CM_Alpha", 0, 0.2, shape=(self.nCMs,))
@@ -365,10 +363,9 @@ class CMDeath_Final(BaseCMModel):
             #     shape=(self.nORs, self.nDs),
             # )
 
-
             self.ExpectedGrowth = self.Det("ExpectedGrowth",
-                                               beta * (np.exp(self.ExpectedLogR/alpha) - T.ones_like(
-                                                   self.ExpectedLogR)),
+                                           beta * (np.exp(self.ExpectedLogR / alpha) - T.ones_like(
+                                               self.ExpectedLogR)),
                                            plot_trace=False
                                            )
 
@@ -402,7 +399,7 @@ class CMDeath_Final(BaseCMModel):
             self.Phi = pm.HalfNormal("Phi", 5)
 
             self.NewDeaths = pm.Data("NewDeaths",
-                                    self.d.NewDeaths.data.reshape((self.nORs * self.nDs,))[self.observed_days])
+                                     self.d.NewDeaths.data.reshape((self.nORs * self.nDs,))[self.observed_days])
 
             # effectively handle missing values ourselves
             self.ObservedDeaths = pm.NegativeBinomial(
@@ -621,7 +618,7 @@ class CMActive_Final(BaseCMModel):
             skipped_days = []
             for d in range(self.nDs):
                 if self.d.NewCases.mask[r, d] == False and d > self.CMDelayCut and not np.isnan(
-                        self.d.Confirmed.data[r, d]) and d < (self.nDs-7):
+                        self.d.Confirmed.data[r, d]) and d < (self.nDs - 7):
                     observed.append(r * self.nDs + d)
                 else:
                     skipped_days.append(d)
@@ -993,7 +990,7 @@ class CMCombined_Final(BaseCMModel):
             for d in range(self.nDs):
                 # if its not masked, after the cut, and not before 100 confirmed
                 if self.d.NewCases.mask[r, d] == False and d > self.CMDelayCut and not np.isnan(
-                        self.d.Confirmed.data[r, d]) and d < (self.nDs-7):
+                        self.d.Confirmed.data[r, d]) and d < (self.nDs - 7):
                     observed_active.append(r * self.nDs + d)
                 else:
                     self.d.NewCases.mask[r, d] = True
@@ -1024,7 +1021,7 @@ class CMCombined_Final(BaseCMModel):
                 "HyperRVar", nu=10, sigma=0.3
             )
 
-            self.RegionLogR_offset = pm.Normal("RegionLogR_offset", 0, self.HyperRVar, shape=(self.nORs, ))
+            self.RegionLogR_offset = pm.Normal("RegionLogR_offset", 0, self.HyperRVar, shape=(self.nORs,))
             self.RegionLogR = pm.Deterministic("RegionLogR", self.HyperRMean + self.RegionLogR_offset)
 
             self.ActiveCMs = pm.Data("ActiveCMs", self.d.ActiveCMs)
@@ -1048,9 +1045,9 @@ class CMCombined_Final(BaseCMModel):
             )
 
             self.ExpectedGrowth = self.Det("ExpectedGrowth",
-                                               beta * (pm.math.exp(
-                                                   self.ExpectedLogR / alpha) - T.ones_like(
-                                                   self.ExpectedLogR)),
+                                           beta * (pm.math.exp(
+                                               self.ExpectedLogR / alpha) - T.ones_like(
+                                               self.ExpectedLogR)),
                                            plot_trace=False
                                            )
 
@@ -1558,13 +1555,13 @@ class CMCombined_Final(BaseCMModel):
 
             if i % 5 == 4:
                 rect = patches.Rectangle((0.01, 0.46), 0.4, 0.5, linewidth=1,
-                                           edgecolor="lightgray", facecolor="white", transform=ax.transAxes, alpha=0.5)
+                                         edgecolor="lightgray", facecolor="white", transform=ax.transAxes, alpha=0.5)
                 plt.gca().add_patch(rect)
                 for indx, f in enumerate(self.d.CMs):
-                    plt.text(0.03, 0.95 - 0.04*indx, plot_style[indx][0], fontproperties=fp2,
-                             color=plot_style[indx][1], size=6, va="center", ha="center", clip_on=True, zorder=1, transform=ax.transAxes)
-                    plt.text(0.06, 0.95 - 0.04*indx, f, size=6, va="center", ha="left", transform=ax.transAxes)
-
+                    plt.text(0.03, 0.95 - 0.04 * indx, plot_style[indx][0], fontproperties=fp2,
+                             color=plot_style[indx][1], size=6, va="center", ha="center", clip_on=True, zorder=1,
+                             transform=ax.transAxes)
+                    plt.text(0.06, 0.95 - 0.04 * indx, f, size=6, va="center", ha="left", transform=ax.transAxes)
 
             plt.subplot(5, 2, 2 * (i % 5) + 2)
 
@@ -1623,6 +1620,7 @@ class CMCombined_Final(BaseCMModel):
                 ax.legend(prop={"size": 8}, loc="upper right", shadow=True, fancybox=True)
                 ax2.legend(prop={"size": 8}, loc="lower left", shadow=True, fancybox=True)
 
+
 class CMActive_Final_ICL(BaseCMModel):
     def __init__(
             self, data, name="", model=None
@@ -1648,7 +1646,7 @@ class CMActive_Final_ICL(BaseCMModel):
                                    0.00645582, 0.00534967, 0.00442695])
 
         self.CMDelayCut = 30
-        self.DailyGrowthNoise = 0.15
+        self.DailyGrowthNoise = 0.2
 
         self.ObservedDaysIndx = np.arange(self.CMDelayCut, len(self.d.Ds))
         self.OR_indxs = np.arange(len(self.d.Rs))
@@ -1660,7 +1658,8 @@ class CMActive_Final_ICL(BaseCMModel):
         not_observed = []
         for r in range(self.nRs):
             for d in range(self.nDs):
-                if self.d.NewCases.mask[r, d] == False and d > self.CMDelayCut and not np.isnan(self.d.Confirmed.data[r, d]):
+                if self.d.NewCases.mask[r, d] == False and d > self.CMDelayCut and not np.isnan(
+                        self.d.Confirmed.data[r, d]) and d < self.nDs - 7:
                     observed.append(r * self.nDs + d)
                 else:
                     # set the mask to False!
@@ -1672,19 +1671,23 @@ class CMActive_Final_ICL(BaseCMModel):
 
     def build_model(self):
         with self.model:
-            self.CM_Alpha = pm.Normal("CM_Alpha", 0, 0.2, shape=(self.nCMs,))
+            self.HyperCMVar = pm.HalfStudentT(
+                "HyperCMVar", nu=10, sigma=0.3
+            )
+
+            self.CM_Alpha = pm.Normal("CM_Alpha", 0, self.HyperCMVar, shape=(self.nCMs,))
             self.CMReduction = pm.Deterministic("CMReduction", T.exp((-1.0) * self.CM_Alpha))
 
-            # self.HyperRMean = pm.StudentT(
-            #     "HyperRMean", nu=10, sigma=1, mu=np.log(3.5),
-            # )
+            self.HyperRMean = pm.StudentT(
+                            "HyperRMean", nu=10, sigma=1, mu=np.log(3.5),
+                        )
 
-            # self.HyperRVar = pm.HalfStudentT(
-            #     "HyperRVar", nu=10, sigma=0.3
-            # )
+            self.HyperRVar = pm.HalfStudentT(
+                "HyperRVar", nu=10, sigma=0.3
+            )
 
             self.RegionLogR = pm.Normal("RegionLogR", np.log(3.5),
-                                        0.3,
+                                        self.HyperRVar,
                                         shape=(self.nORs,))
 
             self.ActiveCMs = pm.Data("ActiveCMs", self.d.ActiveCMs)
@@ -1714,35 +1717,20 @@ class CMActive_Final_ICL(BaseCMModel):
 
             self.Det("Z1", self.LogR - self.ExpectedLogR, plot_trace=False)
 
-            self.InitialSize_log = pm.Normal("InitialSize_log", 1, 10, shape=(self.nORs,))
+            self.InitialSize_log = pm.Normal("InitialSize_log", 0, 20, shape=(self.nORs,))
 
             # # conv padding
             filter_size = self.SI_rev.size
             conv_padding = 7
 
             infected = T.zeros((self.nORs, self.nDs + self.SI_rev.size))
-            infected = T.set_subtensor(infected[:, (filter_size-conv_padding):filter_size],
-                                       pm.math.exp(self.InitialSize_log.reshape((self.nORs, 1)).repeat(conv_padding, axis=1)))
+            infected = T.set_subtensor(infected[:, (filter_size - conv_padding):filter_size],
+                                       pm.math.exp(
+                                           self.InitialSize_log.reshape((self.nORs, 1)).repeat(conv_padding, axis=1)))
 
             # R is a lognorm
             R = pm.math.exp(self.LogR)
-
-            # def loop_fun(d, result, R):
-            #     val = pm.math.sum(
-            #         R[:, d].reshape((self.nORs, 1)) * result[:, d:(d + filter_size)] * self.SI_rev, axis=1)
-            #     inf = T.set_subtensor(result[:, d + filter_size], val)
-            #     return inf
-            #
-            # res, _ = theano.scan(loop_fun, outputs_info=infected, non_sequences=R,
-            #                      sequences=[T.arange(self.nDs)]
-            #                      )
-            # infected = res[-1]
-
             for d in range(self.nDs):
-                # if d+conv_padding < filter_size:
-                #     val = pm.math.sum(
-                #         R[:, d].reshape((self.nORs, 1)) * infected[:, :(d + conv_padding)] * self.SI_rev[:, :(d+conv_padding)], axis=1)
-                # else:
                 val = pm.math.sum(
                     R[:, d].reshape((self.nORs, 1)) * infected[:, d:d + filter_size] * self.SI_rev, axis=1)
                 infected = T.set_subtensor(infected[:, d + filter_size], val)
@@ -1758,19 +1746,18 @@ class CMActive_Final_ICL(BaseCMModel):
             self.ExpectedCases = pm.Deterministic("ExpectedCases", expected_confirmed.reshape(
                 (self.nORs, self.nDs)))
 
-            self.Phi = pm.HalfNormal("Phi", 5)
+            self.Phi = 25
 
-            # self.NewCases = pm.Data("NewCases", self.d.NewCases.data.reshape((self.nORs * self.nDs,))[self.observed_days])
+            self.NewCases = pm.Data("NewCases", self.d.NewCases.data.reshape((self.nORs * self.nDs,))[self.observed_days])
             # self.NewCases = pm.Data("NewCases", self.d.NewCases)
 
             # effectively handle missing values ourselves
-            self.ObservedCases = NegativeBinomialIgnoreMasked(
+            self.ObservedCases = pm.NegativeBinomial(
                 "ObservedCases",
-                mu=self.ExpectedCases,
+                mu=self.ExpectedCases.reshape((self.nORs * self.nDs,))[self.observed_days],
                 alpha=self.Phi,
-                shape= (self.nORs, self.nDs),
-                observed= self.d.NewCases.data,
-                mask= self.d.NewCases.mask
+                shape=(len(self.observed_days),),
+                observed=self.NewCases
             )
 
     def plot_region_predictions(self, plot_style, save_fig=True, output_dir="./out"):
@@ -1789,7 +1776,7 @@ class CMActive_Final_ICL(BaseCMModel):
 
             ec = self.trace.ExpectedCases[:, country_indx, :]
             nS, nDs = ec.shape
-            dist = pm.NegativeBinomial.dist(mu=ec, alpha=15)
+            dist = pm.NegativeBinomial.dist(mu=ec, alpha=6)
             ec_output = dist.random()
 
             means_ea, lu_ea, up_ea, err_eea = produce_CIs(
@@ -1832,7 +1819,7 @@ class CMActive_Final_ICL(BaseCMModel):
 
             plt.scatter(
                 self.ObservedDaysIndx,
-                newcases,
+                newcases[self.ObservedDaysIndx],
                 label="Recorded New Cases",
                 marker="o",
                 s=10,
@@ -1896,9 +1883,11 @@ class CMActive_Final_ICL(BaseCMModel):
             )
             plt.plot([min_x, max_x], [1, 1], "--", linewidth=0.5, color="lightgrey")
 
-            plt.ylim([0, 7])
+            mean_R = np.mean(np.exp(self.trace.RegionLogR[:, country_indx]))
+            plt.plot([min_x, max_x], [mean_R, mean_R], color="tab:red", linewidth=0.5)
+            plt.ylim([0, 10])
             plt.xlim([min_x, max_x])
-            plt.ylabel("Growth")
+            plt.ylabel("R")
             locs = np.arange(min_x, max_x, 7)
             xlabels = [f"{days[ts].day}-{days[ts].month}" for ts in locs]
             plt.xticks(locs, xlabels, rotation=-30)
@@ -1955,6 +1944,7 @@ class CMActive_Final_ICL(BaseCMModel):
                 ax.legend(prop={"size": 8}, loc="center left")
                 ax2.legend(prop={"size": 8}, loc="lower left")
                 ax4.legend(lines + lines2, labels + labels2, prop={"size": 8})
+
 
 class CMDeath_Final_ICL(BaseCMModel):
     def __init__(
@@ -2044,7 +2034,7 @@ class CMDeath_Final_ICL(BaseCMModel):
         )
 
         self.CMDelayCut = 30
-        self.DailyGrowthNoise = 0.15
+        self.DailyGrowthNoise = 0.2
 
         self.ObservedDaysIndx = np.arange(self.CMDelayCut, len(self.d.Ds))
         self.OR_indxs = np.arange(len(self.d.Rs))
@@ -2068,19 +2058,23 @@ class CMDeath_Final_ICL(BaseCMModel):
 
     def build_model(self):
         with self.model:
-            self.CM_Alpha = pm.Normal("CM_Alpha", 0, 0.2, shape=(self.nCMs,))
+            self.HyperCMVar = pm.HalfStudentT(
+                "HyperCMVar", nu=10, sigma=0.1
+            )
+
+            self.CM_Alpha = pm.Normal("CM_Alpha", 0, self.HyperCMVar, shape=(self.nCMs,))
             self.CMReduction = pm.Deterministic("CMReduction", T.exp((-1.0) * self.CM_Alpha))
 
-            # self.HyperRMean = pm.StudentT(
-            #     "HyperRMean", nu=10, sigma=1, mu=np.log(3.5),
-            # )
+            self.HyperRMean = pm.StudentT(
+                "HyperRMean", nu=10, sigma=0.2, mu=np.log(3.25),
+            )
 
-            # self.HyperRVar = pm.HalfStudentT(
-            #     "HyperRVar", nu=10, sigma=0.3
-            # )
+            self.HyperRVar = pm.HalfStudentT(
+                "HyperRVar", nu=10, sigma=0.2
+            )
 
-            self.RegionLogR = pm.Normal("RegionLogR", np.log(3.5),
-                                        0.3,
+            self.RegionLogR = pm.Normal("RegionLogR", self.HyperRMean,
+                                        self.HyperRVar,
                                         shape=(self.nORs,))
 
             self.ActiveCMs = pm.Data("ActiveCMs", self.d.ActiveCMs)
@@ -2100,45 +2094,32 @@ class CMDeath_Final_ICL(BaseCMModel):
                 plot_trace=False,
             )
 
-            self.Normal(
-                "LogR",
-                self.ExpectedLogR,
-                self.DailyGrowthNoise,
-                shape=(self.nORs, self.nDs),
-                plot_trace=False,
-            )
+            # self.Normal(
+            #     "LogR",
+            #     self.ExpectedLogR,
+            #     self.DailyGrowthNoise,
+            #     shape=(self.nORs, self.nDs),
+            #     plot_trace=False,
+            # )
+
+            self.Det("LogR", self.ExpectedLogR)
 
             self.Det("Z1", self.LogR - self.ExpectedLogR, plot_trace=False)
 
-            self.InitialSize_log = pm.Normal("InitialSize_log", -4, 10, shape=(self.nORs,))
+            self.InitialSize_log = pm.Normal("InitialSize_log", -4, 30, shape=(self.nORs,))
 
             # # conv padding
             filter_size = self.SI_rev.size
             conv_padding = 7
 
             infected = T.zeros((self.nORs, self.nDs + self.SI_rev.size))
-            infected = T.set_subtensor(infected[:, (filter_size-conv_padding):filter_size],
-                                       pm.math.exp(self.InitialSize_log.reshape((self.nORs, 1)).repeat(conv_padding, axis=1)))
+            infected = T.set_subtensor(infected[:, (filter_size - conv_padding):filter_size],
+                                       pm.math.exp(
+                                           self.InitialSize_log.reshape((self.nORs, 1)).repeat(conv_padding, axis=1)))
 
             # R is a lognorm
             R = pm.math.exp(self.LogR)
-
-            # def loop_fun(d, result, R):
-            #     val = pm.math.sum(
-            #         R[:, d].reshape((self.nORs, 1)) * result[:, d:(d + filter_size)] * self.SI_rev, axis=1)
-            #     inf = T.set_subtensor(result[:, d + filter_size], val)
-            #     return inf
-            #
-            # res, _ = theano.scan(loop_fun, outputs_info=infected, non_sequences=R,
-            #                      sequences=[T.arange(self.nDs)]
-            #                      )
-            # infected = res[-1]
-
             for d in range(self.nDs):
-                # if d+conv_padding < filter_size:
-                #     val = pm.math.sum(
-                #         R[:, d].reshape((self.nORs, 1)) * infected[:, :(d + conv_padding)] * self.SI_rev[:, :(d+conv_padding)], axis=1)
-                # else:
                 val = pm.math.sum(
                     R[:, d].reshape((self.nORs, 1)) * infected[:, d:d + filter_size] * self.SI_rev, axis=1)
                 infected = T.set_subtensor(infected[:, d + filter_size], val)
@@ -2156,15 +2137,16 @@ class CMDeath_Final_ICL(BaseCMModel):
 
             self.Phi = pm.HalfNormal("Phi", 5)
 
-            self.NewDeaths = pm.Data("NewDeaths", self.d.NewDeaths.data.reshape((self.nORs * self.nDs,))[self.observed_days])
+            self.NewDeaths = pm.Data("NewDeaths",
+                                     self.d.NewDeaths.data.reshape((self.nORs * self.nDs,))[self.observed_days])
 
             # effectively handle missing values ourselves
             self.ObservedDeaths = pm.NegativeBinomial(
                 "ObservedDeaths",
                 mu=self.ExpectedDeaths.reshape((self.nORs * self.nDs,))[self.observed_days],
-                alpha=self.Phi,
+                alpha=15,
                 shape=(len(self.observed_days),),
-                observed= self.NewDeaths
+                observed=self.NewDeaths
             )
 
     def plot_region_predictions(self, plot_style, save_fig=True, output_dir="./out"):
@@ -2181,10 +2163,14 @@ class CMDeath_Final_ICL(BaseCMModel):
                 self.trace.Infected[:, country_indx, :]
             )
 
-            ec = self.trace.ExpectedCases[:, country_indx, :]
+            ec = self.trace.ExpectedDeaths[:, country_indx, :]
             nS, nDs = ec.shape
-            dist = pm.NegativeBinomial.dist(mu=ec, alpha=15)
-            ec_output = dist.random()
+            dist = pm.NegativeBinomial.dist(mu=ec, alpha=40)
+
+            try:
+                ec_output = dist.random()
+            except:
+                ec_output = ec
 
             means_ea, lu_ea, up_ea, err_eea = produce_CIs(
                 ec_output
@@ -2196,7 +2182,7 @@ class CMDeath_Final_ICL(BaseCMModel):
             min_x = 25
             max_x = len(days) - 1
 
-            newcases = self.d.NewCases[country_indx, :]
+            newcases = self.d.NewDeaths[country_indx, :]
 
             ax = plt.gca()
             plt.plot(
@@ -2226,7 +2212,7 @@ class CMDeath_Final_ICL(BaseCMModel):
 
             plt.scatter(
                 self.ObservedDaysIndx,
-                newcases,
+                newcases[self.ObservedDaysIndx],
                 label="Recorded New Cases",
                 marker="o",
                 s=10,
@@ -2267,7 +2253,7 @@ class CMDeath_Final_ICL(BaseCMModel):
 
             ax2 = plt.gca()
 
-            mean_R = np.mean(np.exp(self.trace.RegionLogR[:, country_indx]))
+
 
             means_growth, lu_g, up_g, err = produce_CIs(
                 np.exp(self.trace.ExpectedLogR[:, country_indx, :])
@@ -2277,6 +2263,7 @@ class CMDeath_Final_ICL(BaseCMModel):
                 np.exp(self.trace.LogR[:, country_indx, :])
             )
 
+            mean_R = np.mean(np.exp(self.trace.RegionLogR[:, country_indx]))
             plt.plot([min_x, max_x], [mean_R, mean_R], color="tab:red", linewidth=0.5)
             plt.plot(days_x, means_growth, label="Expected R", zorder=1, color="tab:orange")
             plt.plot(days_x, actual_growth, label="Predicted R", zorder=1, color="tab:blue")
@@ -2305,7 +2292,7 @@ class CMDeath_Final_ICL(BaseCMModel):
             z1_mean, lu_z1, up_z1, err_1 = produce_CIs(self.trace.Z1[:, country_indx, :])
             nS, nDs = self.trace.Z1[:, country_indx, :].shape
             z2_mean, lu_z2, up_z2, err_2 = produce_CIs(
-                np.repeat(self.d.NewCases[country_indx, :].data.reshape(1, nDs), nS, axis=0) - self.trace.ExpectedCases[
+                np.repeat(self.d.NewDeaths[country_indx, :].data.reshape(1, nDs), nS, axis=0) - self.trace.ExpectedDeaths[
                                                                                                :, country_indx, :])
 
             plt.plot(days_x, z1_mean, color="tab:blue", label="Growth Noise")
@@ -2350,15 +2337,6 @@ class CMDeath_Final_ICL(BaseCMModel):
                 ax2.legend(prop={"size": 8}, loc="lower left")
                 ax4.legend(lines + lines2, labels + labels2, prop={"size": 8})
 
-class NegativeBinomialIgnoreMasked(pm.NegativeBinomial):
-    def __init__(self, mu, alpha, mask, *args, **kwargs):
-        super().__init__(mu, alpha, *args, **kwargs)
-        self.mask = mask
-
-    def logp(self, value):
-
-        l = super().logp(value)
-        return T.switch(self.mask, 0, l)
 
 class CMCombined_Final_ICL(BaseCMModel):
     def __init__(
@@ -2448,14 +2426,14 @@ class CMCombined_Final_ICL(BaseCMModel):
         )
 
         self.DelayProbCases = np.array([0.00509233, 0.02039664, 0.03766875, 0.0524391, 0.06340527,
-                                   0.07034326, 0.07361858, 0.07378182, 0.07167229, 0.06755999,
-                                   0.06275661, 0.05731038, 0.05141595, 0.04565263, 0.04028695,
-                                   0.03502109, 0.03030662, 0.02611754, 0.02226727, 0.0188904,
-                                   0.01592167, 0.01342368, 0.01127307, 0.00934768, 0.00779801,
-                                   0.00645582, 0.00534967, 0.00442695])
+                                        0.07034326, 0.07361858, 0.07378182, 0.07167229, 0.06755999,
+                                        0.06275661, 0.05731038, 0.05141595, 0.04565263, 0.04028695,
+                                        0.03502109, 0.03030662, 0.02611754, 0.02226727, 0.0188904,
+                                        0.01592167, 0.01342368, 0.01127307, 0.00934768, 0.00779801,
+                                        0.00645582, 0.00534967, 0.00442695])
 
         self.CMDelayCut = 30
-        self.DailyGrowthNoise = 0.15
+        self.DailyGrowthNoise = 0.2
 
         self.ObservedDaysIndx = np.arange(self.CMDelayCut, len(self.d.Ds))
         self.OR_indxs = np.arange(len(self.d.Rs))
@@ -2468,7 +2446,7 @@ class CMCombined_Final_ICL(BaseCMModel):
             for d in range(self.nDs):
                 # if its not masked, after the cut, and not before 100 confirmed
                 if self.d.NewCases.mask[r, d] == False and d > self.CMDelayCut and not np.isnan(
-                        self.d.Confirmed.data[r, d]) and d < (self.nDs-7):
+                        self.d.Confirmed.data[r, d]) and d < (self.nDs - 7):
                     observed_active.append(r * self.nDs + d)
                 else:
                     self.d.NewCases.mask[r, d] = True
@@ -2489,19 +2467,23 @@ class CMCombined_Final_ICL(BaseCMModel):
 
     def build_model(self):
         with self.model:
-            self.CM_Alpha = pm.Normal("CM_Alpha", 0, 0.2, shape=(self.nCMs,))
+            self.HyperCMVar = pm.HalfStudentT(
+                "HyperCMVar", nu=10, sigma=0.3
+            )
+
+            self.CM_Alpha = pm.Normal("CM_Alpha", 0, self.HyperCMVar, shape=(self.nCMs,))
             self.CMReduction = pm.Deterministic("CMReduction", T.exp((-1.0) * self.CM_Alpha))
 
-            # self.HyperRMean = pm.StudentT(
-            #     "HyperRMean", nu=10, sigma=1, mu=np.log(3.5),
-            # )
+            self.HyperRMean = pm.StudentT(
+                "HyperRMean", nu=10, sigma=1, mu=np.log(3.5),
+            )
 
-            # self.HyperRVar = pm.HalfStudentT(
-            #     "HyperRVar", nu=10, sigma=0.3
-            # )
+            self.HyperRVar = pm.HalfStudentT(
+                "HyperRVar", nu=10, sigma=0.3
+            )
 
-            self.RegionLogR = pm.Normal("RegionLogR", np.log(3.5),
-                                        0.3,
+            self.RegionLogR = pm.Normal("RegionLogR", self.HyperRMean,
+                                        self.HyperRVar,
                                         shape=(self.nORs,))
 
             self.ActiveCMs = pm.Data("ActiveCMs", self.d.ActiveCMs)
@@ -2529,13 +2511,15 @@ class CMCombined_Final_ICL(BaseCMModel):
                 plot_trace=False,
             )
 
-            self.Normal(
-                "LogRDeaths",
-                self.ExpectedLogR,
-                self.DailyGrowthNoise,
-                shape=(self.nORs, self.nDs),
-                plot_trace=False,
-            )
+            # self.Normal(
+            #     "LogRDeaths",
+            #     self.ExpectedLogR,
+            #     self.DailyGrowthNoise,
+            #     shape=(self.nORs, self.nDs),
+            #     plot_trace=False,
+            # )
+
+            self.LogRDeaths = pm.Deterministic("LogRDeaths", self.ExpectedLogR, )
 
             self.Det("Z1C", self.LogRCases - self.ExpectedLogR, plot_trace=False)
             self.Det("Z1D", self.LogRDeaths - self.ExpectedLogR, plot_trace=False)
@@ -2549,12 +2533,12 @@ class CMCombined_Final_ICL(BaseCMModel):
 
             infected_cases = T.zeros((self.nORs, self.nDs + self.SI_rev.size))
             infected_cases = T.set_subtensor(infected_cases[:, (filter_size - conv_padding):filter_size],
-                                       pm.math.exp(self.InitialSizeCases_log.reshape((self.nORs, 1)).repeat(
-                                           conv_padding, axis=1)))
+                                             pm.math.exp(self.InitialSizeCases_log.reshape((self.nORs, 1)).repeat(
+                                                 conv_padding, axis=1)))
             infected_deaths = T.zeros((self.nORs, self.nDs + self.SI_rev.size))
             infected_deaths = T.set_subtensor(infected_deaths[:, (filter_size - conv_padding):filter_size],
-                                       pm.math.exp(self.InitialSizeDeaths_log.reshape((self.nORs, 1)).repeat(
-                                           conv_padding, axis=1)))
+                                              pm.math.exp(self.InitialSizeDeaths_log.reshape((self.nORs, 1)).repeat(
+                                                  conv_padding, axis=1)))
 
             # R is a lognorm
             R_cases = pm.math.exp(self.LogRCases)
@@ -2591,11 +2575,11 @@ class CMCombined_Final_ICL(BaseCMModel):
             self.ExpectedCases = pm.Deterministic("ExpectedCases", expected_cases.reshape(
                 (self.nORs, self.nDs)))
 
-            self.Phi = pm.HalfNormal("Phi", 5)
+            self.Phi = 25
 
             self.NewCases = pm.Data("NewCases",
-                                     self.d.NewCases.data.reshape((self.nORs * self.nDs,))[
-                                         self.all_observed_active])
+                                    self.d.NewCases.data.reshape((self.nORs * self.nDs,))[
+                                        self.all_observed_active])
             self.NewDeaths = pm.Data("NewDeaths",
                                      self.d.NewDeaths.data.reshape((self.nORs * self.nDs,))[
                                          self.all_observed_deaths])
@@ -2627,17 +2611,37 @@ class CMCombined_Final_ICL(BaseCMModel):
 
             plt.subplot(5, 3, 3 * (country_indx % 5) + 1)
 
-            means_d, lu_id, up_id, err_d = produce_CIs(
-                self.trace.Infected[:, country_indx, :]
+            means_ic, lu_ic, up_ic, err_ic = produce_CIs(
+                self.trace.InfectedCases[:, country_indx, :]
             )
 
             ec = self.trace.ExpectedCases[:, country_indx, :]
             nS, nDs = ec.shape
-            dist = pm.NegativeBinomial.dist(mu=ec, alpha=15)
+            # dist = pm.NegativeBinomial.dist(mu=ec + 1e-3, alpha=np.repeat(np.array([self.trace.Phi_1]), nDs, axis=0).T)
+            dist = pm.NegativeBinomial.dist(mu=ec, alpha=25)
             ec_output = dist.random()
 
-            means_ea, lu_ea, up_ea, err_eea = produce_CIs(
+            means_ec, lu_ec, up_ec, err_ec = produce_CIs(
                 ec_output
+            )
+
+            means_id, lu_id, up_id, err_id = produce_CIs(
+                self.trace.InfectedDeaths[:, country_indx, :]
+            )
+
+            ed = self.trace.ExpectedDeaths[:, country_indx, :]
+            nS, nDs = ed.shape
+            # dist = pm.NegativeBinomial.dist(mu=ed + 1e-3, alpha=np.repeat(np.array([self.trace.Phi_2]), nDs, axis=0).T)
+
+            dist = pm.NegativeBinomial.dist(mu=ed, alpha=25)
+            try:
+                ed_output = dist.random()
+            except:
+                print(region)
+                ed_output = ed
+
+            means_ed, lu_ed, up_ed, err_ed = produce_CIs(
+                ed_output
             )
 
             days = self.d.Ds
@@ -2647,36 +2651,37 @@ class CMCombined_Final_ICL(BaseCMModel):
             max_x = len(days) - 1
 
             newcases = self.d.NewCases[country_indx, :]
+            deaths = self.d.NewDeaths[country_indx, :]
 
             ax = plt.gca()
             plt.plot(
                 days_x,
-                means_d,
-                label="Daily Infected",
+                means_ic,
+                label="Daily Infected - Cases",
                 zorder=1,
                 color="tab:purple",
                 alpha=0.25
             )
 
             plt.fill_between(
-                days_x, lu_id, up_id, alpha=0.15, color="tab:purple", linewidth=0
+                days_x, lu_ic, up_ic, alpha=0.15, color="tab:purple", linewidth=0
             )
 
             plt.plot(
                 days_x,
-                means_ea,
+                means_ec,
                 label="Predicted New Cases",
                 zorder=2,
                 color="tab:blue"
             )
 
             plt.fill_between(
-                days_x, lu_ea, up_ea, alpha=0.25, color="tab:blue", linewidth=0
+                days_x, lu_ec, up_ec, alpha=0.25, color="tab:blue", linewidth=0
             )
 
             plt.scatter(
                 self.ObservedDaysIndx,
-                newcases,
+                newcases[self.ObservedDaysIndx],
                 label="Recorded New Cases",
                 marker="o",
                 s=10,
@@ -2685,13 +2690,10 @@ class CMCombined_Final_ICL(BaseCMModel):
                 zorder=3,
             )
 
-            newcases_plot = copy.deepcopy(newcases)
-            newcases_plot[newcases_plot < 1] = 1e-1
-
             plt.scatter(
                 self.ObservedDaysIndx,
-                newcases_plot[self.ObservedDaysIndx].data,
-                label="Heldout New Deaths",
+                newcases[self.ObservedDaysIndx].data,
+                label="Heldout New Cases",
                 marker="o",
                 s=12,
                 edgecolor="tab:green",
@@ -2701,17 +2703,62 @@ class CMCombined_Final_ICL(BaseCMModel):
                 zorder=2,
             )
 
+            plt.plot(
+                days_x,
+                means_id,
+                label="Daily Infected - Deaths",
+                zorder=1,
+                color="tab:orange",
+                alpha=0.25
+            )
+
+            plt.fill_between(
+                days_x, lu_id, up_id, alpha=0.15, color="tab:orange", linewidth=0
+            )
+
+            plt.plot(
+                days_x,
+                means_ed,
+                label="Predicted Deaths",
+                zorder=2,
+                color="tab:red"
+            )
+
+            plt.fill_between(
+                days_x, lu_ed, up_ed, alpha=0.25, color="tab:red", linewidth=0
+            )
+
+            plt.scatter(
+                self.ObservedDaysIndx,
+                deaths[self.ObservedDaysIndx],
+                label="Recorded Deaths",
+                marker="o",
+                s=10,
+                color="tab:gray",
+                alpha=0.9,
+                zorder=3,
+            )
+
+            plt.scatter(
+                self.ObservedDaysIndx,
+                deaths[self.ObservedDaysIndx].data,
+                label="Recorded Heldout Deaths",
+                marker="o",
+                s=12,
+                edgecolor="tab:gray",
+                facecolor="white",
+                linewidth=1,
+                alpha=0.9,
+                zorder=2,
+            )
+
             ax.set_yscale("log")
-            ax.set_axisbelow(True)
-            ax.set_zorder(-3)
             plt.xlim([min_x, max_x])
-            plt.ylim([10 ** -2, 10 ** 5])
+            plt.ylim([10 ** 0, 10 ** 6])
             locs = np.arange(min_x, max_x, 7)
             xlabels = [f"{days[ts].day}-{days[ts].month}" for ts in locs]
             plt.xticks(locs, xlabels, rotation=-30)
             ax1 = add_cms_to_plot(ax, self.d.ActiveCMs, country_indx, min_x, max_x, days, plot_style)
-            ax1.set_axisbelow(True)
-            ax1.set_zorder(-3)
 
             plt.subplot(5, 3, 3 * (country_indx % 5) + 2)
 
@@ -2724,12 +2771,12 @@ class CMCombined_Final_ICL(BaseCMModel):
             )
 
             actual_growth, lu_ag, up_ag, err_act = produce_CIs(
-                np.exp(self.trace.LogR[:, country_indx, :])
+                np.exp(self.trace.LogRCases[:, country_indx, :])
             )
 
             plt.plot([min_x, max_x], [mean_R, mean_R], color="tab:red", linewidth=0.5)
-            plt.plot(days_x, means_growth, label="Expected R", zorder=1, color="tab:orange")
-            plt.plot(days_x, actual_growth, label="Predicted R", zorder=1, color="tab:blue")
+            plt.plot(days_x, means_growth, label="R Deaths", zorder=1, color="tab:orange")
+            plt.plot(days_x, actual_growth, label="R Cases", zorder=1, color="tab:blue")
 
             plt.fill_between(
                 days_x, lu_g, up_g, alpha=0.25, color="tab:orange", linewidth=0
@@ -2742,7 +2789,7 @@ class CMCombined_Final_ICL(BaseCMModel):
 
             plt.ylim([0, 7])
             plt.xlim([min_x, max_x])
-            plt.ylabel("Growth")
+            plt.ylabel("R")
             locs = np.arange(min_x, max_x, 7)
             xlabels = [f"{days[ts].day}-{days[ts].month}" for ts in locs]
             plt.xticks(locs, xlabels, rotation=-30)
@@ -2750,13 +2797,16 @@ class CMCombined_Final_ICL(BaseCMModel):
             ax3 = add_cms_to_plot(ax2, self.d.ActiveCMs, country_indx, min_x, max_x, days, plot_style)
 
             plt.subplot(5, 3, 3 * (country_indx % 5) + 3)
-            axis_scale = 1.5
             ax4 = plt.gca()
-            z1_mean, lu_z1, up_z1, err_1 = produce_CIs(self.trace.Z1[:, country_indx, :])
-            nS, nDs = self.trace.Z1[:, country_indx, :].shape
+            z1_mean, lu_z1, up_z1, err_1 = produce_CIs(self.trace.Z1C[:, country_indx, :])
+            nS, nDs = self.trace.Z1C[:, country_indx, :].shape
             z2_mean, lu_z2, up_z2, err_2 = produce_CIs(
                 np.repeat(self.d.NewCases[country_indx, :].data.reshape(1, nDs), nS,
                           axis=0) - self.trace.ExpectedCases[
+                                    :, country_indx, :])
+            z3_mean, lu_z3, up_z3, err_3 = produce_CIs(
+                np.repeat(self.d.NewDeaths[country_indx, :].data.reshape(1, nDs), nS,
+                          axis=0) - self.trace.ExpectedDeaths[
                                     :, country_indx, :])
 
             plt.plot(days_x, z1_mean, color="tab:blue", label="Growth Noise")
@@ -2770,9 +2820,14 @@ class CMCombined_Final_ICL(BaseCMModel):
 
             ax4.twinx()
             ax5 = plt.gca()
-            plt.plot(np.arange(self.nDs), z2_mean, color="tab:orange", label="Death Noise")
+            plt.plot(np.arange(self.nDs), z2_mean, color="tab:orange", label="Cases Noise")
             plt.fill_between(
                 np.arange(self.nDs), lu_z2, up_z2, alpha=0.25, color="tab:orange", linewidth=0
+            )
+
+            plt.plot(np.arange(self.nDs), z3_mean, color="tab:orange", label="Death Noise")
+            plt.fill_between(
+                np.arange(self.nDs), lu_z3, up_z3, alpha=0.25, color="tab:orange", linewidth=0
             )
             y_lim = max(np.max(np.abs(up_z2)), np.max(np.abs(lu_z2)))
             plt.ylim([-1.5 * y_lim, 1.5 * y_lim])
