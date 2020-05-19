@@ -5,7 +5,6 @@ import logging
 import xml.etree.ElementTree as ET
 from typing import Iterable, Union
 from pathlib import Path
-from contextlib import contextmanager
 
 import pandas as pd
 
@@ -18,7 +17,7 @@ log = logging.getLogger(__name__)
 class GleamDefinition:
     GLEAM_ID_SUFFIX = ".574"  # Magic? Or arbtrary?
 
-    def __init__(self, xml_path: str):
+    def __init__(self, xml_path: Union[str, Path]):
         """
         Load gleam `definition.xml` from a file (export_directory or a file-like object).
         """

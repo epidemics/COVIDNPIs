@@ -279,7 +279,6 @@ class DefinitionBuilder:
     """
 
     GLOBAL_PARAMETERS = {
-        "name": "set_name",
         "duration": "set_duration",
         "number of runs": "set_run_count",
         "airline traffic": "set_airline_traffic",

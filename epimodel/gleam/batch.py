@@ -1,15 +1,13 @@
-import datetime
 import logging
 from pathlib import Path
-from typing import List
+from typing import List, Tuple
 
 import numpy as np
 import pandas as pd
 import tables
 from scipy.stats import lognorm, norm
 
-from .. import algorithms
-from ..regions import Level, RegionDataset
+from ..regions import Level
 from .definition import GleamDefinition
 
 log = logging.getLogger(__name__)
@@ -108,7 +106,9 @@ class Batch:
         """
         self.hdf.close()
 
-    def set_simulations(self, sims_def_name_group_key):
+    def set_simulations(
+        self, sims_def_name_group_key: List[Tuple[GleamDefinition, str, str, str]]
+    ):
         """
         Write simulation records.
 

@@ -245,7 +245,7 @@ class GenerateGleamBatch(luigi.Task):
             self.input()["base_def"].path,
             self.input()["country_estimates"].path,
             self.rds,
-            batch
+            batch,
         )
         logger.info(f"Generated batch scenarios {batch.path!r}:\n  {b.stats()}")
         batch.close()

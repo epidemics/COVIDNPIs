@@ -1,5 +1,5 @@
 import pytest
-from unittest.mock import Mock, patch, call
+from unittest.mock import Mock, patch
 from . import PandasTestCase
 
 import yaml
@@ -86,7 +86,9 @@ class TestScenarioIntegration(PandasTestCase):
         default_xml_path = self.datadir / "default_gleam_definition.xml"
         estimates_path = self.datadir / "estimates.csv"
 
-        sc.generate_simulations(config, default_xml_path, estimates_path, self.rds, self.batch)
+        sc.generate_simulations(
+            config, default_xml_path, estimates_path, self.rds, self.batch
+        )
 
         # ensure that the batch was updated
         self.assertEqual(len(self.batch.hdf["simulations"]), 4)
@@ -456,12 +458,6 @@ class TestDefinitionBuilder(PandasTestCase):
         self.output.set_end_date.assert_called_once_with(params["End date"][0])
 
     # global parameters
-
-    def test_name(self):
-        value = "GLEAMviz test"
-        params = self.params_row({"Parameter": "name", "Value": value,})
-        self.init_def_builder(params)
-        self.output.set_name.assert_called_with(value)
 
     def test_duration(self):
         value = 180.0  # days
