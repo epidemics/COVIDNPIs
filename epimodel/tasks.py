@@ -497,8 +497,8 @@ class WebUpload(luigi.Task):
     channel: str = luigi.Parameter(
         description="channel to load the data to, basically a subdirectory in gcs_path",
     )
-    main_data_file: str = luigi.Parameter(
-        description="Path to the main datafile from web-export"
+    exported_data: str = luigi.Parameter(
+        description="Full path to the exported data. E.g. `outputs/web-exports/latest"
     )
 
     # this together with setting this in self.run and evaluating in self.complete
@@ -509,8 +509,9 @@ class WebUpload(luigi.Task):
     def run(self):
         # main_data_file = self.input().path
         # directory with all the exported outputs
-        base_dir = os.path.dirname(self.main_data_file)
-        upload_export(Path(base_dir), gs_prefix=self.gs_prefix, channel=self.channel)
+        upload_export(
+            Path(self.exported_data), gs_prefix=self.gs_prefix, channel=self.channel
+        )
         self.is_complete = True
 
     def complete(self):
