@@ -2,7 +2,6 @@ import pytest
 from unittest.mock import Mock, patch, call
 from . import PandasTestCase
 
-from glob import glob
 import yaml
 import pandas as pd
 import numpy as np
@@ -21,9 +20,12 @@ class TestScenarioIntegration(PandasTestCase):
         self.timestamp = pd.Timestamp("2020-05-01", tz="UTC")
         self.utcnow = self.timestamp_patcher.start()
         self.utcnow.return_value = self.timestamp
+        self.batch = Batch.new(path=self.tmp_path / "batch.hdf")
 
     def tearDown(self):
         self.timestamp_patcher.stop()
+        self.batch.close()
+        self.clear_tmp_path()
 
     def get_config(self):
         with open(self.datadir / "scenario/config.yaml", "r") as fp:
@@ -59,11 +61,9 @@ class TestScenarioIntegration(PandasTestCase):
             def_builder.definition.assert_equal(expected)
 
         # check Batch integration
-        batch = Batch.new(path=self.tmp_path / "batch.hdf")
-        simulations.add_to_batch(batch)
+        simulations.add_to_batch(self.batch)
 
-        batch.export_definitions_to_gleam(self.tmp_path)
-        batch.close()
+        self.batch.export_definitions_to_gleam(self.tmp_path)
 
         # ensure Batch outputs correctly
         for _, def_builder in simulations:
@@ -86,12 +86,11 @@ class TestScenarioIntegration(PandasTestCase):
         )
 
         default_xml_path = self.datadir / "default_gleam_definition.xml"
-        batch = Batch.new(path=self.tmp_path / "batch.hdf")
 
-        sc.generate_simulations(config, default_xml_path, self.rds, batch)
+        sc.generate_simulations(config, default_xml_path, self.rds, self.batch)
 
         # ensure that the batch was updated
-        self.assertEqual(len(batch.hdf["simulations"]), 4)
+        self.assertEqual(len(self.batch.hdf["simulations"]), 4)
 
 
 @pytest.mark.usefixtures("ut_datadir", "ut_rds")

@@ -1,3 +1,4 @@
+import shutil
 from pathlib import Path
 import pytest
 from _pytest.tmpdir import _mk_tmp
@@ -38,8 +39,18 @@ def ut_tmp_path(request, tmp_path_factory):
     """
     pytest provides no class-scoped tmp_path. This function copies the
     implementation, but it must use private modules to do so.
+
+    Since this is class-scoped, a method-scoped tearDown method must be
+    implemented that calls clear_tmp_path to preserve test isolation.
     """
     request.cls.tmp_path = _mk_tmp(request, tmp_path_factory)
+    request.cls.clear_tmp_path = _clear_tmp_path
+
+
+def _clear_tmp_path(self):
+    mode = self.tmp_path.lstat().st_mode
+    shutil.rmtree(self.tmp_path)
+    self.tmp_path.mkdir(mode=mode)
 
 
 # shared logic
