@@ -22,15 +22,14 @@ class TestScenarioIntegration(PandasTestCase):
         self.utcnow = self.timestamp_patcher.start()
         self.utcnow.return_value = self.timestamp
 
-        self.xml_patcher = patch(
-            "epimodel.gleam.definition.GleamDefinition.DEFAULT_XML_FILE",
-            self.datadir / "default_gleam_definition.xml",
+        self.default_xml_context = GleamDefinition.default_xml_path(
+            self.datadir / "default_gleam_definition.xml"
         )
-        self.xml_patcher.start()
+        self.default_xml_context.__enter__()
 
     def tearDown(self):
         self.timestamp_patcher.stop()
-        self.xml_patcher.stop()
+        self.default_xml_context.__exit__(None, None, None)
 
     def test_integration(self):
         with open(self.datadir / "scenario/config.yaml", "r") as fp:

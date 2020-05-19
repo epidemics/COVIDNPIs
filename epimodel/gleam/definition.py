@@ -5,6 +5,7 @@ import logging
 import xml.etree.ElementTree as ET
 from typing import Iterable, Union
 from pathlib import Path
+from contextlib import contextmanager
 
 import pandas as pd
 
@@ -16,17 +17,25 @@ log = logging.getLogger(__name__)
 
 class GleamDefinition:
     GLEAM_ID_SUFFIX = ".574"  # Magic? Or arbtrary?
-    DEFAULT_XML_FILE = (
-        Path(__file__).parent.parent.parent / "data/default_gleam_definition.xml"
-    )
+    _default_xml_path = None
 
-    def __init__(self, xml_file=None):
+    @classmethod
+    @contextmanager
+    def default_xml_path(cls, path):
+        prev_path = cls._default_xml_path
+        try:
+            cls._default_xml_path = path
+            yield path
+        finally:
+            cls._default_xml_path = prev_path
+
+    def __init__(self, xml_path=None):
         """
         Load gleam `definition.xml` from a file (export_directory or a file-like object).
         """
         ET.register_namespace("", "http://www.gleamviz.org/xmlns/gleamviz_v4_0")
         self.ns = {"gv": "http://www.gleamviz.org/xmlns/gleamviz_v4_0"}
-        self.tree = ET.parse(xml_file or self.DEFAULT_XML_FILE)
+        self.tree = ET.parse(xml_path or self._default_xml_path)
         self.root = self.tree.getroot()
 
         if not self.get_timestamp_str():
@@ -259,7 +268,6 @@ class GleamDefinition:
         if "Region" in estimates:
             estimates = estimates.drop(columns=["Region"])
         compartments = estimates.sum()
-        total_compartments = compartments.sum()
         compartments = (compartments / compartments.sum() * 100).dropna().apply(round)
 
         # ensure everything adds up to 100
