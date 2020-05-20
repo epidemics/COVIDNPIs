@@ -5,7 +5,6 @@ import tempfile
 from datetime import datetime
 from pathlib import Path
 
-import dill
 import luigi
 import yaml
 from luigi.util import inherits
@@ -240,7 +239,7 @@ class GenerateGleamBatch(luigi.Task):
             self.input()["country_estimates"].path,
             rds,
         )
-        logger.info(f"Generated batch scenarios {batch.path!r}:\n  {b.stats()}")
+        logger.info(f"Generated batch scenarios {batch.path!r}:\n  {batch.stats()}")
         batch.close()
 
 
