@@ -37,7 +37,7 @@ class RegionsFile(luigi.ExternalTask):
 
 
 class GleamRegions(luigi.ExternalTask):
-    """Definition of Gleamviz regions"""
+    """Definition of GLEAMviz basins"""
 
     gleams = luigi.Parameter(
         description="Input filename relative to the config directory",
@@ -58,37 +58,34 @@ class RegionsAggregates(luigi.ExternalTask):
         return luigi.LocalTarget(self.aggregates)
 
 
-class RegionsDatasetTask(luigi.Task):
-    """Combines several inputs into a RegionDataset object used in several
-    downstream tasks for handling ISO codes and others"""
+class RegionsDatasetSubroutine:
+    """
+    Combines several inputs into a RegionDataset object used in several
+    downstream tasks for handling ISO codes and others.
 
-    regions_dataset: str = luigi.Parameter(
-        description="Output filename of the exported data.",
-    )
+    This is not an actual task but a subroutine that encapsulates the
+    inputs and process for RegionDataset creation. It fails as an
+    independent task because the regions model is unable to to
+    pickle/unpickle successfully.
+    """
 
-    def requires(self):
+    @staticmethod
+    def requires():
         return {
             "region_file": RegionsFile(),
             "gleam_regions": GleamRegions(),
             "aggregates": RegionsAggregates(),
         }
 
-    def output(self):
-        return luigi.LocalTarget(self.regions_dataset)
-
-    def run(self):
-        regions = self.input()["region_file"].path
-        gleams = self.input()["gleam_regions"].path
-        aggregates = self.input()["aggregates"].path
+    @staticmethod
+    def load_rds(task):
+        regions = task.input()["region_file"].path
+        gleams = task.input()["gleam_regions"].path
+        aggregates = task.input()["aggregates"].path
+        logger.info(f"Loading regions from {regions}, {gleams}, {aggregates}...")
         rds = RegionDataset.load(regions, gleams, aggregates)
         algorithms.estimate_missing_populations(rds)
-        with open(self.regions_dataset, "wb") as ofile:
-            dill.dump(rds, ofile)
-
-    @staticmethod
-    def load_dilled_rds(path: str):
-        with open(path, "rb") as ifile:
-            return dill.load(ifile)
+        return rds
 
 
 class JohnsHopkins(luigi.Task):
@@ -99,13 +96,13 @@ class JohnsHopkins(luigi.Task):
     )
 
     def requires(self):
-        return {"regions": RegionsDatasetTask()}
+        return RegionsDatasetSubroutine.requires()
 
     def output(self):
         return luigi.LocalTarget(self.hopkins_output)
 
     def run(self):
-        rds = RegionsDatasetTask.load_dilled_rds(self.input()["regions"].path)
+        rds = RegionsDatasetSubroutine.load_rds(self)
         csse = imports.import_johns_hopkins(rds)
         csse.to_csv(self.hopkins_output)
         logger.info(
@@ -126,9 +123,7 @@ class UpdateForetold(luigi.Task):
     )
 
     def requires(self):
-        return {
-            "regions": RegionsDatasetTask(),
-        }
+        return RegionsDatasetSubroutine.requires()
 
     def output(self):
         return luigi.LocalTarget(self.foretold_output)
@@ -143,7 +138,7 @@ class UpdateForetold(luigi.Task):
             )
 
         logger.info("Downloading and parsing foretold")
-        rds = RegionsDatasetTask.load_dilled_rds(self.input()["regions"].path)
+        rds = RegionsDatasetSubroutine.load_rds(self)
         foretold = imports.import_foretold(rds, self.foretold_channel)
         foretold.to_csv(self.foretold_output, float_format="%.7g")
         logger.info(f"Saved Foretold to {self.foretold_output}")
@@ -217,8 +212,8 @@ class GenerateGleamBatch(luigi.Task):
         return {
             "base_def": self.clone(BaseDefinition),
             "country_estimates": self.clone(CountryEstimates),
-            "regions_dataset": self.clone(RegionsDatasetTask),
             "config_yaml": self.clone(ConfigYaml),
+            **RegionsDatasetSubroutine.requires(),
         }
 
     def output(self):
@@ -236,8 +231,7 @@ class GenerateGleamBatch(luigi.Task):
     def _run(self):
         batch = Batch.new(path=self.generated_batch_filename)
         logger.info(f"New batch file {batch.path}")
-        logger.info(f"Loading RegionsDataset...")
-        rds = RegionsDatasetTask.load_dilled_rds(self.input()["regions_dataset"].path)
+        rds = RegionsDatasetSubroutine.load_rds(self)
 
         logger.info(f"Generating scenarios...")
         batch.generate_simulations(
@@ -336,8 +330,8 @@ class ExtractSimulationsResults(luigi.Task):
         return {
             "gleamviz_result": self.clone(GleamvizResults),
             "batch_file": GenerateGleamBatch(),
-            "regions_dataset": RegionsDatasetTask(),
             "config_yaml": ConfigYaml(),
+            **RegionsDatasetSubroutine.requires(),
         }
 
     def output(self):
@@ -349,9 +343,7 @@ class ExtractSimulationsResults(luigi.Task):
         simulation_directory = os.path.dirname(self.input()["gleamviz_result"].path)
 
         config_yaml = ConfigYaml.load(self.input()["config_yaml"].path)
-        regions_dataset = RegionsDatasetTask.load_dilled_rds(
-            self.input()["regions_dataset"].path
-        )
+        regions_dataset = RegionsDatasetSubroutine.load_rds(self)
 
         # copy the batch file into a temporary one
         temp_dir = tempfile.TemporaryDirectory()
@@ -440,12 +432,12 @@ class WebExport(luigi.Task):
             "models": ExtractSimulationsResults(),
             "hopkins": JohnsHopkins(),
             "foretold": UpdateForetold(),
-            "regions_dataset": RegionsDatasetTask(),
             "rates": Rates(),
             "timezones": Timezones(),
             "age_distributions": AgeDistributions(),
             "config_yaml": ConfigYaml(),
             "country_estimates": CountryEstimates(),
+            **RegionsDatasetSubroutine.requires(),
         }
 
     def output(self):
@@ -454,9 +446,7 @@ class WebExport(luigi.Task):
     def run(self):
         models = self.input()["models"].path
         config_yaml = ConfigYaml.load(self.input()["config_yaml"].path)
-        regions_dataset = RegionsDatasetTask.load_dilled_rds(
-            self.input()["regions_dataset"].path
-        )
+        regions_dataset = RegionsDatasetSubroutine.load_rds(self)
         estimates = self.input()["country_estimates"].path
 
         ex = process_export(

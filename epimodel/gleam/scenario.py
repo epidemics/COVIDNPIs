@@ -286,7 +286,7 @@ class DefinitionBuilder:
     def filename(self):
         return f"{self.definition.get_id_str()}.xml"
 
-    def save_to_dir(self, dir):
+    def save_to_dir(self, dir: Path):
         self.definition.save(dir / self.filename)
 
     def _set_name(self, name: str, classes: Tuple[str, str]):

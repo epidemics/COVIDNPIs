@@ -8,7 +8,6 @@ import tables
 from scipy.stats import lognorm, norm
 
 from epimodel.regions import Level, RegionDataset
-from .definition import GleamDefinition
 from .scenario import InputParser, SimulationSet
 from epimodel.colabutils import get_csv_or_sheet
 
