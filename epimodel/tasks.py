@@ -312,10 +312,10 @@ class GleamvizResults(luigi.ExternalTask):
 
     single_result = luigi.Parameter(
         description=(
-            "A path to any one `results.h5` gleamviz files you downloaded "
+            "A path to any one gleamviz simulation directory you downloaded "
             "via 'retrieve results' in the gleam software. For example, it "
             "could be something like "
-            "'~/GLEAMviz/data/simulations/82131231323.ghv5/results.h5'"
+            "'~/GLEAMviz/data/simulations/82131231323.ghv5'"
         )
     )
 
