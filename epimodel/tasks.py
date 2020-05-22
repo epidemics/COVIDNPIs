@@ -243,10 +243,11 @@ class GenerateGleamBatch(luigi.Task):
         batch.close()
 
 
-class GenerateSimulationDefinitions(luigi.Task):
+class ExportSimulationDefinitions(luigi.Task):
     """
-    Creates definitions for simulations which can be used for gleamviz. It
-    must not be run when Gleamviz is running otherwise it won't be visible.
+    Saves the generated definition.xml files for simulations directly into
+    the GLEAMviz data folder. GLEAMviz must not be running when you do this
+    or the new simulations will not be visible in the dashboard.
 
     Formerly ExportGleamBatch"""
 
@@ -258,7 +259,7 @@ class GenerateSimulationDefinitions(luigi.Task):
         ),
     )
 
-    stamp_file = "GenerateSimulationDefinitions.success"
+    stamp_file = "ExportSimulationDefinitions.success"
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -304,7 +305,7 @@ class GleamvizResults(luigi.ExternalTask):
     )
 
     def requires(self):
-        return GenerateSimulationDefinitions()
+        return ExportSimulationDefinitions()
 
     def output(self):
         return luigi.LocalTarget(self.single_result)

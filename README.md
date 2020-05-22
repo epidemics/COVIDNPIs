@@ -51,7 +51,7 @@ There is an example of the usage with explanations in `test/example-run.sh` if y
 
 ### Example with faked data
 This example skips the `UpdateForetold` and `ExtractSimulationsResults` task by providing their output.
-In reality, you want to actually run gleamviz in between and provide Foretold channel to get data via API.
+In reality, you want to actually run GLEAMviz in between and provide Foretold channel to get data via API.
 This by default uses data in `data/inputs` and exports data to `data/outputs/example`.
 ```
 # `poetry shell`  # if you haven't done already
@@ -67,14 +67,14 @@ After the pipeline finishes, you should see the results in `data-dir/outputs/exa
 ### The usual flow
 You provide all file inputs, foretold_channel and parameters, tweak configs to your liking and then:
 
-1. `./luigi GenerateSimulationDefinitions`
-2. run gleamviz with the simulations created above, retrieve results via it's UI, close it
+1. `./luigi ExportSimulationDefinitions`
+2. run GLEAMviz with the simulations created above, retrieve results via it's UI, close it
 3. export the data using
 
     ```
     ./luigi WebExport \
     --export-name my-export \
-    --ExtractSimulationResults-single-result ~/GLEAMviz/data/simulations/82131231323.ghv5/results.h5 
+    --ExtractSimulationResults-single-result ~/GLEAMviz/data/simulations/82131231323.ghv5/results.h5
     ```
 
 4. upload the result data using `./luigi WebUpload --export-data data-dir/outputs/web-exports/my-export` task
@@ -84,7 +84,7 @@ You provide all file inputs, foretold_channel and parameters, tweak configs to y
 2. adjust `config.yaml` to your liking, such as scenarios to model or countries to export
 3. change `[Configuration].output_directory` to some empty or non-existing folder
 4. provide data for any of the ExternalTasks, such as `BaseDefinition`, `ConfigYaml`, `CountryEstimates` and others (see the `epimodel/tasks.py`). If you want to see what does your task depends on, use `luigi-deps-tree` as mentioned above.
-5. deal with gleamviz and knowing where it's simulation directory is on your installation
+5. deal with GLEAMviz and knowing where it's simulation directory is on your installation
 
 ### Getting help
 See `epimodel/tasks.py` where the whole pipeline is defined. Read the docstrings and paramter descriptions

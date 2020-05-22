@@ -105,7 +105,7 @@ echo ""
 
 SIM_DIR="$OUTPUT_DIRECTORY/simulations"
 mkdir -p $SIM_DIR
-CMD_GSD="$LUIGI GenerateSimulationDefinitions --simulations-dir $SIM_DIR"
+CMD_GSD="$LUIGI ExportSimulationDefinitions --simulations-dir $SIM_DIR"
 echo "$CMD_GSD"
 echo ""
 $CMD_GSD
