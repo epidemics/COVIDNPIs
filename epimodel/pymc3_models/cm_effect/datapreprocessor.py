@@ -200,7 +200,6 @@ class DataMerger():
         df.to_csv("data_final.csv")
         logger.info("Saved final CSV")
 
-
 class DataPreprocessor():
     def __init__(self, *args, **kwargs):
         self.min_confirmed = 100
@@ -319,7 +318,6 @@ class DataPreprocessor():
                                 NewCases,
                                 region_full_names)
 
-
 class PreprocessedData(object):
     def __init__(self,
                  Active,
@@ -380,6 +378,9 @@ class PreprocessedData(object):
         self.Rs = reduced_regions
         _, nCMs, nDs = self.ActiveCMs.shape
         self.reduce_regions_from_index(reduced_regions_indx)
+
+    def ignore_feature(self, f_i):
+        self.ActiveCMs[:, f_i, :] = 0
 
     def ignore_early_features(self):
         for r in range(len(self.Rs)):
