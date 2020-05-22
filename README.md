@@ -95,12 +95,11 @@ You can also use `./luigi <TaskName> --help` to get information about the parame
 `luigi-deps-tree --module epimodel.tasks <TaskName>` enables you to visualize the dependencies and what is and isn't completed. For example:
 
 ```
-$ luigi-deps-tree --module epimodel.tasks JohnsHopkins --RegionsDatasetTask-regions-dataset something
-└─--[JohnsHopkins-{'_output_directory': 'out', 'hopkins_output': 'john-hopkins.csv'} (COMPLETE)]
-   └─--[RegionsDatasetTask-{'regions': 'manual_input/regions.csv', 'gleams': 'manual_input/regions-gleam.csv', 'aggregates': 'manual_input/regions-agg.yaml', 'regions_dataset': 'something'} (PENDING)]
-      |--[RegionsFile-{'regions': 'manual_input/regions.csv'} (COMPLETE)]
-      |--[GleamRegions-{'gleams': 'manual_input/regions-gleam.csv'} (COMPLETE)]
-      └─--[RegionsAggregates-{'aggregates': 'manual_input/regions-agg.yaml'} (COMPLETE)]
+$ luigi-deps-tree --module epimodel.tasks JohnsHopkins --RegionsFile-regions different-regions.csv
+└─--[JohnsHopkins-{'hopkins_output': 'data-dir/outputs/john-hopkins.csv'} (PENDING)]
+   |--[RegionsFile-{'regions': 'different-regions.csv'} (PENDING)]
+   |--[GleamRegions-{'gleams': 'data-dir/inputs/manual/regions-gleam.csv'} (COMPLETE)]
+   └─--[RegionsAggregates-{'aggregates': 'data-dir/inputs/manual/regions-agg.yaml'} (COMPLETE)]
 ```
 
 ## Development

@@ -259,8 +259,8 @@ class GenerateGleamBatch(luigi.Task):
 class ExportSimulationDefinitions(luigi.Task):
     """
     Saves the generated definition.xml files for simulations directly into
-    the GLEAMviz data folder. GLEAMviz must not be running when you do this
-    or the new simulations will not be visible in the dashboard.
+    the GLEAMviz data folder. You may need to close and reopen GLEAMviz in
+    order for these to show up in the dashboard.
 
     Formerly ExportGleamBatch"""
 

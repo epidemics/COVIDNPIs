@@ -90,8 +90,8 @@ echo ""
 echo "If you wanted to change a parameter of some upstream task of the task you want to run"
 echo "you prefix it with the upstream task name. For example, RegionDatasetTask is an upstream"
 echo "task of the JohnsHopkins and output of RegionDatasetTask is fed into JohnsHopkins"
-echo "You can change the output of RegionsDatasetTask and JohnsHopkins will still work!"
-echo "luigi-deps-tree --module epimodel.tasks JohnsHopkins --RegionsDatasetTask-regions-dataset different-input"
+echo "You can change the output of RegionsFile and JohnsHopkins will still work!"
+echo "luigi-deps-tree --module epimodel.tasks JohnsHopkins --RegionsFile-regions different-regions.csv"
 
 
 echo ""
