@@ -9,7 +9,6 @@ from scipy.stats import lognorm, norm
 
 from epimodel.regions import Level, RegionDataset
 from .scenario import InputParser, SimulationSet
-from epimodel.colabutils import get_csv_or_sheet
 
 log = logging.getLogger(__name__)
 
@@ -85,13 +84,14 @@ class Batch:
         self,
         config: dict,
         base_xml_path: Union[str, Path],
+        parameters_path: Union[str, Path],
         estimates_path: Union[str, Path],
         rds: RegionDataset,
         progress_bar: bool = True,
     ):
         config = config["scenarios"]
 
-        raw_parameters = get_csv_or_sheet(config["parameters"])
+        raw_parameters = pd.read_csv(parameters_path)
         raw_estimates = pd.read_csv(estimates_path)
 
         parser = InputParser(rds, progress_bar=progress_bar)

@@ -36,13 +36,13 @@ scenarios:
   # charts.
   groups:
     - name: Scenario 1
-      description: Current mitigation measures are completely lifted in 2 weeks without replacement.
+      description: Current mitigation measures are completely lifted without replacement.
     - name: Scenario 2
-      description: Current mitigation measures stay in for 4 weeks and are replaced by milder measures afterwards.
+      description: Current mitigation measures are replaced by milder measures afterwards.
     - name: Scenario 3
-      description: Current mitigation measures stay in for 2 weeks and are replaced by strong mitigation afterwards.
+      description: Current mitigation measures are replaced by strong mitigation afterwards.
     - name: Scenario 4
-      description: Current mitigation measures stay in for 2 weeks and are replaced by moderate mitigation afterwards.
+      description: Current mitigation measures are replaced by moderate mitigation afterwards.
 
   # These show up as individual lines on each chart.
   traces:

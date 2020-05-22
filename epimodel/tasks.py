@@ -154,6 +154,17 @@ class BaseDefinition(luigi.ExternalTask):
         return luigi.LocalTarget(self.base_def)
 
 
+class GleamParameters(luigi.ExternalTask):
+    """Configuration parameters for GLEAMviz simulations"""
+
+    gleam_parameters: str = luigi.Parameter(
+        description="Path to the input file relative to the configuration input directory",
+    )
+
+    def output(self):
+        return luigi.LocalTarget(self.gleam_parameters)
+
+
 class CountryEstimates(luigi.ExternalTask):
     """Estimates created manually by forecasters"""
 
@@ -210,6 +221,7 @@ class GenerateGleamBatch(luigi.Task):
     def requires(self):
         return {
             "base_def": self.clone(BaseDefinition),
+            "gleam_parameters": self.clone(GleamParameters),
             "country_estimates": self.clone(CountryEstimates),
             "config_yaml": self.clone(ConfigYaml),
             **RegionsDatasetSubroutine.requires(),
@@ -236,6 +248,7 @@ class GenerateGleamBatch(luigi.Task):
         batch.generate_simulations(
             ConfigYaml.load(self.input()["config_yaml"].path),
             self.input()["base_def"].path,
+            self.input()["gleam_parameters"].path,
             self.input()["country_estimates"].path,
             rds,
         )

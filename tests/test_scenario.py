@@ -36,7 +36,7 @@ class TestScenarioIntegration(PandasTestCase):
         config = self.get_config()["scenarios"]
         parser = sc.InputParser(rds=self.rds)
         params = parser.parse_parameters_df(
-            pd.read_csv(self.datadir / config["parameters"])
+            pd.read_csv(self.datadir / "scenario/parameters.csv")
         )
         estimates = parser.parse_estimates_df(
             pd.read_csv(self.datadir / "estimates.csv")
@@ -78,14 +78,13 @@ class TestScenarioIntegration(PandasTestCase):
 
     def test_generate_simulations(self):
         config = self.get_config()
-        config["scenarios"]["parameters"] = (
-            self.datadir / config["scenarios"]["parameters"]
-        )
-
         base_xml_path = self.datadir / "default_gleam_definition.xml"
+        parameters_path = self.datadir / "scenario/parameters.csv"
         estimates_path = self.datadir / "estimates.csv"
 
-        self.batch.generate_simulations(config, base_xml_path, estimates_path, self.rds)
+        self.batch.generate_simulations(
+            config, base_xml_path, parameters_path, estimates_path, self.rds
+        )
 
         # ensure that the batch was updated
         self.assertEqual(len(self.batch.hdf["simulations"]), 4)

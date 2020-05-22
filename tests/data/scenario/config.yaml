@@ -1,7 +1,6 @@
 ---
 scenarios:
   name: "GLEAMviz Test"
-  parameters: "scenario/parameters.csv"
   groups:
     - name: Weak Exceptions
       description: Parameters with high values
