@@ -19,6 +19,7 @@ def plot_cm_effect_sensitivity(filenames,
                                bbox_to_anchor=None):
     
     fig = plt.figure(figsize=figsize, dpi=300)
+    
     for i in range(len(filenames)):
         # load trace
         cm_trace = np.loadtxt(filenames[i])
@@ -104,17 +105,18 @@ def plot_cm_effect_sensitivity(filenames,
         
         # plot data
         shift_center = y_offset*len(legend_labels)/2
-        plt.plot(means, y_vals+ i*y_offset - shift_center, marker="|", markersize=10, color=colors[i], label = legend_labels[i],
+        height= len(filenames)-i
+        plt.plot(means, y_vals+ height*y_offset - shift_center, marker='|', markersize=10, color=colors[i], label = legend_labels[i],
                  linewidth=0)
         for cm in range(N_cms):
             plt.plot([li[cm], ui[cm]], 
-                     [y_vals[cm]+ i*y_offset-shift_center, y_vals[cm]+ i*y_offset-shift_center],
+                     [y_vals[cm]+ height*y_offset-shift_center, y_vals[cm]+ height*y_offset-shift_center],
                      color=colors[i], alpha=0.25)
             plt.plot([lq[cm], uq[cm]], 
-                     [y_vals[cm]+ i*y_offset-shift_center, y_vals[cm]+ i*y_offset-shift_center], 
+                     [y_vals[cm]+ height*y_offset-shift_center, y_vals[cm]+ height*y_offset-shift_center], 
                     color=colors[i], alpha=0.5)
             
-    plt.plot([0, 0], [1, -(N_cms)*y_scale], "--r", linewidth=0.5)
+    plt.plot([0, 0], [1, -(N_cms)*y_scale], "--k", linewidth=0.5)
     xtick_vals = np.arange(-100, 150, 50)
     xtick_str = [f"{x:.0f}%" for x in xtick_vals]
     plt.yticks(y_vals, np.array(cm_labels))
