@@ -211,6 +211,8 @@ class DataPreprocessor():
         self.smooth = True
         self.N_smooth = 5
 
+        self.drop_HS = False
+
         for key in kwargs:
             setattr(self, key, kwargs[key])
 
@@ -234,6 +236,10 @@ class DataPreprocessor():
         nRs = len(sorted_regions)
         region_names = copy.deepcopy(sorted_regions)
         region_full_names = df.loc[region_names]["Region Name"]
+
+        if self.drop_HS:
+            logger.info("Dropping Healthcare Infection Control")
+            df = df.drop('Healthcare Infection Control', axis=1)
 
         CMs = list(df.columns[4:])
         nCMs = len(CMs)
