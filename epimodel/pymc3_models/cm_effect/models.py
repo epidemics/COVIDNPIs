@@ -105,7 +105,7 @@ class BaseCMModel(Model):
             self.cm_plot_style = cm_plot_style
         else:
             self.cm_plot_style = [
-                ("\uf7f2", "tab:red"),  # hospital symbol
+                # ("\uf7f2", "tab:red"),  # hospital symbol
                 ("\uf963", "black"),  # mask
                 ("\uf492", "mediumblue"),  # vial
                 ("\uf0c0", "lightgrey"),  # ppl
@@ -1428,10 +1428,10 @@ class CMCombined_Final(BaseCMModel):
 
             region = self.d.Rs[country_indx]
 
-            if i % 5 == 0:
-                plt.figure(figsize=(12, 20), dpi=300)
+            if i % 6 == 0:
+                plt.figure(figsize=(12, 24), dpi=300)
 
-            plt.subplot(5, 3, 3 * (i % 5) + 1)
+            plt.subplot(6, 3, 3 * (i % 6) + 1)
 
             means_ic, lu_ic, up_ic, err_ic = produce_CIs(
                 self.trace.InfectedCases[:, country_indx, :]
@@ -1557,7 +1557,7 @@ class CMCombined_Final(BaseCMModel):
             plt.xticks(locs, xlabels, rotation=-30)
             ax1 = add_cms_to_plot(ax, self.d.ActiveCMs, country_indx, min_x, max_x, days, plot_style)
 
-            plt.subplot(5, 3, 3 * (i % 5) + 2)
+            plt.subplot(6, 3, 3 * (i % 6) + 2)
 
             ax2 = plt.gca()
 
@@ -1577,7 +1577,7 @@ class CMCombined_Final(BaseCMModel):
             plt.fill_between(days_x, lu_g, up_g, alpha=0.25, color="tab:gray", linewidth=0)
             plt.fill_between(days_x, lu_base, up_base, alpha=0.15, color="tab:red", linewidth=0, zorder=-1)
 
-            plt.ylim([0, 5])
+            plt.ylim([0, 6])
             plt.xlim([min_x, max_x])
             plt.ylabel("R")
             locs = np.arange(min_x, max_x, 7)
@@ -1586,18 +1586,18 @@ class CMCombined_Final(BaseCMModel):
             plt.title(f"{self.d.RNames[region][0]}")
             ax3 = add_cms_to_plot(ax2, self.d.ActiveCMs, country_indx, min_x, max_x, days, plot_style)
 
-            plt.subplot(5, 3, 3 * (i % 5) + 3)
+            plt.subplot(6, 3, 3 * (i % 6) + 3)
             axis_scale = 1.5
             ax4 = plt.gca()
             z1c_m, lu_z1c, up_z1c, err_z1c = produce_CIs(self.trace.Z1C[:, country_indx, :])
             z1d_m, lu_z1d, up_z1d, err_z1d = produce_CIs(self.trace.Z1D[:, country_indx, :])
 
-            plt.plot(days_x, z1c_m, color="tab:purple", label="$z_1^{(C)}$")
+            plt.plot(days_x, z1c_m, color="tab:purple", label="$\epsilon^{(C)}$")
             plt.fill_between(days_x, lu_z1c, up_z1c, alpha=0.25, color="tab:purple", linewidth=0)
-            plt.plot(days_x, z1d_m, color="tab:orange", label="$z_1^{(D)}$")
+            plt.plot(days_x, z1d_m, color="tab:orange", label="$\epsilon^{(D)}$")
             plt.fill_between(days_x, lu_z1d, up_z1d, alpha=0.25, color="tab:orange", linewidth=0)
             plt.xlim([min_x, max_x])
-            plt.ylim([-1.5, 1.5])
+            plt.ylim([-0.75, 0.75])
             plt.plot([min_x, max_x], [0, 0], "--", linewidth=0.5, color="k")
             plt.xticks(locs, xlabels, rotation=-30)
             plt.ylabel("$z_1$")
@@ -1625,7 +1625,7 @@ class CMCombined_Final(BaseCMModel):
             sns.despine(ax=ax2)
             sns.despine(ax=ax3)
 
-            if i % 5 == 4 or country_indx == len(self.d.Rs) - 1:
+            if i % 6 == 5 or country_indx == len(self.d.Rs) - 1:
                 plt.tight_layout()
                 if save_fig:
                     save_fig_pdf(
@@ -1633,8 +1633,8 @@ class CMCombined_Final(BaseCMModel):
                         f"CountryPredictionPlot{((country_indx + 1) / 5):.1f}",
                     )
 
-            elif i % 5 == 0:
-                ax1.legend(*ax.get_legend_handles_labels(), prop={"size": 8}, loc=(0.5, 0.6), shadow=True,
+            elif i % 6 == 0:
+                ax1.legend(*ax.get_legend_handles_labels(), prop={"size": 8}, loc=(0.55, 0.6), shadow=True,
                            fancybox=True).set_zorder(5)
                 ax2.legend(prop={"size": 8}, loc="upper left", shadow=True, fancybox=True)
                 ax4.legend(prop={"size": 8}, loc="upper left", shadow=True, fancybox=True)
