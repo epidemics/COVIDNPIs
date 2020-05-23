@@ -1119,7 +1119,6 @@ class CMCombined_Final(BaseCMModel):
                 (self.nORs, self.nDs)))
 
             # learn the output noise for this.
-            # self.Phi_1 = pm.HalfNormal("Phi_1", 5)
             self.Phi = pm.HalfNormal("Phi_1", 5)
 
             # effectively handle missing values ourselves
@@ -1150,8 +1149,6 @@ class CMCombined_Final(BaseCMModel):
 
             self.ExpectedDeaths = pm.Deterministic("ExpectedDeaths", expected_deaths.reshape(
                 (self.nORs, self.nDs)))
-
-            # self.Phi_2 = pm.HalfNormal("Phi_2", 5)
 
             # effectively handle missing values ourselves
             self.ObservedDeaths = pm.NegativeBinomial(
@@ -2430,7 +2427,6 @@ class CMCombined_Final_ALT(BaseCMModel):
 
         if save_fig:
             save_fig_pdf(output_dir, f"CMCorr")
-
 
 # ICL Model versions - not used for our results
 class CMActive_Final_ICL(BaseCMModel):
