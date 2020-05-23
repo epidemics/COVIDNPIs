@@ -8,65 +8,18 @@ import seaborn as sns
 import scipy.signal as ss
 
 from mpl_toolkits.axes_grid1 import make_axes_locatable
+from matplotlib.font_manager import FontProperties
+from matplotlib.ticker import PercentFormatter
 
-from epimodel import read_csv, RegionDataset
-
+from epimodel import read_csv
 from epimodel.regions import Level
-
 import os
 import logging
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-
-def dataset_summary_plot(features, ActiveCMs):
-    nRs, nCMs, nDs = ActiveCMs.shape
-
-    plt.figure(figsize=(10, 5), dpi=300)
-    plt.subplot(1, 2, 1)
-    plt.title("Co-activation")
-    ax = plt.gca()
-    mat = np.zeros((nCMs, nCMs))
-    for cm in range(nCMs):
-        mask = ActiveCMs[:, cm, :]
-        for cm2 in range(nCMs):
-            mat[cm, cm2] = np.sum(mask * ActiveCMs[:, cm2, :]) / np.sum(mask)
-    im = plt.imshow(mat * 100, vmin=0, vmax=100, cmap="inferno", aspect="auto")
-    ax.tick_params(axis="both", which="major", labelsize=8)
-
-    plt.xticks(
-        np.arange(len(features)),
-        [f for f in features],
-        rotation=90
-    )
-
-    plt.yticks(
-        np.arange(len(features)),
-        [f for f in features],
-    )
-
-    divider = make_axes_locatable(ax)
-    cax = divider.append_axes("right", size="5%", pad=0.05)
-    plt.colorbar(im, cax=cax)
-
-    plt.subplot(1, 2, 2)
-    ax = plt.gca()
-    days_active = np.sum(np.sum(ActiveCMs, axis=0), axis=1)
-    plt.barh(-np.arange(nCMs), days_active)
-
-    plt.yticks(
-        -np.arange(len(features)),
-        [f for f in features],
-    )
-
-    ax.tick_params(axis="both", which="major", labelsize=8)
-    plt.title("Days NPI Used")
-    plt.xlabel("Days")
-
-    plt.tight_layout()
-    sns.despine()
-
+fp2 = FontProperties(fname=r"../../fonts/Font Awesome 5 Free-Solid-900.otf")
 
 class DataMerger():
     def __init__(self, params_dict=None, *args, **kwargs):
@@ -224,8 +177,6 @@ class DataMerger():
             logger_str = f"{logger_str}\n{i + 1:2} {cm:42} {np.min(ActiveCMs[:, i, :]):.3f} ... {np.mean(ActiveCMs[:, i, :]):.3f} ... {np.max(ActiveCMs[:, i, :]):.3f} ... {np.unique(ActiveCMs[:, i, :])[:5]}"
         logger.info(logger_str)
 
-        dataset_summary_plot(ordered_features, ActiveCMs)
-
         # Johnhopkins Stuff
         johnhop_ds = read_csv(os.path.join(data_base_path, self.johnhop_fname))
         Confirmed = np.stack([johnhop_ds["Confirmed"].loc[(fc, Ds)] for fc in regions_epi])
@@ -248,7 +199,6 @@ class DataMerger():
         df = df.set_index(["Country Code", "Date"])
         df.to_csv("data_final.csv")
         logger.info("Saved final CSV")
-
 
 class DataPreprocessor():
     def __init__(self, *args, **kwargs):
@@ -283,6 +233,7 @@ class DataPreprocessor():
         sorted_regions = [r for l, r in sorted(zip(locations, regions))]
         nRs = len(sorted_regions)
         region_names = copy.deepcopy(sorted_regions)
+        region_full_names = df.loc[region_names]["Region Name"]
 
         CMs = list(df.columns[4:])
         nCMs = len(CMs)
@@ -351,8 +302,6 @@ class DataPreprocessor():
         else:
             NewCases[NewCases < 0] = np.nan
 
-        dataset_summary_plot(CMs, ActiveCMs)
-
         Confirmed = np.ma.masked_invalid(Confirmed.astype(theano.config.floatX))
         Active = np.ma.masked_invalid(Active.astype(theano.config.floatX))
         Deaths = np.ma.masked_invalid(Deaths.astype(theano.config.floatX))
@@ -366,8 +315,8 @@ class DataPreprocessor():
                                 Ds,
                                 Deaths,
                                 NewDeaths,
-                                NewCases)
-
+                                NewCases,
+                                region_full_names)
 
 class PreprocessedData(object):
     def __init__(self,
@@ -379,7 +328,8 @@ class PreprocessedData(object):
                  Ds,
                  Deaths,
                  NewDeaths,
-                 NewCases):
+                 NewCases,
+                 RNames):
         super().__init__()
         self.Active = Active
         self.Confirmed = Confirmed
@@ -390,7 +340,7 @@ class PreprocessedData(object):
         self.Ds = Ds
         self.NewDeaths = NewDeaths
         self.NewCases = NewCases
-
+        self.RNames = RNames
 
     def reduce_regions_from_index(self, reduced_regions_indx):
         self.Active = self.Active[reduced_regions_indx, :]
@@ -429,3 +379,101 @@ class PreprocessedData(object):
         _, nCMs, nDs = self.ActiveCMs.shape
         self.reduce_regions_from_index(reduced_regions_indx)
 
+    def ignore_feature(self, f_i):
+        self.ActiveCMs[:, f_i, :] = 0
+
+    def ignore_early_features(self):
+        for r in range(len(self.Rs)):
+            for f_i, f in enumerate(self.CMs):
+                if f_i == 0:
+                    if np.sum(self.ActiveCMs[r, f_i, :]) > 0:
+                        # i.e., if the feature is turned on.
+                        nz = np.nonzero(self.ActiveCMs[r, f_i, :])[0]
+                        # if the first day that the feature is on corresponds to a masked day. this is conservative
+                        if np.isnan(self.Confirmed.data[r, nz[0]]):
+                            self.ActiveCMs[r, f_i, :] = 0
+                            print(f"Region {self.Rs[r]} has feature {f} removed, since it is too early")
+
+    def coactivation_plot(self, cm_plot_style, newfig=True):
+        if newfig:
+            plt.figure(figsize=(3, 3), dpi=300)
+
+        nRs, nCMs, nDs = self.ActiveCMs.shape
+        plt.title("Frequency$(\phi_j=1 | \phi_i = 1)$",  fontsize=12)
+        ax = plt.gca()
+        mat = np.zeros((nCMs, nCMs))
+        for cm in range(nCMs):
+            mask = self.ActiveCMs[:, cm, :]
+            for cm2 in range(nCMs):
+                mat[cm, cm2] = np.sum(mask * self.ActiveCMs[:, cm2, :]) / np.sum(mask)
+        im = plt.imshow(mat * 100, vmin=0, vmax=100, cmap="inferno", aspect="auto")
+        ax.tick_params(axis="both", which="major", labelsize=8)
+
+        plt.xticks(
+            np.arange(len(self.CMs)),
+            [f"{cm_plot_style[i][0]}" for i, f in enumerate(self.CMs)],
+            fontproperties=fp2
+        )
+
+        for i, ticklabel in enumerate(ax.get_xticklabels()):
+            ticklabel.set_color(cm_plot_style[i][1])
+
+        plt.yticks(
+            np.arange(len(self.CMs)),
+            [f"{f}     " for f in self.CMs]
+        )
+
+        plt.xlabel("NPI $j$")
+        plt.ylabel("NPI $i$")
+
+        x_min, x_max = plt.xlim()
+        x_r = x_max - x_min
+        for i, (ticklabel, tickloc) in enumerate(zip(ax.get_yticklabels(), ax.get_yticks())):
+            ticklabel.set_color(cm_plot_style[i][1])
+            plt.text(-0.13 * x_r, tickloc, cm_plot_style[i][0], horizontalalignment='center',
+                     verticalalignment='center',
+                     fontproperties=fp2, fontsize=10, color=cm_plot_style[i][1])
+
+        divider = make_axes_locatable(ax)
+        cax = divider.append_axes("right", size="5%", pad=0.05)
+        plt.colorbar(im, cax=cax, format=PercentFormatter())
+        ax.tick_params(axis="both", which="major", labelsize=10)
+
+
+        # sns.despine()
+
+    def cumulative_days_plot(self, cm_plot_style, newfig=True):
+        if newfig:
+            plt.figure(figsize=(3, 3), dpi=300)
+
+        nRs, nCMs, nDs = self.ActiveCMs.shape
+
+        ax = plt.gca()
+        days_active = np.sum(np.sum(self.ActiveCMs, axis=0), axis=1)
+        plt.barh(-np.arange(nCMs), days_active)
+
+        plt.yticks(
+            -np.arange(len(self.CMs)),
+            [f"{f}     " for f in self.CMs]
+        )
+
+        x_min, x_max = plt.xlim()
+        x_r = x_max - x_min
+        for i, (ticklabel, tickloc) in enumerate(zip(ax.get_yticklabels(), ax.get_yticks())):
+            ticklabel.set_color(cm_plot_style[i][1])
+            plt.text(-0.075*x_r, tickloc, cm_plot_style[i][0], horizontalalignment='center', verticalalignment='center',
+                     fontproperties=fp2, fontsize=10, color=cm_plot_style[i][1])
+
+        ax.tick_params(axis="both", which="major", labelsize=10)
+        plt.title("Total Days NPI Active", fontsize=12)
+        plt.xlabel("Days")
+        plt.ylim([-len(self.CMs)+0.5, 0.5])
+
+    def summary_plot(self, cm_plot_style):
+        plt.figure(figsize=(10, 3.3), dpi=300)
+        plt.subplot(1, 2, 1)
+        self.coactivation_plot(cm_plot_style, False)
+        plt.subplot(1, 2, 2)
+        self.cumulative_days_plot(cm_plot_style, False)
+        plt.tight_layout()
+        # sns.despine()
