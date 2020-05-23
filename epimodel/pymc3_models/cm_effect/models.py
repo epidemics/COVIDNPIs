@@ -2428,7 +2428,6 @@ class CMCombined_Final_ALT(BaseCMModel):
         if save_fig:
             save_fig_pdf(output_dir, f"CMCorr")
 
-
 # ICL Model versions - not used for our results
 class CMActive_Final_ICL(BaseCMModel):
     def __init__(
