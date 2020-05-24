@@ -16,7 +16,8 @@ def plot_cm_effect_sensitivity(filenames,
                                legend_title=None,
                                legend_fontsize=8,
                                leavouts=False,
-                               bbox_to_anchor=None):
+                               bbox_to_anchor=None,
+                               combine_hierarchical=True):
     
     fig = plt.figure(figsize=figsize, dpi=300)
     
@@ -38,52 +39,51 @@ def plot_cm_effect_sensitivity(filenames,
         cm_trace = np.loadtxt(filenames[i])
         
         # combine traces for overlapping features
-        # if plotting leavouts, have to combine differently
-        if leavouts==True:
-
-            if legend_labels[i]==('Healthcare Infection Control' or 'Mask Wearing' or 'Symptomatic testing'):
-                # just shift up
-                cm_trace[:,ind_100-1] = cm_trace[:,ind_1000-1]*cm_trace[:,ind_100-1]
-                cm_trace[:,ind_10-1] = cm_trace[:,ind_100-1]*cm_trace[:,ind_10-1]
-                cm_trace[:,ind_most_bus-1] = cm_trace[:,ind_some_bus-1]*cm_trace[:,ind_most_bus-1]
-            elif legend_labels[i]=='Gatherings <1000':
-                # shift up, while removing the combos with gatherings<1000
-                cm_trace[:,ind_100-1] = cm_trace[:,ind_100-1]
-                cm_trace[:,ind_10-1] = cm_trace[:,ind_100-1]*cm_trace[:,ind_10-1]
-                cm_trace[:,ind_most_bus-1] = cm_trace[:,ind_some_bus-1]*cm_trace[:,ind_most_bus-1]
-            elif legend_labels[i]=='Gatherings <100':
-                # gatherings<100 doesn't exist
-                # shift up, while removing the combos with gatherings<100
-                # note that gatherings<1000 will not be shifted up
-                cm_trace[:,ind_10-1] = cm_trace[:,ind_1000]*cm_trace[:,ind_10-1]
-                cm_trace[:,ind_most_bus-1] = cm_trace[:,ind_some_bus-1]*cm_trace[:,ind_most_bus-1]
-            elif legend_labels[i]=='Gatherings <10':
-                # gatherings<100 no longer needs to be shifted up
-                # gatherings<10 doesn't exist
-                # most businesses shifted up
-                cm_trace[:,ind_100] = cm_trace[:,ind_1000]*cm_trace[:,ind_100]
-                cm_trace[:,ind_most_bus-1] = cm_trace[:,ind_some_bus-1]*cm_trace[:,ind_most_bus-1]
-            elif legend_labels[i]=='Some Businesses Suspended':
-                # gatherings<100 no longer needs to be shifted up
-                # gatherings<10 no longer needs to be shifted up
-                # some businesses doesn't exist, so shift most bus up
-                cm_trace[:,ind_100] = cm_trace[:,ind_1000]*cm_trace[:,ind_100]
-                cm_trace[:,ind_10] = cm_trace[:,ind_100]*cm_trace[:,ind_10]
-                cm_trace[:,ind_most_bus-1] = cm_trace[:,ind_most_bus-1]
-            elif legend_labels[i]=='Most Businesses Suspended':
-                # gatherings don't need to be shifted
-                # most businesses doesn't exist
-                cm_trace[:,ind_100] = cm_trace[:,ind_1000]*cm_trace[:,ind_100]
-                cm_trace[:,ind_10] = cm_trace[:,ind_100]*cm_trace[:,ind_10]
+        if combine_hierarchical==True:
+            # if plotting leavouts, have to combine differently
+            if leavouts==True:
+                if legend_labels[i]==('Healthcare Infection Control' or 'Mask Wearing' or 'Symptomatic testing'):
+                    # just shift up
+                    cm_trace[:,ind_100-1] = cm_trace[:,ind_1000-1]*cm_trace[:,ind_100-1]
+                    cm_trace[:,ind_10-1] = cm_trace[:,ind_100-1]*cm_trace[:,ind_10-1]
+                    cm_trace[:,ind_most_bus-1] = cm_trace[:,ind_some_bus-1]*cm_trace[:,ind_most_bus-1]
+                elif legend_labels[i]=='Gatherings <1000':
+                    # shift up, while removing the combos with gatherings<1000
+                    cm_trace[:,ind_100-1] = cm_trace[:,ind_100-1]
+                    cm_trace[:,ind_10-1] = cm_trace[:,ind_100-1]*cm_trace[:,ind_10-1]
+                    cm_trace[:,ind_most_bus-1] = cm_trace[:,ind_some_bus-1]*cm_trace[:,ind_most_bus-1]
+                elif legend_labels[i]=='Gatherings <100':
+                    # gatherings<100 doesn't exist
+                    # shift up, while removing the combos with gatherings<100
+                    # note that gatherings<1000 will not be shifted up
+                    cm_trace[:,ind_10-1] = cm_trace[:,ind_1000]*cm_trace[:,ind_10-1]
+                    cm_trace[:,ind_most_bus-1] = cm_trace[:,ind_some_bus-1]*cm_trace[:,ind_most_bus-1]
+                elif legend_labels[i]=='Gatherings <10':
+                    # gatherings<100 no longer needs to be shifted up
+                    # gatherings<10 doesn't exist
+                    # most businesses shifted up
+                    cm_trace[:,ind_100] = cm_trace[:,ind_1000]*cm_trace[:,ind_100]
+                    cm_trace[:,ind_most_bus-1] = cm_trace[:,ind_some_bus-1]*cm_trace[:,ind_most_bus-1]
+                elif legend_labels[i]=='Some Businesses Suspended':
+                    # gatherings<100 no longer needs to be shifted up
+                    # gatherings<10 no longer needs to be shifted up
+                    # some businesses doesn't exist, so shift most bus up
+                    cm_trace[:,ind_100] = cm_trace[:,ind_1000]*cm_trace[:,ind_100]
+                    cm_trace[:,ind_10] = cm_trace[:,ind_100]*cm_trace[:,ind_10]
+                    cm_trace[:,ind_most_bus-1] = cm_trace[:,ind_most_bus-1]
+                elif legend_labels[i]=='Most Businesses Suspended':
+                    # gatherings don't need to be shifted
+                    # most businesses doesn't exist
+                    cm_trace[:,ind_100] = cm_trace[:,ind_1000]*cm_trace[:,ind_100]
+                    cm_trace[:,ind_10] = cm_trace[:,ind_100]*cm_trace[:,ind_10]
+                else:
+                    cm_trace[:,ind_100] = cm_trace[:,ind_1000]*cm_trace[:,ind_100]
+                    cm_trace[:,ind_10] = cm_trace[:,ind_100]*cm_trace[:,ind_10]
+                    cm_trace[:,ind_most_bus] = cm_trace[:,ind_some_bus]*cm_trace[:,ind_most_bus]    
             else:
                 cm_trace[:,ind_100] = cm_trace[:,ind_1000]*cm_trace[:,ind_100]
                 cm_trace[:,ind_10] = cm_trace[:,ind_100]*cm_trace[:,ind_10]
                 cm_trace[:,ind_most_bus] = cm_trace[:,ind_some_bus]*cm_trace[:,ind_most_bus]
-                
-        else:
-            cm_trace[:,ind_100] = cm_trace[:,ind_1000]*cm_trace[:,ind_100]
-            cm_trace[:,ind_10] = cm_trace[:,ind_100]*cm_trace[:,ind_10]
-            cm_trace[:,ind_most_bus] = cm_trace[:,ind_some_bus]*cm_trace[:,ind_most_bus]
         
         # calculate means and confidence intervals
         means = 100*(1 - np.mean(cm_trace, axis=0))
@@ -114,6 +114,9 @@ def plot_cm_effect_sensitivity(filenames,
         # plot data
         shift_center = y_offset*len(legend_labels)/2
         height= len(filenames)-i
+        print('test')
+        print(len(means))
+        print(len(y_vals))
         plt.plot(means, y_vals+ height*y_offset - shift_center, marker='|', markersize=10, color=colors[i], label = legend_labels[i],
                  linewidth=0)
         for cm in range(N_cms):
