@@ -358,17 +358,23 @@ class CMDeath_Final(BaseCMModel):
         self.ORs = copy.deepcopy(self.d.Rs)
         self.predict_all_days = True
 
-    def build_model(self):
+    def build_model(self, R_hyperprior_mean=3.25, cm_prior_sigma=0.1, 
+                    serial_interval_mean=SI_ALPHA/SI_BETA, cm_hyperprior=True
+                    ):
         with self.model:
-            self.HyperCMVar = pm.HalfStudentT(
-                "HyperCMVar", nu=10, sigma=0.1
-            )
-
-            self.CM_Alpha = pm.Normal("CM_Alpha", 0, self.HyperCMVar, shape=(self.nCMs,))
+            if cm_hyperprior:
+                self.HyperCMVar = pm.HalfStudentT(
+                    "HyperCMVar", nu=10, sigma=cm_prior_sigma
+                )
+    
+                self.CM_Alpha = pm.Normal("CM_Alpha", 0, self.HyperCMVar, shape=(self.nCMs,))
+            else:
+                self.CM_Alpha = pm.Normal("CM_Alpha", 0, cm_prior_sigma, shape=(self.nCMs,))
+                
             self.CMReduction = pm.Deterministic("CMReduction", T.exp((-1.0) * self.CM_Alpha))
 
             self.HyperRMean = pm.StudentT(
-                "HyperRMean", nu=10, sigma=0.2, mu=np.log(3.25),
+                "HyperRMean", nu=10, sigma=0.2, mu=np.log(R_hyperprior_mean),
             )
 
             self.HyperRVar = pm.HalfStudentT(
@@ -395,8 +401,12 @@ class CMDeath_Final(BaseCMModel):
                 T.reshape(self.RegionLogR, (self.nORs, 1)) - self.GrowthReduction,
             )
 
+
+            serial_interval_sigma = np.sqrt(SI_ALPHA/SI_BETA**2)
+            si_beta = serial_interval_mean/serial_interval_sigma**2
+            si_alpha = serial_interval_mean**2/serial_interval_sigma**2
             self.ExpectedGrowth = self.Det("ExpectedGrowth",
-                                           SI_BETA * (np.exp(self.ExpectedLogR / SI_ALPHA) - T.ones_like(
+                                           si_beta * (np.exp(self.ExpectedLogR / si_alpha) - T.ones_like(
                                                self.ExpectedLogR)),
                                            plot_trace=False
                                            )
@@ -656,17 +666,23 @@ class CMActive_Final(BaseCMModel):
 
         self.observed_days = np.array(observed)
 
-    def build_model(self):
+    def build_model(self, R_hyperprior_mean=3.25, cm_prior_sigma=0.1, 
+                    serial_interval_mean=SI_ALPHA/SI_BETA, cm_hyperprior=True
+                    ):
         with self.model:
-            self.HyperCMVar = pm.HalfStudentT(
-                "HyperCMVar", nu=10, sigma=0.1
-            )
-
-            self.CM_Alpha = pm.Normal("CM_Alpha", 0, self.HyperCMVar, shape=(self.nCMs,))
+            if cm_hyperprior:
+                self.HyperCMVar = pm.HalfStudentT(
+                    "HyperCMVar", nu=10, sigma=cm_prior_sigma
+                )
+    
+                self.CM_Alpha = pm.Normal("CM_Alpha", 0, self.HyperCMVar, shape=(self.nCMs,))
+            else:
+                self.CM_Alpha = pm.Normal("CM_Alpha", 0, cm_prior_sigma, shape=(self.nCMs,))
+                
             self.CMReduction = pm.Deterministic("CMReduction", T.exp((-1.0) * self.CM_Alpha))
 
             self.HyperRMean = pm.StudentT(
-                "HyperRMean", nu=10, sigma=0.2, mu=np.log(3.25),
+                "HyperRMean", nu=10, sigma=0.2, mu=np.log(R_hyperprior_mean),
             )
 
             self.HyperRVar = pm.HalfStudentT(
@@ -694,9 +710,12 @@ class CMActive_Final(BaseCMModel):
                 plot_trace=False,
             )
 
+            serial_interval_sigma = np.sqrt(SI_ALPHA/SI_BETA**2)
+            si_beta = serial_interval_mean/serial_interval_sigma**2
+            si_alpha = serial_interval_mean**2/serial_interval_sigma**2
             self.ExpectedGrowth = self.Det("ExpectedGrowth",
-                                           SI_BETA * (pm.math.exp(
-                                               self.ExpectedLogR / SI_ALPHA) - T.ones_like(
+                                           si_beta * (pm.math.exp(
+                                               self.ExpectedLogR / si_alpha) - T.ones_like(
                                                self.ExpectedLogR)),
                                            plot_trace=False
                                            )
@@ -921,7 +940,7 @@ class CMActive_Final(BaseCMModel):
 
 class CMCombined_Final(BaseCMModel):
     def __init__(
-            self, data, cm_plot_style, name="", model=None
+            self, data, cm_plot_style=None, name="", model=None
     ):
         super().__init__(data, cm_plot_style, name=name, model=model)
 
@@ -1039,17 +1058,25 @@ class CMCombined_Final(BaseCMModel):
 
         self.all_observed_deaths = np.array(observed_deaths)
 
-    def build_model(self):
+    def build_model(self, R_hyperprior_mean=3.25, cm_prior_sigma=0.1, 
+                    serial_interval_mean=SI_ALPHA/SI_BETA, cm_hyperprior=True
+                    ):
         with self.model:
-            self.HyperCMVar = pm.HalfStudentT(
-                "HyperCMVar", nu=10, sigma=0.1
-            )
-
-            self.CM_Alpha = pm.Normal("CM_Alpha", 0, self.HyperCMVar, shape=(self.nCMs,))
+            if cm_hyperprior:
+                print('hyper')
+                self.HyperCMVar = pm.HalfStudentT(
+                    "HyperCMVar", nu=10, sigma=cm_prior_sigma
+                )
+    
+                self.CM_Alpha = pm.Normal("CM_Alpha", 0, self.HyperCMVar, shape=(self.nCMs,))
+            else:
+                print('normal')
+                self.CM_Alpha = pm.Normal("CM_Alpha", 0, cm_prior_sigma, shape=(self.nCMs,))
+                
             self.CMReduction = pm.Deterministic("CMReduction", T.exp((-1.0) * self.CM_Alpha))
 
             self.HyperRMean = pm.StudentT(
-                "HyperRMean", nu=10, sigma=0.2, mu=np.log(3.25),
+                "HyperRMean", nu=10, sigma=0.2, mu=np.log(R_hyperprior_mean),
             )
 
             self.HyperRVar = pm.HalfStudentT(
@@ -1076,10 +1103,13 @@ class CMCombined_Final(BaseCMModel):
                 T.reshape(self.RegionLogR, (self.nORs, 1)) - self.GrowthReduction,
                 plot_trace=False,
             )
-
+        
+            serial_interval_sigma = np.sqrt(SI_ALPHA/SI_BETA**2)
+            si_beta = serial_interval_mean/serial_interval_sigma**2
+            si_alpha = serial_interval_mean**2/serial_interval_sigma**2
             self.ExpectedGrowth = self.Det("ExpectedGrowth",
-                                           SI_BETA * (pm.math.exp(
-                                               self.ExpectedLogR / SI_ALPHA) - T.ones_like(
+                                           si_beta * (pm.math.exp(
+                                               self.ExpectedLogR / si_alpha) - T.ones_like(
                                                self.ExpectedLogR)),
                                            plot_trace=False
                                            )
