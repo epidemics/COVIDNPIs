@@ -111,6 +111,45 @@ class JohnsHopkins(luigi.Task):
         )
 
 
+class SerialIntervalSample(luigi.ExternalTask):
+    """Serial Interval data imported manually"""
+
+    serial_interval_sample: str = luigi.Parameter(
+        description="Path to the input file relative to the configuration input directory",
+    )
+
+    def output(self):
+        return luigi.LocalTarget(self.serial_interval_sample)
+
+
+class EstimateR(luigi.Task):
+    """
+    R estimation script for all countries in the JohnHopkins database.
+    !! This task usually takes about an 30 minutes to complete
+    """
+    r_estimates_output: str = luigi.Parameter(
+        description="Output filename of the estimates file relative to config output dir.",
+    )
+
+    def requires(self):
+        return {
+            "jhdata": JohnsHopkins(),
+            "si_sample": SerialIntervalSample()
+        }
+
+    def output(self):
+        return luigi.LocalTarget(self.r_estimates_output)
+
+    def run(self):
+        john_hopkins_path = self.input()['jhdata'].path
+        serial_interval_file = self.input()['si_sample'].path
+        algorithms.estimate_r(
+            self.r_estimates_output,
+            john_hopkins_path,
+            serial_interval_file
+        )
+
+
 class UpdateForetold(luigi.Task):
     """Exports prediction data form the Foretold platform and
     dumps them into a CSV. These are part of the inputs to the gleamviz model.
