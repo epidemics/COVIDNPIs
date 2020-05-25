@@ -24,19 +24,20 @@
         <variable name="imu" value="0" />
       </variables>
     </compartmentalModel>
-    <parameters commutingModel="gravity" commutingRate="7" duration="261" flightsTimeAggregation="month" occupancyRate="90" outbreakSize="1" runCount="5" seasonalityAlphaMin="0.35" seasonalityEnabled="true" secondaryEvents="1" startDate="2020-04-15" />
+    <parameters startDate="2020-04-15" duration="261" runCount="5" occupancyRate="90" seasonalityEnabled="true" seasonalityAlphaMin="0.35" commutingModel="gravity" commutingRate="7" flightsTimeAggregation="month" secondaryEvents="1" outbreakSize="1" />
     <notes />
     <initialCompartments>
-      <initialCompartment compartment="Infectious" fraction="35.7" />
-      <initialCompartment compartment="Exposed" fraction="64.3" />
+      <initialCompartment compartment="Infectious" fraction="0.2" />
+      <initialCompartment compartment="Exposed" fraction="0.4" />
+      <initialCompartment compartment="Susceptible" fraction="99.4" />
     </initialCompartments>
     <seeds>
-      <seed city="1543" compartment="Infectious" number="1954" />
-      <seed city="1543" compartment="Exposed" number="3518" />
-      <seed city="1544" compartment="Infectious" number="45" />
-      <seed city="1544" compartment="Exposed" number="81" />
-      <seed city="655" compartment="Infectious" number="574" />
-      <seed city="655" compartment="Exposed" number="1033" />
+      <seed number="1954" compartment="Infectious" city="1543" />
+      <seed number="3518" compartment="Exposed" city="1543" />
+      <seed number="45" compartment="Infectious" city="1544" />
+      <seed number="81" compartment="Exposed" city="1544" />
+      <seed number="574" compartment="Infectious" city="655" />
+      <seed number="1033" compartment="Exposed" city="655" />
     </seeds>
     <resultCompartments>
       <id>Susceptible</id>
@@ -45,7 +46,7 @@
       <id>Recovered</id>
     </resultCompartments>
     <exceptions>
-      <exception basins="" continents="" countries="163" from="2020-04-14" hemispheres="" regions="" till="2021-05-01"><variable name="beta" value="0.6" /><variable name="epsilon" value="0.5" /></exception>
+      <exception basins="" continents="" countries="163" hemispheres="" regions="" from="2020-04-14" till="2021-05-01"><variable name="beta" value="0.6" /><variable name="epsilon" value="0.5" /></exception>
     </exceptions>
   </definition>
   <metadata>

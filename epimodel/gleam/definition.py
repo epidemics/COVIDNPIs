@@ -8,7 +8,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from ..regions import Level, Region
+from ..regions import Level, Region, RegionDataset
 from ..utils import utc_date
 
 log = logging.getLogger(__name__)
@@ -191,7 +191,7 @@ class GleamDefinition:
     def format_seeds(self):
         self._format_list_node(self.seeds_node)
 
-    def set_seeds(self, estimates: pd.DataFrame, rds=None):
+    def set_seeds(self, estimates: pd.DataFrame, rds: Optional[RegionDataset] = None):
         """
         Estimates must be a DataFrame with a `Region` column containing
         Region objects. All other columns are compartment names
@@ -228,10 +228,10 @@ class GleamDefinition:
 
         self.clear_seeds()
         for _, seed in seeds.iterrows():
-            self.add_seed(*seed)
+            self.add_seed(*seed, format=False)
         self.format_seeds()
 
-    def add_seed(self, region: Region, compartments: dict, format=False):
+    def add_seed(self, region: Region, compartments: dict, format: bool = True):
         """
         Add seed populations for a gleam_basin.
         """
@@ -262,25 +262,31 @@ class GleamDefinition:
     def format_initial_compartments(self):
         self._format_list_node(self.initial_compartments_node)
 
-    def set_initial_compartments_from_estimates(self, estimates):
+    def set_initial_compartments_from_estimates(
+        self, estimates: pd.DataFrame, rds: Optional[RegionDataset] = None
+    ):
         """
         Determines compartment proportions from same DataFrame format as
         used in set_seeds and uses this to set_initial_compartments.
         """
         if "Region" in estimates:
+            population = estimates.Region.apply(lambda reg: reg.Population).sum()
             estimates = estimates.drop(columns=["Region"])
+        else:
+            population = rds.data.loc[estimates.index, "Population"].sum()
+
         compartments = estimates.sum()
         compartments = (
-            (compartments / compartments.sum() * 100)
-            .dropna()
-            .apply(lambda x: round(x, 1))
+            (compartments / population * 100).dropna().apply(lambda x: round(x, 1))
         )
 
         # ensure everything adds up to 100
-        while compartments.sum() < 100:
-            compartments[compartments.idxmax()] += 0.1
         while compartments.sum() > 100:
             compartments[compartments.idxmax()] -= 0.1
+        if compartments.sum() < 100:
+            # add any unaccounted to susceptible
+            compartments["Susceptible"] = 0
+            compartments["Susceptible"] = 100 - compartments.sum()
 
         self.set_initial_compartments(compartments.to_dict())
 

@@ -1,4 +1,5 @@
 import pytest
+from unittest.mock import Mock, NonCallableMagicMock
 from . import PandasTestCase
 
 import numpy as np
@@ -132,21 +133,50 @@ class TestGleamDefinition(PandasTestCase):
             """,
         )
 
-    def test_set_initial_compartments_from_estimates(self):
+    def test_set_initial_compartments_from_estimates_rounds(self):
         estimates = self.get_estimates()
+        fake_populations = pd.Series([300, 300, 300], index=estimates.index)
+        rds = NonCallableMagicMock()
+        rds.data.loc.__getitem__.return_value = fake_populations
+
         # these numbers will round to 99% total, so this test ensures
         # the function handles that possibility
+        estimates["Susceptible"] = 130
         estimates["Infectious"] = 70
         estimates["Exposed"] = 100
-        estimates["Recovered"] = 130
-        self.defn.set_initial_compartments_from_estimates(estimates)
-        self.assert_xml_equal(
-            self.defn.initial_compartments_node,
-            """
-            <initialCompartments>
-                <initialCompartment compartment="Infectious" fraction="23.3" />
-                <initialCompartment compartment="Exposed" fraction="33.3" />
-                <initialCompartment compartment="Recovered" fraction="43.4" />
-            </initialCompartments>
-            """,
+
+        output = Mock()
+        self.defn.set_initial_compartments = output
+        self.defn.set_initial_compartments_from_estimates(estimates, rds)
+
+        output.assert_called_once_with(
+            {
+                "Susceptible": pytest.approx(43.4),
+                "Infectious": pytest.approx(23.3),
+                "Exposed": pytest.approx(33.3),
+            }
+        )
+
+    def test_set_initial_compartments_from_estimates_fills_susceptible(self):
+        """
+        It should assume all unaccounted population is Susceptible
+        """
+        estimates = self.get_estimates()
+        fake_populations = pd.Series([500, 500, 500], index=estimates.index)
+        rds = NonCallableMagicMock()
+        rds.data.loc.__getitem__.return_value = fake_populations
+
+        estimates["Infectious"] = 100
+        estimates["Exposed"] = 100
+
+        output = Mock()
+        self.defn.set_initial_compartments = output
+        self.defn.set_initial_compartments_from_estimates(estimates, rds)
+
+        output.assert_called_once_with(
+            {
+                "Susceptible": pytest.approx(60),
+                "Infectious": pytest.approx(20),
+                "Exposed": pytest.approx(20),
+            }
         )
