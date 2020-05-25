@@ -114,20 +114,20 @@ class TestGleamDefinition(PandasTestCase):
         self.assertRaises(
             AssertionError,
             self.defn.set_initial_compartments,
-            {"Exposed": 60, "Infectious": 39},
+            {"Exposed": 60, "Infectious": 39.9},
         )
         self.assertRaises(
             AssertionError,
             self.defn.set_initial_compartments,
-            {"Exposed": 60, "Infectious": 41},
+            {"Exposed": 60, "Infectious": 40.1},
         )
         self.defn.set_initial_compartments({"Exposed": 60, "Infectious": 40})
         self.assert_xml_equal(
             self.defn.initial_compartments_node,
             """
             <initialCompartments>
-                <initialCompartment compartment="Exposed" fraction="60" />
-                <initialCompartment compartment="Infectious" fraction="40" />
+                <initialCompartment compartment="Exposed" fraction="60.0" />
+                <initialCompartment compartment="Infectious" fraction="40.0" />
             </initialCompartments>
             """,
         )
@@ -144,9 +144,9 @@ class TestGleamDefinition(PandasTestCase):
             self.defn.initial_compartments_node,
             """
             <initialCompartments>
-                <initialCompartment compartment="Infectious" fraction="23" />
-                <initialCompartment compartment="Exposed" fraction="33" />
-                <initialCompartment compartment="Recovered" fraction="44" />
+                <initialCompartment compartment="Infectious" fraction="23.3" />
+                <initialCompartment compartment="Exposed" fraction="33.3" />
+                <initialCompartment compartment="Recovered" fraction="43.4" />
             </initialCompartments>
             """,
         )

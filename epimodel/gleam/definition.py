@@ -66,7 +66,7 @@ class GleamDefinition:
         self.save(b)
         return b.getvalue().decode("ascii")
 
-    ### Testing methids
+    ### Testing methods
 
     def assert_equal(self, other):
         assert isinstance(other, self.__class__)
@@ -270,18 +270,24 @@ class GleamDefinition:
         if "Region" in estimates:
             estimates = estimates.drop(columns=["Region"])
         compartments = estimates.sum()
-        compartments = (compartments / compartments.sum() * 100).dropna().apply(round)
+        compartments = (
+            (compartments / compartments.sum() * 100)
+            .dropna()
+            .apply(lambda x: round(x, 1))
+        )
 
         # ensure everything adds up to 100
         while compartments.sum() < 100:
-            compartments[compartments.idxmax()] += 1
+            compartments[compartments.idxmax()] += 0.1
         while compartments.sum() > 100:
-            compartments[compartments.idxmax()] -= 1
+            compartments[compartments.idxmax()] -= 0.1
 
         self.set_initial_compartments(compartments.to_dict())
 
     def set_initial_compartments(self, compartments):
-        assert sum(int(v) for v in compartments.values()) == 100
+        # ensure compartments are rounded to 1 decimal & sum correctly
+        compartments = {k: round(v, 1) for k, v in compartments.items()}
+        assert sum(compartments.values()) == 100
 
         self.clear_initial_compartments()
         ic_node = self.initial_compartments_node
@@ -290,7 +296,7 @@ class GleamDefinition:
             ET.SubElement(
                 ic_node,
                 "initialCompartment",
-                {"compartment": compartment, "fraction": str(int(percentage))},
+                {"compartment": compartment, "fraction": f"{percentage:.1f}"},
             )
 
         self.format_initial_compartments()
