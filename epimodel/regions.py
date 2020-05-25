@@ -422,6 +422,22 @@ class RegionDataset:
             raise KeyError(f"Found no regions matching {s!r}{lcmt}")
         raise KeyError(f"Found multiple regions matching {s!r}{lcmt}: {rs!r}")
 
+    def find_first_by_code_or_name(self, code_or_name: str):
+        """
+        Find a corresponding region from unknown input type.
+
+        Assumes first match. Only errors raises KeyError if no region is found.
+        """
+        # Try code first
+        if code_or_name in self:
+            return self[code_or_name]
+
+        # Try name. Match Gleam regions first.
+        matches = self.find_all_by_name(code_or_name, levels=tuple(Level))
+        if not matches:
+            raise KeyError(f"No region found for {code_or_name!r}.")
+        return matches[0]
+
     def write_csv(self, path, regions=None):
         """
         Write the selected regions as a `regions-*.csv` file.

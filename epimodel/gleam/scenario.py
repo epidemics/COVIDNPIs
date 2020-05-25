@@ -108,15 +108,7 @@ class InputParser:
         if pd.isnull(code_or_name):
             return None
 
-        # Try code first
-        if code_or_name in self.rds:
-            region = self.rds[code_or_name]
-        else:
-            # Try code_or_name. Match Gleam regions first.
-            matches = self.rds.find_all_by_name(code_or_name, levels=tuple(Level))
-            if not matches:
-                raise ValueError(f"No region found for {code_or_name!r}.")
-            region = matches[0]
+        region = self.rds.find_first_by_code_or_name(code_or_name)
 
         if pd.isnull(region.GleamID):
             raise ValueError(f"Region {region!r} has no GleamID")
