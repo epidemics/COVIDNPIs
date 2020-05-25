@@ -18,11 +18,12 @@ import pickle
 
 argparser = argparse.ArgumentParser()
 argparser.add_argument("--rg", dest="rg", type=str)
-args = argparser.parse_args()
-
 argparser.add_argument("--s", dest="nS", type=int)
 argparser.add_argument("--c", dest="nC", type=int)
 args = argparser.parse_args()
+
+import os
+os.environ["THEANO_FLAGS"] = "mode=FAST_RUN,floatX=float32,device=gpu"
 
 def mask_region(d, region, days=14):
     i = d.Rs.index(region)
