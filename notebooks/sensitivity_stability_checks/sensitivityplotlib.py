@@ -26,13 +26,7 @@ def plot_cm_effect_sensitivity(filenames,
     ind_100 = np.where(np.array(cm_labels)=='Gatherings <100')[0][0]
     ind_10 = np.where(np.array(cm_labels)=='Gatherings <10')[0][0]
     ind_some_bus = np.where(np.array(cm_labels)=='Some Businesses Suspended')[0][0]
-    ind_most_bus = np.where(np.array(cm_labels)=='Most Businesses Suspended')[0][0]
-    #ind_1000 = 3
-    #ind_100 = 4
-    #ind_10 = 5
-    #ind_some_bus = 6
-    #ind_most_bus = 7
-    
+    ind_most_bus = np.where(np.array(cm_labels)=='Most Businesses Suspended')[0][0]    
     
     for i in range(len(filenames)):
         # load trace
@@ -42,8 +36,10 @@ def plot_cm_effect_sensitivity(filenames,
         if combine_hierarchical==True:
             # if plotting leavouts, have to combine differently
             if leavouts==True:
-                if legend_labels[i]==('Healthcare Infection Control' or 'Mask Wearing' or 'Symptomatic testing'):
-                    # just shift up
+                if (legend_labels[i]=='Healthcare Infection Control' or 
+                    legend_labels[i]=='Mask Wearing' or
+                    legend_labels[i]=='Symptomatic Testing'):
+                    # everything below is shifted up
                     cm_trace[:,ind_100-1] = cm_trace[:,ind_1000-1]*cm_trace[:,ind_100-1]
                     cm_trace[:,ind_10-1] = cm_trace[:,ind_100-1]*cm_trace[:,ind_10-1]
                     cm_trace[:,ind_most_bus-1] = cm_trace[:,ind_some_bus-1]*cm_trace[:,ind_most_bus-1]
@@ -77,6 +73,7 @@ def plot_cm_effect_sensitivity(filenames,
                     cm_trace[:,ind_100] = cm_trace[:,ind_1000]*cm_trace[:,ind_100]
                     cm_trace[:,ind_10] = cm_trace[:,ind_100]*cm_trace[:,ind_10]
                 else:
+                    # if leavout is None, School closure, or stay at home order the combos are normal
                     cm_trace[:,ind_100] = cm_trace[:,ind_1000]*cm_trace[:,ind_100]
                     cm_trace[:,ind_10] = cm_trace[:,ind_100]*cm_trace[:,ind_10]
                     cm_trace[:,ind_most_bus] = cm_trace[:,ind_some_bus]*cm_trace[:,ind_most_bus]    
@@ -114,9 +111,6 @@ def plot_cm_effect_sensitivity(filenames,
         # plot data
         shift_center = y_offset*len(legend_labels)/2
         height= len(filenames)-i
-        print('test')
-        print(len(means))
-        print(len(y_vals))
         plt.plot(means, y_vals+ height*y_offset - shift_center, marker='|', markersize=10, color=colors[i], label = legend_labels[i],
                  linewidth=0)
         for cm in range(N_cms):
