@@ -25,7 +25,12 @@ args = argparser.parse_args()
 def mask_region(d, region, days=14):
     i = d.Rs.index(region)
     c_s = np.nonzero(np.cumsum(d.NewCases.data[i, :] > 0)==days+1)[0][0]
-    d_s = np.nonzero(np.cumsum(d.NewDeaths.data[i, :] > 0)==days+1)[0][0]
+    d_s = np.nonzero(np.cumsum(d.NewDeaths.data[i, :] > 0)==days+1)[0]
+    if len(d_s) > 0:
+        d_s = d_s[0]
+    else:
+        d_s = len(d.Ds)
+
     d.Active.mask = False
     d.Confirmed.mask = False
     d.Deaths.mask = False
