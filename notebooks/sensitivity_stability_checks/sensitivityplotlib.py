@@ -74,6 +74,7 @@ def plot_cm_effect_sensitivity(filenames,
                     cm_trace[:,ind_10] = cm_trace[:,ind_100]*cm_trace[:,ind_10]
                 else:
                     # if leavout is None, School closure, or stay at home order the combos are normal
+
                     cm_trace[:,ind_100] = cm_trace[:,ind_1000]*cm_trace[:,ind_100]
                     cm_trace[:,ind_10] = cm_trace[:,ind_100]*cm_trace[:,ind_10]
                     cm_trace[:,ind_most_bus] = cm_trace[:,ind_some_bus]*cm_trace[:,ind_most_bus]    
