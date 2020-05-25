@@ -17,13 +17,10 @@ import argparse
 import pickle
 
 argparser = argparse.ArgumentParser()
-argparser.add_argument("--rg", dest="rg", type=str)
+argparser.add_argument('--rg', nargs='+', dest="rgs", type=str)
 argparser.add_argument("--s", dest="nS", type=int)
 argparser.add_argument("--c", dest="nC", type=int)
 args = argparser.parse_args()
-
-import os
-os.environ["THEANO_FLAGS"] = "mode=FAST_RUN,floatX=float32,device=gpu"
 
 def mask_region(d, region, days=14):
     i = d.Rs.index(region)
@@ -53,19 +50,20 @@ if __name__ == "__main__":
             self.ExpectedCases = trace.ExpectedCases[:, indx, :]
             self.ExpectedDeaths = trace.ExpectedDeaths[:, indx, :]
 
-    rg = args.rg
-    dp = DataPreprocessor(min_confirmed=100, drop_HS=True)
-    data = dp.preprocess_data("notebooks/final_data/data_final.csv")
+    print(args.rgs)
+    for rg in args.rgs:
+        dp = DataPreprocessor(min_confirmed=100, drop_HS=True)
+        data = dp.preprocess_data("notebooks/final_data/data_final.csv")
 
-    mask_region(data, rg)
-    indx = data.Rs.index(rg)
+        mask_region(data, rg)
+        indx = data.Rs.index(rg)
 
-    print(f"holdout {rg} w/ {indx}")
-    with cm_effect.models.CMCombined_Final(data, None) as model:
-        model.build_model()
+        print(f"holdout {rg} w/ {indx}")
+        with cm_effect.models.CMCombined_Final(data, None) as model:
+            model.build_model()
 
-    with model.model:
-        model.trace = pm.sample(args.nS, chains=args.nC, target_accept=0.95)
+        with model.model:
+            model.trace = pm.sample(args.nS, chains=args.nC, target_accept=0.95)
 
-    results_obj = ResultsObject(indx, model.trace)
-    pickle.dump(results_obj, open(f"ho_results/{rg}.pkl","wb"))
+        results_obj = ResultsObject(indx, model.trace)
+        pickle.dump(results_obj, open(f"ho_results/{rg}.pkl","wb"))

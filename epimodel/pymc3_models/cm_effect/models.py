@@ -23,12 +23,12 @@ fp2 = FontProperties(fname=r"../../fonts/Font Awesome 5 Free-Solid-900.otf")
 # taken from Cereda et. al (2020).
 # https://arxiv.org/ftp/arxiv/papers/2003/2003.09320.pdf
 # alpha is shape, beta is inverse scale (reciprocal reported in the paper).
-# SI_ALPHA = 1.87
-# SI_BETA = 0.28
+SI_ALPHA = 1.87
+SI_BETA = 0.28
 
 # ICL paper versions.
-SI_ALPHA = (1 / (0.62 ** 2))
-SI_BETA = (1 / (6.5 * (0.62 ** 2)))
+# SI_ALPHA = (1 / (0.62 ** 2))
+# SI_BETA = (1 / (6.5 * (0.62 ** 2)))
 
 
 def save_fig_pdf(output_dir, figname):
@@ -1116,6 +1116,7 @@ class CMCombined_Final(BaseCMModel):
             serial_interval_sigma = np.sqrt(SI_ALPHA/SI_BETA**2)
             si_beta = serial_interval_mean/serial_interval_sigma**2
             si_alpha = serial_interval_mean**2/serial_interval_sigma**2
+
             self.ExpectedGrowth = self.Det("ExpectedGrowth",
                                            si_beta * (pm.math.exp(
                                                self.ExpectedLogR / si_alpha) - T.ones_like(
