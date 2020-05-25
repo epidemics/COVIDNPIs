@@ -86,11 +86,27 @@ You provide all file inputs, foretold_channel and parameters, tweak configs to y
 4. provide data for any of the ExternalTasks, such as `BaseDefinition`, `ConfigYaml`, `CountryEstimates` and others (see the `epimodel/tasks.py`). If you want to see what does your task depends on, use `luigi-deps-tree` as mentioned above.
 5. deal with GLEAMviz and knowing where it's simulation directory is on your installation
 
+### Usage tips
+Luigi by default uses `luigi.cfg` from the root of the repository. You can edit it directly or you can created another one and reference it via `LUIGI_CONFIG_PATH=your-config.cfg`. `your-config.cfg` will take precedence over the `luigi.cfg`, so you can change only what's necessary. For example, if you wanted to have a different input and output directory for a specific location run, you could have:
+
+```
+# balochistan.cfg
+
+[DEFAULT]
+output_directory = my-outputs/balochistan
+
+[RegionsAggregates]
+aggregates = data-dir/your-specific-file-for-aggregates.yaml
+```
+
+and then `env LUIGI_CONFIG_PATH=balochistan.cfg ./luigi RegionsDatasetTask` would make all outputs go to `my-outputs/balochistan` (instead of the outputs dir from `luigi.cfg`) and the `RegionsAggregates.aggregates` would be taken from the new location too . Parameters from configs can be still overriden from CLI, so `env LUIGI_CONFIG_PATH=balochistan.cfg ./luigi RegionsDatasetTask --RegionsAggregates-aggregates some-other-path.yaml` would still take precedence.
+
+
 ### Getting help
 See `epimodel/tasks.py` where the whole pipeline is defined. Read the docstrings and paramter descriptions
 to understand and discover all available tasks, their inputs, outputs and their configuration.
 
-You can also use `./luigi <TaskName> --help` to get information about the parameters of the task.
+You can also use `./luigi <TaskName> --help` or `./luigi <TaskName> --help-all` to get information about the parameters of the task.
 
 `luigi-deps-tree --module epimodel.tasks <TaskName>` enables you to visualize the dependencies and what is and isn't completed. For example:
 
