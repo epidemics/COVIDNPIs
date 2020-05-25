@@ -1063,14 +1063,12 @@ class CMCombined_Final(BaseCMModel):
                     ):
         with self.model:
             if cm_hyperprior:
-                print('hyper')
                 self.HyperCMVar = pm.HalfStudentT(
                     "HyperCMVar", nu=10, sigma=cm_prior_sigma
                 )
     
                 self.CM_Alpha = pm.Normal("CM_Alpha", 0, self.HyperCMVar, shape=(self.nCMs,))
             else:
-                print('normal')
                 self.CM_Alpha = pm.Normal("CM_Alpha", 0, cm_prior_sigma, shape=(self.nCMs,))
                 
             self.CMReduction = pm.Deterministic("CMReduction", T.exp((-1.0) * self.CM_Alpha))
