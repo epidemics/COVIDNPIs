@@ -99,12 +99,11 @@ show_and_do luigi-deps-tree --module epimodel.tasks JohnsHopkins --RegionsFile-r
 user_continue
 
 echo ""
-echo "GenerateGleamBatch requires a"
+echo "Continuing the pipeline..."
 show_and_do_luigi GenerateGleamBatch
 user_continue
 
 echo ""
-echo "Continuing the pipeline..."
 SIM_DIR="$OUTPUT_DIRECTORY/simulations"
 mkdir -p $SIM_DIR
 show_and_do_luigi ExportSimulationDefinitions --simulations-dir $SIM_DIR

@@ -118,10 +118,42 @@ $ luigi-deps-tree --module epimodel.tasks JohnsHopkins --RegionsFile-regions dif
    └─--[RegionsAggregates-{'aggregates': 'data-dir/inputs/manual/regions-agg.yaml'} (COMPLETE)]
 ```
 
+## Manual Inputs
+
+#### ConfigYaml
+
+This holds the confguration for web-export including the groups and traces used to generate the GLEAMviz definitions. More documentation can be found in the [default config file](data-dir/inputs/manual/config.yaml).
+
+#### RegionsFile & GleamRegions
+
+These are stable CSVs and you shouldn't have to edit them.
+
+#### RegionsAggregates
+
+Documentation is in [the file](data-dir/inputs/manual/regions-agg.yaml).
+
+#### BaseDefinition
+
+This a pre-formatted XML file. Modifying it changes the default gleam parameters. If you do change it, only change the values, not the structure.
+
+#### GleamParameters
+
+This is a CSV whose format is documented in the [example sheet](https://docs.google.com/spreadsheets/d/1IxPMadPxjnphWSKG_6PxmsrCLoXe3cHGp1Ok9kcddPk/edit#gid=1831691945).
+
+#### CountryEstimates
+
+This gives estimates for the Infectious compartment and Beta values for various regions.
+
+#### Rates
+
+#### Timezones
+
+#### AgeDistributions
+
+
 ## Development
 
 * Use Poetry for dependency management.
 * We enforce [black](https://github.com/psf/black) formatting (with the default style).
 * Use `pytest` for testing, add tests for your code
 * Use pull requests for both this and the data repository.
-
