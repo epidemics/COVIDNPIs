@@ -323,7 +323,7 @@ class GleamvizResults(luigi.ExternalTask):
         return ExportSimulationDefinitions()
 
     def output(self):
-        return luigi.LocalTarget(self.single_result)
+        return luigi.LocalTarget(Path(self.single_result).expanduser())
 
 
 @inherits(GleamvizResults)

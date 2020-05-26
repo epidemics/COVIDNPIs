@@ -27,6 +27,13 @@ show_and_do() {
   "$@"
 }
 
+show_and_do_luigi() {
+  echo ""
+  echo "./luigi $@"
+  user_continue
+  $LUIGI "$@"
+}
+
 echo "The main way how to operate the pipeline is via the 'luigi' tool. It loads"
 echo "the tasks definition from epimodel.tasks where all inputs, dependencies and outputs"
 echo "are defined:"
@@ -44,13 +51,13 @@ user_continue
 echo ""
 echo "you can specify a specific task to be executed by providing its name and"
 echo "mandatory parameters (if any). Let's try to execute JohnsHopkins task"
-show_and_do $LUIGI JohnsHopkins
+show_and_do_luigi JohnsHopkins
 user_continue
 
 echo ""
 echo "If we try it again, luigi will report that there is no work to do because"
 echo "it recognized that the output of the previous task is present"
-show_and_do $LUIGI JohnsHopkins
+show_and_do_luigi JohnsHopkins
 user_continue
 
 echo ""
@@ -68,19 +75,19 @@ user_continue
 
 echo ""
 echo "So let's try it now again:"
-show_and_do $LUIGI JohnsHopkins
+show_and_do_luigi JohnsHopkins
 user_continue
 
 echo ""
 echo "In this case, we could achieve the same with the --hopkins-output parameter":
-show_and_do $LUIGI JohnsHopkins --hopkins-output $OUTPUT_DIRECTORY/john-hopkins-2.csv
+show_and_do_luigi JohnsHopkins --hopkins-output $OUTPUT_DIRECTORY/john-hopkins-2.csv
 user_continue
 
 echo ""
 echo "Paramters can be set on the command line or via config or env variables"
 echo "In the UpdateForetold, we need to pass foretold_channel"
 echo "Set this variable at the top of the file - you can ask in Slack for it"
-show_and_do $LUIGI UpdateForetold --foretold-channel $FORETOLD_TOKEN
+show_and_do_luigi UpdateForetold --foretold-channel $FORETOLD_TOKEN
 user_continue
 
 echo ""
@@ -92,14 +99,15 @@ show_and_do luigi-deps-tree --module epimodel.tasks JohnsHopkins --RegionsFile-r
 user_continue
 
 echo ""
-echo "Continuing the pipeline..."
-show_and_do $LUIGI GenerateGleamBatch
+echo "GenerateGleamBatch requires a"
+show_and_do_luigi GenerateGleamBatch
 user_continue
 
 echo ""
+echo "Continuing the pipeline..."
 SIM_DIR="$OUTPUT_DIRECTORY/simulations"
 mkdir -p $SIM_DIR
-show_and_do $LUIGI ExportSimulationDefinitions --simulations-dir $SIM_DIR
+show_and_do_luigi ExportSimulationDefinitions --simulations-dir $SIM_DIR
 user_continue
 
 echo ""
@@ -109,7 +117,7 @@ echo "Now faking the results of ImportGleamBatch in $RESULTS_FAKE"
 echo ""
 touch $RESULTS_FAKE
 echo "CAUTION: The following will fail if you haven't retrieved GLEAMviz results."
-show_and_do $LUIGI ExtractSimulationsResults --single-result $RESULTS_FAKE
+show_and_do_luigi ExtractSimulationsResults --single-result $RESULTS_FAKE
 user_continue
 
 echo ""
@@ -126,4 +134,4 @@ $LUIGI WebExport \
 
 echo ""
 echo "And finally upload:"
-show_and_do $LUIGI WebUpload --gs-prefix gs://static-covid/static/v4/deleteme --exported-data $OUTPUT_DIRECTORY/web-exports/test-output
+show_and_do_luigi WebUpload --gs-prefix gs://static-covid/static/v4/deleteme --exported-data $OUTPUT_DIRECTORY/web-exports/test-output
