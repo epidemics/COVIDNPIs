@@ -323,8 +323,7 @@ def upload_export(dir_to_export: Path, gs_prefix: str, channel: str):
             log.error(f"Error in JSON file {json_file}")
             raise
 
-    release_name = dir_to_export.parts[-1]
-    gcs_path = os.path.join(gs_prefix, channel, release_name)
+    gcs_path = os.path.join(gs_prefix, channel)
     log.info(f"Uploading data folder {dir_to_export} to {gcs_path} ...")
     cmd = CMD + ["-Z", "-R", dir_to_export.as_posix(), gcs_path]
     log.debug(f"Running {cmd!r}")
