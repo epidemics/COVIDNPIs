@@ -17,9 +17,7 @@ import argparse
 import pickle
 
 argparser = argparse.ArgumentParser()
-argparser.add_argument("--rg", dest="rg", type=str)
-args = argparser.parse_args()
-
+argparser.add_argument('--rg', nargs='+', dest="rgs", type=str)
 argparser.add_argument("--s", dest="nS", type=int)
 argparser.add_argument("--c", dest="nC", type=int)
 args = argparser.parse_args()
@@ -27,7 +25,12 @@ args = argparser.parse_args()
 def mask_region(d, region, days=14):
     i = d.Rs.index(region)
     c_s = np.nonzero(np.cumsum(d.NewCases.data[i, :] > 0)==days+1)[0][0]
-    d_s = np.nonzero(np.cumsum(d.NewDeaths.data[i, :] > 0)==days+1)[0][0]
+    d_s = np.nonzero(np.cumsum(d.NewDeaths.data[i, :] > 0)==days+1)[0]
+    if len(d_s) > 0:
+        d_s = d_s[0]
+    else:
+        d_s = len(d.Ds)
+
     d.Active.mask = False
     d.Confirmed.mask = False
     d.Deaths.mask = False
@@ -52,19 +55,20 @@ if __name__ == "__main__":
             self.ExpectedCases = trace.ExpectedCases[:, indx, :]
             self.ExpectedDeaths = trace.ExpectedDeaths[:, indx, :]
 
-    rg = args.rg
-    dp = DataPreprocessor(min_confirmed=100, drop_HS=True)
-    data = dp.preprocess_data("notebooks/final_data/data_final.csv")
+    print(args.rgs)
+    for rg in args.rgs:
+        dp = DataPreprocessor(min_confirmed=100, drop_HS=True)
+        data = dp.preprocess_data("notebooks/final_data/data_final.csv")
 
-    mask_region(data, rg)
-    indx = data.Rs.index(rg)
+        mask_region(data, rg)
+        indx = data.Rs.index(rg)
 
-    print(f"holdout {rg} w/ {indx}")
-    with cm_effect.models.CMCombined_Final(data, None) as model:
-        model.build_model()
+        print(f"holdout {rg} w/ {indx}")
+        with cm_effect.models.CMCombined_Final(data, None) as model:
+            model.build_model()
 
-    with model.model:
-        model.trace = pm.sample(args.nS, chains=args.nC, target_accept=0.95)
+        with model.model:
+            model.trace = pm.sample(args.nS, chains=args.nC, target_accept=0.95)
 
-    results_obj = ResultsObject(indx, model.trace)
-    pickle.dump(results_obj, open(f"ho_results/{rg}.pkl","wb"))
+        results_obj = ResultsObject(indx, model.trace)
+        pickle.dump(results_obj, open(f"ho_results/{rg}.pkl","wb"))

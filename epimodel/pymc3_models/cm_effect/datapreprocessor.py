@@ -12,7 +12,6 @@ from matplotlib.font_manager import FontProperties
 from matplotlib.ticker import PercentFormatter
 
 from epimodel import read_csv
-from epimodel.regions import Level
 import os
 import logging
 
