@@ -42,6 +42,8 @@ poetry install -E pymc3
 poetry install -E pyro
 ```
 
+* Install the [R language](https://www.r-project.org/about.html): for example `apt install r-base`
+
 ## Running the pipeline
 We are using [luigi](https://luigi.readthedocs.io/en/stable/index.html) as the workflow framework. This
 readme doesn't include description of how to use `luigi` so please refer to the project documentation
