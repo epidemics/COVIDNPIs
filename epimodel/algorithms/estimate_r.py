@@ -8,7 +8,7 @@ from epimodel.imports.johns_hopkins import aggregate_countries
 from epimodel.regions import RegionDataset
 
 project_dir = os.path.join(os.path.dirname(__file__), "../..")
-script_dir = os.path.join(project_dir, "scripts/r_estimate")
+script_dir = os.path.join(project_dir, "scripts")
 
 
 def preprocess_hopkins(

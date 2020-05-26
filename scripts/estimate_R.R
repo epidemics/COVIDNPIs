@@ -66,7 +66,7 @@ estimate_r <- function(cases, country_code, si_sample) {
     RMean=R_mcmc_estimated_si$R['Mean(R)'],
     RStd=R_mcmc_estimated_si$R['Std(R)']
   )
-  out$code = country_code
+  out$Code = country_code
   return(out)
 }
 
