@@ -130,6 +130,9 @@ class EstimateR(luigi.Task):
     r_estimates_output: str = luigi.Parameter(
         description="Output filename of the estimates file relative to config output dir.",
     )
+    r_executable_path: str = luigi.Parameter(
+        description="Path to the Rscript executable (/usr/bin/Rscript default).",
+    )
 
     def requires(self):
         return {
@@ -144,6 +147,7 @@ class EstimateR(luigi.Task):
         john_hopkins_path = self.input()['jhdata'].path
         serial_interval_file = self.input()['si_sample'].path
         algorithms.estimate_r(
+            self.r_executable_path,
             self.r_estimates_output,
             john_hopkins_path,
             serial_interval_file

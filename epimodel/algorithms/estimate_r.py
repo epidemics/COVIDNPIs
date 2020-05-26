@@ -1,21 +1,13 @@
 import os
-from subprocess import Popen, call
+from subprocess import Popen
 
 project_dir = os.path.join(os.path.dirname(__file__), "../..")
 script_dir = os.path.join(project_dir, "scripts/r_estimate")
 
 
-def estimate_r(output_file, john_hopkins_csv, serial_interval_sample):
-    # install R dependencies
-    rc = call([
-        "/usr/bin/Rscript",
-        os.path.join(script_dir, "dependencies.R"),
-    ])
-    if rc != 0:
-        raise RuntimeError("Could not install R dependencies")
-
+def estimate_r(r_script_executable, output_file, john_hopkins_csv, serial_interval_sample):
     process = Popen([
-        "/usr/bin/Rscript",
+        r_script_executable,
         os.path.join(script_dir, "estimate_R.R"),
         serial_interval_sample,
         john_hopkins_csv,
@@ -25,11 +17,3 @@ def estimate_r(output_file, john_hopkins_csv, serial_interval_sample):
     rc = process.returncode
     if rc != 0:
         raise RuntimeError("Could not estimate R")
-
-
-if __name__ == "__main__":
-    estimate_r(
-        os.path.join(project_dir, "data-dir/outputs"),
-        os.path.join(project_dir, "data-dir/outputs/john-hopkins-small.csv"),
-        os.path.join(project_dir, "data-dir/inputs/manual/si_sample.rds"),
-    )
