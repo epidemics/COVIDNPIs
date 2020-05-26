@@ -101,7 +101,16 @@ def plot_cm_effect_sensitivity(filenames,
                 li = np.insert(li, ind, np.nan)
                 ui = np.insert(ui, ind, np.nan)
                 lq = np.insert(lq, ind, np.nan)
-                uq = np.insert(uq, ind, np.nan)        
+                uq = np.insert(uq, ind, np.nan)
+        # if not plotting a leavout set, but extra CMs added to end (e.g mobility)
+        if leavouts==False and len(means)<len(cm_labels):
+            for k in range(len(cm_labels)-len(means)): # assumes extra CMs are at the end
+                means = np.append(means,np.nan)
+                li = np.append(li,np.nan)
+                ui = np.append(ui,np.nan)
+                lq = np.append(lq,np.nan)
+                uq = np.append(uq,np.nan)
+            
         
         # plot shading to make easier to see
         y_vals = -1 * y_scale * np.arange(N_cms)
