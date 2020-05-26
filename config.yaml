@@ -21,72 +21,57 @@ web_export:
   un_age_dist: various/age_dist_un.csv
 
 ### Generating GLEAM scenarios
-# All combinations of groups and scenarios are created,
-# unifying the attributes. Semantics:
-# - param_beta_multiplier is applied to all beta (incl. exceptions)
-# - param_beta_exceptions is list of [[days, vaue], [days, value], ...],
-#   where value is eother a number, os region column name
-# - param_beta is the global parameter setting
+# All combinations of groups and traces are created.
+#
+# Group and trace `name` values must contain all the classes in the
+# parameters configuration sheet of that type. Groups and traces listed
+# here that have no configuration will still be computed, but only with
+# the parameters common to all classes of that type.
 scenarios:
-  - param_occupancyRate: 70 # Note this is in percent!
-    param_beta_multiplier: 1.1
-    name: Faster spread (110%)<br>Less air travel
-    key: "HIGHER_WEAK"
-  - param_occupancyRate: 70 # Note this is in percent!
-    param_beta_multiplier: 1.0
-    name: Expected spread (100%)<br>Less air travel
-    key: "EXPECTED_WEAK"
-  - param_occupancyRate: 70 # Note this is in percent!
-    param_beta_multiplier: 0.9
-    name: Slower spread (90%)<br>Less air travel
-    key: "LOWER_WEAK"
-  - param_occupancyRate: 20 # Note this is in percent!
-    param_beta_multiplier: 1.1
-    name: Faster spread (110%)<br>Much less air travel
-    key: "HIGHER_STRONG"
-  - param_occupancyRate: 20 # Note this is in percent!
-    param_beta_multiplier: 1.0
-    name: Expected spread (100%)<br>Much less air travel
-    key: "EXPECTED_STRONG"
-  - param_occupancyRate: 20 # Note this is in percent!
-    param_beta_multiplier: 0.9
-    name: Slower spread (90%)<br>Much less air travel
-    key: "LOWER_STRONG"
+  # This will be the simulation name prefix in GLEAMviz. The full name
+  # of each simulation will be "{name} ({group.name} + {trace.name})"
+  name: "Main Web"
 
-groups:
-  - group: "2W_None"
-    name: Scenario 1
-    description: Current mitigation measures are completely lifted in 2 weeks without replacement.
-    param_beta: 0.4
-    param_beta_exceptions: [[14, "Beta1"], [999, 1.285]]
-    param_seasonalityAlphaMin: 1.0
-  - group: "4W_None"
-    name: Scenario 2
-    description: Current mitigation measures stay in for 4 weeks and are replaced by milder measures afterwards.
-    param_beta: 0.4
-    param_beta_exceptions: [[28, "Beta1"], [999, "Beta2"]]
-    param_seasonalityAlphaMin: 1.0
-  - group: "2W_Strong"
-    name: Scenario 3
-    description: Current mitigation measures stay in for 2 weeks and are replaced by strong mitigation afterwards.
-    param_beta: 0.4
-    param_beta_exceptions: [[14, "Beta1"], [999, 0.4]]
-    param_seasonalityAlphaMin: 1.0
-  - group: "2W_Moderate"
-    name: Scenario 4
-    description: Current mitigation measures stay in for 2 weeks and are replaced by moderate mitigation afterwards.
-    param_beta: 0.4
-    param_beta_exceptions: [[14, "Beta1"], [999, 0.55]]
-    param_seasonalityAlphaMin: 1.0
+  # These are the different tabs you can click on to see different
+  # charts.
+  groups:
+    - name: Scenario 1
+      description: Current mitigation measures are completely lifted without replacement.
+    - name: Scenario 2
+      description: Current mitigation measures are replaced by milder measures afterwards.
+    - name: Scenario 3
+      description: Current mitigation measures are replaced by strong mitigation afterwards.
+    - name: Scenario 4
+      description: Current mitigation measures are replaced by moderate mitigation afterwards.
 
-# How to assign estimate different compartments
-compartment_multipliers:
-  Infectious: 1.0
-  Exposed: 1.8
+  # These show up as individual lines on each chart.
+  traces:
+    - name: HIGHER_WEAK
+      description: Faster spread (110%)<br>Less air travel
+    - name: EXPECTED_WEAK
+      description: Expected spread (100%)<br>Less air travel
+    - name: LOWER_WEAK
+      description: Slower spread (90%)<br>Less air travel
+    - name: HIGHER_STRONG
+      description: Faster spread (110%)<br>Much less air travel
+    - name: EXPECTED_STRONG
+      description: Expected spread (100%)<br>Much less air travel
+    - name: LOWER_STRONG
+      description: Slower spread (90%)<br>Much less air travel
 
-# Maximal fraction of population in a region that is in
-# some compartment
-compartments_max_fraction: 0.8
+  # Input estimates are only for the infectious compartment. The
+  # following are multipied x infectious to get the total for each
+  # compartment in each region. Only the compartments listed here will
+  # be added to the simulations as seeds.
+  compartment_multipliers:
+    Infectious: 1.0
+    Exposed: 1.8
+
+  # Maximum fraction of population in any region that is in all of the
+  # listed compartments combined. If estimating all compartments, this
+  # should be set to 1.
+  compartments_max_fraction: 0.8
+
 
 ### Upload settings
 gs_prefix: "gs://static-covid/static/v4/"

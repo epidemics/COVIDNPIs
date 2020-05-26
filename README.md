@@ -51,7 +51,7 @@ There is an example of the usage with explanations in `test/example-run.sh` if y
 
 ### Example with faked data
 This example skips the `UpdateForetold` and `ExtractSimulationsResults` task by providing their output.
-In reality, you want to actually run gleamviz in between and provide Foretold channel to get data via API.
+In reality, you want to actually run GLEAMviz in between and provide Foretold channel to get data via API.
 This by default uses data in `data/inputs` and exports data to `data/outputs/example`.
 ```
 # `poetry shell`  # if you haven't done already
@@ -67,14 +67,14 @@ After the pipeline finishes, you should see the results in `data-dir/outputs/exa
 ### The usual flow
 You provide all file inputs, foretold_channel and parameters, tweak configs to your liking and then:
 
-1. `./luigi GenerateSimulationDefinitions`
-2. run gleamviz with the simulations created above, retrieve results via it's UI, close it
+1. `./luigi ExportSimulationDefinitions`
+2. run GLEAMviz with the simulations created above, retrieve results via it's UI, close it
 3. export the data using
 
     ```
     ./luigi WebExport \
     --export-name my-export \
-    --ExtractSimulationResults-single-result ~/GLEAMviz/data/simulations/82131231323.ghv5/results.h5 
+    --ExtractSimulationsResults-single-result ~/GLEAMviz/data/simulations/82131231323.ghv5/results.h5
     ```
 
 4. upload the result data using `./luigi WebUpload --export-data data-dir/outputs/web-exports/my-export` task
@@ -84,7 +84,7 @@ You provide all file inputs, foretold_channel and parameters, tweak configs to y
 2. adjust `config.yaml` to your liking, such as scenarios to model or countries to export
 3. change `[Configuration].output_directory` to some empty or non-existing folder
 4. provide data for any of the ExternalTasks, such as `BaseDefinition`, `ConfigYaml`, `CountryEstimates` and others (see the `epimodel/tasks.py`). If you want to see what does your task depends on, use `luigi-deps-tree` as mentioned above.
-5. deal with gleamviz and knowing where it's simulation directory is on your installation
+5. deal with GLEAMviz and knowing where it's simulation directory is on your installation
 
 ### Usage tips
 Luigi by default uses `luigi.cfg` from the root of the repository. You can edit it directly or you can created another one and reference it via `LUIGI_CONFIG_PATH=your-config.cfg`. `your-config.cfg` will take precedence over the `luigi.cfg`, so you can change only what's necessary. For example, if you wanted to have a different input and output directory for a specific location run, you could have:
@@ -111,13 +111,45 @@ You can also use `./luigi <TaskName> --help` or `./luigi <TaskName> --help-all` 
 `luigi-deps-tree --module epimodel.tasks <TaskName>` enables you to visualize the dependencies and what is and isn't completed. For example:
 
 ```
-$ luigi-deps-tree --module epimodel.tasks JohnsHopkins --RegionsDatasetTask-regions-dataset something
-└─--[JohnsHopkins-{'_output_directory': 'out', 'hopkins_output': 'john-hopkins.csv'} (COMPLETE)]
-   └─--[RegionsDatasetTask-{'regions': 'manual_input/regions.csv', 'gleams': 'manual_input/regions-gleam.csv', 'aggregates': 'manual_input/regions-agg.yaml', 'regions_dataset': 'something'} (PENDING)]
-      |--[RegionsFile-{'regions': 'manual_input/regions.csv'} (COMPLETE)]
-      |--[GleamRegions-{'gleams': 'manual_input/regions-gleam.csv'} (COMPLETE)]
-      └─--[RegionsAggregates-{'aggregates': 'manual_input/regions-agg.yaml'} (COMPLETE)]
+$ luigi-deps-tree --module epimodel.tasks JohnsHopkins --RegionsFile-regions different-regions.csv
+└─--[JohnsHopkins-{'hopkins_output': 'data-dir/outputs/john-hopkins.csv'} (PENDING)]
+   |--[RegionsFile-{'regions': 'different-regions.csv'} (PENDING)]
+   |--[GleamRegions-{'gleams': 'data-dir/inputs/manual/regions-gleam.csv'} (COMPLETE)]
+   └─--[RegionsAggregates-{'aggregates': 'data-dir/inputs/manual/regions-agg.yaml'} (COMPLETE)]
 ```
+
+## Manual Inputs
+
+#### ConfigYaml
+
+This holds the confguration for web-export including the groups and traces used to generate the GLEAMviz definitions. More documentation can be found in the [default config file](data-dir/inputs/manual/config.yaml).
+
+#### RegionsFile & GleamRegions
+
+These are stable CSVs and you shouldn't have to edit them.
+
+#### RegionsAggregates
+
+Documentation is in [the file](data-dir/inputs/manual/regions-agg.yaml).
+
+#### BaseDefinition
+
+This a pre-formatted XML file. Modifying it changes the default gleam parameters. If you do change it, only change the values, not the structure.
+
+#### GleamParameters
+
+This is a CSV whose format is documented in the [example sheet](https://docs.google.com/spreadsheets/d/1IxPMadPxjnphWSKG_6PxmsrCLoXe3cHGp1Ok9kcddPk/edit#gid=1831691945).
+
+#### CountryEstimates
+
+This gives estimates for the Infectious compartment and Beta values for various regions.
+
+#### Rates
+
+#### Timezones
+
+#### AgeDistributions
+
 
 ## Development
 
@@ -125,4 +157,3 @@ $ luigi-deps-tree --module epimodel.tasks JohnsHopkins --RegionsDatasetTask-regi
 * We enforce [black](https://github.com/psf/black) formatting (with the default style).
 * Use `pytest` for testing, add tests for your code
 * Use pull requests for both this and the data repository.
-

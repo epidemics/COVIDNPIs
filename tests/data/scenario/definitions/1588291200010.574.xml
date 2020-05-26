@@ -1,0 +1,59 @@
+<simulation xmlns="http://www.gleamviz.org/xmlns/gleamviz_v4_0">
+  <definition id="1588291200010.574" name="GLEAMviz Test (Strong Exceptions + Faster Spread)" type="multi-run">
+    <compartmentalModel>
+      <compartments>
+        <compartment color="#51b2b7" id="Susceptible" isCarrier="false" isCommuter="true" isSecondary="false" isTraveller="true" x="409" y="35" />
+        <compartment color="#f59123" id="Exposed" isCarrier="true" isCommuter="true" isSecondary="true" isTraveller="true" x="218" y="158" />
+        <compartment color="#ff5127" id="Infectious" isCarrier="true" isCommuter="false" isSecondary="false" isTraveller="false" x="218" y="291" />
+        <compartment color="#89c443" id="Recovered" isCarrier="false" isCommuter="true" isSecondary="false" isTraveller="true" x="218" y="430" />
+      </compartments>
+      <ratioTransitions>
+        <ratioTransition labelPosition="0.5" ratio="epsilon" source="Exposed" target="Infectious" />
+        <ratioTransition labelPosition="0.5" ratio="mu" source="Infectious" target="Recovered" />
+        <ratioTransition labelPosition="0.5" ratio="imu" source="Recovered" target="Susceptible" />
+      </ratioTransitions>
+      <infections>
+        <infection source="Susceptible" target="Exposed">
+          <infector ratio="beta" source="Infectious" x="130" y="0" />
+        </infection>
+      </infections>
+      <variables>
+        <variable name="beta" value="1.80" />
+        <variable name="epsilon" value="0.2" />
+        <variable name="mu" value="0.5" />
+        <variable name="imu" value="0" />
+      </variables>
+    </compartmentalModel>
+    <parameters startDate="2020-04-15" duration="261" runCount="5" occupancyRate="90" seasonalityEnabled="true" seasonalityAlphaMin="0.35" commutingModel="gravity" commutingRate="7" flightsTimeAggregation="month" secondaryEvents="1" outbreakSize="1" />
+    <notes />
+    <initialCompartments>
+      <initialCompartment compartment="Infectious" fraction="0.2" />
+      <initialCompartment compartment="Exposed" fraction="0.4" />
+      <initialCompartment compartment="Susceptible" fraction="99.4" />
+    </initialCompartments>
+    <seeds>
+      <seed number="1954" compartment="Infectious" city="1543" />
+      <seed number="3518" compartment="Exposed" city="1543" />
+      <seed number="45" compartment="Infectious" city="1544" />
+      <seed number="81" compartment="Exposed" city="1544" />
+      <seed number="574" compartment="Infectious" city="655" />
+      <seed number="1033" compartment="Exposed" city="655" />
+    </seeds>
+    <resultCompartments>
+      <id>Susceptible</id>
+      <id>Exposed</id>
+      <id>Infectious</id>
+      <id>Recovered</id>
+    </resultCompartments>
+    <exceptions>
+      <exception basins="" continents="" countries="163" hemispheres="" regions="" from="2020-04-14" till="2021-05-01"><variable name="beta" value="0.6" /><variable name="epsilon" value="0.5" /></exception>
+    </exceptions>
+  </definition>
+  <metadata>
+    <creationDate>2020-05-01T00:00:00</creationDate>
+    <clientVersion>7.0</clientVersion>
+  </metadata>
+  <extradata>
+    <userVariableOrder>beta epsilon mu imu</userVariableOrder>
+  </extradata>
+</simulation>

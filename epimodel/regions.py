@@ -27,24 +27,24 @@ class Level(enum.Enum):
     world = 6
 
     def __ge__(self, other):
-        if self.__class__ is other.__class__:
+        if isinstance(other, self.__class__):
             return self.value >= other.value
-        return NotImplemented
+        return super() >= other
 
     def __gt__(self, other):
-        if self.__class__ is other.__class__:
+        if isinstance(other, self.__class__):
             return self.value > other.value
-        return NotImplemented
+        return super() > other
 
     def __le__(self, other):
-        if self.__class__ is other.__class__:
+        if isinstance(other, self.__class__):
             return self.value <= other.value
-        return NotImplemented
+        return super() <= other
 
     def __lt__(self, other):
-        if self.__class__ is other.__class__:
+        if isinstance(other, self.__class__):
             return self.value < other.value
-        return NotImplemented
+        return super() < other
 
 
 class Region:
@@ -99,6 +99,32 @@ class Region:
             raise AttributeError(
                 f"Setting attribute {name} on {self!r} not allowed (use rds.data directly)."
             )
+
+    def __eq__(self, other):
+        return isinstance(other, Region) and self.Code == other.Code
+
+    def __ge__(self, other):
+        if isinstance(other, self.__class__):
+            return self.Code >= other.Code
+        return super() >= other
+
+    def __gt__(self, other):
+        if isinstance(other, self.__class__):
+            return self.Code > other.Code
+        return super() > other
+
+    def __le__(self, other):
+        if isinstance(other, self.__class__):
+            return self.Code <= other.Code
+        return super() <= other
+
+    def __lt__(self, other):
+        if isinstance(other, self.__class__):
+            return self.Code < other.Code
+        return super() < other
+
+    def __hash__(self):
+        return hash(self._code)
 
     @property
     def Code(self):
@@ -395,6 +421,22 @@ class RegionDataset:
         if len(rs) < 1:
             raise KeyError(f"Found no regions matching {s!r}{lcmt}")
         raise KeyError(f"Found multiple regions matching {s!r}{lcmt}: {rs!r}")
+
+    def find_first_by_code_or_name(self, code_or_name: str):
+        """
+        Find a corresponding region from unknown input type.
+
+        Assumes first match. Only errors raises KeyError if no region is found.
+        """
+        # Try code first
+        if code_or_name in self:
+            return self[code_or_name]
+
+        # Try name. Match Gleam regions first.
+        matches = self.find_all_by_name(code_or_name, levels=tuple(Level))
+        if not matches:
+            raise KeyError(f"No region found for {code_or_name!r}.")
+        return matches[0]
 
     def write_csv(self, path, regions=None):
         """

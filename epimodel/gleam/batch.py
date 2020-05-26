@@ -1,22 +1,18 @@
-import datetime
-import io
 import logging
-import time
 from pathlib import Path
-from typing import List
+from typing import List, Union
 
 import numpy as np
 import pandas as pd
 import tables
 from scipy.stats import lognorm, norm
 
-from .. import algorithms
-from ..regions import Level, RegionDataset
-from .definition import GleamDefinition
+from epimodel.regions import Level, RegionDataset
+from .scenario import InputParser, SimulationSet
 
 log = logging.getLogger(__name__)
 
-SIMULATION_COLUMNS = ["Name", "Group", "Key", "StartDate", "DefinitionXML"]
+SIMULATION_COLUMNS = ["Name", "Group", "StartDate", "DefinitionXML"]
 
 LEVEL_TO_GTYPE = {
     Level.country: "country",
@@ -84,11 +80,39 @@ class Batch:
         hdf = pd.HDFStore(path, "w")
         return cls(hdf, path, _direct=False)
 
+    def generate_simulations(
+        self,
+        config: dict,
+        base_xml_path: Union[str, Path],
+        parameters_path: Union[str, Path],
+        estimates_path: Union[str, Path],
+        rds: RegionDataset,
+        progress_bar: bool = True,
+    ):
+        config = config["scenarios"]
+
+        raw_parameters = pd.read_csv(parameters_path)
+        raw_estimates = pd.read_csv(estimates_path)
+
+        parser = InputParser(rds, progress_bar=progress_bar)
+        parameters = parser.parse_parameters_df(raw_parameters)
+        estimates = parser.parse_estimates_df(raw_estimates)
+
+        simulations = SimulationSet(config, parameters, estimates, base_xml_path)
+        self.set_simulations(simulations)
+
     def set_initial_compartments(self, initial_df):
         """
-        `initial_df` must be indexed by `Code` and columns should be
+        `initial_df` should be indexed by `Code` and columns should be
         compartment names.
+
+        Alternately, it can have a `Region` column containing Region
+        objects, which will then be used to obtain the `Code` index.
         """
+        if "Region" in initial_df:
+            codes = initial_df["Region"].apply(lambda reg: reg.Code)
+            initial_df = initial_df.drop(columns=["Region"]).set_index(codes)
+
         self.hdf.put(
             "initial_compartments",
             initial_df.astype("float32"),
@@ -103,37 +127,24 @@ class Batch:
         """
         self.hdf.close()
 
-    def set_simulations(self, sims_def_name_group_key):
+    def set_simulations(self, simulations: SimulationSet):
         """
-        Write simulation records.
-
-        Each element of `sims_def_group_key` is `(definition, name, group, key)`.
-        In addiMakes the ID unique, adds the initial compartments clearing any old seeds,
-        records the simulation and seeds in the HDF file.
-
-        TODO: Potentially have a nicer interface than list-of-tuples
+        Import simulation records from SimulationSet object.
         """
-        last_id = 0
-        rows = []
-        for definition, name, group, key in sims_def_name_group_key:
-            d = definition.copy()
-            last_id = max(int(time.time() * 1000), last_id + 1)
-            gv2id = f"{last_id}.{GLEAM_ID_SUFFIX}"
-            d.set_id(gv2id)
-            s = io.BytesIO()
-            d.save(s)
-            rows.append(
-                {
-                    "SimulationID": gv2id,
-                    "Name": name,
-                    "Group": group,
-                    "Key": key,
-                    "StartDate": d.get_start_date().isoformat(),
-                    "DefinitionXML": s.getvalue().decode("ascii"),
-                }
-            )
+
+        rows = [
+            {
+                "SimulationID": definition.get_id_str(),
+                "Group": group,
+                "Trace": trace,
+                "StartDate": definition.get_start_date_str(),
+                "DefinitionXML": definition.to_xml_string(),
+            }
+            for (group, trace), definition in simulations.definitions.iteritems()
+        ]
         data = pd.DataFrame(rows).set_index("SimulationID", verify_integrity=True)
         self.hdf.put("simulations", data, format="table", complib="bzip2", complevel=9)
+        self.set_initial_compartments(simulations.estimates)
 
     def export_definitions_to_gleam(
         self, sims_dir, sim_ids=None, overwrite=False, info_level=logging.DEBUG
@@ -266,86 +277,3 @@ class Batch:
                 "q95": min(dist.ppf(0.95), 1.0),
             }
         return stats
-
-
-def generate_simulations(
-    batch: Batch,
-    definition: GleamDefinition,
-    data: pd.DataFrame,
-    rds: RegionDataset,
-    config: dict,
-    start_date: datetime.datetime,
-    top: int = None,
-    size_column="Infectious_mean",
-):
-    # Estimate infections in subregions
-    if size_column not in data.columns:
-        raise Exception(f"Column {size_column} not found in {list(data.columns)}")
-    s = data[size_column].copy().astype("float32")
-    algorithms.distribute_down_with_population(s, rds)
-
-    # Create compartment sizes
-    mults = config["compartment_multipliers"]
-    mult_sum = sum(mults.values())
-    s = np.minimum(
-        s, rds.data.Population * config["compartments_max_fraction"] / mult_sum
-    )
-    s = s[pd.notnull(s)]
-    est = pd.DataFrame({n: s * m for n, m in mults.items()})
-
-    # Update definition and batch
-    d = definition.copy()
-    d.set_start_date(start_date)
-    d.clear_seeds()
-    d.add_seeds(rds, est, top=top)
-    batch.set_initial_compartments(est)
-
-    # Generate simulations
-    sims = []
-    for mit in config["groups"]:
-        for sce in config["scenarios"]:
-            par = dict(mit)
-            par.update(sce)
-            d2 = d.copy()
-
-            beta_mult = par.get("param_beta_multiplier", 1.0)
-
-            d2.clear_exceptions()
-            next_day = d2.get_start_date()
-            for days, exc in par.get("param_beta_exceptions", ()):
-                for rc, row in data.iterrows():
-                    end_day = next_day + pd.DateOffset(days)
-                    if isinstance(exc, float):
-                        beta = float(exc)
-                    elif isinstance(exc, str):
-                        if exc not in row:
-                            raise ValueError(f"Beta-value column {exc!r} not present")
-                        beta = row[exc]
-                        if not np.isfinite(beta):
-                            raise ValueError(
-                                f"Beta {exc!r} is NaN or Inf for region {rc!r}"
-                            )
-                    else:
-                        raise TypeError(
-                            f"Unsupportted type for beta in 'param_beta_exceptions': {type(exc)}"
-                        )
-                    d2.add_exception(
-                        [rds[rc]],
-                        {"beta": beta * beta_mult},
-                        start=next_day,
-                        end=end_day,
-                    )
-                next_day = end_day
-
-            d2.set_seasonality(par["param_seasonalityAlphaMin"])
-            d2.set_traffic_occupancy(par["param_occupancyRate"])
-            d2.set_variable("beta", par["param_beta"] * beta_mult)
-            # TODO: other params or variables?
-            d2.set_name(
-                f"{batch.path.name} "
-                f"{d2.get_start_date().date().isoformat()}-{d2.get_end_date().date().isoformat()} "
-                f"{par['group']} {par['key']} beta_mult={beta_mult:.3g}"
-            )
-
-            sims.append((d2, par["name"], par["group"], par["key"]))
-    batch.set_simulations(sims)

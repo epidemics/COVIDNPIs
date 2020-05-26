@@ -5,15 +5,13 @@ import tempfile
 from datetime import datetime
 from pathlib import Path
 
-import dill
 import luigi
 import yaml
 from luigi.util import inherits
 
-from epimodel import Level, RegionDataset, algorithms, imports, read_csv_smart, utils
+from epimodel import Level, RegionDataset, algorithms, imports
 from epimodel.exports.epidemics_org import process_export, upload_export
-from epimodel.gleam import Batch, GleamDefinition
-from epimodel.gleam import batch as batch_module
+from epimodel.gleam import Batch
 
 logger = logging.getLogger(__name__)
 
@@ -38,7 +36,7 @@ class RegionsFile(luigi.ExternalTask):
 
 
 class GleamRegions(luigi.ExternalTask):
-    """Definition of Gleamviz regions"""
+    """Definition of GLEAMviz basins"""
 
     gleams = luigi.Parameter(
         description="Input filename relative to the config directory",
@@ -59,37 +57,36 @@ class RegionsAggregates(luigi.ExternalTask):
         return luigi.LocalTarget(self.aggregates)
 
 
-class RegionsDatasetTask(luigi.Task):
-    """Combines several inputs into a RegionDataset object used in several
-    downstream tasks for handling ISO codes and others"""
+class RegionsDatasetSubroutine:
+    """
+    Combines several inputs into a RegionDataset object used in several
+    downstream tasks for handling ISO codes and others.
 
-    regions_dataset: str = luigi.Parameter(
-        description="Output filename of the exported data.",
-    )
+    This is not an actual task but a subroutine that encapsulates the
+    inputs and process for RegionDataset creation. It fails as an
+    independent task because the regions model is unable to to
+    pickle/unpickle successfully.
+    """
 
-    def requires(self):
+    @staticmethod
+    def requires():
         return {
             "region_file": RegionsFile(),
             "gleam_regions": GleamRegions(),
             "aggregates": RegionsAggregates(),
         }
 
-    def output(self):
-        return luigi.LocalTarget(self.regions_dataset)
-
-    def run(self):
-        regions = self.input()["region_file"].path
-        gleams = self.input()["gleam_regions"].path
-        aggregates = self.input()["aggregates"].path
-        rds = RegionDataset.load(regions, gleams, aggregates)
-        algorithms.estimate_missing_populations(rds)
-        with open(self.regions_dataset, "wb") as ofile:
-            dill.dump(rds, ofile)
-
     @staticmethod
-    def load_dilled_rds(path: str):
-        with open(path, "rb") as ifile:
-            return dill.load(ifile)
+    def load_rds(task):
+        regions = task.input()["region_file"].path
+        gleams = task.input()["gleam_regions"].path
+        aggregates = task.input()["aggregates"].path
+        logger.info(f"Loading regions from {regions}, {gleams}, {aggregates}...")
+        rds = RegionDataset.load(regions, gleams, aggregates)
+        logger.info(f"Estimating missing populations...")
+        algorithms.estimate_missing_populations(rds)
+        logger.info(f"Regions sucessfully loaded.")
+        return rds
 
 
 class JohnsHopkins(luigi.Task):
@@ -100,13 +97,13 @@ class JohnsHopkins(luigi.Task):
     )
 
     def requires(self):
-        return {"regions": RegionsDatasetTask()}
+        return RegionsDatasetSubroutine.requires()
 
     def output(self):
         return luigi.LocalTarget(self.hopkins_output)
 
     def run(self):
-        rds = RegionsDatasetTask.load_dilled_rds(self.input()["regions"].path)
+        rds = RegionsDatasetSubroutine.load_rds(self)
         csse = imports.import_johns_hopkins(rds)
         csse.to_csv(self.hopkins_output)
         logger.info(
@@ -127,9 +124,7 @@ class UpdateForetold(luigi.Task):
     )
 
     def requires(self):
-        return {
-            "regions": RegionsDatasetTask(),
-        }
+        return RegionsDatasetSubroutine.requires()
 
     def output(self):
         return luigi.LocalTarget(self.foretold_output)
@@ -144,7 +139,7 @@ class UpdateForetold(luigi.Task):
             )
 
         logger.info("Downloading and parsing foretold")
-        rds = RegionsDatasetTask.load_dilled_rds(self.input()["regions"].path)
+        rds = RegionsDatasetSubroutine.load_rds(self)
         foretold = imports.import_foretold(rds, self.foretold_channel)
         foretold.to_csv(self.foretold_output, float_format="%.7g")
         logger.info(f"Saved Foretold to {self.foretold_output}")
@@ -159,6 +154,17 @@ class BaseDefinition(luigi.ExternalTask):
 
     def output(self):
         return luigi.LocalTarget(self.base_def)
+
+
+class GleamParameters(luigi.ExternalTask):
+    """Configuration parameters for GLEAMviz simulations"""
+
+    gleam_parameters: str = luigi.Parameter(
+        description="Path to the input file relative to the configuration input directory",
+    )
+
+    def output(self):
+        return luigi.LocalTarget(self.gleam_parameters)
 
 
 class CountryEstimates(luigi.ExternalTask):
@@ -213,17 +219,14 @@ class GenerateGleamBatch(luigi.Task):
     generated_batch_filename: str = luigi.Parameter(
         description="Output filename of the generated batch file for gleam",
     )
-    top: int = luigi.IntParameter(description="Upper limit for seed compartments.")
-    start_date: datetime = luigi.DateParameter(
-        default=datetime.utcnow(), description="Start date of the simulations"
-    )
 
     def requires(self):
         return {
             "base_def": self.clone(BaseDefinition),
+            "gleam_parameters": self.clone(GleamParameters),
             "country_estimates": self.clone(CountryEstimates),
-            "regions_dataset": self.clone(RegionsDatasetTask),
             "config_yaml": self.clone(ConfigYaml),
+            **RegionsDatasetSubroutine.requires(),
         }
 
     def output(self):
@@ -239,38 +242,27 @@ class GenerateGleamBatch(luigi.Task):
             raise
 
     def _run(self):
-        b = Batch.new(path=self.generated_batch_filename)
-        logger.info(f"New batch file {b.path}")
+        batch = Batch.new(path=self.generated_batch_filename)
+        logger.info(f"New batch file {batch.path}")
+        rds = RegionsDatasetSubroutine.load_rds(self)
 
-        base_def = self.input()["base_def"].path
-        logger.info(f"Reading base GLEAM definition {base_def} ...")
-        d = GleamDefinition(base_def)
-
-        country_estimates = self.input()["country_estimates"].path
-        rds = RegionsDatasetTask.load_dilled_rds(self.input()["regions_dataset"].path)
-        logger.info(f"Reading estimates from CSV {country_estimates} ...")
-        est = read_csv_smart(country_estimates, rds, levels=Level.country)
-        start_date = (
-            utils.utc_date(self.start_date) if self.start_date else d.get_start_date()
+        logger.info(f"Generating scenarios...")
+        batch.generate_simulations(
+            ConfigYaml.load(self.input()["config_yaml"].path),
+            self.input()["base_def"].path,
+            self.input()["gleam_parameters"].path,
+            self.input()["country_estimates"].path,
+            rds,
         )
-        logger.info(f"Generating scenarios with start_date {start_date.ctime()} ...")
-        batch_module.generate_simulations(
-            b,
-            d,
-            est,
-            rds=rds,
-            config=ConfigYaml.load(self.input()["config_yaml"].path),
-            start_date=start_date,
-            top=self.top,
-        )
-        logger.info(f"Generated batch {b.path!r}:\n  {b.stats()}")
-        b.close()
+        logger.info(f"Generated batch scenarios {batch.path!r}:\n  {batch.stats()}")
+        batch.close()
 
 
-class GenerateSimulationDefinitions(luigi.Task):
+class ExportSimulationDefinitions(luigi.Task):
     """
-    Creates definitions for simulations which can be used for gleamviz. It
-    must not be run when Gleamviz is running otherwise it won't be visible.
+    Saves the generated definition.xml files for simulations directly into
+    the GLEAMviz data folder. You may need to close and reopen GLEAMviz in
+    order for these to show up in the dashboard.
 
     Formerly ExportGleamBatch"""
 
@@ -282,13 +274,13 @@ class GenerateSimulationDefinitions(luigi.Task):
         ),
     )
 
-    stamp_file = "GenerateSimulationDefinitions.success"
+    stamp_file = "ExportSimulationDefinitions.success"
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         # if this file exist in the simulations_dir,
         # it's assumed that this tasks has finished
-        self.stamp_file_path = Path(self.simulations_dir, self.stamp_file)
+        self.stamp_file_path = Path(self.simulations_dir, self.stamp_file).expanduser()
 
     def requires(self):
         return GenerateGleamBatch()
@@ -310,7 +302,7 @@ class GenerateSimulationDefinitions(luigi.Task):
         )
 
         # write a dummy stamp file to mark success
-        Path(self.stamp_file_path).touch()
+        self.stamp_file_path.touch()
 
 
 class GleamvizResults(luigi.ExternalTask):
@@ -328,10 +320,10 @@ class GleamvizResults(luigi.ExternalTask):
     )
 
     def requires(self):
-        return GenerateSimulationDefinitions()
+        return ExportSimulationDefinitions()
 
     def output(self):
-        return luigi.LocalTarget(self.single_result)
+        return luigi.LocalTarget(Path(self.single_result).expanduser())
 
 
 @inherits(GleamvizResults)
@@ -353,8 +345,8 @@ class ExtractSimulationsResults(luigi.Task):
         return {
             "gleamviz_result": self.clone(GleamvizResults),
             "batch_file": GenerateGleamBatch(),
-            "regions_dataset": RegionsDatasetTask(),
             "config_yaml": ConfigYaml(),
+            **RegionsDatasetSubroutine.requires(),
         }
 
     def output(self):
@@ -366,9 +358,7 @@ class ExtractSimulationsResults(luigi.Task):
         simulation_directory = os.path.dirname(self.input()["gleamviz_result"].path)
 
         config_yaml = ConfigYaml.load(self.input()["config_yaml"].path)
-        regions_dataset = RegionsDatasetTask.load_dilled_rds(
-            self.input()["regions_dataset"].path
-        )
+        regions_dataset = RegionsDatasetSubroutine.load_rds(self)
 
         # copy the batch file into a temporary one
         temp_dir = tempfile.TemporaryDirectory()
@@ -457,12 +447,12 @@ class WebExport(luigi.Task):
             "models": ExtractSimulationsResults(),
             "hopkins": JohnsHopkins(),
             "foretold": UpdateForetold(),
-            "regions_dataset": RegionsDatasetTask(),
             "rates": Rates(),
             "timezones": Timezones(),
             "age_distributions": AgeDistributions(),
             "config_yaml": ConfigYaml(),
             "country_estimates": CountryEstimates(),
+            **RegionsDatasetSubroutine.requires(),
         }
 
     def output(self):
@@ -471,9 +461,7 @@ class WebExport(luigi.Task):
     def run(self):
         models = self.input()["models"].path
         config_yaml = ConfigYaml.load(self.input()["config_yaml"].path)
-        regions_dataset = RegionsDatasetTask.load_dilled_rds(
-            self.input()["regions_dataset"].path
-        )
+        regions_dataset = RegionsDatasetSubroutine.load_rds(self)
         estimates = self.input()["country_estimates"].path
 
         ex = process_export(
@@ -483,9 +471,7 @@ class WebExport(luigi.Task):
             self.comment,
             models,
             estimates,
-            config_yaml["export_regions"],
-            config_yaml["state_to_country"],
-            config_yaml["groups"],
+            config_yaml,
             self.resample,
         )
         ex.write(
