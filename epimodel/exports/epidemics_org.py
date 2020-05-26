@@ -245,6 +245,7 @@ class WebExportRegion:
         for group in self.groups:
             api_group = dict(group)
             api_group["group"] = api_group["name"]
+            groups.append(api_group)
 
         return {"scenarios": groups, "models": d}
 
@@ -434,6 +435,9 @@ def get_extra_path(config, name: str) -> Path:
 def aggregate_countries(
     hopkins: pd.DataFrame, countries_with_provinces: List[str], region_dataset,
 ) -> pd.DataFrame:
+    if not countries_with_provinces:
+        return hopkins
+
     to_append = []
     all_state_codes = []
     for country_code in countries_with_provinces:

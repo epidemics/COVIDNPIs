@@ -15,3 +15,11 @@ scenarios:
     Infectious: 1.0
     Exposed: 1.8
   compartments_max_fraction: 0.8
+
+export_regions:
+  - PK
+  - MT
+  - RW
+  - GB
+
+state_to_country: []
