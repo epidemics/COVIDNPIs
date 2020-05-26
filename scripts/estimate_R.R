@@ -11,6 +11,9 @@ INCIDENCE_LAG <- 1
 # The sliding window on which to estimate R
 ESTIMATION_WINDOW <- 14
 
+# How much percent of population of confirmed cases to start estimating from
+PERCENT_TO_OUTBREAK <- 1e-6
+
 country_codes <- function(cases) {
   return(unique(cases$code))
 }
@@ -30,7 +33,8 @@ load_country <- function(cases, country_code) {
       dates = date
     )
 
-  outbreak_start <- which(country_cases$confirmed > 0)[1]
+  outbreak_threshold <- country_cases$population[1] * PERCENT_TO_OUTBREAK
+  outbreak_start <- which(country_cases$confirmed > outbreak_threshold)[1]
   if(is.na(outbreak_start)){
     return(NULL)
   }
@@ -78,7 +82,7 @@ main <- function(si_sample_file, input_file, output_file) {
   #Code,Date,Recovered,Confirmed,Deaths,Active
   cases <- read.csv(
     input_file,
-    colClasses=c("character", "character", "numeric", "numeric", "numeric", "numeric"),
+    colClasses=c("character", "character", "numeric", "numeric", "numeric", "numeric", "numeric"),
     na.strings=""
   )
   names(cases) <- names(cases) %>% tolower() %>% str_replace('[\\/]', '_')
