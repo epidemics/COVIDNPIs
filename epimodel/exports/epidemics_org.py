@@ -56,8 +56,9 @@ class WebExport:
         foretold: Optional[pd.DataFrame],
         timezones: Optional[pd.DataFrame],
         un_age_dist: Optional[pd.DataFrame],
+        r_estimates: Optional[pd.DataFrame],
     ):
-        er = WebExportRegion(
+        export_region = WebExportRegion(
             region,
             current_estimate,
             self.groups,
@@ -69,9 +70,10 @@ class WebExport:
             foretold,
             timezones,
             un_age_dist,
+            r_estimates,
         )
-        self.export_regions[region.Code] = er
-        return er
+        self.export_regions[region.Code] = export_region
+        return export_region
 
     def write(
         self,
@@ -87,12 +89,12 @@ class WebExport:
         os.makedirs(export_directory, exist_ok=False)
 
         log.info(f"Writing WebExport to {export_directory} ...")
-        for rc, er in tqdm(list(self.export_regions.items()), desc="Writing regions"):
-            fname = f"extdata-{rc}.json"
-            er.data_url = f"{fname}"
+        for region_code, export_region in tqdm(list(self.export_regions.items()), desc="Writing regions"):
+            fname = f"extdata-{region_code}.json"
+            export_region.data_url = f"{fname}"
             with open(export_directory / fname, "wt") as f:
                 json.dump(
-                    er.data_ext,
+                    export_region.data_ext,
                     f,
                     default=types_to_json,
                     allow_nan=False,
@@ -131,6 +133,7 @@ class WebExportRegion:
         foretold: Optional[pd.DataFrame],
         timezones: Optional[pd.DataFrame],
         un_age_dist: Optional[pd.DataFrame],
+        r_estimates: Optional[pd.DataFrame],
     ):
         log.debug(f"Prepare WebExport: {region.Code}, {region.Name}")
 
@@ -142,7 +145,7 @@ class WebExportRegion:
 
         # Any per-region data. Large ones should go to data_ext.
         self.data = self.extract_smallish_data(
-            rates, hopkins, foretold, timezones, un_age_dist
+            rates, hopkins, foretold, timezones, un_age_dist, r_estimates
         )
         # Extended data to be written in a separate per-region file
         self.data_ext = self.extract_external_data(models, simulation_specs)
@@ -156,11 +159,12 @@ class WebExportRegion:
         foretold: Optional[pd.DataFrame],
         timezones: pd.DataFrame,
         un_age_dist: Optional[pd.DataFrame],
+        r_estimates: Optional[pd.DataFrame],
     ) -> Dict[str, Dict[str, Any]]:
-        d = {}
+        data = {}
 
         if rates is not None:
-            d["Rates"] = rates.replace({np.nan: None}).to_dict()
+            data["Rates"] = rates.replace({np.nan: None}).to_dict()
 
         if hopkins is not None:
             nulls = hopkins.isna().sum()
@@ -171,25 +175,31 @@ class WebExportRegion:
                     self.region.Code,
                     nulls.to_dict(),
                 )
-            d["JohnsHopkins"] = {
+            data["JohnsHopkins"] = {
                 "Date": [x.date().isoformat() for x in hopkins.index],
                 **hopkins.astype("Int64").replace({pd.NA: None}).to_dict(orient="list"),
             }
 
         if foretold is not None:
-            d["Foretold"] = {
+            data["Foretold"] = {
                 "Date": [x.isoformat() for x in foretold.index],
                 **foretold.replace({np.nan: None})
                 .loc[:, ["Mean", "Variance", "0.05", "0.50", "0.95"]]
                 .to_dict(orient="list"),
             }
 
-        d["Timezones"] = timezones["Timezone"].tolist()
+        data["Timezones"] = timezones["Timezone"].tolist()
 
         if un_age_dist is not None:
-            d["AgeDist"] = un_age_dist.to_dict()
+            data["AgeDist"] = un_age_dist.to_dict()
 
-        return d
+        if r_estimates is not None:
+            data["REstimates"] = {
+                "Date": [x.isoformat() for x in r_estimates.index],
+                **r_estimates[["Mean.R.", "Std.R."]].to_dict(orient="list")
+            }
+
+        return data
 
     @staticmethod
     def get_stats(
@@ -484,6 +494,7 @@ def process_export(
     rates = inputs["rates"].path
     timezone = inputs["timezones"].path
     un_age_dist = inputs["age_distributions"].path
+    r_estimates = inputs["r_estimates"].path
 
     export_regions = sorted(config["export_regions"])
 
@@ -525,6 +536,14 @@ def process_export(
         cummulative_active_df,
     )
 
+    r_estimates_df: pd.DataFrame = pd.read_csv(
+        r_estimates,
+        index_col=["Code", "Date"],
+        parse_dates=["Date"],
+        keep_default_na=False,
+        na_values=[""],
+    )
+
     analyze_data_consistency(
         debug, export_regions, cummulative_active_df, rates_df, hopkins_df, foretold_df,
     )
@@ -543,5 +562,6 @@ def process_export(
             get_df_else_none(foretold_df, code),
             get_df_list(timezone_df, code),
             get_df_else_none(un_age_dist_df, m49),
+            get_df_else_none(r_estimates_df, code),
         )
     return ex

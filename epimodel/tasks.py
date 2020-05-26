@@ -513,6 +513,7 @@ class WebExport(luigi.Task):
             "age_distributions": AgeDistributions(),
             "config_yaml": ConfigYaml(),
             "country_estimates": CountryEstimates(),
+            "r_estimates": EstimateR(),
             **RegionsDatasetSubroutine.requires(),
         }
 
