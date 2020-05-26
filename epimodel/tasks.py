@@ -83,7 +83,9 @@ class RegionsDatasetSubroutine:
         aggregates = task.input()["aggregates"].path
         logger.info(f"Loading regions from {regions}, {gleams}, {aggregates}...")
         rds = RegionDataset.load(regions, gleams, aggregates)
+        logger.info(f"Estimating missing populations...")
         algorithms.estimate_missing_populations(rds)
+        logger.info(f"Regions sucessfully loaded.")
         return rds
 
 
@@ -278,7 +280,7 @@ class ExportSimulationDefinitions(luigi.Task):
         super().__init__(*args, **kwargs)
         # if this file exist in the simulations_dir,
         # it's assumed that this tasks has finished
-        self.stamp_file_path = Path(self.simulations_dir, self.stamp_file)
+        self.stamp_file_path = Path(self.simulations_dir, self.stamp_file).expanduser()
 
     def requires(self):
         return GenerateGleamBatch()
@@ -300,7 +302,7 @@ class ExportSimulationDefinitions(luigi.Task):
         )
 
         # write a dummy stamp file to mark success
-        Path(self.stamp_file_path).touch()
+        self.stamp_file_path.touch()
 
 
 class GleamvizResults(luigi.ExternalTask):

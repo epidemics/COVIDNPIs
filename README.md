@@ -74,7 +74,7 @@ You provide all file inputs, foretold_channel and parameters, tweak configs to y
     ```
     ./luigi WebExport \
     --export-name my-export \
-    --ExtractSimulationResults-single-result ~/GLEAMviz/data/simulations/82131231323.ghv5/results.h5
+    --ExtractSimulationsResults-single-result ~/GLEAMviz/data/simulations/82131231323.ghv5/results.h5
     ```
 
 4. upload the result data using `./luigi WebUpload --export-data data-dir/outputs/web-exports/my-export` task
