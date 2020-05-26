@@ -25,15 +25,18 @@ args = argparser.parse_args()
 import os
 os.environ["THEANO_FLAGS"] = "mode=FAST_RUN,floatX=float32,device=gpu"
 
-def mask_region(d, region, days=14):
-    i = d.Rs.index(region)
-    c_s = np.nonzero(np.cumsum(d.NewCases.data[i, :] > 0)==days+1)[0][0]
-    d_s = np.nonzero(np.cumsum(d.NewDeaths.data[i, :] > 0)==days+1)[0][0]
+def unmask_all(d):
     d.Active.mask = False
     d.Confirmed.mask = False
     d.Deaths.mask = False
     d.NewDeaths.mask = False
     d.NewCases.mask = False
+
+def mask_region(d, region, days=14):
+    i = d.Rs.index(region)
+    c_s = np.nonzero(np.cumsum(d.NewCases.data[i, :] > 0)==days+1)[0][0]
+    d_s = np.nonzero(np.cumsum(d.NewDeaths.data[i, :] > 0)==days+1)[0][0]
+    print(f"Region {region} masking from day {c_s} and {d_s}")
     d.Active.mask[i,c_s:] = True
     d.Confirmed.mask[i,c_s:] = True
     d.Deaths.mask[i,d_s:] = True
@@ -58,6 +61,7 @@ if __name__ == "__main__":
 
     HO_rs = ["DE", "PT", "CZ", "PL", "MX", "NL"]
     indxs = [data.Rs.index(rg) for rg in HO_rs]
+    unmask_all(data)
     for region in HO_rs:
         mask_region(data, region)
 
