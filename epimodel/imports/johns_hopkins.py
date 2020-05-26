@@ -1,4 +1,5 @@
 import logging
+from typing import List, Optional
 
 import pandas as pd
 import numpy as np
@@ -140,3 +141,35 @@ def import_johns_hopkins(rds: RegionDataset, prefix=None):
     df = pd.concat(ds, axis=1).sort_index()
     df["Active"] = df["Confirmed"] - df["Recovered"] - df["Deaths"]
     return df
+
+
+def aggregate_countries(
+        hopkins: pd.DataFrame, countries_with_provinces: Optional[List[str]], region_dataset,
+) -> pd.DataFrame:
+    if not countries_with_provinces:
+        return hopkins
+
+    to_append = []
+    all_state_codes = []
+    for country_code in countries_with_provinces:
+        _state_codes = [x.Code for x in region_dataset.get(country_code).children]
+        present_state_codes = list(
+            set(_state_codes).intersection(hopkins.index.get_level_values("Code"))
+        )
+        log.info(
+            "Aggregating hopkins data for %s into a single code %s",
+            present_state_codes,
+            country_code,
+        )
+        aggregated = (
+            hopkins.loc[present_state_codes]
+                .reset_index("Date")
+                .groupby("Date")
+                .sum()
+                .assign(Code=country_code)
+                .reset_index()
+                .set_index(["Code", "Date"])
+        )
+        to_append.append(aggregated)
+        all_state_codes.extend(present_state_codes)
+    return hopkins.drop(index=all_state_codes).append(pd.concat(to_append))

@@ -14,8 +14,9 @@ import numpy as np
 import pandas as pd
 from tqdm import tqdm
 
+from epimodel.imports.johns_hopkins import aggregate_countries
 from ..gleam import Batch
-from ..regions import Region, RegionDataset, Level
+from ..regions import Region, RegionDataset
 import epimodel
 
 log = logging.getLogger(__name__)
@@ -427,38 +428,6 @@ def get_df_list(df: pd.DataFrame, code) -> pd.DataFrame:
 
 def get_extra_path(config, name: str) -> Path:
     return Path(config["data_dir"]) / config["web_export"][name]
-
-
-def aggregate_countries(
-    hopkins: pd.DataFrame, countries_with_provinces: List[str], region_dataset,
-) -> pd.DataFrame:
-    if not countries_with_provinces:
-        return hopkins
-
-    to_append = []
-    all_state_codes = []
-    for country_code in countries_with_provinces:
-        _state_codes = [x.Code for x in region_dataset.get(country_code).children]
-        present_state_codes = list(
-            set(_state_codes).intersection(hopkins.index.get_level_values("Code"))
-        )
-        log.info(
-            "Aggregating hopkins data for %s into a single code %s",
-            present_state_codes,
-            country_code,
-        )
-        aggregated = (
-            hopkins.loc[present_state_codes]
-            .reset_index("Date")
-            .groupby("Date")
-            .sum()
-            .assign(Code=country_code)
-            .reset_index()
-            .set_index(["Code", "Date"])
-        )
-        to_append.append(aggregated)
-        all_state_codes.extend(present_state_codes)
-    return hopkins.drop(index=all_state_codes).append(pd.concat(to_append))
 
 
 def add_aggregate_traces(aggregate_regions, cummulative_active_df):

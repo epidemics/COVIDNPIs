@@ -137,7 +137,9 @@ class EstimateR(luigi.Task):
     def requires(self):
         return {
             "jhdata": JohnsHopkins(),
-            "si_sample": SerialIntervalSample()
+            "si_sample": SerialIntervalSample(),
+            "regions_dataset": RegionsDatasetTask(),
+            "config_yaml": ConfigYaml(),
         }
 
     def output(self):
@@ -146,11 +148,18 @@ class EstimateR(luigi.Task):
     def run(self):
         john_hopkins_path = self.input()['jhdata'].path
         serial_interval_file = self.input()['si_sample'].path
+        config_yaml = ConfigYaml.load(self.input()["config_yaml"].path)
+        regions_dataset = RegionsDatasetTask.load_dilled_rds(
+            self.input()["regions_dataset"].path
+        )
+
         algorithms.estimate_r(
             self.r_executable_path,
             self.r_estimates_output,
             john_hopkins_path,
-            serial_interval_file
+            serial_interval_file,
+            regions_dataset,
+            config_yaml["state_to_country"],
         )
 
 
