@@ -64,7 +64,11 @@ estimate_r <- function(cases, country_code, si_sample) {
   out <- data.frame(
     Date=R_mcmc_estimated_si$dates[R_mcmc_estimated_si$R$t_end],
     RMean=R_mcmc_estimated_si$R['Mean(R)'],
-    RStd=R_mcmc_estimated_si$R['Std(R)']
+    RStd=R_mcmc_estimated_si$R['Std(R)'],
+    check.names=FALSE
+  ) %>% rename(
+    MeanR="Mean(R)",
+    StdR="Std(R)"
   )
   out$Code = country_code
   return(out)
@@ -84,7 +88,7 @@ main <- function(si_sample_file, input_file, output_file) {
   si_sample <- read_rds(si_sample_file)
 
   pb <- progress_bar$new(total = length(countries))
-  export <- data.frame(code=NULL, date=NULL, RMean=NULL, RStd=NULL)
+  export <- data.frame(code=NULL, date=NULL, MeanR=NULL, StdR=NULL)
   for (country_code in countries) {
     country_estimates <- estimate_r(cases, country_code, si_sample)
     export <- rbind(export, country_estimates)

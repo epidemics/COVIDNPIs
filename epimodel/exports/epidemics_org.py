@@ -196,7 +196,7 @@ class WebExportRegion:
         if r_estimates is not None:
             data["REstimates"] = {
                 "Date": [x.isoformat() for x in r_estimates.index],
-                **r_estimates[["Mean.R.", "Std.R."]].to_dict(orient="list")
+                **r_estimates[["MeanR", "StdR"]].to_dict(orient="list")
             }
 
         return data
