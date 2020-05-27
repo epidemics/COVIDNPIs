@@ -305,17 +305,26 @@ class ExportSimulationDefinitions(luigi.Task):
         self.stamp_file_path.touch()
 
 
+class GleamvizResultsTarget(luigi.Target):
+    def __init__(self, path):
+        self.path = path
+
+    def exists(self):
+        for _, _, files in os.walk(self.path, topdown=False):
+            if "results.h5" in files:
+                return True
+        return False
+
+
 class GleamvizResults(luigi.ExternalTask):
     """This is done manually by a user via Gleam software. You should see the new
     simulations loaded. Run all of them and "Retrieve results"
     (do not export manually). Exit gleamviz."""
 
-    single_result = luigi.Parameter(
+    simulation_directory = luigi.Parameter(
         description=(
-            "A path to any one `results.h5` gleamviz files you downloaded "
-            "via 'retrieve results' in the gleam software. For example, it "
-            "could be something like "
-            "'~/GLEAMviz/data/simulations/82131231323.ghv5/results.h5'"
+            "A path to the gleamviz simulation directory. For example, it "
+            "could be something like '~/GLEAMviz/data/simulations/'"
         )
     )
 
@@ -323,7 +332,7 @@ class GleamvizResults(luigi.ExternalTask):
         return ExportSimulationDefinitions()
 
     def output(self):
-        return luigi.LocalTarget(Path(self.single_result).expanduser())
+        return GleamvizResultsTarget(Path(self.simulation_directory).expanduser())
 
 
 @inherits(GleamvizResults)
@@ -355,7 +364,7 @@ class ExtractSimulationsResults(luigi.Task):
     def run(self):
         batch_file = self.input()["batch_file"].path
 
-        simulation_directory = os.path.dirname(self.input()["gleamviz_result"].path)
+        simulation_directory = self.input()["gleamviz_result"].path
 
         config_yaml = ConfigYaml.load(self.input()["config_yaml"].path)
         regions_dataset = RegionsDatasetSubroutine.load_rds(self)

@@ -59,7 +59,7 @@ This by default uses data in `data/inputs` and exports data to `data/outputs/exa
     --export-name test-export \
     --UpdateForetold-foretold-output data-dir/inputs/fixtures/foretold.csv \
     --ExtractSimulationsResults-models-file data-dir/inputs/fixtures/gleam-models.hdf5 \
-    --ExtractSimulationsResults-single-result this-is-now-ignored
+    --ExtractSimulationsResults-simulation-directory this-is-now-ignored
 ```
 
 After the pipeline finishes, you should see the results in `data-dir/outputs/example/`
@@ -74,7 +74,7 @@ You provide all file inputs, foretold_channel and parameters, tweak configs to y
     ```
     ./luigi WebExport \
     --export-name my-export \
-    --ExtractSimulationsResults-single-result ~/GLEAMviz/data/simulations/82131231323.ghv5/results.h5
+    --ExtractSimulationsResults-simulation-directory ~/GLEAMviz/data/simulations/ 
     ```
 
 4. upload the result data using `./luigi WebUpload --export-data data-dir/outputs/web-exports/my-export` task

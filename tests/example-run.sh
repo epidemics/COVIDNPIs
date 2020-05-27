@@ -116,7 +116,7 @@ echo "Now faking the results of ImportGleamBatch in $RESULTS_FAKE"
 echo ""
 touch $RESULTS_FAKE
 echo "CAUTION: The following will fail if you haven't retrieved GLEAMviz results."
-show_and_do_luigi ExtractSimulationsResults --single-result $RESULTS_FAKE
+show_and_do_luigi ExtractSimulationsResults --simulation-directory $SIM_DIR
 user_continue
 
 echo ""
@@ -126,7 +126,7 @@ echo ""
 echo "$LUIGI WebExport --export-name test-output"
 user_continue
 $LUIGI WebExport \
-  --ExtractSimulationsResults-single-result $RESULTS_FAKE  \
+  --ExtractSimulationsResults-simulation-directory $SIM_DIR  \
   --ExtractSimulationsResults-models-file data-dir/inputs/fixtures/gleam-models.hdf5 \
   --export-name test-output \
   --web-export-directory $OUTPUT_DIRECTORY/web-exports
