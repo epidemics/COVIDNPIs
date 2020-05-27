@@ -48,8 +48,6 @@ if __name__ == "__main__":
         def __init__(self, indxs, trace):
             self.CMReduction = trace.CMReduction
             self.RegionLogR = trace.RegionLogR[:, indxs]
-            self.Z1C = trace.Z1C[:, indxs, :]
-            self.Z1D = trace.Z1D[:, indxs, :]
             self.InfectedCases = trace.InfectedCases[:, indxs, :]
             self.InfectedDeaths = trace.InfectedDeaths[:, indxs, :]
             self.ExpectedCases = trace.ExpectedCases[:, indxs, :]

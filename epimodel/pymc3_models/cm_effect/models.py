@@ -1393,7 +1393,7 @@ class CMCombined_Final_Old(BaseCMModel):
             means_id, lu_id, up_id, err_id = produce_CIs(
                 ids
             )
-            
+
             means_ed, lu_ed, up_ed, err_ed = produce_CIs(
                 ed_output
             )
@@ -1571,7 +1571,7 @@ class CMCombined_Final_Old(BaseCMModel):
                 if save_fig:
                     save_fig_pdf(
                         output_dir,
-                        f"CountryPredictionPlot{((country_indx + 1) / 5):.1f}"
+                        f"Fits{((country_indx + 1) / 5):.1f}"
                     )
 
 class CMCombined_Final(BaseCMModel):
