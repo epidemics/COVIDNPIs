@@ -310,11 +310,16 @@ class CMDeath_Final(BaseCMModel):
         self.ORs = copy.deepcopy(self.d.Rs)
         self.predict_all_days = True
 
-    def build_model(self, R_hyperprior_mean=3.25, cm_prior_sigma=0.1,
+    def build_model(self, R_hyperprior_mean=3.25, cm_prior_sigma=0.2, cm_prior='normal',
                     serial_interval_mean=SI_ALPHA / SI_BETA
                     ):
         with self.model:
-            self.CM_Alpha = pm.Normal("CM_Alpha", 0, cm_prior_sigma, shape=(self.nCMs,))
+            
+            if cm_prior=='normal':
+                self.CM_Alpha = pm.Normal("CM_Alpha", 0, cm_prior_sigma, shape=(self.nCMs,))
+                
+            if cm_prior=='half_normal':
+                self.CM_Alpha = pm.HalfNormal("CM_Alpha", cm_prior_sigma, shape=(self.nCMs,))
 
             self.CMReduction = pm.Deterministic("CMReduction", T.exp((-1.0) * self.CM_Alpha))
 
@@ -360,11 +365,6 @@ class CMDeath_Final(BaseCMModel):
                                     self.ExpectedGrowth,
                                     self.DailyGrowthNoise,
                                     shape=(self.nORs, self.nDs))
-
-            # self.Growth = pm.Deterministic("Growth",
-            #                                self.ExpectedGrowth)
-
-            # self.Det("Z1", self.Growth - self.ExpectedGrowth, plot_trace=False)
 
             self.InitialSize_log = pm.Normal("InitialSize_log", -6, 100, shape=(self.nORs,))
             self.Infected_log = pm.Deterministic("Infected_log", T.reshape(self.InitialSize_log, (
@@ -615,11 +615,15 @@ class CMActive_Final(BaseCMModel):
 
         self.observed_days = np.array(observed)
 
-    def build_model(self, R_hyperprior_mean=3.25, cm_prior_sigma=0.2,
+    def build_model(self, R_hyperprior_mean=3.25, cm_prior_sigma=0.2, cm_prior='normal',
                     serial_interval_mean=SI_ALPHA / SI_BETA
                     ):
         with self.model:
-            self.CM_Alpha = pm.Normal("CM_Alpha", 0, cm_prior_sigma, shape=(self.nCMs,))
+            if cm_prior=='normal':
+                self.CM_Alpha = pm.Normal("CM_Alpha", 0, cm_prior_sigma, shape=(self.nCMs,))
+                
+            if cm_prior=='half_normal':
+                self.CM_Alpha = pm.HalfNormal("CM_Alpha", cm_prior_sigma, shape=(self.nCMs,))
 
             self.CMReduction = pm.Deterministic("CMReduction", T.exp((-1.0) * self.CM_Alpha))
 
@@ -1626,11 +1630,15 @@ class CMCombined_Final(BaseCMModel):
 
         self.all_observed_deaths = np.array(observed_deaths)
 
-    def build_model(self, R_hyperprior_mean=3.25, cm_prior_sigma=0.2,
+    def build_model(self, R_hyperprior_mean=3.25, cm_prior_sigma=0.2, cm_prior='normal',
                     serial_interval_mean=SI_ALPHA / SI_BETA
                     ):
         with self.model:
-            self.CM_Alpha = pm.Normal("CM_Alpha", 0, cm_prior_sigma, shape=(self.nCMs,))
+            if cm_prior=='normal':
+                self.CM_Alpha = pm.Normal("CM_Alpha", 0, cm_prior_sigma, shape=(self.nCMs,))
+                
+            if cm_prior=='half_normal':
+                self.CM_Alpha = pm.HalfNormal("CM_Alpha", cm_prior_sigma, shape=(self.nCMs,))            
 
             self.CMReduction = pm.Deterministic("CMReduction", T.exp((-1.0) * self.CM_Alpha))
 
