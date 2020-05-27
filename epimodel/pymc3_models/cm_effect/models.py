@@ -1116,7 +1116,12 @@ class CMCombined_Final_Old(BaseCMModel):
             try:
                 ed_output = dist.random()
             except:
+                print("hi?")
                 print(region)
+                ed_output = np.ones_like(ids) * 10 ** -5
+                ids = np.ones_like(ids) * 10 ** -5
+
+            if np.isnan(self.d.Deaths.data[country_indx, -1]):
                 ed_output = np.ones_like(ids) * 10 ** -5
                 ids = np.ones_like(ids) * 10 ** -5
 
@@ -1368,20 +1373,27 @@ class CMCombined_Final_Old(BaseCMModel):
                 ec_output
             )
 
-            means_id, lu_id, up_id, err_id = produce_CIs(
-                self.trace.InfectedDeaths[:, country_indx, :]
-            )
-
             ed = self.trace.ExpectedDeaths[:, country_indx, :]
             nS, nDs = ed.shape
             dist = pm.NegativeBinomial.dist(mu=ed + 1e-3, alpha=np.repeat(np.array([self.trace.Phi_1]), nDs, axis=0).T)
 
+            ids = self.trace.InfectedDeaths[:, country_indx, :]
             try:
                 ed_output = dist.random()
             except:
+                print("hi?")
                 print(region)
-                ed_output = ed
+                ed_output = np.ones_like(ids) * 10 ** -5
+                ids = np.ones_like(ids) * 10 ** -5
 
+            # if np.isnan(self.d.Deaths.data[country_indx, -1]):
+            #     ed_output = np.ones_like(ids) * 10 ** -5
+            #     ids = np.ones_like(ids) * 10 ** -5
+
+            means_id, lu_id, up_id, err_id = produce_CIs(
+                ids
+            )
+            
             means_ed, lu_ed, up_ed, err_ed = produce_CIs(
                 ed_output
             )
