@@ -954,7 +954,7 @@ class CMCombined_Final_Old(BaseCMModel):
         self.all_observed_deaths = np.array(observed_deaths)
 
     def build_model(self, R_hyperprior_mean=3.25, cm_prior_sigma=0.2,
-                    serial_interval_mean=SI_ALPHA / SI_BETA
+                    serial_interval_mean=SI_ALPHA / SI_BETA, conf_noise = None, deaths_noise = None
                     ):
         with self.model:
             self.HyperCMVar = pm.HalfStudentT(
@@ -1038,18 +1038,30 @@ class CMCombined_Final_Old(BaseCMModel):
 
             self.ExpectedCases = pm.Deterministic("ExpectedCases", expected_cases.reshape(
                 (self.nORs, self.nDs)))
-
-            # learn the output noise for this.
-            self.Phi = pm.HalfNormal("Phi_1", 5)
-
-            # effectively handle missing values ourselves
-            self.ObservedCases = pm.NegativeBinomial(
-                "ObservedCases",
-                mu=self.ExpectedCases.reshape((self.nORs * self.nDs,))[self.all_observed_active],
-                alpha=self.Phi,
-                shape=(len(self.all_observed_active),),
-                observed=self.d.NewCases.data.reshape((self.nORs * self.nDs,))[self.all_observed_active]
-            )
+                
+            # can use learned or fixed conf noise
+            if conf_noise is None:
+                # learn the output noise for this
+                self.Phi = pm.HalfNormal("Phi_1", 5)
+                
+                # effectively handle missing values ourselves
+                self.ObservedCases = pm.NegativeBinomial(
+                    "ObservedCases",
+                    mu=self.ExpectedCases.reshape((self.nORs * self.nDs,))[self.all_observed_active],
+                    alpha=self.Phi,
+                    shape=(len(self.all_observed_active),),
+                    observed=self.d.NewCases.data.reshape((self.nORs * self.nDs,))[self.all_observed_active]
+                    )                
+                
+            else:
+                # effectively handle missing values ourselves
+                self.ObservedCases = pm.NegativeBinomial(
+                    "ObservedCases",
+                    mu=self.ExpectedCases.reshape((self.nORs * self.nDs,))[self.all_observed_active],
+                    alpha=conf_noise,
+                    shape=(len(self.all_observed_active),),
+                    observed=self.d.NewCases.data.reshape((self.nORs * self.nDs,))[self.all_observed_active]
+                    )  
 
             self.Z2C = pm.Deterministic(
                 "Z2C",
@@ -1071,14 +1083,29 @@ class CMCombined_Final_Old(BaseCMModel):
             self.ExpectedDeaths = pm.Deterministic("ExpectedDeaths", expected_deaths.reshape(
                 (self.nORs, self.nDs)))
 
-            # effectively handle missing values ourselves
-            self.ObservedDeaths = pm.NegativeBinomial(
-                "ObservedDeaths",
-                mu=self.ExpectedDeaths.reshape((self.nORs * self.nDs,))[self.all_observed_deaths],
-                alpha=self.Phi,
-                shape=(len(self.all_observed_deaths),),
-                observed=self.d.NewDeaths.data.reshape((self.nORs * self.nDs,))[self.all_observed_deaths]
-            )
+            # can use learned or fixed deaths noise
+            if deaths_noise is None:
+                if conf_noise is not None:
+                    # learn the output noise for this
+                    self.Phi = pm.HalfNormal("Phi_1", 5)
+                    
+                # effectively handle missing values ourselves
+                self.ObservedDeaths = pm.NegativeBinomial(
+                    "ObservedDeaths",
+                    mu=self.ExpectedDeaths.reshape((self.nORs * self.nDs,))[self.all_observed_deaths],
+                    alpha=self.Phi,
+                    shape=(len(self.all_observed_deaths),),
+                    observed=self.d.NewDeaths.data.reshape((self.nORs * self.nDs,))[self.all_observed_deaths]
+                )
+            else:
+                # effectively handle missing values ourselves
+                self.ObservedDeaths = pm.NegativeBinomial(
+                    "ObservedDeaths",
+                    mu=self.ExpectedDeaths.reshape((self.nORs * self.nDs,))[self.all_observed_deaths],
+                    alpha=deaths_noise,
+                    shape=(len(self.all_observed_deaths),),
+                    observed=self.d.NewDeaths.data.reshape((self.nORs * self.nDs,))[self.all_observed_deaths]
+                )
 
             self.Det(
                 "Z2D",
@@ -1630,7 +1657,7 @@ class CMCombined_Final(BaseCMModel):
         self.all_observed_deaths = np.array(observed_deaths)
 
     def build_model(self, R_hyperprior_mean=3.25, cm_prior_sigma=0.2, cm_prior='normal',
-                    serial_interval_mean=SI_ALPHA / SI_BETA
+                    serial_interval_mean=SI_ALPHA / SI_BETA, conf_noise = None, deaths_noise = None
                     ):
         with self.model:
             if cm_prior=='normal':
@@ -1715,17 +1742,30 @@ class CMCombined_Final(BaseCMModel):
             self.ExpectedCases = pm.Deterministic("ExpectedCases", expected_cases.reshape(
                 (self.nORs, self.nDs)))
 
-            # learn the output noise for this.
-            self.Phi = pm.HalfNormal("Phi_1", 5)
+            # can use learned or fixed conf noise
+            if conf_noise is None:
+                # learn the output noise for this
+                self.Phi = pm.HalfNormal("Phi_1", 5)
+                
+                # effectively handle missing values ourselves
+                self.ObservedCases = pm.NegativeBinomial(
+                    "ObservedCases",
+                    mu=self.ExpectedCases.reshape((self.nORs * self.nDs,))[self.all_observed_active],
+                    alpha=self.Phi,
+                    shape=(len(self.all_observed_active),),
+                    observed=self.d.NewCases.data.reshape((self.nORs * self.nDs,))[self.all_observed_active]
+                    )                
+                
+            else:
+                # effectively handle missing values ourselves
+                self.ObservedCases = pm.NegativeBinomial(
+                    "ObservedCases",
+                    mu=self.ExpectedCases.reshape((self.nORs * self.nDs,))[self.all_observed_active],
+                    alpha=conf_noise,
+                    shape=(len(self.all_observed_active),),
+                    observed=self.d.NewCases.data.reshape((self.nORs * self.nDs,))[self.all_observed_active]
+                    )   
 
-            # effectively handle missing values ourselves
-            self.ObservedCases = pm.NegativeBinomial(
-                "ObservedCases",
-                mu=self.ExpectedCases.reshape((self.nORs * self.nDs,))[self.all_observed_active],
-                alpha=self.Phi,
-                shape=(len(self.all_observed_active),),
-                observed=self.d.NewCases.data.reshape((self.nORs * self.nDs,))[self.all_observed_active]
-            )
 
             self.Z2C = pm.Deterministic(
                 "Z2C",
@@ -1745,16 +1785,31 @@ class CMCombined_Final(BaseCMModel):
             )[:, :self.nDs]
 
             self.ExpectedDeaths = pm.Deterministic("ExpectedDeaths", expected_deaths.reshape(
-                (self.nORs, self.nDs)))
+                (self.nORs, self.nDs)))                
 
-            # effectively handle missing values ourselves
-            self.ObservedDeaths = pm.NegativeBinomial(
-                "ObservedDeaths",
-                mu=self.ExpectedDeaths.reshape((self.nORs * self.nDs,))[self.all_observed_deaths],
-                alpha=self.Phi,
-                shape=(len(self.all_observed_deaths),),
-                observed=self.d.NewDeaths.data.reshape((self.nORs * self.nDs,))[self.all_observed_deaths]
-            )
+            # can use learned or fixed deaths noise
+            if deaths_noise is None:
+                if conf_noise is not None:
+                    # learn the output noise for this
+                    self.Phi = pm.HalfNormal("Phi_1", 5)
+                    
+                # effectively handle missing values ourselves
+                self.ObservedDeaths = pm.NegativeBinomial(
+                    "ObservedDeaths",
+                    mu=self.ExpectedDeaths.reshape((self.nORs * self.nDs,))[self.all_observed_deaths],
+                    alpha=self.Phi,
+                    shape=(len(self.all_observed_deaths),),
+                    observed=self.d.NewDeaths.data.reshape((self.nORs * self.nDs,))[self.all_observed_deaths]
+                )
+            else:
+                # effectively handle missing values ourselves
+                self.ObservedDeaths = pm.NegativeBinomial(
+                    "ObservedDeaths",
+                    mu=self.ExpectedDeaths.reshape((self.nORs * self.nDs,))[self.all_observed_deaths],
+                    alpha=deaths_noise,
+                    shape=(len(self.all_observed_deaths),),
+                    observed=self.d.NewDeaths.data.reshape((self.nORs * self.nDs,))[self.all_observed_deaths]
+                )
 
             self.Det(
                 "Z2D",
