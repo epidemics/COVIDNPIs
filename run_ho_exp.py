@@ -71,4 +71,4 @@ if __name__ == "__main__":
             model.trace = pm.sample(args.nS, chains=args.nC, target_accept=0.95)
 
         results_obj = ResultsObject(indx, model.trace)
-        pickle.dump(results_obj, open(f"ho_results/{rg}.pkl","wb"))
+        pickle.dump(results_obj, open(f"ho_resultsv2/{rg}.pkl","wb"))
