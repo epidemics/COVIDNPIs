@@ -8,125 +8,154 @@ Please use the [covid](https://github.com/epidemics/covid/issues/new/choose) rep
 ## Main concepts
 
 * Region database (continents, countries, provinces, GLEAM basins) - codes, names, basic stats, tree structure (TODO).
-* All data, including the region database, is stored in [epimodel-covid-data](https://github.com/epidemics/epimodel-covid-data) repo for asynchronous updates.
 * Each region has an ISO-based code, all datasets are organized by those codes (as a row index).
 * Built on Pandas with some helpers, using mostly CSVs and HDF5.
 * Algorithms and imports assuming common dataframe structure (with `Code` and optionally `Date` row index).
 * All dates are UTC timestamps, stored in ISO format with TZ.
+* Most of the data is stored in [epimodel-covid-data](https://github.com/epidemics/epimodel-covid-data) repo for asynchronous updates.
+
+
+## Contributing
+
+For the contribution details and project management, please see [this specification](https://www.notion.so/Development-project-management-476f3c53b0f24171a78146365072d82e).
+
 
 ## Install
 
 * [Get Poetry](https://python-poetry.org/docs/#installation)
 * Clone this repository.
 * Install the dependencies and this lib `poetry install` (creates a virtual env by default).
-* Clone the [epimodel-covid-data](https://github.com/epidemics/epimodel-covid-data/) repository. For convenience, I recommend cloning it inside the `epimodel` repo directory as `data`.
 
 ```sh
 ## Clone the repositories (or use their https://... withou github login)
 git clone git@github.com:epidemics/epimodel.git
 cd epimodel
-git clone git@github.com:epidemics/epimodel-covid-data.git data
 
 ## Install packages
-poetry install  # Best run it outside virtualenv - poetry will create its own
+poetry install  # poetry creates its own virtualenv
+
+poetry shell # activating the virtualenv (if not active already)
+poetry run luigi  # running a command in the virtualenv
+
 # Alternatively, you can also install PyMC3 or Pyro, and jupyter (in both cases):
 poetry install -E pymc3
 poetry install -E pyro
-
-## Or, if using conda:
-pip install -r requirements.txt
-
-poetry shell # One way to enter the virtualenv (if not active already)
-poetry run jupyter notebook  # For example
 ```
 
-## Basic usage
+* Install the [R language](https://www.r-project.org/about.html): for example `apt install r-base`
 
-```python
-from epimodel import RegionDataset, read_csv
+## Running the pipeline
+We are using [luigi](https://luigi.readthedocs.io/en/stable/index.html) as the workflow framework. This
+readme doesn't include description of how to use `luigi` so please refer to the project documentation
+to understand how to tweak this.
 
-# Read regions
-rds = RegionDataset.load('data/regions.csv')
-# Find by name or by code
-cz = rds['CZ']
-cz = rds.find_one_by_name('Czech Republic')
-# Use attribute access on Region
-print(cz.Name)
-# TODO: attributes for tree-structure access
+There is an example of the usage with explanations in `test/example-run.sh` if you want to see a more.
 
-# Load John Hopkins CSSE dataset with our helper (creates indexes etc.)
-csse = read_csv('data/johns-hopkins.csv')
-print(csse.loc[('CZ', "2020-03-28")])
+### Example with faked data
+This example skips the `UpdateForetold` and `ExtractSimulationsResults` task by providing their output.
+In reality, you want to actually run GLEAMviz in between and provide Foretold channel to get data via API.
+This by default uses data in `data/inputs` and exports data to `data/outputs/example`.
 ```
+# `poetry shell`  # if you haven't done already
+./luigi WebExport \
+    --export-name test-export \
+    --UpdateForetold-foretold-output data-dir/inputs/fixtures/foretold.csv \
+    --ExtractSimulationsResults-models-file data-dir/inputs/fixtures/gleam-models.hdf5 \
+    --ExtractSimulationsResults-simulation-directory this-is-now-ignored
+```
+
+After the pipeline finishes, you should see the results in `data-dir/outputs/example/`
+
+### The usual flow
+You provide all file inputs, foretold_channel and parameters, tweak configs to your liking and then:
+
+1. `./luigi ExportSimulationDefinitions`
+2. run GLEAMviz with the simulations created above, retrieve results via it's UI, close it
+3. export the data using
+
+    ```
+    ./luigi WebExport \
+    --export-name my-export \
+    --ExtractSimulationsResults-simulation-directory ~/GLEAMviz/data/simulations/ 
+    ```
+
+4. upload the result data using `./luigi WebUpload --export-data data-dir/outputs/web-exports/my-export` task
+
+### Actually using it
+1. add `foretold_channel` in `luigi.cfg` to `[UpdateForetold]` section. This is a secret and you can get it from others on slack
+2. adjust `config.yaml` to your liking, such as scenarios to model or countries to export
+3. change `[Configuration].output_directory` to some empty or non-existing folder
+4. provide data for any of the ExternalTasks, such as `BaseDefinition`, `ConfigYaml`, `CountryEstimates` and others (see the `epimodel/tasks.py`). If you want to see what does your task depends on, use `luigi-deps-tree` as mentioned above.
+5. deal with GLEAMviz and knowing where it's simulation directory is on your installation
+
+### Usage tips
+Luigi by default uses `luigi.cfg` from the root of the repository. You can edit it directly or you can created another one and reference it via `LUIGI_CONFIG_PATH=your-config.cfg`. `your-config.cfg` will take precedence over the `luigi.cfg`, so you can change only what's necessary. For example, if you wanted to have a different input and output directory for a specific location run, you could have:
+
+```
+# balochistan.cfg
+
+[DEFAULT]
+output_directory = my-outputs/balochistan
+
+[RegionsAggregates]
+aggregates = data-dir/your-specific-file-for-aggregates.yaml
+```
+
+and then `env LUIGI_CONFIG_PATH=balochistan.cfg ./luigi RegionsDatasetTask` would make all outputs go to `my-outputs/balochistan` (instead of the outputs dir from `luigi.cfg`) and the `RegionsAggregates.aggregates` would be taken from the new location too . Parameters from configs can be still overriden from CLI, so `env LUIGI_CONFIG_PATH=balochistan.cfg ./luigi RegionsDatasetTask --RegionsAggregates-aggregates some-other-path.yaml` would still take precedence.
+
+
+### Getting help
+See `epimodel/tasks.py` where the whole pipeline is defined. Read the docstrings and paramter descriptions
+to understand and discover all available tasks, their inputs, outputs and their configuration.
+
+You can also use `./luigi <TaskName> --help` or `./luigi <TaskName> --help-all` to get information about the parameters of the task.
+
+`luigi-deps-tree --module epimodel.tasks <TaskName>` enables you to visualize the dependencies and what is and isn't completed. For example:
+
+```
+$ luigi-deps-tree --module epimodel.tasks JohnsHopkins --RegionsFile-regions different-regions.csv
+└─--[JohnsHopkins-{'hopkins_output': 'data-dir/outputs/john-hopkins.csv'} (PENDING)]
+   |--[RegionsFile-{'regions': 'different-regions.csv'} (PENDING)]
+   |--[GleamRegions-{'gleams': 'data-dir/inputs/manual/regions-gleam.csv'} (COMPLETE)]
+   └─--[RegionsAggregates-{'aggregates': 'data-dir/inputs/manual/regions-agg.yaml'} (COMPLETE)]
+```
+
+## Manual Inputs
+
+#### ConfigYaml
+
+This holds the confguration for web-export including the groups and traces used to generate the GLEAMviz definitions. More documentation can be found in the [default config file](data-dir/inputs/manual/config.yaml).
+
+#### RegionsFile & GleamRegions
+
+These are stable CSVs and you shouldn't have to edit them.
+
+#### RegionsAggregates
+
+Documentation is in [the file](data-dir/inputs/manual/regions-agg.yaml).
+
+#### BaseDefinition
+
+This a pre-formatted XML file. Modifying it changes the default gleam parameters. If you do change it, only change the values, not the structure.
+
+#### GleamParameters
+
+This is a CSV whose format is documented in the [example sheet](https://docs.google.com/spreadsheets/d/1IxPMadPxjnphWSKG_6PxmsrCLoXe3cHGp1Ok9kcddPk/edit#gid=1831691945).
+
+#### CountryEstimates
+
+This gives estimates for the Infectious compartment and Beta values for various regions.
+
+#### Rates
+
+#### Timezones
+
+#### AgeDistributions
+
 
 ## Development
 
 * Use Poetry for dependency management.
 * We enforce [black](https://github.com/psf/black) formatting (with the default style).
-* Use `pytest` for testing, add tests for your code!
+* Use `pytest` for testing, add tests for your code
 * Use pull requests for both this and the data repository.
-
-## Contributing
-
-For the contribution details and project management, please see [this specification](https://www.notion.so/Development-project-management-476f3c53b0f24171a78146365072d82e).
-
-## Running pipeline to get web export
-
-Assuming you've installed deps via `poetry install` and you are in the root epimodel repo.
-Also, you did `cp config.yaml config-local.yaml` (modifying it as fit) and set e.g. `export_regions: [CZ, ES]`. Prepend `-C config_local.yaml` to all commands below to use it rather than `config.yaml` (changing `config.yaml` may later conflict with git update). Alternatively, set the environment variable `EPI_CONFIG` to the path of the config file you're using.
-
-1. Clone data repo or update it.
-   `git clone https://github.com/epidemics/epimodel-covid-data data`
-
-2. Optional: Update Johns Hopkins data `./do update-johns-hopkins` (not needed if you got fresh data from the repo above).
-
-3. Generate batch file from estimates and basic Gleam XML definition.
-   `./do generate-gleam-batch -D 2020-04-15 -c JK default.xml estimates-2020-04-15.csv`
-   The batch file now contains all the scenario definitions and initial populations.
-   Note the estimate input specification may change.
-
-4. Export Gleam simulation XML files in Gleamviz (not while gleamviz is running!).
-   `./do export-gleam-batch out/batch-2020-04-16T03:54:52.910001+00:00.hdf5`
-
-5. Start gleamviz. You should see the new simulations loaded. Run all of them and "Retrieve results" (do not export manually). Exit gleamviz.
-
-6. ./do import-gleam-batch out/batch-2020-04-16T03:54:52.910001+00:00.hdf5
-    will output to  out/batch-out.hdf5
-   (Gleamviz must be stopped before that.) After this succeeds, you may delete the simulations from gleamviz.
-
-7. Generate web export (additional data are fetched from [config.yml](https://github.com/epidemics/epimodel/blob/master/config.yaml#L16))
-
-   `./do web-export out/batch-out.hdf5 data/sources/estimates-JK-2020-04-15.csv`
-
-8. Export the generated folder to web! Optionally, set a channel for testing first.
-   `./do web-upload -d out/export-2020-04-03T02:03:28.991629+00:00 ttest28`
-
-Alternatively, steps 7 and 8 can be combined:
-
-`./do web-export out/batch-2020-04-16T03:54:52.910001+00:00.hdf5 data/sources/estimates-JK-2020-04-15.csv --upload ttest28`
-
-### Running pipeline with workflow commands
-
-An alternative way to run the pipeline is as follows:
-
-1. Update Johns Hopkins and Foretold data, generate batch file from estimates and basic Gleam XML definition and export Gleam simulation XML files to Gleamviz (not while gleamviz is running!):
-   `./do workflow-prepare-gleam -D 2020-04-15 -c JK default.xml estimates-2020-04-15.csv`
-
-2. Start gleamviz. You should see the new simulations loaded. Run all of them and "Retrieve results" (do not export manually). Exit gleamviz.
-
-3. Import the gleamviz results into the HDF batch file, generate web export and export the generated folder to web (Gleamviz must be stopped before that.) After this succeeds, you may delete the simulations from gleamviz.
-   `./do workflow-gleam-to-web out/batch-2020-04-16T03:54:52.910001+00:00.hdf5 data/sources/estimates-JK-2020-04-15.csv ttest28`
-
-### Gleam Batch file
-
-Has 2-3 dataframes:
-
-* `simulations`: indexed by `SimulationID`, contains information about what simulation ID had what parameters, and the XML definition file.
-
-* `initial_compartments`: Indexed by `['SimulationID', 'Code']`, has the initial sizes of set compartments (columns Exposed, Infected).
-
-* `new_fraction`: After `import-gleam-batch` actually contains the modelled data for Infected and Recovered (columns). Indexed by `['SimulationID', 'Code', 'Date']`:
-  * `SimulationID`: corresponding simulation ID to be able to be able to map it to parameters in `simulations`,
-  * `Code`: region code (ISOa2 for countries, e.g. `AE`),
-  * `Date`: a date for which we model Infected and Recovered.
-  Note that the values are *new* elements in the compartment for given day (or in case of resampled dates, in the period since last sample).

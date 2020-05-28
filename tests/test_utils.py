@@ -1,5 +1,6 @@
 import io
 from datetime import date, datetime, tzinfo
+import numpy as np
 
 from epimodel import utils
 
@@ -38,7 +39,7 @@ def test_read_csv_smart(regions):
     df = utils.read_csv_smart(
         io.StringIO("A,name,date\n42,CZ,2020-01-02\n43,CZ,2020-01-01"), regions
     )
-    assert df["A"].dtype == int
+    assert np.issubdtype(df["A"].dtype, np.int)
 
     df = utils.read_csv_smart(io.StringIO("A,name\n42,CZ\n43,NA"), regions)
     assert df.loc["NA", "A"] == 43

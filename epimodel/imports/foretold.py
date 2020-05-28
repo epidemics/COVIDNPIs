@@ -94,7 +94,7 @@ def fetch_foretold(channel_id: str) -> bytes:
     """Fetch the data from foretold.io.
 
     :param channel_id: Channel id (UUID)
-    :param output_path: If set, writes into the path.
+    :param output_path: If set, writes into the export_directory.
     :returns: None if written to a file; parsed JSON if output_path not set.
     """
     if not channel_id:

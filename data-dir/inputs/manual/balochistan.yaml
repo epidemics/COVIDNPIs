@@ -1,0 +1,94 @@
+### date on which the model was produced, displayed as 'model last updated on ...' on website
+generation_date: "2020-05-10"
+
+### Generating GLEAM scenarios
+# All combinations of groups and traces are created.
+#
+# Group and trace `name` values must contain all the classes in the
+# parameters configuration sheet of that type. Groups and traces listed
+# here that have no configuration will still be computed, but only with
+# the parameters common to all classes of that type.
+scenarios:
+  # This will be the simulation name prefix in GLEAMviz. The full name
+  # of each simulation will be "{name} ({group.name} + {trace.name})"
+  name: "Balochistan"
+
+  # These are the different tabs you can click on to see different
+  # charts.
+  groups:
+    - group: "Default_Weak"
+      name: Weak mitigation
+      description: Mostly open borders; full opening of public places; no social distancing; little compliance with hygiene advice
+
+    - group: "Default_Moderate"
+      name: Moderate mitigation
+      description: Some border closure; closure of schools; ban on public gatherings; partial social distancing
+
+    - group: "Default_Strong"
+      name: Strong mitigation
+      description: Strong external and internal border closure; full closure of public places (including places of worship); social distancing outside and within homes
+
+    - group: "Default_Recommended"
+      name: Recommended mitigation
+      description: Moderate measures + compulsory masks; contact tracing; social distancing at places of worship and within homes
+
+  # These show up as individual lines on each chart.
+  traces:
+    # TODO
+
+  # Input estimates are only for the infectious compartment. The
+  # following are multipied x infectious to get the total for each
+  # compartment in each region. Only the compartments listed here will
+  # be added to the simulations as seeds.
+  compartment_multipliers:
+    Infectious: 1.0
+    Exposed: 1.8
+
+  # Maximum fraction of population in any region that is in all of the
+  # listed compartments combined. If estimating all compartments, this
+  # should be set to 1.
+  compartments_max_fraction: 0.8
+
+### List of exported regions code
+export_regions:
+  - { code: G-BHV, name: "Bahawalpur (and nearby regions)" }
+  - { code: G-DBA, name: "Dalbandin (and nearby regions)" }
+  - { code: G-DDU, name: "Dadu (and nearby regions)" }
+  - { code: G-DEA, name: "Dera Ghazi Khan (and nearby regions)" }
+  - { code: G-DSK, name: "Dera Ismail Khan (and nearby regions)" }
+  - { code: G-GIL, name: "Gilgit (and nearby regions)" }
+  - { code: G-GWD, name: "Gwadar (and nearby regions)" }
+  - { code: G-HDD, name: "Hyderabad (and nearby regions)" }
+  - { code: G-ISB, name: "Islamabad (and nearby regions)" }
+  - { code: G-KCF, name: "Kadanwari (and nearby regions)" }
+  - { code: G-KDU, name: "Skardu (and nearby regions)" }
+  - { code: G-KHI, name: "Karachi (and nearby regions)" }
+  - { code: G-LHE, name: "Lahore (and nearby regions)" }
+  - { code: G-LYP, name: "Faisalabad (and nearby regions)" }
+  - { code: G-MJD, name: "Mohenjodaro (and nearby regions)" }
+  - { code: G-MUX, name: "Multan (and nearby regions)" }
+  - { code: G-PEW, name: "Peshawar (and nearby regions)" }
+  - { code: G-PJG, name: "Panjgur (and nearby regions)" }
+  - { code: G-PZH, name: "Zhob (and nearby regions)" }
+  - { code: G-RYK, name: "Rahim Yar Khan (and nearby regions)" }
+  - { code: G-SDT, name: "Saidu Sharif (and nearby regions)" }
+  - { code: G-SKT, name: "Sialkot (and nearby regions)" }
+  - { code: G-SKZ, name: "Sukkur (and nearby regions)" }
+  - { code: G-SUL, name: "Sui (and nearby regions)" }
+  - { code: G-TUK, name: "Turbat (and nearby regions)" }
+  - { code: G-UET, name: "Quetta (and nearby regions)" }
+  - { code: G-WNS, name: "Nawabshah (and nearby regions)" }
+  - PK
+  - PK-BA
+  - PK-GB
+  - PK-ICT
+  - PK-KP
+  - PK-PB
+  - PK-SD
+
+### these are used to match our non-state codes (e.g. AU) for John Hopkins database
+### where they have it on state/province granularity
+state_to_country:
+  - AU
+  - CN
+  - CA

@@ -1,0 +1,11 @@
+Region,Value,Parameter,Start date,End date,Type,Class,Trace
+,,run dates,2020-04-15,2021-01-01,,,
+,5,number of runs,,,,,
+,0.35,seasonality,,,trace,,
+,0.9,airline traffic,,,trace,,
+,1.5,beta,,,trace,,
+,1.2,beta multiplier,,,trace,Faster Spread,
+Pakistan,1,epsilon,2020-04-14,2021-05-01,group,Weak Exceptions,
+Pakistan,1,beta,2020-04-14,2021-05-01,group,Weak Exceptions,
+Pakistan,0.5,epsilon,2020-04-14,2021-05-01,group,Strong Exceptions,
+Pakistan,0.5,beta,2020-04-14,2021-05-01,group,Strong Exceptions,

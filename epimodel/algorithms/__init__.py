@@ -1,1 +1,2 @@
 from .population import distribute_down_with_population, estimate_missing_populations
+from .estimate_r import estimate_r
