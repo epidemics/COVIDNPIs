@@ -140,8 +140,8 @@ class EstimateR(luigi.Task):
         return {
             "jhdata": JohnsHopkins(),
             "si_sample": SerialIntervalSample(),
-            "regions_dataset": RegionsDatasetTask(),
             "config_yaml": ConfigYaml(),
+            **RegionsDatasetSubroutine.requires(),
         }
 
     def output(self):
@@ -151,9 +151,7 @@ class EstimateR(luigi.Task):
         john_hopkins_path = self.input()["jhdata"].path
         serial_interval_file = self.input()["si_sample"].path
         config_yaml = ConfigYaml.load(self.input()["config_yaml"].path)
-        regions_dataset = RegionsDatasetTask.load_dilled_rds(
-            self.input()["regions_dataset"].path
-        )
+        regions_dataset = RegionsDatasetSubroutine.load_rds(self)
 
         algorithms.estimate_r(
             self.r_executable_path,
@@ -247,7 +245,6 @@ class ConfigYaml(luigi.ExternalTask):
     def load(path):
         with open(path, "rt") as f:
             config = yaml.safe_load(f)
-            ctx.obj["CONFIG"] = config
 
         export_regions = {}
         for item in config["export_regions"]:
@@ -576,7 +573,7 @@ class WebUpload(luigi.Task):
     channel: str = luigi.Parameter(
         description="channel to load the data to, basically a subdirectory in gcs_path",
     )
-    exported_data: str = luigi.Parameter(
+    export_data: str = luigi.Parameter(
         description="Full path to the exported data. E.g. `outputs/web-exports/latest"
     )
 
@@ -588,7 +585,7 @@ class WebUpload(luigi.Task):
     def run(self):
         # main_data_file = self.input().path
         # directory with all the exported outputs
-        export_path = Path(self.exported_data)
+        export_path = Path(self.export_data)
         if not export_path.exists():
             raise IOError(
                 f"'{export_path}' directory does not exist. Provide existing directory."

@@ -1,5 +1,5 @@
 ### date on which the model was produced, displayed as 'model last updated on ...' on website
-generation_date: "2020-05-10"
+generated: "2020-05-10"
 
 ### Generating GLEAM scenarios
 # All combinations of groups and traces are created.

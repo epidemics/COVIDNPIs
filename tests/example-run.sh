@@ -138,4 +138,4 @@ $LUIGI WebExport \
 
 echo ""
 echo "And finally upload:"
-show_and_do_luigi WebUpload --gs-prefix gs://static-covid/static/v4/deleteme --exported-data $OUTPUT_DIRECTORY/web-exports/test-output
+show_and_do_luigi WebUpload --gs-prefix gs://static-covid/static/v4/deleteme --export-data $OUTPUT_DIRECTORY/web-exports/test-output

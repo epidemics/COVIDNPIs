@@ -30,7 +30,7 @@ class WebExport:
 
     def __init__(self, config, date_resample: str, comment=None):
         self.created = datetime.datetime.now().astimezone(datetime.timezone.utc)
-        self.generated = config["generated_date"]
+        self.generated = config["generated"]
         self.created_by = f"{getpass.getuser()}@{socket.gethostname()}"
         self.comment = comment
         self.date_resample = date_resample
@@ -331,8 +331,9 @@ def upload_export(dir_to_export: Path, gs_prefix: str, channel: str):
         "-a",
         "public-read",
     ]
-    assert dir_to_export.is_dir()
 
+    # Validate files to export
+    assert dir_to_export.is_dir()
     for json_file in dir_to_export.iterdir():
         if json_file.suffix != ".json":
             continue
@@ -343,13 +344,15 @@ def upload_export(dir_to_export: Path, gs_prefix: str, channel: str):
             raise
 
     gcs_path = os.path.join(gs_prefix, channel)
-    log.info(f"Uploading data folder {dir_to_export} to {gcs_path} ...")
-    cmd = CMD + ["-Z", "-R", dir_to_export.as_posix(), gcs_path]
+    log.info(f"Uploading from {dir_to_export} to {gcs_path} ...")
+
+    cmd = CMD + ["-Z", "-R", f"{dir_to_export.as_posix()}/*", gcs_path]
     log.debug(f"Running {cmd!r}")
     subprocess.run(cmd, check=True)
 
-    if channel != "main":
-        log.info(f"Custom web URL: http://epidemicforecasting.org/?channel={channel}")
+    log.info(f"Production URL: http://epidemicforecasting.org/?channel={channel}")
+    log.info(f"Staging URL: http://epidemicforecasting.org/?channel={channel}")
+    log.info(f"Local URL: http://127.0.0.1:8000/?channel={channel}")
 
 
 def types_to_json(obj):
