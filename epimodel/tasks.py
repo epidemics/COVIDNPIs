@@ -111,6 +111,58 @@ class JohnsHopkins(luigi.Task):
         )
 
 
+class SerialIntervalSample(luigi.ExternalTask):
+    """Serial Interval data imported manually"""
+
+    serial_interval_sample: str = luigi.Parameter(
+        description="Path to the input file relative to the configuration input directory",
+    )
+
+    def output(self):
+        return luigi.LocalTarget(self.serial_interval_sample)
+
+
+class EstimateR(luigi.Task):
+    """
+    R estimation script for all countries in the JohnHopkins database.
+    !! This task usually takes about an 30 minutes to complete
+    """
+    r_estimates_output: str = luigi.Parameter(
+        description="Output filename of the estimates file relative to config output dir.",
+    )
+    r_executable_path: str = luigi.Parameter(
+        description="Path to the Rscript executable (/usr/bin/Rscript default).",
+    )
+
+    def requires(self):
+        return {
+            "jhdata": JohnsHopkins(),
+            "si_sample": SerialIntervalSample(),
+            "regions_dataset": RegionsDatasetTask(),
+            "config_yaml": ConfigYaml(),
+        }
+
+    def output(self):
+        return luigi.LocalTarget(self.r_estimates_output)
+
+    def run(self):
+        john_hopkins_path = self.input()['jhdata'].path
+        serial_interval_file = self.input()['si_sample'].path
+        config_yaml = ConfigYaml.load(self.input()["config_yaml"].path)
+        regions_dataset = RegionsDatasetTask.load_dilled_rds(
+            self.input()["regions_dataset"].path
+        )
+
+        algorithms.estimate_r(
+            self.r_executable_path,
+            self.r_estimates_output,
+            john_hopkins_path,
+            serial_interval_file,
+            regions_dataset,
+            config_yaml["state_to_country"],
+        )
+
+
 class UpdateForetold(luigi.Task):
     """Exports prediction data form the Foretold platform and
     dumps them into a CSV. These are part of the inputs to the gleamviz model.
@@ -461,6 +513,7 @@ class WebExport(luigi.Task):
             "age_distributions": AgeDistributions(),
             "config_yaml": ConfigYaml(),
             "country_estimates": CountryEstimates(),
+            "r_estimates": EstimateR(),
             **RegionsDatasetSubroutine.requires(),
         }
 

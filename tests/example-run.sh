@@ -91,6 +91,10 @@ show_and_do_luigi UpdateForetold --foretold-channel $FORETOLD_TOKEN
 user_continue
 
 echo ""
+echo "Run this to estimate the reproduction number for all countries in the JH database"
+$LUIGI EstimateR --r_executable_path /usr/bin/Rscript
+
+echo ""
 echo "If you wanted to change a parameter of some upstream task of the task you want to run"
 echo "you prefix it with the upstream task name. For example, RegionsFile is an upstream"
 echo "task of the JohnsHopkins and the RegionsFile location is fed into JohnsHopkins"
@@ -128,6 +132,7 @@ user_continue
 $LUIGI WebExport \
   --ExtractSimulationsResults-simulation-directory $SIM_DIR  \
   --ExtractSimulationsResults-models-file data-dir/inputs/fixtures/gleam-models.hdf5 \
+  --EstimateR-r-estimates-output data-dir/inputs/fixtures/r_estimates.csv \
   --export-name test-output \
   --web-export-directory $OUTPUT_DIRECTORY/web-exports
 
