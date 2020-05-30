@@ -221,11 +221,17 @@ class DataPreprocessor():
             "confirmed_mask": self.min_num_active_mask,
         }
 
-    def preprocess_data(self, data_path):
+    def preprocess_data(self, data_path, days_max=None):
         # load data
         df = pd.read_csv(data_path, parse_dates=["Date"], infer_datetime_format=True).set_index(
             ["Country Code", "Date"])
-        Ds = list(df.index.levels[1])
+
+        if days_max is None:
+            Ds = list(df.index.levels[1])
+        else:
+            Ds = list(df.index.levels[1])[:days_max]
+            print(Ds[-1])
+
         nDs = len(Ds)
 
         all_rs = list([r for r, _ in df.index])
@@ -347,6 +353,10 @@ class PreprocessedData(object):
         self.NewCases = NewCases
         self.RNames = RNames
 
+        for i, c in enumerate(self.CMs):
+            if c == "Stay Home Order":
+                self.CMs[i] = "Stay Home Order (with exemptions)"
+
     def reduce_regions_from_index(self, reduced_regions_indx):
         self.Active = self.Active[reduced_regions_indx, :]
         self.Confirmed = self.Confirmed[reduced_regions_indx, :]
@@ -399,12 +409,12 @@ class PreprocessedData(object):
                             self.ActiveCMs[r, f_i, :] = 0
                             print(f"Region {self.Rs[r]} has feature {f} removed, since it is too early")
 
-    def coactivation_plot(self, cm_plot_style, newfig=True):
+    def coactivation_plot(self, cm_plot_style, newfig=True, skip_yticks=False):
         if newfig:
-            plt.figure(figsize=(3, 3), dpi=300)
+            plt.figure(figsize=(2, 3), dpi=300)
 
         nRs, nCMs, nDs = self.ActiveCMs.shape
-        plt.title("Frequency$(\phi_j=1 | \phi_i = 1)$",  fontsize=12)
+        plt.title("Frequency $i$ Active Given $j$ Active",  fontsize=8)
         ax = plt.gca()
         mat = np.zeros((nCMs, nCMs))
         for cm in range(nCMs):
@@ -417,7 +427,7 @@ class PreprocessedData(object):
         plt.xticks(
             np.arange(len(self.CMs)),
             [f"{cm_plot_style[i][0]}" for i, f in enumerate(self.CMs)],
-            fontproperties=fp2
+           fontproperties=fp2,
         )
 
         for i, ticklabel in enumerate(ax.get_xticklabels()):
@@ -425,29 +435,31 @@ class PreprocessedData(object):
 
         plt.yticks(
             np.arange(len(self.CMs)),
-            [f"{f}     " for f in self.CMs]
+            [f"{f}     " if not skip_yticks else "    " for f in self.CMs]
         )
 
-        plt.xlabel("NPI $j$")
-        plt.ylabel("NPI $i$")
+        plt.xlabel("$i$", fontsize=8)
+        plt.ylabel("$j$", fontsize=8)
 
         x_min, x_max = plt.xlim()
         x_r = x_max - x_min
         for i, (ticklabel, tickloc) in enumerate(zip(ax.get_yticklabels(), ax.get_yticks())):
             ticklabel.set_color(cm_plot_style[i][1])
-            plt.text(-0.13 * x_r, tickloc, cm_plot_style[i][0], horizontalalignment='center',
+            plt.text(-0.16 * x_r, tickloc, cm_plot_style[i][0], horizontalalignment='center',
                      verticalalignment='center',
-                     fontproperties=fp2, fontsize=10, color=cm_plot_style[i][1])
+                     fontproperties=fp2, fontsize=8, color=cm_plot_style[i][1])
 
+        plt.xticks(fontsize=8)
         divider = make_axes_locatable(ax)
         cax = divider.append_axes("right", size="5%", pad=0.05)
         plt.colorbar(im, cax=cax, format=PercentFormatter())
-        ax.tick_params(axis="both", which="major", labelsize=10)
+        ax = plt.gca()
+        ax.tick_params(axis="both", which="major", labelsize=6)
 
 
         # sns.despine()
 
-    def cumulative_days_plot(self, cm_plot_style, newfig=True):
+    def cumulative_days_plot(self, cm_plot_style, newfig=True, skip_yticks=False):
         if newfig:
             plt.figure(figsize=(3, 3), dpi=300)
 
@@ -459,26 +471,28 @@ class PreprocessedData(object):
 
         plt.yticks(
             -np.arange(len(self.CMs)),
-            [f"{f}     " for f in self.CMs]
+            [f"{f}     " if not skip_yticks else "    " for f in self.CMs]
         )
 
         x_min, x_max = plt.xlim()
         x_r = x_max - x_min
         for i, (ticklabel, tickloc) in enumerate(zip(ax.get_yticklabels(), ax.get_yticks())):
             ticklabel.set_color(cm_plot_style[i][1])
-            plt.text(-0.075*x_r, tickloc, cm_plot_style[i][0], horizontalalignment='center', verticalalignment='center',
-                     fontproperties=fp2, fontsize=10, color=cm_plot_style[i][1])
+            plt.text(-0.09*x_r, tickloc, cm_plot_style[i][0], horizontalalignment='center', verticalalignment='center',
+                     fontproperties=fp2, fontsize=8, color=cm_plot_style[i][1])
 
-        ax.tick_params(axis="both", which="major", labelsize=10)
-        plt.title("Total Days NPI Active", fontsize=12)
-        plt.xlabel("Days")
+        plt.xticks([0, 500, 1000, 1500, 2000], fontsize=6)
+        # ax.tick_params(axis="both", which="major", labelsize=10)
+        plt.title("Total Days Active", fontsize=8)
+        plt.xlabel("Days", fontsize=8)
         plt.ylim([-len(self.CMs)+0.5, 0.5])
 
     def summary_plot(self, cm_plot_style):
-        plt.figure(figsize=(10, 3.3), dpi=300)
+        plt.figure(figsize=(10, 3), dpi=300)
         plt.subplot(1, 2, 1)
         self.coactivation_plot(cm_plot_style, False)
         plt.subplot(1, 2, 2)
         self.cumulative_days_plot(cm_plot_style, False)
         plt.tight_layout()
+        plt.savefig("FigureCA.pdf", bbox_inches='tight')
         # sns.despine()
