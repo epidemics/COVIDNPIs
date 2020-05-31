@@ -6,6 +6,7 @@ from datetime import datetime
 import seaborn as sns
 
 import numpy as np
+import scipy.stats
 import pymc3 as pm
 import theano.tensor as T
 import theano.tensor.signal.conv as C
@@ -4398,9 +4399,9 @@ class CMDeath_Final_ICL(BaseCMModel):
 
 class CMCombined_Final_ICL(BaseCMModel):
     def __init__(
-            self, data, name="", model=None
+            self, data, name="", model=None, cm_plot_style=None
     ):
-        super().__init__(data, name=name, model=model)
+        super().__init__(data, cm_plot_style=cm_plot_style, name=name, model=model)
 
         self.SI = np.array(
             [0.04656309, 0.08698277, 0.1121656, 0.11937737, 0.11456359,
@@ -4420,6 +4421,7 @@ class CMCombined_Final_ICL(BaseCMModel):
                                         0.01577148, 0.01326564, 0.01110783, 0.00928827, 0.0077231,
                                         0.00641162, 0.00530572, 0.00437895, 0.00358801, 0.00295791,
                                         0.0024217, 0.00197484])
+        self.DelayProbCases = self.DelayProbCases.reshape((1, self.DelayProbCases.size))
 
 
         self.DelayProbDeaths = np.array([0.00000000e+00, 1.64635735e-06, 3.15032703e-05, 1.86360977e-04,
@@ -4438,6 +4440,7 @@ class CMCombined_Final_ICL(BaseCMModel):
                                          1.55693122e-03, 1.31909933e-03, 1.11729819e-03, 9.46588730e-04,
                                          8.06525991e-04, 6.81336089e-04, 5.74623210e-04, 4.80157895e-04,
                                          4.02211774e-04, 3.35345193e-04, 2.82450401e-04, 2.38109993e-04])
+        self.DelayProbDeaths = self.DelayProbDeaths.reshape((1, self.DelayProbDeaths.size))
 
         self.CMDelayCut = 30
         self.DailyGrowthNoise = 0.7
@@ -4472,13 +4475,28 @@ class CMCombined_Final_ICL(BaseCMModel):
 
         self.all_observed_deaths = np.array(observed_deaths)
 
-    def build_model(self):
+
+    def build_model(self, R_hyperprior_mean=2.5, cm_prior_sigma=0.2, cm_prior='normal',
+                    serial_interval_mean=SI_ALPHA / SI_BETA
+                    ):
         with self.model:
-            self.CM_Alpha = pm.Normal("CM_Alpha", 0, 0.2, shape=(self.nCMs,))
+            
+            serial_interval_sigma = np.sqrt(SI_ALPHA / SI_BETA ** 2)
+            si_beta = serial_interval_mean / serial_interval_sigma ** 2
+            si_alpha = serial_interval_mean ** 2 / serial_interval_sigma ** 2
+            self.SI = scipy.stats.gamma.pdf(np.arange(len(self.SI)), si_alpha, scale = 1/si_beta)    
+            self.SI_rev = self.SI[::-1].reshape((1, self.SI.size))
+            
+            if cm_prior=='normal':
+                self.CM_Alpha = pm.Normal("CM_Alpha", 0, cm_prior_sigma, shape=(self.nCMs,))
+                
+            if cm_prior=='half_normal':
+                self.CM_Alpha = pm.HalfNormal("CM_Alpha", cm_prior_sigma, shape=(self.nCMs,))            
+
             self.CMReduction = pm.Deterministic("CMReduction", T.exp((-1.0) * self.CM_Alpha))
 
             self.HyperRMean = pm.StudentT(
-                "HyperRMean", nu=10, sigma=0.2, mu=np.log(2.5),
+                "HyperRMean", nu=10, sigma=0.2, mu=np.log(R_hyperprior_mean),
             )
 
             self.HyperRVar = pm.HalfStudentT(
@@ -4521,8 +4539,6 @@ class CMCombined_Final_ICL(BaseCMModel):
                 shape=(self.nORs, self.nDs),
                 plot_trace=False,
             )
-
-            self.LogRDeaths = pm.Deterministic("LogRDeaths", self.ExpectedLogR, )
 
             self.Det("Z1C", self.LogRCases - self.ExpectedLogR, plot_trace=False)
             self.Det("Z1D", self.LogRDeaths - self.ExpectedLogR, plot_trace=False)
