@@ -3750,11 +3750,11 @@ class CMCombined_Additive(BaseCMModel):
 
         self.all_observed_deaths = np.array(observed_deaths)
 
-    def build_model(self, R_hyperprior_mean=3.25, cm_prior_sigma=0.2, cm_prior='normal',
+    def build_model(self, R_hyperprior_mean=3.25, cm_prior_conc=1,
                     serial_interval_mean=SI_ALPHA / SI_BETA
                     ):
         with self.model:
-            self.AllBeta = pm.Dirichlet("AllBeta", np.ones((self.nCMs + 1)), shape=(self.nCMs + 1,))
+            self.AllBeta = pm.Dirichlet("AllBeta", cm_prior_conc*np.ones((self.nCMs + 1)), shape=(self.nCMs + 1,))
             self.CM_Beta = pm.Deterministic("CM_Beta", self.AllBeta[1:])
             self.Beta_hat = pm.Deterministic("Beta_hat", self.AllBeta[0])
             self.CMReduction = pm.Deterministic("CMReduction", self.CM_Beta)
@@ -5262,7 +5262,10 @@ class CMCombined_Final_ICL(BaseCMModel):
             serial_interval_sigma = np.sqrt(SI_ALPHA / SI_BETA ** 2)
             si_beta = serial_interval_mean / serial_interval_sigma ** 2
             si_alpha = serial_interval_mean ** 2 / serial_interval_sigma ** 2
-            self.SI = scipy.stats.gamma.pdf(np.arange(len(self.SI)), si_alpha, scale = 1/si_beta)    
+            x = np.arange(len(self.SI))*1.
+            if serial_interval_mean<5: # to avoid inf first value for small means
+                x[0]=0.001
+            self.SI = scipy.stats.gamma.pdf(x, si_alpha, scale = 1/si_beta)
             self.SI_rev = self.SI[::-1].reshape((1, self.SI.size))
             
             if cm_prior=='normal':
