@@ -9,4 +9,4 @@
 /out
 config-local.yaml
 .mypy_cache
-overrides.cfg
+secrets.cfg

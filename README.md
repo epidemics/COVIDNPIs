@@ -52,7 +52,7 @@ to understand how to tweak this.
 There is an example of the usage with explanations in `test/example-run.sh` if you want to see a more.
 
 ### Configuring Luigi
-We generate the Luigi configuration from the default.cfg and additional overrides.cfg. The overrides.cfg 
+We generate the Luigi configuration from the default.cfg and additional secrets.cfg. The secrets.cfg 
 are not committed to the repository and you can override the defaults to fit your own local configuration. 
 Notably you should configure the `UpdateForetold.foretold_channel` section if you wish to use the task 
 UpdateForetold or any task it depends on.
@@ -88,7 +88,7 @@ You provide all file inputs, foretold_channel and parameters, tweak configs to y
 4. upload the result data using `./run-luigi WebUpload --export-data data-dir/outputs/web-exports/my-export` task
 
 ### Actually using it
-1. add `foretold_channel` in `overrides.cfg` to `[UpdateForetold]` section. This is a secret and you can get it from others on slack
+1. add `foretold_channel` in `secrets.cfg` to `[UpdateForetold]` section. This is a secret and you can get it from others on slack
 2. adjust `config.yaml` to your liking, such as scenarios to model or countries to export
 3. change `[Configuration].output_directory` to some empty or non-existing folder
 4. provide data for any of the ExternalTasks, such as `BaseDefinition`, `ConfigYaml`, `CountryEstimates` and others (see the `epimodel/tasks.py`). If you want to see what does your task depends on, use `luigi-deps-tree` as mentioned above.
@@ -98,7 +98,7 @@ You provide all file inputs, foretold_channel and parameters, tweak configs to y
 Luigi by default uses `luigi.cfg` from the root of the repository. You can edit it directly or 
 you can created another one and reference it via `LUIGI_CONFIG_PATH=your-config.cfg`. `your-config.cfg` 
 will take precedence over the `luigi.cfg`, so you can change only what's necessary. However, the overrides 
-that are specified in the overrides.cfg will override whatever you have defined in your custom configuration.
+that are specified in the secrets.cfg will override whatever you have defined in your custom configuration.
 For example, if you wanted to have a different input and output directory for a specific location run, 
 you could have:
 

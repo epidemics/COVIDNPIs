@@ -4,6 +4,6 @@ from luigi.configuration import add_config_path
 from luigi.cmdline import luigi_run
 
 if __name__ == "__main__":
-    add_config_path("overrides.cfg")
+    add_config_path("secrets.cfg")
     args = ["--module", "epimodel.tasks", "--local-scheduler"] + sys.argv[1:]
     luigi_run(args)
