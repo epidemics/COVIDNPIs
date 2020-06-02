@@ -9,7 +9,7 @@
 # You need to replace <TOKEN> with a foretold_channel
 FORETOLD_TOKEN=""
 
-LUIGI="luigi --local-scheduler --module epimodel.tasks"
+LUIGI="run_luigi.py"
 
 OUTPUT_DIRECTORY=data-dir/outputs/example-1
 rm -rf $OUTPUT_DIRECTORY
@@ -29,7 +29,7 @@ show_and_do() {
 
 show_and_do_luigi() {
   echo ""
-  echo "./luigi $@"
+  echo "${LUIGI} $@"
   user_continue
   $LUIGI "$@"
 }

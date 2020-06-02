@@ -51,6 +51,12 @@ to understand how to tweak this.
 
 There is an example of the usage with explanations in `test/example-run.sh` if you want to see a more.
 
+### Configuring Luigi
+We generate the Luigi configuration from the default.cfg and additional secrets.cfg. The secrets.cfg 
+are not committed to the repository and you can override the defaults to fit your own local configuration. 
+Notably you should configure the `UpdateForetold.foretold_channel` section if you wish to use the task 
+UpdateForetold or any task it depends on.
+
 ### Example with faked data
 
 This example skips the `UpdateForetold` and `ExtractSimulationsResults` task by providing their output.
@@ -59,7 +65,7 @@ This by default uses data in `data/inputs` and exports data to `data/outputs/exa
 
 ```
 # `poetry shell`  # if you haven't done already
-./luigi WebExport \
+./run-luigi WebExport \
     --export-name test-export \
     --UpdateForetold-foretold-output data-dir/inputs/fixtures/foretold.csv \
     --ExtractSimulationsResults-models-file data-dir/inputs/fixtures/main.hdf5 \
@@ -73,21 +79,21 @@ After the pipeline finishes, you should see the results in `data-dir/outputs/exa
 
 You provide all file inputs, foretold_channel and parameters, tweak configs to your liking and then:
 
-1. `./luigi ExportSimulationDefinitions`
+1. `./run-luigi ExportSimulationDefinitions`
 2. run GLEAMviz with the simulations created above, retrieve results via it's UI, close it
 3. export the data using
 
    ```
-   ./luigi WebExport \
+   ./run-luigi WebExport \
    --export-name my-export \
    --ExtractSimulationsResults-simulation-directory ~/GLEAMviz/data/simulations/
    ```
 
-4. upload the result data using `./luigi WebUpload --export-data data-dir/outputs/web-exports/my-export` task
+4. upload the result data using `./run-luigi WebUpload --export-data data-dir/outputs/web-exports/my-export` task
 
 ### Actually using it
 
-1. add `foretold_channel` in `luigi.cfg` to `[UpdateForetold]` section. This is a secret and you can get it from others on slack
+1. add `foretold_channel` in `secrets.cfg` to `[UpdateForetold]` section. This is a secret and you can get it from others on slack
 2. adjust `config.yaml` to your liking, such as scenarios to model or countries to export
 3. change `[Configuration].output_directory` to some empty or non-existing folder
 4. provide data for any of the ExternalTasks, such as `BaseDefinition`, `ConfigYaml`, `CountryEstimates` and others (see the `epimodel/tasks.py`). If you want to see what does your task depends on, use `luigi-deps-tree` as mentioned above.
@@ -95,7 +101,12 @@ You provide all file inputs, foretold_channel and parameters, tweak configs to y
 
 ### Usage tips
 
-Luigi by default uses `luigi.cfg` from the root of the repository. You can edit it directly or you can created another one and reference it via `LUIGI_CONFIG_PATH=your-config.cfg`. `your-config.cfg` will take precedence over the `luigi.cfg`, so you can change only what's necessary. For example, if you wanted to have a different input and output directory for a specific location run, you could have:
+Luigi by default uses `luigi.cfg` from the root of the repository. You can edit it directly or 
+you can created another one and reference it via `LUIGI_CONFIG_PATH=your-config.cfg`. `your-config.cfg` 
+will take precedence over the `luigi.cfg`, so you can change only what's necessary. However, the overrides 
+that are specified in the secrets.cfg will override whatever you have defined in your custom configuration.
+For example, if you wanted to have a different input and output directory for a specific location run, 
+you could have:
 
 ```
 # balochistan.cfg
@@ -107,14 +118,18 @@ output_directory = my-outputs/balochistan
 aggregates = data-dir/your-specific-file-for-aggregates.yaml
 ```
 
-and then `env LUIGI_CONFIG_PATH=balochistan.cfg ./luigi RegionsDatasetTask` would make all outputs go to `my-outputs/balochistan` (instead of the outputs dir from `luigi.cfg`) and the `RegionsAggregates.aggregates` would be taken from the new location too . Parameters from configs can be still overriden from CLI, so `env LUIGI_CONFIG_PATH=balochistan.cfg ./luigi RegionsDatasetTask --RegionsAggregates-aggregates some-other-path.yaml` would still take precedence.
+and then `env LUIGI_CONFIG_PATH=balochistan.cfg ./run-luigi RegionsDatasetTask` would make all outputs 
+go to `my-outputs/balochistan` (instead of the outputs dir from `luigi.cfg`) and the `RegionsAggregates.aggregates` 
+would be taken from the new location too . Parameters from configs can be still overriden from CLI, so 
+`env LUIGI_CONFIG_PATH=balochistan.cfg ./run-luigi RegionsDatasetTask --RegionsAggregates-aggregates some-other-path.yaml` 
+would still take precedence.
 
 ### Getting help
 
 See `epimodel/tasks.py` where the whole pipeline is defined. Read the docstrings and paramter descriptions
 to understand and discover all available tasks, their inputs, outputs and their configuration.
 
-You can also use `./luigi <TaskName> --help` or `./luigi <TaskName> --help-all` to get information about the parameters of the task.
+You can also use `./run-luigi <TaskName> --help` or `./run-luigi <TaskName> --help-all` to get information about the parameters of the task.
 
 `luigi-deps-tree --module epimodel.tasks <TaskName>` enables you to visualize the dependencies and what is and isn't completed. For example:
 

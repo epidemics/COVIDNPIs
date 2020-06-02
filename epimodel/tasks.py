@@ -141,7 +141,7 @@ class EstimateR(luigi.Task):
             "jhdata": JohnsHopkins(),
             "si_sample": SerialIntervalSample(),
             "config_yaml": ConfigYaml(),
-            **RegionsDatasetSubroutine.requires(),
+            **RegionsDatasetSubroutine().requires(),
         }
 
     def output(self):
@@ -518,6 +518,9 @@ class WebExport(luigi.Task):
     )
     comment: str = luigi.Parameter(description="Optional comment to the export",)
     resample: str = luigi.Parameter(description="Pandas dataseries resample")
+    overwrite: bool = luigi.BoolParameter(
+        description="Whether to overwrite an already existing export"
+    )
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -561,6 +564,7 @@ class WebExport(luigi.Task):
             Path(self.main_data_filename),
             latest="latest",
             pretty_print=self.pretty_print,
+            overwrite=self.overwrite,
         )
 
 
