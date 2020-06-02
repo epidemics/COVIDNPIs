@@ -82,7 +82,7 @@ class WebExport:
         latest=None,
         pretty_print=False,
         overwrite=False,
-        write_country_exports=True
+        write_country_exports=True,
     ):
         indent = None
         if pretty_print:
@@ -559,14 +559,21 @@ def process_export(
             cummulative_active_df,
         )
         analyze_data_consistency(
-            debug, export_regions, cummulative_active_df, rates_df, hopkins_df, foretold_df,
+            debug,
+            export_regions,
+            cummulative_active_df,
+            rates_df,
+            hopkins_df,
+            foretold_df,
         )
 
     for code in export_regions:
         reg: Region = rds[code]
         m49 = int(reg["M49Code"]) if pd.notnull(reg["M49Code"]) else -1
         if batch_file is not None:
-            country_cummulative_active_df = cummulative_active_df.xs(key=code, level="Code").sort_index(level="Date")
+            country_cummulative_active_df = cummulative_active_df.xs(
+                key=code, level="Code"
+            ).sort_index(level="Date")
         else:
             country_cummulative_active_df = pd.DataFrame([])
         ex.new_region(

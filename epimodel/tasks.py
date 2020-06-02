@@ -534,7 +534,7 @@ class AutomatedExport(luigi.Task):
             None,
             estimates,
             config_yaml,
-            self.resample
+            self.resample,
         )
         ex.write(
             self.full_export_path,
@@ -542,7 +542,7 @@ class AutomatedExport(luigi.Task):
             latest="latest",
             pretty_print=self.pretty_print,
             overwrite=self.overwrite,
-            write_country_exports=False
+            write_country_exports=False,
         )
 
 
