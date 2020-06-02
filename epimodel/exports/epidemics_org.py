@@ -156,7 +156,13 @@ class WebExportRegion:
 
         # Any per-region data. Large ones should go to data_ext.
         self.data = self.extract_smallish_data(
-            rates, hopkins, foretold, timezones, un_age_dist, r_estimates, hospital_capacity
+            rates,
+            hopkins,
+            foretold,
+            timezones,
+            un_age_dist,
+            r_estimates,
+            hospital_capacity,
         )
         # Extended data to be written in a separate per-region file
         self.data_ext = self.extract_external_data(models, simulation_specs)
