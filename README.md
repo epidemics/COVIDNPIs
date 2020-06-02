@@ -43,19 +43,50 @@ poetry install -E pyro
 ```
 
 * Install the [R language](https://www.r-project.org/about.html): for example `apt install r-base`
+  * Optionally: install the packages required by the `scripts/estimate_R.R` script. The script should install them automatically but its a point of common failure.
+  * For a fresh R installation, run `chooseCRANmirror()` interactively in the R shell.  
+
+* Get [GLEAMviz](https://sim.gleamviz.org/) and register an account
 
 ## Running the pipeline
 We are using [luigi](https://luigi.readthedocs.io/en/stable/index.html) as the workflow framework. This
 readme doesn't include description of how to use `luigi` so please refer to the project documentation
 to understand how to tweak this.
 
-There is an example of the usage with explanations in `test/example-run.sh` if you want to see a more.
+There is an example of the usage with explanations in `scripts/run-interactive.sh` that configures the 
+pipeline and runs it for you.
 
 ### Configuring Luigi
 We generate the Luigi configuration from the default.cfg and additional secrets.cfg. The secrets.cfg 
 are not committed to the repository and you can override the defaults to fit your own local configuration. 
 Notably you should configure the `UpdateForetold.foretold_channel` section if you wish to use the task 
 UpdateForetold or any task it depends on.
+
+A example secrets.cfg that should enable you to run the pipeline with minimal additional configuration:
+```
+[UpdateForetold]
+foretold_channel = 1221122-2212212
+
+[ExportSimulationDefinitions]
+simulations_dir = /home/bob/GLEAMviz/data/simulations
+
+[ExtractSimulationsResults]
+simulation_directory = /home/bob/GLEAMviz/data/simulations
+```
+
+### The usual flow
+You provide all file inputs, foretold_channel and parameters, tweak configs to your liking and then:
+
+1. `./run-luigi ExportSimulationDefinitions`
+2. run [GLEAMviz](https://sim.gleamviz.org/) with the simulations created above, retrieve results via it's UI, close it
+3. export the data using
+
+    ```
+    ./run-luigi WebExport \
+    --export-name my-export 
+    ```
+
+4. upload the result data using `./run-luigi WebUpload --export-data data-dir/outputs/web-exports/my-export` task
 
 ### Example with faked data
 This example skips the `UpdateForetold` and `ExtractSimulationsResults` task by providing their output.
@@ -71,28 +102,6 @@ This by default uses data in `data/inputs` and exports data to `data/outputs/exa
 ```
 
 After the pipeline finishes, you should see the results in `data-dir/outputs/example/`
-
-### The usual flow
-You provide all file inputs, foretold_channel and parameters, tweak configs to your liking and then:
-
-1. `./run-luigi ExportSimulationDefinitions`
-2. run GLEAMviz with the simulations created above, retrieve results via it's UI, close it
-3. export the data using
-
-    ```
-    ./run-luigi WebExport \
-    --export-name my-export \
-    --ExtractSimulationsResults-simulation-directory ~/GLEAMviz/data/simulations/ 
-    ```
-
-4. upload the result data using `./run-luigi WebUpload --export-data data-dir/outputs/web-exports/my-export` task
-
-### Actually using it
-1. add `foretold_channel` in `secrets.cfg` to `[UpdateForetold]` section. This is a secret and you can get it from others on slack
-2. adjust `config.yaml` to your liking, such as scenarios to model or countries to export
-3. change `[Configuration].output_directory` to some empty or non-existing folder
-4. provide data for any of the ExternalTasks, such as `BaseDefinition`, `ConfigYaml`, `CountryEstimates` and others (see the `epimodel/tasks.py`). If you want to see what does your task depends on, use `luigi-deps-tree` as mentioned above.
-5. deal with GLEAMviz and knowing where it's simulation directory is on your installation
 
 ### Usage tips
 Luigi by default uses `luigi.cfg` from the root of the repository. You can edit it directly or 
