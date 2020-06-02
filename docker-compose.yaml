@@ -1,0 +1,7 @@
+version: "3"
+services:
+  runner:
+    build: .
+    image: epimodel-runner
+    volumes:
+      - .:/app
