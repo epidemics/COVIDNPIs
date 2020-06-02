@@ -10,7 +10,7 @@ import yaml
 from luigi.util import inherits
 
 from epimodel import Level, RegionDataset, algorithms, imports
-from epimodel.exports.epidemics_org import process_export, upload_export
+from epimodel.exports.epidemics_org import process_export, upload_export, process_export_without_model
 from epimodel.gleam import Batch
 
 logger = logging.getLogger(__name__)
@@ -477,6 +477,66 @@ class AgeDistributions(luigi.ExternalTask):
 
     def output(self):
         return luigi.LocalTarget(self.age_distributions)
+
+
+class AutomatedExport(luigi.Task):
+    """Generates export used by the website."""
+
+    export_name: str = luigi.Parameter(
+        description="Directory name with exported files inside web_export_directory"
+    )
+    pretty_print: bool = luigi.BoolParameter(
+        description="If true, result JSONs are indented by 4 spaces"
+    )
+    web_export_directory: str = luigi.Parameter(
+        description="Root subdirectory for all exports.",
+    )
+    main_data_filename: str = luigi.Parameter(
+        description="The default name of the main JSON data file",
+    )
+    comment: str = luigi.Parameter(description="Optional comment to the export",)
+    resample: str = luigi.Parameter(description="Pandas dataseries resample")
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.full_export_path = Path(self.web_export_directory, self.export_name)
+
+    def requires(self):
+        return {
+            "hopkins": JohnsHopkins(),
+            "foretold": UpdateForetold(),
+            "rates": Rates(),
+            "timezones": Timezones(),
+            "age_distributions": AgeDistributions(),
+            "config_yaml": ConfigYaml(),
+            "country_estimates": CountryEstimates(),
+            "r_estimates": EstimateR(),
+            **RegionsDatasetSubroutine.requires(),
+        }
+
+    def output(self):
+        return luigi.LocalTarget(self.full_export_path / self.main_data_filename)
+
+    def run(self):
+        config_yaml = ConfigYaml.load(self.input()["config_yaml"].path)
+        regions_dataset = RegionsDatasetSubroutine.load_rds(self)
+        estimates = self.input()["country_estimates"].path
+
+        ex = process_export_without_model(
+            self.input(),
+            regions_dataset,
+            self.comment,
+            estimates,
+            config_yaml,
+            self.resample,
+        )
+        ex.write(
+            self.full_export_path,
+            Path(self.main_data_filename),
+            latest="latest",
+            pretty_print=self.pretty_print,
+            write_country_exports=False
+        )
 
 
 class WebExport(luigi.Task):

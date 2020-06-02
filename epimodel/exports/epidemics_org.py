@@ -81,6 +81,7 @@ class WebExport:
         main_data_filename: Path,
         latest=None,
         pretty_print=False,
+        write_country_exports=True
     ):
         indent = None
         if pretty_print:
@@ -89,18 +90,19 @@ class WebExport:
         os.makedirs(export_directory, exist_ok=False)
 
         log.info(f"Writing WebExport to {export_directory} ...")
-        for region_code, export_region in tqdm(list(self.export_regions.items()), desc="Writing regions"):
-            fname = f"extdata-{region_code}.json"
-            export_region.data_url = f"{fname}"
-            with open(export_directory / fname, "wt") as f:
-                json.dump(
-                    export_region.data_ext,
-                    f,
-                    default=types_to_json,
-                    allow_nan=False,
-                    separators=(",", ":"),
-                    indent=indent,
-                )
+        if write_country_exports:
+            for region_code, export_region in tqdm(list(self.export_regions.items()), desc="Writing regions"):
+                fname = f"extdata-{region_code}.json"
+                export_region.data_url = f"{fname}"
+                with open(export_directory / fname, "wt") as f:
+                    json.dump(
+                        export_region.data_ext,
+                        f,
+                        default=types_to_json,
+                        allow_nan=False,
+                        separators=(",", ":"),
+                        indent=indent,
+                    )
         with open(export_directory / main_data_filename, "wt") as f:
             json.dump(
                 self.to_json(),
@@ -148,7 +150,10 @@ class WebExportRegion:
             rates, hopkins, foretold, timezones, un_age_dist, r_estimates
         )
         # Extended data to be written in a separate per-region file
-        self.data_ext = self.extract_external_data(models, simulation_specs)
+        if not models.empty and not simulation_specs.empty:
+            self.data_ext = self.extract_external_data(models, simulation_specs)
+        else:
+            self.data_ext = None
         # Relative URL of the extended data file, set on write
         self.data_url = None
 
@@ -557,6 +562,81 @@ def process_export(
             get_df_else_none(estimates_df, code),
             cummulative_active_df.xs(key=code, level="Code").sort_index(level="Date"),
             simulation_specs,
+            get_df_else_none(rates_df, code),
+            get_df_else_none(hopkins_df, code),
+            get_df_else_none(foretold_df, code),
+            get_df_list(timezone_df, code),
+            get_df_else_none(un_age_dist_df, m49),
+            get_df_else_none(r_estimates_df, code),
+        )
+    return ex
+
+
+def process_export_without_model(
+        inputs: dict,
+        rds: RegionDataset,
+        comment,
+        estimates,
+        config: dict,
+        resample: str,
+) -> WebExport:
+    ex = WebExport(config, resample, comment=comment)
+
+    hopkins = inputs["hopkins"].path
+    foretold = inputs["foretold"].path
+    rates = inputs["rates"].path
+    timezone = inputs["timezones"].path
+    un_age_dist = inputs["age_distributions"].path
+    r_estimates = inputs["r_estimates"].path
+
+    export_regions = sorted(config["export_regions"])
+
+    estimates_df = epimodel.read_csv_smart(estimates, rds, prefer_higher=True)
+
+    rates_df: pd.DataFrame = pd.read_csv(
+        rates, index_col="Code", keep_default_na=False, na_values=[""]
+    )
+    timezone_df: pd.DataFrame = pd.read_csv(
+        timezone, index_col="Code", keep_default_na=False, na_values=[""],
+    )
+
+    un_age_dist_df: pd.DataFrame = pd.read_csv(un_age_dist, index_col="Code M49").drop(
+        columns=["Type", "Region Name", "Parent Code M49"]
+    )
+
+    foretold_df: pd.DataFrame = pd.read_csv(
+        foretold,
+        index_col=["Code", "Date"],
+        parse_dates=["Date"],
+        keep_default_na=False,
+        na_values=[""],
+    )
+
+    hopkins_df: pd.DataFrame = pd.read_csv(
+        hopkins,
+        index_col=["Code", "Date"],
+        parse_dates=["Date"],
+        keep_default_na=False,
+        na_values=[""],
+    ).pipe(aggregate_countries, config["state_to_country"], rds)
+
+    r_estimates_df: pd.DataFrame = pd.read_csv(
+        r_estimates,
+        index_col=["Code", "Date"],
+        parse_dates=["Date"],
+        keep_default_na=False,
+        na_values=[""],
+    )
+
+    for code in export_regions:
+        reg: Region = rds[code]
+        m49 = int(reg["M49Code"]) if pd.notnull(reg["M49Code"]) else -1
+
+        ex.new_region(
+            reg,
+            get_df_else_none(estimates_df, code),
+            pd.DataFrame([]),
+            pd.DataFrame([]),
             get_df_else_none(rates_df, code),
             get_df_else_none(hopkins_df, code),
             get_df_else_none(foretold_df, code),
