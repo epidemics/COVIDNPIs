@@ -81,12 +81,16 @@ class WebExport:
         main_data_filename: Path,
         latest=None,
         pretty_print=False,
+        overwrite=False
     ):
         indent = None
         if pretty_print:
             indent = 4
 
-        os.makedirs(export_directory, exist_ok=False)
+        try:
+            os.makedirs(export_directory, exist_ok=overwrite)
+        except FileExistsError:
+            raise RuntimeError("The export already exists, overwrite it by specifying the --overwrite flag")
 
         log.info(f"Writing WebExport to {export_directory} ...")
         for region_code, export_region in tqdm(list(self.export_regions.items()), desc="Writing regions"):
