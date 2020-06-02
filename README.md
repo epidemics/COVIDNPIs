@@ -184,3 +184,4 @@ so for example:
 ```
 docker-compose run luigi JohnsHopkins
 ```
+the image currently doesn't contain `gsutil` available, so the upload my be still necessary from the host
