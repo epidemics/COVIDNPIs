@@ -171,7 +171,7 @@ class WebExportRegion:
         timezones: pd.DataFrame,
         un_age_dist: Optional[pd.DataFrame],
         r_estimates: Optional[pd.DataFrame],
-        hospital_capacity: Optional[pd.DataFrame],
+        hospital_capacity: Optional[pd.Series],
     ) -> Dict[str, Dict[str, Any]]:
         data = {}
 
@@ -212,12 +212,7 @@ class WebExportRegion:
             }
 
         if hospital_capacity is not None:
-            capacity = {}
-            for key, value in hospital_capacity.to_dict().items():
-                if not isinstance(value, float) or not np.isnan(value):
-                    capacity[key] = value
-
-            data["Capacity"] = capacity
+            data["Capacity"] = hospital_capacity.dropna().to_dict()
 
         return data
 
