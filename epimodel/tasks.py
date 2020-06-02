@@ -127,6 +127,7 @@ class EstimateR(luigi.Task):
     R estimation script for all countries in the JohnHopkins database.
     !! This task usually takes about an 30 minutes to complete
     """
+
     r_estimates_output: str = luigi.Parameter(
         description="Output filename of the estimates file relative to config output dir.",
     )
@@ -139,15 +140,15 @@ class EstimateR(luigi.Task):
             "jhdata": JohnsHopkins(),
             "si_sample": SerialIntervalSample(),
             "config_yaml": ConfigYaml(),
-            **RegionsDatasetSubroutine().requires()
+            **RegionsDatasetSubroutine().requires(),
         }
 
     def output(self):
         return luigi.LocalTarget(self.r_estimates_output)
 
     def run(self):
-        john_hopkins_path = self.input()['jhdata'].path
-        serial_interval_file = self.input()['si_sample'].path
+        john_hopkins_path = self.input()["jhdata"].path
+        serial_interval_file = self.input()["si_sample"].path
         config_yaml = ConfigYaml.load(self.input()["config_yaml"].path)
         regions_dataset = RegionsDatasetSubroutine.load_rds(self)
 
@@ -496,7 +497,9 @@ class WebExport(luigi.Task):
     )
     comment: str = luigi.Parameter(description="Optional comment to the export",)
     resample: str = luigi.Parameter(description="Pandas dataseries resample")
-    overwrite: bool = luigi.BoolParameter(description="Whether to overwrite an already existing export")
+    overwrite: bool = luigi.BoolParameter(
+        description="Whether to overwrite an already existing export"
+    )
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -540,7 +543,7 @@ class WebExport(luigi.Task):
             Path(self.main_data_filename),
             latest="latest",
             pretty_print=self.pretty_print,
-            overwrite=self.overwrite
+            overwrite=self.overwrite,
         )
 
 

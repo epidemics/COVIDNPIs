@@ -144,7 +144,9 @@ def import_johns_hopkins(rds: RegionDataset, prefix=None):
 
 
 def aggregate_countries(
-        hopkins: pd.DataFrame, countries_with_provinces: Optional[List[str]], region_dataset,
+    hopkins: pd.DataFrame,
+    countries_with_provinces: Optional[List[str]],
+    region_dataset,
 ) -> pd.DataFrame:
     if not countries_with_provinces:
         return hopkins
@@ -163,12 +165,12 @@ def aggregate_countries(
         )
         aggregated = (
             hopkins.loc[present_state_codes]
-                .reset_index("Date")
-                .groupby("Date")
-                .sum()
-                .assign(Code=country_code)
-                .reset_index()
-                .set_index(["Code", "Date"])
+            .reset_index("Date")
+            .groupby("Date")
+            .sum()
+            .assign(Code=country_code)
+            .reset_index()
+            .set_index(["Code", "Date"])
         )
         to_append.append(aggregated)
         all_state_codes.extend(present_state_codes)

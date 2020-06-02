@@ -81,7 +81,7 @@ class WebExport:
         main_data_filename: Path,
         latest=None,
         pretty_print=False,
-        overwrite=False
+        overwrite=False,
     ):
         indent = None
         if pretty_print:
@@ -90,10 +90,14 @@ class WebExport:
         try:
             os.makedirs(export_directory, exist_ok=overwrite)
         except FileExistsError:
-            raise RuntimeError("The export already exists, overwrite it by specifying the --overwrite flag")
+            raise RuntimeError(
+                "The export already exists, overwrite it by specifying the --overwrite flag"
+            )
 
         log.info(f"Writing WebExport to {export_directory} ...")
-        for region_code, export_region in tqdm(list(self.export_regions.items()), desc="Writing regions"):
+        for region_code, export_region in tqdm(
+            list(self.export_regions.items()), desc="Writing regions"
+        ):
             fname = f"extdata-{region_code}.json"
             export_region.data_url = f"{fname}"
             with open(export_directory / fname, "wt") as f:
@@ -200,7 +204,7 @@ class WebExportRegion:
         if r_estimates is not None:
             data["REstimates"] = {
                 "Date": [x.isoformat() for x in r_estimates.index],
-                **r_estimates[["MeanR", "StdR"]].to_dict(orient="list")
+                **r_estimates[["MeanR", "StdR"]].to_dict(orient="list"),
             }
 
         return data
