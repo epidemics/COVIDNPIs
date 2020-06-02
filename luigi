@@ -1,2 +1,0 @@
-#!/usr/bin/env bash
-luigi --local-scheduler --module epimodel.tasks $@
