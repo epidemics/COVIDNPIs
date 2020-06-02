@@ -515,6 +515,7 @@ def process_export(
     timezone = inputs["timezones"].path
     un_age_dist = inputs["age_distributions"].path
     r_estimates = inputs["r_estimates"].path
+    hospital_capacity = inputs["hospital_capacity"].path
 
     export_regions = sorted(config["export_regions"])
 
@@ -535,7 +536,7 @@ def process_export(
         columns=["Type", "Region Name", "Parent Code M49"]
     )
 
-    hospital_capacity_df = pd.read_csv(get_extra_path(args, "hospital_capacity"), index_col="Code")
+    hospital_capacity_df = pd.read_csv(hospital_capacity, index_col="Code")
 
     foretold_df: pd.DataFrame = pd.read_csv(
         foretold,
