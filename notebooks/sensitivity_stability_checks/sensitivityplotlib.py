@@ -187,18 +187,27 @@ def plot_cm_effect_sensitivity_v2(filenames,
                                leavouts=False,
                                bbox_to_anchor=None,
                                combine_hierarchical=True,
-                               legend_loc = 'lower left'):
+                               legend_loc = 'lower left',
+                               base_rate_filenames=None):
     if y_offset is None:
         y_offset = 1/(len(legend_labels)+2)
     if len(cm_labels)>len(derived_features):
+        counter = 9
         if (len(cm_labels)-len(derived_features))==1:
-            derived_features.append(("Mobility - Retail and Rec", [10-1]))
+            counter+=1
+            derived_features.append(("Mobility - Retail and Rec", [counter-1]))
             cm_plot_style.append(("\uf290", "black"))
         if (len(cm_labels)-len(derived_features))==2:
-            derived_features.append(("Mobility - Retail and Rec", [10-1]))
-            derived_features.append(("Mobility - Work", [11-1]))
+            counter+=1
+            derived_features.append(("Mobility - Retail and Rec", [counter-1]))
+            counter+=1
+            derived_features.append(("Mobility - Work", [counter-1]))
             cm_plot_style.append(("\uf290", "black"))
             cm_plot_style.append(("\uf0b1", "black"))
+        if base_rate_filenames is not None:
+            counter+=1
+            derived_features.append(("Beta_hat", [counter-1]))
+            cm_plot_style.append(("", "black"))
         
 
     fig = plt.figure(figsize=figsize, dpi=400)
@@ -212,6 +221,7 @@ def plot_cm_effect_sensitivity_v2(filenames,
     for i in range(len(filenames)):
         # load trace
         cm_trace = np.loadtxt(filenames[i])
+        print(cm_trace.shape)
         
         # combine traces for overlapping features
         if combine_hierarchical==True:
@@ -263,6 +273,17 @@ def plot_cm_effect_sensitivity_v2(filenames,
                 cm_trace[:,ind_100] = cm_trace[:,ind_1000]*cm_trace[:,ind_100]
                 cm_trace[:,ind_10] = cm_trace[:,ind_100]*cm_trace[:,ind_10]
                 cm_trace[:,ind_most_bus] = cm_trace[:,ind_some_bus]*cm_trace[:,ind_most_bus]
+
+        # add base rate
+        if base_rate_filenames is not None:
+            cm_base_trace = np.loadtxt(base_rate_filenames[i])
+            cm_base_trace = np.reshape(cm_base_trace, (1, len(cm_base_trace)))
+            cm_trace = np.reshape(cm_trace, (10, 8000))
+            print(cm_trace.shape)
+            print(cm_base_trace.shape)
+            cm_trace = np.vstack((cm_trace, cm_base_trace))
+            cm_trace = np.reshape(cm_trace, (8000,11))
+            print(cm_base_trace.shape)
         
         # calculate means and confidence intervals
         means = 100*(1 - np.mean(cm_trace, axis=0))
@@ -270,7 +291,7 @@ def plot_cm_effect_sensitivity_v2(filenames,
         ui = 100 * (1 - np.percentile(cm_trace, 97.5, axis=0))
         lq = 100 * (1 - np.percentile(cm_trace, 25, axis=0))
         uq = 100 * (1- np.percentile(cm_trace, 75, axis=0))
-        N_cms = len(cm_labels)
+        N_cms = cm_trace.shape[1]#len(cm_labels)
         
         # if plotting leavouts, add nan to indices of leftout CMs
         if leavouts==True:

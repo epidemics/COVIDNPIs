@@ -18,7 +18,7 @@ def generate_out_dir(daily_growth_noise):
     #if region_heldout is not None:
     #    out_dir = out_dir + '_rho' + region_heldout 
     if daily_growth_noise is not None:
-        out_dir = out_dir + '_dgn' + str(daily_growth_noise)[2:len(daily_growth_noise)]
+        out_dir = out_dir + '_dgn' + str(daily_growth_noise)[2:len(str(daily_growth_noise))]
         
     if not os.path.exists(out_dir):
         os.makedirs(out_dir)
@@ -45,14 +45,23 @@ def mask_region(d, region, days=14):
     d.NewCases.mask[i,c_s:] = True
 
 def leavout_cm(data, cm_leavouts, i):
-        data_cm_leavout = copy.deepcopy(data)
-        print('CM left out: ' + cm_leavouts[i])
-        if cm_leavouts[i]=='None':
-            pass
-        else:
-            data_cm_leavout.ActiveCMs = np.delete(data_cm_leavout.ActiveCMs, i, 1)
-            data_cm_leavout.CMs = np.delete(data_cm_leavout.CMs, i)
-        return data_cm_leavout
+    data_cm_leavout = copy.deepcopy(data)
+    print('CM left out: ' + cm_leavouts[i])
+    if cm_leavouts[i]=='None':
+        pass
+    else:
+        data_cm_leavout.ActiveCMs = np.delete(data_cm_leavout.ActiveCMs, i, 1)
+        data_cm_leavout.CMs = np.delete(data_cm_leavout.CMs, i)
+    return data_cm_leavout
+        
+def save_traces(model, model_type, filename):
+    cm_trace = model.trace["CMReduction"]
+    np.savetxt(filename, cm_trace)    
+    
+    if model_type == 'combined_additive':
+        cm_base_trace = model.trace["Beta_hat"]
+        np.savetxt(filename[0:len(filename)-4] + '_base.txt', cm_base_trace) 
+        
 
 def region_holdout_sensitivity(model_types, regions_heldout = ["CZ", "DE", "MX", "NL", "PL", "PT"], daily_growth_noise=None):
     dp = DataPreprocessor(drop_HS=True)
@@ -63,6 +72,7 @@ def region_holdout_sensitivity(model_types, regions_heldout = ["CZ", "DE", "MX",
     
         for model_type in model_types:
             print('Model: ' + str(model_type))
+            print('Heldout Region: ' + str(region))
             if model_type=='combined':
                 with cm_effect.models.CMCombined_Final(data) as model:
                     if daily_growth_noise is not None:
@@ -91,6 +101,9 @@ def region_holdout_sensitivity(model_types, regions_heldout = ["CZ", "DE", "MX",
             if model_type=='combined_no_noise':                
                 with cm_effect.models.CMCombined_Final_NoNoise(data) as model:
                     model.build_model()
+            if model_type=='combined_icl_no_noise':                
+                with cm_effect.models.CMCombined_ICL_NoNoise(data) as model:
+                    model.build_model()
             if model_type=='combined_additive':               
                 with cm_effect.models.CMCombined_Additive(data) as model:
                     if daily_growth_noise is not None:
@@ -102,8 +115,7 @@ def region_holdout_sensitivity(model_types, regions_heldout = ["CZ", "DE", "MX",
             model.run(1000, chains=8, cores=8)
             out_dir = generate_out_dir(daily_growth_noise)
             filename = out_dir + '/regions_heldout_' + region +'_' + model_type + '.txt'
-            cm_trace = model.trace["CMReduction"]
-            np.savetxt(filename, cm_trace)
+            save_traces(model, model_type, filename)
     
 
 def cm_leavout_sensitivity(model_types, daily_growth_noise=None):
@@ -146,6 +158,9 @@ def cm_leavout_sensitivity(model_types, daily_growth_noise=None):
             if model_type=='combined_no_noise':                
                 with cm_effect.models.CMCombined_Final_NoNoise(data_cm_leavout) as model:
                     model.build_model()
+            if model_type=='combined_icl_no_noise':                
+                with cm_effect.models.CMCombined_ICL_NoNoise(data_cm_leavout) as model:
+                    model.build_model()
             if model_type=='combined_additive':               
                 with cm_effect.models.CMCombined_Additive(data_cm_leavout) as model:
                     if daily_growth_noise is not None:
@@ -155,8 +170,7 @@ def cm_leavout_sensitivity(model_types, daily_growth_noise=None):
             model.run(1000, chains=8, cores=8)
             out_dir = generate_out_dir(daily_growth_noise)
             filename = out_dir + '/cm_leavout_' + model_type + '_' + str(i) + '.txt'
-            cm_trace = model.trace["CMReduction"]
-            np.savetxt(filename, cm_trace)
+            save_traces(model, model_type, filename)
 
 def cm_prior_sensitivity(model_types, priors=['half_normal', 'wide'], sigma_wide=10,
                          daily_growth_noise=None):
@@ -165,7 +179,7 @@ def cm_prior_sensitivity(model_types, priors=['half_normal', 'wide'], sigma_wide
 
     for model_type in model_types:
         for prior in priors:
-            print('Prior: ' + prior)
+            print('Prior: ' + str(prior))
             print('Model: ' + model_type)
             if model_type=='combined':
                 with cm_effect.models.CMCombined_Final(data) as model:
@@ -225,6 +239,14 @@ def cm_prior_sensitivity(model_types, priors=['half_normal', 'wide'], sigma_wide
                         model.build_model(cm_prior_sigma=sigma_wide)
                     if prior=='half_normal':
                         model.build_model(cm_prior='half_normal')
+            if model_type=='combined_icl_no_noise':                
+                with cm_effect.models.CMCombined_ICL_NoNoise(data) as model:
+                    if prior=='default':
+                        model.build_model()
+                    if prior=='wide':
+                        model.build_model(cm_prior_sigma=sigma_wide)
+                    if prior=='half_normal':
+                        model.build_model(cm_prior='half_normal')
             if model_type=='combined_additive':               
                 with cm_effect.models.CMCombined_Additive(data) as model:
                     if daily_growth_noise is not None:
@@ -237,8 +259,7 @@ def cm_prior_sensitivity(model_types, priors=['half_normal', 'wide'], sigma_wide
             model.run(1000, chains=8, cores=8)
             out_dir = generate_out_dir(daily_growth_noise)
             filename = out_dir + '/cm_prior_' + model_type + '_' + str(prior) + '.txt'
-            cm_trace = model.trace["CMReduction"]
-            np.savetxt(filename, cm_trace) 
+            save_traces(model, model_type, filename)
             
 def data_mob_sensitivity(model_types, daily_growth_noise=None):
     dp = DataPreprocessor(drop_HS=True)
@@ -283,6 +304,9 @@ def data_mob_sensitivity(model_types, daily_growth_noise=None):
             if model_type=='combined_no_noise':                
                 with cm_effect.models.CMCombined_Final_NoNoise(data) as model:
                     model.build_model()
+            if model_type=='combined_icl_no_noise':                
+                with cm_effect.models.CMCombined_ICL_NoNoise(data) as model:
+                    model.build_model()
             if model_type=='combined_additive':               
                 with cm_effect.models.CMCombined_Additive(data) as model:
                     if daily_growth_noise is not None:
@@ -292,8 +316,7 @@ def data_mob_sensitivity(model_types, daily_growth_noise=None):
             model.run(1000, chains=8, cores=8)
             out_dir = generate_out_dir(daily_growth_noise)
             filename = out_dir + '/data_mobility_' + data_mobility_type + '_' + model_type + '.txt'
-            cm_trace = model.trace["CMReduction"]
-            np.savetxt(filename, cm_trace)
+            save_traces(model, model_type, filename)
         
 def data_schools_open_sensitivity(model_types, daily_growth_noise=None):
     dp = DataPreprocessor(drop_HS=True)
@@ -329,6 +352,9 @@ def data_schools_open_sensitivity(model_types, daily_growth_noise=None):
         if model_type=='combined_no_noise':                
             with cm_effect.models.CMCombined_Final_NoNoise(data) as model:
                 model.build_model()
+        if model_type=='combined_icl_no_noise':                
+            with cm_effect.models.CMCombined_ICL_NoNoise(data) as model:
+                model.build_model()
         if model_type=='combined_additive':               
             with cm_effect.models.CMCombined_Additive(data) as model:
                 if daily_growth_noise is not None:
@@ -338,8 +364,7 @@ def data_schools_open_sensitivity(model_types, daily_growth_noise=None):
         model.run(1000, chains=8, cores=8)
         out_dir = generate_out_dir(daily_growth_noise)
         filename = out_dir + '/schools_open_' + model_type + '.txt'
-        cm_trace = model.trace["CMReduction"]
-        np.savetxt(filename, cm_trace)
+        save_traces(model, model_type, filename)
             
 def daily_growth_noise_sensitivity(model_types, daily_growth_noise = [0.05, 0.1, 0.4]):
 
@@ -378,8 +403,7 @@ def daily_growth_noise_sensitivity(model_types, daily_growth_noise = [0.05, 0.1,
             model.run(1000, chains=8, cores=8)
             out_dir = 'out'
             filename = out_dir + '/growth_noise_' + model_type + '_' + str(i) + '.txt'
-            cm_trace = model.trace["CMReduction"]
-            np.savetxt(filename, cm_trace)
+            save_traces(model, model_type, filename)
             
 def min_num_confirmed_sensitivity(model_types, min_conf_cases = [10, 30, 300, 500], daily_growth_noise=None):
     dp = DataPreprocessor(drop_HS=True)    
@@ -414,17 +438,18 @@ def min_num_confirmed_sensitivity(model_types, min_conf_cases = [10, 30, 300, 50
             if model_type=='combined_no_noise':                
                 with cm_effect.models.CMCombined_Final_NoNoise(data) as model:
                     model.build_model()
+            if model_type=='combined_icl_no_noise':                
+                with cm_effect.models.CMCombined_ICL_NoNoise(data) as model:
+                    model.build_model()
             if model_type=='combined_additive':               
                 with cm_effect.models.CMCombined_Additive(data) as model:
                     if daily_growth_noise is not None:
                         model.DailyGrowthNoise = daily_growth_noise
                     model.build_model()
             model.run(1000, chains=8, cores=8)
-            cm_trace = model.trace["CMReduction"]
             out_dir = generate_out_dir(daily_growth_noise)
             filename = out_dir + '/min_confirmed_'+ str(model_type) + '_' + str(min_conf_cases[i]) + '.txt'
-            np.savetxt(filename, cm_trace)
-            
+            save_traces(model, model_type, filename)
 
 def calc_trace_statistic(model, stat_type):
     if stat_type=='rhat':
@@ -433,11 +458,12 @@ def calc_trace_statistic(model, stat_type):
         stat = az.ess(model.trace, relative=True)
     stat_all = []
     stat_nums = []
-    print(model.vars)
     for i in range(len(model.vars)):
         var = model.vars[i]
         if str(var)[-6:-1]=='_log_':
             var = str(var)[0:-6]
+        if '_stickbreaking__' in str(var):
+            var = str(var)[0:-16]
         if stat[str(var)].size>1:
             stat_all.append(stat[str(var)].to_dataframe().to_numpy().flatten())
         else:
@@ -481,6 +507,9 @@ def MCMC_stability(model_types, daily_growth_noise=None):
         if model_type=='combined_no_noise':                
             with cm_effect.models.CMCombined_Final_NoNoise(data) as model:
                 model.build_model()      
+        if model_type=='combined_icl_no_noise':                
+            with cm_effect.models.CMCombined_ICL_NoNoise(data) as model:
+                model.build_model()  
         if model_type=='combined_additive':               
             with cm_effect.models.CMCombined_Additive(data) as model:
                 if daily_growth_noise is not None:
@@ -495,8 +524,7 @@ def MCMC_stability(model_types, daily_growth_noise=None):
         np.savetxt(out_dir + '/rhats_'+ model_type + '.txt',rhats)
         np.savetxt(out_dir + '/ess_'+ model_type + '.txt',ess)
         filename = out_dir + '/default_' + model_type + '.txt'
-        cm_trace = model.trace["CMReduction"]
-        np.savetxt(filename, cm_trace)
+        save_traces(model, model_type, filename)
         
 def R_hyperprior_mean_sensitivity(model_types, hyperprior_means =[1.5, 5.5], daily_growth_noise=None):
     dp = DataPreprocessor(drop_HS=True)
@@ -534,6 +562,9 @@ def R_hyperprior_mean_sensitivity(model_types, hyperprior_means =[1.5, 5.5], dai
             if model_type=='combined_no_noise':                
                 with cm_effect.models.CMCombined_Final_NoNoise(data) as model:
                     model.build_model(R_hyperprior_mean=hyperprior_means[i])
+            if model_type=='combined_icl_no_noise':                
+                with cm_effect.models.CMCombined_ICL_NoNoise(data) as model:
+                    model.build_model(R_hyperprior_mean=hyperprior_means[i])
             if model_type=='combined_additive':               
                 with cm_effect.models.CMCombined_Additive(data) as model:
                     if daily_growth_noise is not None:
@@ -543,8 +574,7 @@ def R_hyperprior_mean_sensitivity(model_types, hyperprior_means =[1.5, 5.5], dai
             model.run(1000, chains=8, cores=8)
             out_dir = generate_out_dir(daily_growth_noise)
             filename = out_dir + '/R_hyperprior_' + model_type + '_' + str(i) + '.txt'
-            cm_trace = model.trace["CMReduction"]
-            np.savetxt(filename, cm_trace)
+            save_traces(model, model_type, filename)
             
 def serial_interval_sensitivity(model_types, serial_interval=[4, 5, 6, 7, 8], daily_growth_noise=None):
     dp = DataPreprocessor(drop_HS=True)
@@ -582,6 +612,9 @@ def serial_interval_sensitivity(model_types, serial_interval=[4, 5, 6, 7, 8], da
             if model_type=='combined_no_noise':                
                 with cm_effect.models.CMCombined_Final_NoNoise(data) as model:
                     model.build_model(serial_interval_mean=serial_interval[i])
+            if model_type=='combined_icl_no_noise':                
+                with cm_effect.models.CMCombined_ICL_NoNoise(data) as model:
+                    model.build_model(serial_interval_mean=serial_interval[i])
             if model_type=='combined_additive':               
                 with cm_effect.models.CMCombined_Additive(data) as model:
                     if daily_growth_noise is not None:
@@ -589,11 +622,10 @@ def serial_interval_sensitivity(model_types, serial_interval=[4, 5, 6, 7, 8], da
                     model.build_model(serial_interval_mean=serial_interval[i])
                                  
                         
-            model.run(10, chains=2, cores=2)
+            model.run(1000, chains=8, cores=8)
             out_dir = generate_out_dir(daily_growth_noise)
             filename = out_dir + '/serial_int_' + model_type + '_SI' + str(serial_interval[i]) + '.txt'
-            cm_trace = model.trace["CMReduction"]
-            np.savetxt(filename, cm_trace)
+            save_traces(model, model_type, filename)
 
 ######## delay mean #############
 
@@ -706,8 +738,7 @@ def delay_mean_sensitivity(model_types, mean_shift = [-2, -1, 1, 2], daily_growt
                     model.build_model()
                 model.run(samples, chains=chains, cores=chains)
                 filename = out_dir + '/delay_mean_confirmed_combined_' + str(i) + '.txt'
-                cm_trace = model.trace["CMReduction"]
-                np.savetxt(filename, cm_trace)
+                save_traces(model, model_type, filename)
     
                 with cm_effect.models.CMCombined_Final(data) as model:
                     if daily_growth_noise is not None:
@@ -717,8 +748,7 @@ def delay_mean_sensitivity(model_types, mean_shift = [-2, -1, 1, 2], daily_growt
                     model.build_model()
                 model.run(samples, chains=chains, cores=cores)
                 filename = out_dir + '/delay_mean_death_combined_' + str(i) + '.txt'
-                cm_trace = model.trace["CMReduction"]
-                np.savetxt(filename, cm_trace)
+                save_traces(model, model_type, filename)
         elif model_type=='combined_v3':
             # for combined model vary confirmed and deaths delay
             for i in range(len(mean_shift)):
@@ -732,8 +762,7 @@ def delay_mean_sensitivity(model_types, mean_shift = [-2, -1, 1, 2], daily_growt
                     model.build_model()
                 model.run(samples, chains=chains, cores=cores)
                 filename = out_dir + '/delay_mean_confirmed_combined_v3_' + str(i) + '.txt'
-                cm_trace = model.trace["CMReduction"]
-                np.savetxt(filename, cm_trace)
+                save_traces(model, model_type, filename)
     
                 with cm_effect.models.CMCombined_Final_V3(data) as model:
                     if daily_growth_noise is not None:
@@ -743,8 +772,7 @@ def delay_mean_sensitivity(model_types, mean_shift = [-2, -1, 1, 2], daily_growt
                     model.build_model()
                 model.run(samples, chains=chains, cores=cores)
                 filename = out_dir + '/delay_mean_death_combined_v3_' + str(i) + '.txt'
-                cm_trace = model.trace["CMReduction"]
-                np.savetxt(filename, cm_trace)
+                save_traces(model, model_type, filename)
         elif model_type=='combined_icl':
             # for combined model vary confirmed and deaths delay
             for i in range(len(mean_shift)):
@@ -758,8 +786,7 @@ def delay_mean_sensitivity(model_types, mean_shift = [-2, -1, 1, 2], daily_growt
                     model.build_model()
                 model.run(samples, chains=chains, cores=cores)
                 filename = out_dir + '/delay_mean_confirmed_combined_icl_' + str(i) + '.txt'
-                cm_trace = model.trace["CMReduction"]
-                np.savetxt(filename, cm_trace)
+                save_traces(model, model_type, filename)
     
                 with cm_effect.models.CMCombined_Final_ICL(data) as model:
                     if daily_growth_noise is not None:
@@ -769,8 +796,7 @@ def delay_mean_sensitivity(model_types, mean_shift = [-2, -1, 1, 2], daily_growt
                     model.build_model()
                 model.run(samples, chains=chains, cores=cores)
                 filename = out_dir + '/delay_mean_death_combined_icl_' + str(i) + '.txt'
-                cm_trace = model.trace["CMReduction"]
-                np.savetxt(filename, cm_trace)
+                save_traces(model, model_type, filename)
         elif model_type=='combined_no_noise':
             # for combined model vary confirmed and deaths delay
             for i in range(len(mean_shift)):
@@ -782,16 +808,14 @@ def delay_mean_sensitivity(model_types, mean_shift = [-2, -1, 1, 2], daily_growt
                     model.build_model()
                 model.run(samples, chains=chains, cores=cores)
                 filename = out_dir + '/delay_mean_confirmed_combined_no_noise_' + str(i) + '.txt'
-                cm_trace = model.trace["CMReduction"]
-                np.savetxt(filename, cm_trace)
+                save_traces(model, model_type, filename)
                 with cm_effect.models.CMCombined_Final_NoNoise(data) as model:
                     model = vary_delay_mean_death(model, mean_shift[i])
                     #delay_probs_death_combined.append(model.DelayProbDeaths) 
                     model.build_model()
                 model.run(samples, chains=chains, cores=cores)
                 filename = out_dir + '/delay_mean_death_combined_no_noise_' + str(i) + '.txt'
-                cm_trace = model.trace["CMReduction"]
-                np.savetxt(filename, cm_trace)
+                save_traces(model, model_type, filename)
         elif model_type=='combined_additive':
             # for combined model vary confirmed and deaths delay
             for i in range(len(mean_shift)):
@@ -805,8 +829,7 @@ def delay_mean_sensitivity(model_types, mean_shift = [-2, -1, 1, 2], daily_growt
                     model.build_model()
                 model.run(samples, chains=chains, cores=cores)
                 filename = out_dir + '/delay_mean_confirmed_combined_additive_' + str(i) + '.txt'
-                cm_trace = model.trace["CMReduction"]
-                np.savetxt(filename, cm_trace)
+                save_traces(model, model_type, filename)
     
                 with cm_effect.models.CMCombined_Additive(data) as model:
                     if daily_growth_noise is not None:
@@ -816,8 +839,7 @@ def delay_mean_sensitivity(model_types, mean_shift = [-2, -1, 1, 2], daily_growt
                     model.build_model()
                 model.run(samples, chains=chains, cores=cores)
                 filename = out_dir + '/delay_mean_death_combined_additive_' + str(i) + '.txt'
-                cm_trace = model.trace["CMReduction"]
-                np.savetxt(filename, cm_trace)
+                save_traces(model, model_type, filename)
         else:
             # for other models there is only one delay mean
             for i in range(len(mean_shift)):
@@ -825,7 +847,7 @@ def delay_mean_sensitivity(model_types, mean_shift = [-2, -1, 1, 2], daily_growt
                 print('Model: ' + str(model_type))
                 if model_type=='active':
                     with cm_effect.models.CMActive_Final(data) as model:
-                        plt.plot(model.DelayProb, color='k', label='default')
+                        #plt.plot(model.DelayProb, color='k', label='default')
                         if daily_growth_noise is not None:
                             model.DailyGrowthNoise = daily_growth_noise
                         model = vary_delay_mean(model, mean_shift[i], model_type)
@@ -833,13 +855,18 @@ def delay_mean_sensitivity(model_types, mean_shift = [-2, -1, 1, 2], daily_growt
                         model.build_model()
                 if model_type=='death':
                     with cm_effect.models.CMDeath_Final(data) as model:
-                        plt.plot(model.DelayProb, color='k', label='default')
+                        #plt.plot(model.DelayProb, color='k', label='default')
                         if daily_growth_noise is not None:
                             model.DailyGrowthNoise = daily_growth_noise
                         model = vary_delay_mean(model, mean_shift[i], model_type)
                         delay_probs_death.append(model.DelayProb) 
                         model.build_model()
+                if model_type=='combined_icl_no_noise':
+                    with cm_effect.models.CMCombined_ICL_NoNoise(data) as model:
+                        #plt.plot(model.DelayProb, color='k', label='default')
+                        model = vary_delay_mean_death(model, mean_shift[i])
+                        delay_probs_death.append(model.DelayProbDeaths) 
+                        model.build_model()
                 model.run(samples, chains=chains, cores=cores)
                 filename = out_dir + '/delay_mean_' + model_type + '_' + str(i) + '.txt'
-                cm_trace = model.trace["CMReduction"]
-                np.savetxt(filename, cm_trace)
+                save_traces(model, model_type, filename)
