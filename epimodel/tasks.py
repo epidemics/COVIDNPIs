@@ -581,6 +581,9 @@ class WebUpload(luigi.Task):
     exported_data: str = luigi.Parameter(
         description="Full path to the exported data. E.g. `outputs/web-exports/latest"
     )
+    overwrite: bool = luigi.BoolParameter(
+        description="Whether to overwrite the data in the channel or not", default=False
+    )
 
     # this together with setting this in self.run and evaluating in self.complete
     # guarantees that this task always run
@@ -595,7 +598,12 @@ class WebUpload(luigi.Task):
             raise IOError(
                 f"'{export_path}' directory does not exist. Provide existing directory."
             )
-        upload_export(export_path, gs_prefix=self.gs_prefix, channel=self.channel)
+        upload_export(
+            export_path,
+            gs_prefix=self.gs_prefix,
+            channel=self.channel,
+            overwrite=self.overwrite,
+        )
         self.is_complete = True
 
     def complete(self):
