@@ -57,6 +57,17 @@ class RegionsAggregates(luigi.ExternalTask):
         return luigi.LocalTarget(self.aggregates)
 
 
+class HospitalCapacity(luigi.ExternalTask):
+    """Aggregates used for locations like Balochistan and others"""
+
+    hospital_capacity = luigi.Parameter(
+        description="Input filename relative to the config directory",
+    )
+
+    def output(self):
+        return luigi.LocalTarget(self.hospital_capacity)
+
+
 class RegionsDatasetSubroutine:
     """
     Combines several inputs into a RegionDataset object used in several
@@ -520,6 +531,7 @@ class WebExport(luigi.Task):
             "config_yaml": ConfigYaml(),
             "country_estimates": CountryEstimates(),
             "r_estimates": EstimateR(),
+            "hospital_capacity": HospitalCapacity(),
             **RegionsDatasetSubroutine.requires(),
         }
         if self.automatic:
