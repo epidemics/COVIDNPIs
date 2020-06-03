@@ -339,13 +339,18 @@ def assert_valid_json(file, minify=False):
             )
 
 
-def upload_export(dir_to_export: Path, gs_prefix: str, channel: str):
+def upload_export(
+        dir_to_export: Path,
+        gs_prefix: str,
+        channel: str,
+        overwrite: bool = False
+):
     CMD = [
         "gsutil",
         "-m",
         "-h",
         "Cache-Control:public,max-age=30",
-        "cp",
+        "rsync" if overwrite else "cp",
         "-a",
         "public-read",
     ]
@@ -362,7 +367,12 @@ def upload_export(dir_to_export: Path, gs_prefix: str, channel: str):
 
     gcs_path = os.path.join(gs_prefix, channel)
     log.info(f"Uploading data folder {dir_to_export} to {gcs_path} ...")
-    cmd = CMD + ["-Z", "-R", dir_to_export.as_posix(), gcs_path]
+    cmd = CMD + [
+        "-J" if overwrite else "-Z",
+        "-R",
+        dir_to_export.as_posix(),
+        gcs_path
+    ]
     log.debug(f"Running {cmd!r}")
     subprocess.run(cmd, check=True)
 
