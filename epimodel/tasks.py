@@ -480,72 +480,6 @@ class AgeDistributions(luigi.ExternalTask):
         return luigi.LocalTarget(self.age_distributions)
 
 
-class AutomatedExport(luigi.Task):
-    """Generates export used by the website."""
-
-    export_name: str = luigi.Parameter(
-        description="Directory name with exported files inside web_export_directory"
-    )
-    pretty_print: bool = luigi.BoolParameter(
-        description="If true, result JSONs are indented by 4 spaces"
-    )
-    web_export_directory: str = luigi.Parameter(
-        description="Root subdirectory for all exports.",
-    )
-    main_data_filename: str = luigi.Parameter(
-        description="The default name of the main JSON data file",
-    )
-    comment: str = luigi.Parameter(description="Optional comment to the export",)
-    resample: str = luigi.Parameter(description="Pandas dataseries resample")
-    overwrite: bool = luigi.BoolParameter(
-        description="Whether to overwrite an already existing export"
-    )
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.full_export_path = Path(self.web_export_directory, self.export_name)
-
-    def requires(self):
-        return {
-            "hopkins": JohnsHopkins(),
-            "foretold": UpdateForetold(),
-            "rates": Rates(),
-            "timezones": Timezones(),
-            "age_distributions": AgeDistributions(),
-            "config_yaml": ConfigYaml(),
-            "country_estimates": CountryEstimates(),
-            "r_estimates": EstimateR(),
-            **RegionsDatasetSubroutine.requires(),
-        }
-
-    def output(self):
-        return luigi.LocalTarget(self.full_export_path / self.main_data_filename)
-
-    def run(self):
-        config_yaml = ConfigYaml.load(self.input()["config_yaml"].path)
-        regions_dataset = RegionsDatasetSubroutine.load_rds(self)
-        estimates = self.input()["country_estimates"].path
-
-        ex = process_export(
-            self.input(),
-            regions_dataset,
-            False,
-            self.comment,
-            None,
-            estimates,
-            config_yaml,
-            self.resample,
-        )
-        ex.write(
-            self.full_export_path,
-            Path(self.main_data_filename),
-            latest="latest",
-            pretty_print=self.pretty_print,
-            overwrite=self.overwrite,
-            write_country_exports=False,
-        )
-
-
 class WebExport(luigi.Task):
     """Generates export used by the website."""
 
@@ -566,14 +500,18 @@ class WebExport(luigi.Task):
     overwrite: bool = luigi.BoolParameter(
         description="Whether to overwrite an already existing export"
     )
+    automatic: bool = luigi.BoolParameter(
+        description="Whether to run only task that could be done automatically"
+    )
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.full_export_path = Path(self.web_export_directory, self.export_name)
 
     def requires(self):
-        return {
-            "models": ExtractSimulationsResults(),
+        manual_requires = {"models": ExtractSimulationsResults()}
+
+        automatic_requires = {
             "hopkins": JohnsHopkins(),
             "foretold": UpdateForetold(),
             "rates": Rates(),
@@ -584,12 +522,17 @@ class WebExport(luigi.Task):
             "r_estimates": EstimateR(),
             **RegionsDatasetSubroutine.requires(),
         }
+        if self.automatic:
+            return automatic_requires
+        return dict(manual_requires, **automatic_requires)
 
     def output(self):
         return luigi.LocalTarget(self.full_export_path / self.main_data_filename)
 
     def run(self):
-        models = self.input()["models"].path
+        models = None
+        if not self.automatic:
+            models = self.input()["models"].path
         config_yaml = ConfigYaml.load(self.input()["config_yaml"].path)
         regions_dataset = RegionsDatasetSubroutine.load_rds(self)
         estimates = self.input()["country_estimates"].path
@@ -610,6 +553,7 @@ class WebExport(luigi.Task):
             latest="latest",
             pretty_print=self.pretty_print,
             overwrite=self.overwrite,
+            write_country_exports=not self.automatic,
         )
 
 
