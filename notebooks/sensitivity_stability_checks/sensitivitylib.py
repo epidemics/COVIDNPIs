@@ -63,11 +63,14 @@ def save_traces(model, model_type, filename):
         np.savetxt(filename[0:len(filename)-4] + '_base.txt', cm_base_trace) 
         
 
-def region_holdout_sensitivity(model_types, regions_heldout = ["CZ", "DE", "MX", "NL", "PL", "PT"], daily_growth_noise=None):
+def region_holdout_sensitivity(model_types, regions_heldout = ["CZ", "DE", "MX", "NL", "PL", "PT"], 
+                               daily_growth_noise=None, min_deaths=None, region_var_noise=0.1):
     dp = DataPreprocessor(drop_HS=True)
 
     for region in regions_heldout:  
         data = dp.preprocess_data("../final_data/data_final.csv")
+        if min_deaths is not None:
+            data.filter_region_min_deaths(min_deaths)
         mask_region(data, region)
     
         for model_type in model_types:
@@ -102,6 +105,7 @@ def region_holdout_sensitivity(model_types, regions_heldout = ["CZ", "DE", "MX",
                 with cm_effect.models.CMCombined_Final_DifEffects(data) as model:
                     if daily_growth_noise is not None:
                         model.DailyGrowthNoise = daily_growth_noise
+                    model.RegionVariationNoise = region_var_noise
                     model.build_model()
             if model_type=='combined_no_noise':                
                 with cm_effect.models.CMCombined_Final_NoNoise(data) as model:
@@ -122,13 +126,16 @@ def region_holdout_sensitivity(model_types, regions_heldout = ["CZ", "DE", "MX",
             save_traces(model, model_type, filename)
     
 
-def cm_leavout_sensitivity(model_types, daily_growth_noise=None):
+def cm_leavout_sensitivity(model_types, daily_growth_noise=None, min_deaths=None,
+                           region_var_noise=0.1):
 
     dp = DataPreprocessor(drop_HS=True)
     data = dp.preprocess_data("../final_data/data_final.csv")
+    if min_deaths is not None:
+        data.filter_region_min_deaths(min_deaths)
         
     cm_leavouts = copy.deepcopy(data.CMs)
-    cm_leavouts.append('None')
+    #cm_leavouts.append('None')
     
     for model_type in model_types:
         for i in range(len(cm_leavouts)):
@@ -163,6 +170,7 @@ def cm_leavout_sensitivity(model_types, daily_growth_noise=None):
                 with cm_effect.models.CMCombined_Final_DifEffects(data_cm_leavout) as model:
                     if daily_growth_noise is not None:
                         model.DailyGrowthNoise = daily_growth_noise
+                    model.RegionVariationNoise = region_var_noise
                     model.build_model()
             if model_type=='combined_no_noise':                
                 with cm_effect.models.CMCombined_Final_NoNoise(data_cm_leavout) as model:
@@ -182,9 +190,11 @@ def cm_leavout_sensitivity(model_types, daily_growth_noise=None):
             save_traces(model, model_type, filename)
 
 def cm_prior_sensitivity(model_types, priors=['half_normal', 'wide'], sigma_wide=10,
-                         daily_growth_noise=None):
+                         daily_growth_noise=None, min_deaths=None, region_var_noise=0.1):
     dp = DataPreprocessor(drop_HS=True)
     data = dp.preprocess_data("../final_data/data_final.csv")
+    if min_deaths is not None:
+        data.filter_region_min_deaths(min_deaths)
 
     for model_type in model_types:
         for prior in priors:
@@ -242,6 +252,7 @@ def cm_prior_sensitivity(model_types, priors=['half_normal', 'wide'], sigma_wide
                         model.build_model(cm_prior='half_normal')
             if model_type=='combined_dif':                
                 with cm_effect.models.CMCombined_Final_DifEffects(data) as model:
+                    model.RegionVariationNoise = region_var_noise
                     if daily_growth_noise is not None:
                         model.DailyGrowthNoise = daily_growth_noise
                     if prior=='default':
@@ -280,7 +291,8 @@ def cm_prior_sensitivity(model_types, priors=['half_normal', 'wide'], sigma_wide
             filename = out_dir + '/cm_prior_' + model_type + '_' + str(prior) + '.txt'
             save_traces(model, model_type, filename)
             
-def data_mob_sensitivity(model_types, daily_growth_noise=None):
+def data_mob_sensitivity(model_types, daily_growth_noise=None, min_deaths=None,
+                         region_var_noise=0.1):
     dp = DataPreprocessor(drop_HS=True)
     data_mob_no_work = dp.preprocess_data("../final_data/data_mob_no_work.csv")
     data_mob = dp.preprocess_data("../final_data/data_mob.csv")
@@ -292,6 +304,8 @@ def data_mob_sensitivity(model_types, daily_growth_noise=None):
             data = copy.deepcopy(data_mob_no_work)
         if data_mobility_type=='rec_work':
             data = copy.deepcopy(data_mob)
+        if min_deaths is not None:
+            data.filter_region_min_deaths(min_deaths)
         for model_type in model_types:
             print('Model: ' + str(model_type))
             print('Data Mobility Type: ' + str(data_mobility_type))
@@ -324,6 +338,7 @@ def data_mob_sensitivity(model_types, daily_growth_noise=None):
                 with cm_effect.models.CMCombined_Final_DifEffects(data) as model:
                     if daily_growth_noise is not None:
                         model.DailyGrowthNoise = daily_growth_noise
+                    model.RegionVariationNoise = region_var_noise
                     model.build_model()
             if model_type=='combined_no_noise':                
                 with cm_effect.models.CMCombined_Final_NoNoise(data) as model:
@@ -342,9 +357,12 @@ def data_mob_sensitivity(model_types, daily_growth_noise=None):
             filename = out_dir + '/data_mobility_' + data_mobility_type + '_' + model_type + '.txt'
             save_traces(model, model_type, filename)
         
-def data_schools_open_sensitivity(model_types, daily_growth_noise=None):
+def data_schools_open_sensitivity(model_types, daily_growth_noise=None, min_deaths=None,
+                                  region_var_noise=0.1):
     dp = DataPreprocessor(drop_HS=True)
     data = dp.preprocess_data("../final_data/data_SE_schools_open.csv")
+    if min_deaths is not None:
+        data.filter_region_min_deaths(min_deaths)
     
     for model_type in model_types:
         print('Model: ' + str(model_type))
@@ -377,6 +395,7 @@ def data_schools_open_sensitivity(model_types, daily_growth_noise=None):
             with cm_effect.models.CMCombined_Final_DifEffects(data) as model:
                 if daily_growth_noise is not None:
                     model.DailyGrowthNoise = daily_growth_noise
+                model.RegionVariationNoise = region_var_noise
                 model.build_model()
         if model_type=='combined_no_noise':                
             with cm_effect.models.CMCombined_Final_NoNoise(data) as model:
@@ -395,10 +414,13 @@ def data_schools_open_sensitivity(model_types, daily_growth_noise=None):
         filename = out_dir + '/schools_open_' + model_type + '.txt'
         save_traces(model, model_type, filename)
             
-def daily_growth_noise_sensitivity(model_types, daily_growth_noise = [0.05, 0.1, 0.4]):
+def daily_growth_noise_sensitivity(model_types, daily_growth_noise = [0.05, 0.1, 0.4], 
+                                   min_deaths=None, region_var_noise=0.1):
 
     dp = DataPreprocessor(drop_HS=True)
     data = dp.preprocess_data("../final_data/data_final.csv")
+    if min_deaths is not None:
+        data.filter_region_min_deaths(min_deaths)
     
     for i in range(len(daily_growth_noise)):
         for model_type in model_types:
@@ -427,6 +449,7 @@ def daily_growth_noise_sensitivity(model_types, daily_growth_noise = [0.05, 0.1,
             if model_type=='combined_dif':                
                 with cm_effect.models.CMCombined_Final_DifEffects(data) as model:
                     model.DailyGrowthNoise = daily_growth_noise[i]
+                    model.RegionVariationNoise = region_var_noise
                     model.build_model()
             if model_type=='combined_additive':               
                 with cm_effect.models.CMCombined_Additive(data) as model:
@@ -438,7 +461,9 @@ def daily_growth_noise_sensitivity(model_types, daily_growth_noise = [0.05, 0.1,
             filename = out_dir + '/growth_noise_' + model_type + '_' + str(i) + '.txt'
             save_traces(model, model_type, filename)
             
-def min_num_confirmed_sensitivity(model_types, min_conf_cases = [10, 30, 300, 500], daily_growth_noise=None):
+def min_num_confirmed_sensitivity(model_types, min_conf_cases = [10, 30, 300, 500], 
+                                  daily_growth_noise=None, min_deaths=None, 
+                                  region_var_noise=0.1):
     dp = DataPreprocessor(drop_HS=True)    
     
     for model_type in model_types:
@@ -447,6 +472,8 @@ def min_num_confirmed_sensitivity(model_types, min_conf_cases = [10, 30, 300, 50
             print('Minimum number of confirmed cases: ' + str(min_conf_cases[i]))
             dp.min_confirmed = min_conf_cases[i]
             data = dp.preprocess_data("../final_data/data_final.csv")
+            if min_deaths is not None:
+                data.filter_region_min_deaths(min_deaths)
             
             if model_type=='active':
                 with cm_effect.models.CMActive_Final(data) as model:
@@ -467,12 +494,13 @@ def min_num_confirmed_sensitivity(model_types, min_conf_cases = [10, 30, 300, 50
                 with cm_effect.models.CMCombined_Final_ICL(data) as model:
                     if daily_growth_noise is not None:
                         model.DailyGrowthNoise = daily_growth_noise
-                model.build_model()
+                    model.build_model()
             if model_type=='combined_dif':                
                 with cm_effect.models.CMCombined_Final_DifEffects(data) as model:
                     if daily_growth_noise is not None:
                         model.DailyGrowthNoise = daily_growth_noise
-                model.build_model()
+                    model.RegionVariationNoise = region_var_noise
+                    model.build_model()
             if model_type=='combined_no_noise':                
                 with cm_effect.models.CMCombined_Final_NoNoise(data) as model:
                     model.build_model()
@@ -510,10 +538,13 @@ def calc_trace_statistic(model, stat_type):
     stat_all = np.concatenate([stat_all, stat_nums])
     return stat_all
 
-def MCMC_stability(model_types, daily_growth_noise=None):
+def MCMC_stability(model_types, daily_growth_noise=None, min_deaths=None,
+                   region_var_noise=0.1):
     
     dp = DataPreprocessor(drop_HS=True)
     data = dp.preprocess_data("../final_data/data_final.csv")
+    if min_deaths is not None:
+        data.filter_region_min_deaths(min_deaths)
 
     for model_type in model_types:
         print('Model: ' + str(model_type))
@@ -546,6 +577,7 @@ def MCMC_stability(model_types, daily_growth_noise=None):
             with cm_effect.models.CMCombined_Final_DifEffects(data) as model:
                 if daily_growth_noise is not None:
                     model.DailyGrowthNoise = daily_growth_noise
+                model.RegionVariationNoise = region_var_noise
                 model.build_model()
         if model_type=='combined_no_noise':                
             with cm_effect.models.CMCombined_Final_NoNoise(data) as model:
@@ -569,9 +601,13 @@ def MCMC_stability(model_types, daily_growth_noise=None):
         filename = out_dir + '/default_' + model_type + '.txt'
         save_traces(model, model_type, filename)
         
-def R_hyperprior_mean_sensitivity(model_types, hyperprior_means =[1.5, 5.5], daily_growth_noise=None):
+def R_hyperprior_mean_sensitivity(model_types, hyperprior_means =[1.5, 5.5], 
+                                  daily_growth_noise=None, min_deaths=None,
+                                  region_var_noise=0.1):
     dp = DataPreprocessor(drop_HS=True)
     data = dp.preprocess_data("../final_data/data_final.csv")
+    if min_deaths is not None:
+        data.filter_region_min_deaths(min_deaths)
 
     for i in range(len(hyperprior_means)):
         for model_type in model_types:
@@ -606,6 +642,7 @@ def R_hyperprior_mean_sensitivity(model_types, hyperprior_means =[1.5, 5.5], dai
                 with cm_effect.models.CMCombined_Final_DifEffects(data) as model:
                     if daily_growth_noise is not None:
                         model.DailyGrowthNoise = daily_growth_noise
+                    model.RegionVariationNoise = region_var_noise
                     model.build_model(R_hyperprior_mean=hyperprior_means[i])
             if model_type=='combined_no_noise':                
                 with cm_effect.models.CMCombined_Final_NoNoise(data) as model:
@@ -624,9 +661,13 @@ def R_hyperprior_mean_sensitivity(model_types, hyperprior_means =[1.5, 5.5], dai
             filename = out_dir + '/R_hyperprior_' + model_type + '_' + str(i) + '.txt'
             save_traces(model, model_type, filename)
             
-def serial_interval_sensitivity(model_types, serial_interval=[4, 5, 6, 7, 8], daily_growth_noise=None):
+def serial_interval_sensitivity(model_types, serial_interval=[4, 5, 6, 7, 8], 
+                                daily_growth_noise=None, min_deaths=None,
+                                region_var_noise=0.1):
     dp = DataPreprocessor(drop_HS=True)
     data = dp.preprocess_data("../final_data/data_final.csv")
+    if min_deaths is not None:
+        data.filter_region_min_deaths(min_deaths)
 
     for i in range(len(serial_interval)):
         for model_type in model_types:
@@ -661,6 +702,7 @@ def serial_interval_sensitivity(model_types, serial_interval=[4, 5, 6, 7, 8], da
                 with cm_effect.models.CMCombined_Final_DifEffects(data) as model:
                     if daily_growth_noise is not None:
                         model.DailyGrowthNoise = daily_growth_noise
+                    model.RegionVariationNoise = region_var_noise
                     model.build_model(serial_interval_mean=serial_interval[i])
             if model_type=='combined_no_noise':                
                 with cm_effect.models.CMCombined_Final_NoNoise(data) as model:
@@ -756,7 +798,8 @@ def vary_delay_mean_death(model, mean_shift):
         model.DelayProbDeaths = delay_prob
     return model
     
-def delay_mean_sensitivity(model_types, mean_shift = [-2, -1, 1, 2], daily_growth_noise=None):    
+def delay_mean_sensitivity(model_types, mean_shift = [-2, -1, 1, 2], daily_growth_noise=None,
+                           min_deaths=None, region_var_noise=0.1):    
     '''
     mean_shift shifts the mean of the underlying distributions that will combine
     to form the delay distrobution. So the resulting total delay distribution
@@ -779,6 +822,8 @@ def delay_mean_sensitivity(model_types, mean_shift = [-2, -1, 1, 2], daily_growt
     
     dp = DataPreprocessor(drop_HS=True)
     data = dp.preprocess_data("../final_data/data_final.csv")
+    if min_deaths is not None:
+        data.filter_region_min_deaths(min_deaths)
     out_dir = generate_out_dir(daily_growth_noise)
     
     for model_type in model_types:
@@ -863,6 +908,7 @@ def delay_mean_sensitivity(model_types, mean_shift = [-2, -1, 1, 2], daily_growt
                 with cm_effect.models.CMCombined_Final_DifEffects(data) as model:
                     if daily_growth_noise is not None:
                         model.DailyGrowthNoise = daily_growth_noise
+                    model.RegionVariationNoise = region_var_noise
                     model = vary_delay_mean_confirmed(model, mean_shift[i])
                     #delay_probs_conf_combined.append(model.DelayProbCases) 
                     model.build_model()
@@ -873,6 +919,7 @@ def delay_mean_sensitivity(model_types, mean_shift = [-2, -1, 1, 2], daily_growt
                 with cm_effect.models.CMCombined_Final_DifEffects(data) as model:
                     if daily_growth_noise is not None:
                         model.DailyGrowthNoise = daily_growth_noise
+                    model.RegionVariationNoise = region_var_noise
                     model = vary_delay_mean_death(model, mean_shift[i])
                     #delay_probs_death_combined.append(model.DelayProbDeaths) 
                     model.build_model()
