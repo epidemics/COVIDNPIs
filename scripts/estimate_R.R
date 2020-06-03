@@ -1,4 +1,4 @@
-requiredPackages <- c('tidyverse','EpiEstim','progress')
+requiredPackages <- c('tidyverse','EpiEstim','progress', 'doParallel', 'foreach')
 for(p in requiredPackages){
   if(!require(p,character.only = TRUE)) install.packages(p)
   library(p,character.only = TRUE)
@@ -91,13 +91,22 @@ main <- function(si_sample_file, input_file, output_file) {
   print(paste("Estimating R from JH data", input_file, "on", length(countries), "countries and writing to", output_file))
   si_sample <- read_rds(si_sample_file)
 
-  pb <- progress_bar$new(total = length(countries))
+  cores <- detectCores()
+  cl <- makeCluster(cores[1]-1) #not to overload your computer
+  registerDoParallel(cl)
   export <- data.frame(code=NULL, date=NULL, MeanR=NULL, StdR=NULL)
-  for (country_code in countries) {
-    country_estimates <- estimate_r(cases, country_code, si_sample)
-    export <- rbind(export, country_estimates)
-    pb$tick()
+  export <- foreach(
+    i = seq_along(countries),
+    .combine=rbind,
+    .export = c("estimate_r", "load_country", "INCIDENCE_LAG", "ESTIMATION_WINDOW", "PERCENT_TO_OUTBREAK"),
+    .packages = requiredPackages
+  ) %dopar% {
+    country_code <- countries[i]
+    estimate_r(cases, country_code, si_sample)
   }
+  stopCluster(cl)
+
+
   write.csv(export, output_file)
   print(paste("Exported R estimates for", length(countries), "countries to", output_file))
 }

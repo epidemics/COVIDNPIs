@@ -84,6 +84,7 @@ class WebExport:
         latest=None,
         pretty_print=False,
         overwrite=False,
+        write_country_exports=True,
     ):
         indent = None
         if pretty_print:
@@ -97,20 +98,21 @@ class WebExport:
             )
 
         log.info(f"Writing WebExport to {export_directory} ...")
-        for region_code, export_region in tqdm(
-            list(self.export_regions.items()), desc="Writing regions"
-        ):
-            fname = f"extdata-{region_code}.json"
-            export_region.data_url = f"{fname}"
-            with open(export_directory / fname, "wt") as f:
-                json.dump(
-                    export_region.data_ext,
-                    f,
-                    default=types_to_json,
-                    allow_nan=False,
-                    separators=(",", ":"),
-                    indent=indent,
-                )
+        if write_country_exports:
+            for region_code, export_region in tqdm(
+                list(self.export_regions.items()), desc="Writing regions"
+            ):
+                fname = f"extdata-{region_code}.json"
+                export_region.data_url = f"{fname}"
+                with open(export_directory / fname, "wt") as f:
+                    json.dump(
+                        export_region.data_ext,
+                        f,
+                        default=types_to_json,
+                        allow_nan=False,
+                        separators=(",", ":"),
+                        indent=indent,
+                    )
         with open(export_directory / main_data_filename, "wt") as f:
             json.dump(
                 self.to_json(),
@@ -165,7 +167,10 @@ class WebExportRegion:
             hospital_capacity,
         )
         # Extended data to be written in a separate per-region file
-        self.data_ext = self.extract_external_data(models, simulation_specs)
+        if not models.empty and not simulation_specs.empty:
+            self.data_ext = self.extract_external_data(models, simulation_specs)
+        else:
+            self.data_ext = None
         # Relative URL of the extended data file, set on write
         self.data_url = None
 
@@ -520,10 +525,6 @@ def process_export(
 
     export_regions = sorted(config["export_regions"])
 
-    batch = Batch.open(batch_file)
-    simulation_specs: pd.DataFrame = batch.hdf["simulations"]
-    cummulative_active_df = batch.get_cummulative_active_df()
-
     estimates_df = epimodel.read_csv_smart(estimates, rds, prefer_higher=True)
 
     rates_df: pd.DataFrame = pd.read_csv(
@@ -555,11 +556,6 @@ def process_export(
         na_values=[""],
     ).pipe(aggregate_countries, config["state_to_country"], rds)
 
-    cummulative_active_df = add_aggregate_traces(
-        [reg for reg in rds.aggregate_regions if reg.Code in export_regions],
-        cummulative_active_df,
-    )
-
     r_estimates_df: pd.DataFrame = pd.read_csv(
         r_estimates,
         index_col=["Code", "Date"],
@@ -568,18 +564,38 @@ def process_export(
         na_values=[""],
     )
 
-    analyze_data_consistency(
-        debug, export_regions, cummulative_active_df, rates_df, hopkins_df, foretold_df,
-    )
+    simulation_specs: pd.DataFrame = pd.DataFrame([])
+    cummulative_active_df = pd.DataFrame([])
+    if batch_file is not None:
+        batch = Batch.open(batch_file)
+        simulation_specs: pd.DataFrame = batch.hdf["simulations"]
+        cummulative_active_df = batch.get_cummulative_active_df()
+        cummulative_active_df = add_aggregate_traces(
+            [reg for reg in rds.aggregate_regions if reg.Code in export_regions],
+            cummulative_active_df,
+        )
+        analyze_data_consistency(
+            debug,
+            export_regions,
+            cummulative_active_df,
+            rates_df,
+            hopkins_df,
+            foretold_df,
+        )
 
     for code in export_regions:
         reg: Region = rds[code]
         m49 = int(reg["M49Code"]) if pd.notnull(reg["M49Code"]) else -1
-
+        if batch_file is not None:
+            country_cummulative_active_df = cummulative_active_df.xs(
+                key=code, level="Code"
+            ).sort_index(level="Date")
+        else:
+            country_cummulative_active_df = pd.DataFrame([])
         ex.new_region(
             reg,
             get_df_else_none(estimates_df, code),
-            cummulative_active_df.xs(key=code, level="Code").sort_index(level="Date"),
+            country_cummulative_active_df,
             simulation_specs,
             get_df_else_none(rates_df, code),
             get_df_else_none(hopkins_df, code),

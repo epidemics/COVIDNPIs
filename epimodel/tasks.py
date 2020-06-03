@@ -511,14 +511,18 @@ class WebExport(luigi.Task):
     overwrite: bool = luigi.BoolParameter(
         description="Whether to overwrite an already existing export"
     )
+    automatic: bool = luigi.BoolParameter(
+        description="Whether to run only task that could be done automatically"
+    )
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.full_export_path = Path(self.web_export_directory, self.export_name)
 
     def requires(self):
-        return {
-            "models": ExtractSimulationsResults(),
+        manual_requires = {"models": ExtractSimulationsResults()}
+
+        automatic_requires = {
             "hopkins": JohnsHopkins(),
             "foretold": UpdateForetold(),
             "rates": Rates(),
@@ -530,12 +534,17 @@ class WebExport(luigi.Task):
             "hospital_capacity": HospitalCapacity(),
             **RegionsDatasetSubroutine.requires(),
         }
+        if self.automatic:
+            return automatic_requires
+        return dict(manual_requires, **automatic_requires)
 
     def output(self):
         return luigi.LocalTarget(self.full_export_path / self.main_data_filename)
 
     def run(self):
-        models = self.input()["models"].path
+        models = None
+        if not self.automatic:
+            models = self.input()["models"].path
         config_yaml = ConfigYaml.load(self.input()["config_yaml"].path)
         regions_dataset = RegionsDatasetSubroutine.load_rds(self)
         estimates = self.input()["country_estimates"].path
@@ -556,6 +565,7 @@ class WebExport(luigi.Task):
             latest="latest",
             pretty_print=self.pretty_print,
             overwrite=self.overwrite,
+            write_country_exports=not self.automatic,
         )
 
 
