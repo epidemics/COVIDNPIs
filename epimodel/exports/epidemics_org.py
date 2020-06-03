@@ -96,12 +96,13 @@ class WebExport:
             )
 
         log.info(f"Writing WebExport to {export_directory} ...")
-        if write_country_exports:
-            for region_code, export_region in tqdm(
-                list(self.export_regions.items()), desc="Writing regions"
-            ):
-                fname = f"extdata-{region_code}.json"
-                export_region.data_url = f"{fname}"
+
+        for region_code, export_region in tqdm(
+            list(self.export_regions.items()), desc="Writing regions"
+        ):
+            fname = f"extdata-{region_code}.json"
+            export_region.data_url = f"{fname}"
+            if write_country_exports:
                 with open(export_directory / fname, "wt") as f:
                     json.dump(
                         export_region.data_ext,
