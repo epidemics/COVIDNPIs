@@ -4524,7 +4524,7 @@ class CMCombined_Final_DifEffects(BaseCMModel):
 
         self.all_observed_deaths = np.array(observed_deaths)
 
-    def build_model(self, R_hyperprior_mean=3.25, cm_prior_sigma=0.2, cm_prior='normal',
+    def build_model(self, R_hyperprior_mean=3.25, cm_prior_sigma=0.1, cm_prior='normal',
                     serial_interval_mean=SI_ALPHA / SI_BETA
                     ):
         with self.model:

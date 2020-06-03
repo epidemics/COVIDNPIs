@@ -353,9 +353,9 @@ class PreprocessedData(object):
         self.NewCases = NewCases
         self.RNames = RNames
 
-        for i, c in enumerate(self.CMs):
-            if c == "Stay Home Order":
-                self.CMs[i] = "Stay Home Order (with exemptions)"
+        # for i, c in enumerate(self.CMs):
+        #     if c == "Stay Home Order":
+        #         self.CMs[i] = "Stay Home Order (with exemptions)"
 
     def reduce_regions_from_index(self, reduced_regions_indx):
         self.Active = self.Active[reduced_regions_indx, :]
@@ -496,3 +496,75 @@ class PreprocessedData(object):
         plt.tight_layout()
         plt.savefig("FigureCA.pdf", bbox_inches='tight')
         # sns.despine()
+
+    def alt_summary_plot(self, cm_plot_style):
+        plt.figure(figsize=(9, 3.5), dpi=300)
+        plt.subplot(1, 2, 1)
+        self.alt_coactivation_plot(cm_plot_style, False)
+        plt.subplot(1, 2, 2)
+        self.alt_cumulative_days_plot(cm_plot_style, False)
+        plt.tight_layout()
+        plt.savefig("Data.pdf", bbox_inches='tight')
+        # sns.despine()
+
+    def alt_coactivation_plot(self, cm_plot_style, newfig=True, skip_yticks=False):
+        if newfig:
+            plt.figure(figsize=(2, 3), dpi=300)
+
+        nRs, nCMs, nDs = self.ActiveCMs.shape
+        plt.title("Frequency$[\phi_{i} = 1 | \phi_j = 1]$", fontsize=8)
+        ax = plt.gca()
+        mat = np.zeros((nCMs, nCMs))
+        for cm in range(nCMs):
+            mask = self.ActiveCMs[:, cm, :]
+            for cm2 in range(nCMs):
+                mat[cm, cm2] = np.sum(mask * self.ActiveCMs[:, cm2, :]) / np.sum(mask)
+        im = plt.imshow(mat * 100, vmin=0, vmax=100, cmap="viridis", aspect="auto")
+        ax.tick_params(axis="both", which="major", labelsize=8)
+
+        plt.xticks(
+            np.arange(len(self.CMs)),
+            self.CMs, ha="left", rotation=-25
+        )
+
+        plt.yticks(
+            np.arange(len(self.CMs)),
+            self.CMs
+        )
+
+        plt.xlabel("NPI $i$", fontsize=8)
+        plt.ylabel("NPI $j$", fontsize=8)
+
+        x_min, x_max = plt.xlim()
+        x_r = x_max - x_min
+
+        plt.xticks(fontsize=8)
+        divider = make_axes_locatable(ax)
+        cax = divider.append_axes("right", size="5%", pad=0.05)
+        plt.colorbar(im, cax=cax, format=PercentFormatter())
+        ax = plt.gca()
+        ax.tick_params(axis="both", which="major", labelsize=8)
+
+    def alt_cumulative_days_plot(self, cm_plot_style, newfig=True, skip_yticks=False):
+        if newfig:
+            plt.figure(figsize=(3, 3), dpi=300)
+
+        nRs, nCMs, nDs = self.ActiveCMs.shape
+
+        ax = plt.gca()
+        days_active = np.sum(np.sum(self.ActiveCMs, axis=0), axis=1)
+        plt.barh(-np.arange(nCMs), days_active)
+
+        plt.yticks(
+            -np.arange(len(self.CMs)),
+            self.CMs
+        )
+
+        x_min, x_max = plt.xlim()
+        x_r = x_max - x_min
+
+        plt.xticks([0, 500, 1000, 1500, 2000], fontsize=6)
+        ax.tick_params(axis="both", which="major", labelsize=8)
+        plt.title("Total Days Active", fontsize=8)
+        plt.xlabel("Days", fontsize=8)
+        plt.ylim([-len(self.CMs)+0.5, 0.5])
