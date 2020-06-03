@@ -1,0 +1,8 @@
+version: "3"
+services:
+  luigi:
+    build: .
+    image: epimodel-runner
+    volumes:
+      - .:/app
+    entrypoint: ["python", "run_luigi"]

@@ -19,6 +19,8 @@ web_export:
   rates: rates.csv
   timezones: timezones.csv
   un_age_dist: various/age_dist_un.csv
+  hospital_capacity: hospital-capacity.csv
+
 
 ### Generating GLEAM scenarios
 # All combinations of groups and traces are created.
