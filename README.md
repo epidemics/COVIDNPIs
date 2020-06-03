@@ -174,3 +174,14 @@ This gives estimates for the Infectious compartment and Beta values for various 
 * We enforce [black](https://github.com/psf/black) formatting (with the default style).
 * Use `pytest` for testing, add tests for your code
 * Use pull requests for both this and the data repository.
+
+## Using docker
+If you have docker compose, simply use:
+```
+docker-compose run luigi <luigi-parameters>
+```
+so for example:
+```
+docker-compose run luigi JohnsHopkins
+```
+the image currently doesn't contain `gsutil` available, so the upload my be still necessary from the host

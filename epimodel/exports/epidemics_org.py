@@ -57,6 +57,7 @@ class WebExport:
         timezones: Optional[pd.DataFrame],
         un_age_dist: Optional[pd.DataFrame],
         r_estimates: Optional[pd.DataFrame],
+        hospital_capacity: Optional[pd.DataFrame],
     ):
         export_region = WebExportRegion(
             region,
@@ -71,6 +72,7 @@ class WebExport:
             timezones,
             un_age_dist,
             r_estimates,
+            hospital_capacity,
         )
         self.export_regions[region.Code] = export_region
         return export_region
@@ -96,7 +98,7 @@ class WebExport:
             )
 
         log.info(f"Writing WebExport to {export_directory} ...")
-
+        
         for region_code, export_region in tqdm(
             list(self.export_regions.items()), desc="Writing regions"
         ):
@@ -145,6 +147,7 @@ class WebExportRegion:
         timezones: Optional[pd.DataFrame],
         un_age_dist: Optional[pd.DataFrame],
         r_estimates: Optional[pd.DataFrame],
+        hospital_capacity: Optional[pd.DataFrame],
     ):
         log.debug(f"Prepare WebExport: {region.Code}, {region.Name}")
 
@@ -156,7 +159,13 @@ class WebExportRegion:
 
         # Any per-region data. Large ones should go to data_ext.
         self.data = self.extract_smallish_data(
-            rates, hopkins, foretold, timezones, un_age_dist, r_estimates
+            rates,
+            hopkins,
+            foretold,
+            timezones,
+            un_age_dist,
+            r_estimates,
+            hospital_capacity,
         )
         # Extended data to be written in a separate per-region file
         if not models.empty and not simulation_specs.empty:
@@ -174,6 +183,7 @@ class WebExportRegion:
         timezones: pd.DataFrame,
         un_age_dist: Optional[pd.DataFrame],
         r_estimates: Optional[pd.DataFrame],
+        hospital_capacity: Optional[pd.Series],
     ) -> Dict[str, Dict[str, Any]]:
         data = {}
 
@@ -212,6 +222,9 @@ class WebExportRegion:
                 "Date": [x.isoformat() for x in r_estimates.index],
                 **r_estimates[["MeanR", "StdR"]].to_dict(orient="list"),
             }
+
+        if hospital_capacity is not None:
+            data["Capacity"] = hospital_capacity.dropna().to_dict()
 
         return data
 
@@ -327,13 +340,15 @@ def assert_valid_json(file, minify=False):
             )
 
 
-def upload_export(dir_to_export: Path, gs_prefix: str, channel: str):
+def upload_export(
+    dir_to_export: Path, gs_prefix: str, channel: str, overwrite: bool = False
+):
     CMD = [
         "gsutil",
         "-m",
         "-h",
         "Cache-Control:public,max-age=30",
-        "cp",
+        "rsync" if overwrite else "cp",
         "-a",
         "public-read",
     ]
@@ -350,7 +365,7 @@ def upload_export(dir_to_export: Path, gs_prefix: str, channel: str):
 
     gcs_path = os.path.join(gs_prefix, channel)
     log.info(f"Uploading data folder {dir_to_export} to {gcs_path} ...")
-    cmd = CMD + ["-Z", "-R", dir_to_export.as_posix(), gcs_path]
+    cmd = CMD + ["-J" if overwrite else "-Z", "-R", dir_to_export.as_posix(), gcs_path]
     log.debug(f"Running {cmd!r}")
     subprocess.run(cmd, check=True)
 
@@ -509,6 +524,7 @@ def process_export(
     timezone = inputs["timezones"].path
     un_age_dist = inputs["age_distributions"].path
     r_estimates = inputs["r_estimates"].path
+    hospital_capacity = inputs["hospital_capacity"].path
 
     export_regions = sorted(config["export_regions"])
 
@@ -524,6 +540,8 @@ def process_export(
     un_age_dist_df: pd.DataFrame = pd.read_csv(un_age_dist, index_col="Code M49").drop(
         columns=["Type", "Region Name", "Parent Code M49"]
     )
+
+    hospital_capacity_df = pd.read_csv(hospital_capacity, index_col="Code")
 
     foretold_df: pd.DataFrame = pd.read_csv(
         foretold,
@@ -588,5 +606,6 @@ def process_export(
             get_df_list(timezone_df, code),
             get_df_else_none(un_age_dist_df, m49),
             get_df_else_none(r_estimates_df, code),
+            get_df_else_none(hospital_capacity_df, code),
         )
     return ex
