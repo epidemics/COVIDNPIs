@@ -582,8 +582,7 @@ class WebUpload(luigi.Task):
         description="Full path to the exported data. E.g. `outputs/web-exports/latest"
     )
     overwrite: bool = luigi.BoolParameter(
-        description="Whether to overwrite the data in the channel or not",
-        default=False
+        description="Whether to overwrite the data in the channel or not", default=False
     )
 
     # this together with setting this in self.run and evaluating in self.complete
@@ -603,7 +602,7 @@ class WebUpload(luigi.Task):
             export_path,
             gs_prefix=self.gs_prefix,
             channel=self.channel,
-            overwrite=self.overwrite
+            overwrite=self.overwrite,
         )
         self.is_complete = True
 
