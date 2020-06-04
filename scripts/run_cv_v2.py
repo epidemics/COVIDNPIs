@@ -54,18 +54,27 @@ def unmask_all(d):
 
 class ResultsObject():
     def __init__(self, indxs, trace):
-        self.CMReduction = trace.CMReduction
-        self.RegionLogR = trace.RegionLogR[:, indxs]
-        self.Z1C = trace.Z1C[:, indxs, :]
-        self.Z1D = trace.Z1D[:, indxs, :]
-        self.InfectedCases = trace.InfectedCases[:, indxs, :]
-        self.InfectedDeaths = trace.InfectedDeaths[:, indxs, :]
-        self.ExpectedCases = trace.ExpectedCases[:, indxs, :]
-        self.ExpectedDeaths = trace.ExpectedDeaths[:, indxs, :]
+        if "CMReduction" in trace.varnames:
+            self.CMReduction = trace.CMReduction
+
+        if "RegionLogR" in trace.varnames:
+            self.RegionLogR = trace.RegionLogR[:, indxs]
+
+        if "InfectedCases" in trace.varnames:
+            self.InfectedCases = trace.InfectedCases[:, indxs, :]
+
+        if "InfectedDeaths" in trace.varnames:
+            self.InfectedDeaths = trace.InfectedDeaths[:, indxs, :]
+
+        if "ExpectedCases" in trace.varnames:
+            self.ExpectedCases = trace.ExpectedCases[:, indxs, :]
+
+        if "ExpectedDeaths" in trace.varnames:
+            self.ExpectedDeaths = trace.ExpectedDeaths[:, indxs, :]
 
         if "Phi" in trace.varnames:
             self.Phi = trace.Phi
-        else:
+        elif "Phi_1" in trace.varnames:
             self.Phi = trace.Phi_1
 
 
