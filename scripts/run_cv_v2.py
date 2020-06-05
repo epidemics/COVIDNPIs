@@ -89,8 +89,6 @@ if __name__ == "__main__":
     dp = DataPreprocessor(min_confirmed=100, drop_HS=True)
     data = dp.preprocess_data("notebooks/final_data/data_final.csv")
 
-    data.filter_regions_min_deaths()
-
     r_is = []
     ds = []
     for rg in fold_rs:
