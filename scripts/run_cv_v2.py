@@ -89,13 +89,14 @@ if __name__ == "__main__":
     dp = DataPreprocessor(min_confirmed=100, drop_HS=True)
     data = dp.preprocess_data("notebooks/final_data/data_final.csv")
 
+    data.filter_regions_min_deaths()
+
     r_is = []
     ds = []
     for rg in fold_rs:
         c_s, d_s = mask_region(data, rg)
         ds.append((c_s, d_s))
-
-    r_is.append(data.Rs.index(rg))
+        r_is.append(data.Rs.index(rg))
 
     if args.model == 0:
         with cm_effect.models.CMCombined_Final(data, None) as model:
@@ -110,6 +111,7 @@ if __name__ == "__main__":
             model.build_model()
 
     elif args.model == 3:
+        print("using ICL model")
         with cm_effect.models.CMCombined_Final_ICL(data, None) as model:
             model.build_model()
 

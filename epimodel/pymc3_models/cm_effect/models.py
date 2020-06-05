@@ -2352,7 +2352,7 @@ class CMCombined_Final_V3(BaseCMModel):
         self.DelayProbDeaths = self.DelayProbDeaths.reshape((1, self.DelayProbDeaths.size))
 
         self.CMDelayCut = 30
-        self.DailyGrowthNoise = 0.7
+        self.DailyGrowthNoise = 0.3
 
         self.ObservedDaysIndx = np.arange(self.CMDelayCut, len(self.d.Ds))
         self.OR_indxs = np.arange(len(self.d.Rs))
@@ -2999,7 +2999,7 @@ class CMCombined_Final_NoNoise(BaseCMModel):
                                         0.03470891, 0.0299895, 0.02577721, 0.02199923, 0.01871723,
                                         0.01577148, 0.01326564, 0.01110783, 0.00928827, 0.0077231,
                                         0.00641162, 0.00530572, 0.00437895, 0.00358801, 0.00295791,
-                                        0.0024217, 0.00197484])
+                                        0.0024217, 0.00197484], dtype="float32")
 
         self.DelayProbCases = self.DelayProbCases.reshape((1, self.DelayProbCases.size))
 
@@ -3018,7 +3018,7 @@ class CMCombined_Final_NoNoise(BaseCMModel):
                                          2.91542076e-03, 2.49468747e-03, 2.13152106e-03, 1.82750115e-03,
                                          1.55693122e-03, 1.31909933e-03, 1.11729819e-03, 9.46588730e-04,
                                          8.06525991e-04, 6.81336089e-04, 5.74623210e-04, 4.80157895e-04,
-                                         4.02211774e-04, 3.35345193e-04, 2.82450401e-04, 2.38109993e-04])
+                                         4.02211774e-04, 3.35345193e-04, 2.82450401e-04, 2.38109993e-04], dtype="float32")
         self.DelayProbDeaths = self.DelayProbDeaths.reshape((1, self.DelayProbDeaths.size))
 
         self.CMDelayCut = 30
@@ -5890,6 +5890,7 @@ class CMCombined_Final_ICL(BaseCMModel):
                                         0.01577148, 0.01326564, 0.01110783, 0.00928827, 0.0077231,
                                         0.00641162, 0.00530572, 0.00437895, 0.00358801, 0.00295791,
                                         0.0024217, 0.00197484])
+
         self.DelayProbCases = self.DelayProbCases.reshape((1, self.DelayProbCases.size))
 
         self.DelayProbDeaths = np.array([0.00000000e+00, 1.64635735e-06, 3.15032703e-05, 1.86360977e-04,
@@ -5911,7 +5912,7 @@ class CMCombined_Final_ICL(BaseCMModel):
         self.DelayProbDeaths = self.DelayProbDeaths.reshape((1, self.DelayProbDeaths.size))
 
         self.CMDelayCut = 30
-        self.DailyGrowthNoise = 0.7
+        self.DailyGrowthNoise = 0.2
 
         self.ObservedDaysIndx = np.arange(self.CMDelayCut, len(self.d.Ds))
         self.OR_indxs = np.arange(len(self.d.Rs))
@@ -5925,7 +5926,7 @@ class CMCombined_Final_ICL(BaseCMModel):
                 # if its not masked, after the cut, and not before 100 confirmed
                 if self.d.NewCases.mask[r, d] == False and d > self.CMDelayCut and not np.isnan(
                         self.d.Confirmed.data[r, d]) and d < (self.nDs - 7):
-                    observed_active.append(r * self.nDs + d)
+                    observed_active.append(r * self.nDs + d - 30)
                 else:
                     self.d.NewCases.mask[r, d] = True
 
@@ -5937,26 +5938,26 @@ class CMCombined_Final_ICL(BaseCMModel):
                 # if its not masked, after the cut, and not before 10 deaths
                 if self.d.NewDeaths.mask[r, d] == False and d > self.CMDelayCut and not np.isnan(
                         self.d.Deaths.data[r, d]):
-                    observed_deaths.append(r * self.nDs + d)
+                    observed_deaths.append(r * self.nDs + d - 30)
                 else:
                     self.d.NewDeaths.mask[r, d] = True
 
         self.all_observed_deaths = np.array(observed_deaths)
 
 
-    def build_model(self, R_hyperprior_mean=2.5, cm_prior_sigma=0.2, cm_prior='normal',
+    def build_model(self, R_hyperprior_mean=3.25, cm_prior_sigma=0.2, cm_prior='normal',
                     serial_interval_mean=SI_ALPHA / SI_BETA
                     ):
         with self.model:
             
-            serial_interval_sigma = np.sqrt(SI_ALPHA / SI_BETA ** 2)
-            si_beta = serial_interval_mean / serial_interval_sigma ** 2
-            si_alpha = serial_interval_mean ** 2 / serial_interval_sigma ** 2
-            x = np.arange(len(self.SI))*1.
-            if serial_interval_mean<5: # to avoid inf first value for small means
-                x[0]=0.001
-            self.SI = scipy.stats.gamma.pdf(x, si_alpha, scale = 1/si_beta)
-            self.SI_rev = self.SI[::-1].reshape((1, self.SI.size))
+            # serial_interval_sigma = np.sqrt(SI_ALPHA / SI_BETA ** 2)
+            # si_beta = serial_interval_mean / serial_interval_sigma ** 2
+            # si_alpha = serial_interval_mean ** 2 / serial_interval_sigma ** 2
+            # x = np.arange(len(self.SI))*1.
+            # if serial_interval_mean<5: # to avoid inf first value for small means
+            #     x[0]=0.001
+            # self.SI = scipy.stats.gamma.pdf(x, si_alpha, scale = 1/si_beta)
+            # self.SI_rev = self.SI[::-1].reshape((1, self.SI.size))
             
             if cm_prior=='normal':
                 self.CM_Alpha = pm.Normal("CM_Alpha", 0, cm_prior_sigma, shape=(self.nCMs,))
@@ -5995,13 +5996,18 @@ class CMCombined_Final_ICL(BaseCMModel):
                 plot_trace=False,
             )
 
-            self.Normal(
-                "LogRCases",
-                self.ExpectedLogR,
-                self.DailyGrowthNoise,
-                shape=(self.nORs, self.nDs),
-                plot_trace=False,
-            )
+            # self.Z1C = pm.Normal("Z1C", 0, self.DailyGrowthNoise, shape=(self.nORs, self.nDs))
+            # self.Z1D = pm.Normal("Z1D", 0, self.DailyGrowthNoise, shape=(self.nORs, self.nDs))
+            #
+            # self.LogRCases = pm.Deterministic(
+            #     "LogRCases",
+            #     self.ExpectedLogR + self.Z1C,
+            # )
+            #
+            # self.LogRDeaths = pm.Deterministic(
+            #     "LogRDeaths",
+            #     self.ExpectedLogR + self.Z1D,
+            # )
 
             self.Normal(
                 "LogRDeaths",
@@ -6011,8 +6017,24 @@ class CMCombined_Final_ICL(BaseCMModel):
                 plot_trace=False,
             )
 
-            self.Det("Z1C", self.LogRCases - self.ExpectedLogR, plot_trace=False)
-            self.Det("Z1D", self.LogRDeaths - self.ExpectedLogR, plot_trace=False)
+            self.Normal(
+                "LogRCases",
+                self.ExpectedLogR,
+                self.DailyGrowthNoise,
+                shape=(self.nORs, self.nDs),
+                plot_trace=False,
+            )
+            #
+            # self.Normal(
+            #     "LogRDeaths",
+            #     self.ExpectedLogR,
+            #     self.DailyGrowthNoise,
+            #     shape=(self.nORs, self.nDs),
+            #     plot_trace=False,
+            # )
+
+            # self.Det("Z1C", self.LogRCases - self.ExpectedLogR, plot_trace=False)
+            # self.Det("Z1D", self.LogRDeaths - self.ExpectedLogR, plot_trace=False)
 
             self.InitialSizeCases_log = pm.Normal("InitialSizeCases_log", 0, 50, shape=(self.nORs,))
             self.InitialSizeDeaths_log = pm.Normal("InitialSizeDeaths_log", 0, 50, shape=(self.nORs,))
@@ -6021,11 +6043,11 @@ class CMCombined_Final_ICL(BaseCMModel):
             filter_size = self.SI_rev.size
             conv_padding = 7
 
-            infected_cases = T.zeros((self.nORs, self.nDs + self.SI_rev.size))
+            infected_cases = T.zeros((self.nORs, self.nDs + self.SI_rev.size - 30))
             infected_cases = T.set_subtensor(infected_cases[:, (filter_size - conv_padding):filter_size],
                                              pm.math.exp(self.InitialSizeCases_log.reshape((self.nORs, 1)).repeat(
                                                  conv_padding, axis=1)))
-            infected_deaths = T.zeros((self.nORs, self.nDs + self.SI_rev.size))
+            infected_deaths = T.zeros((self.nORs, self.nDs + self.SI_rev.size - 30))
             infected_deaths = T.set_subtensor(infected_deaths[:, (filter_size - conv_padding):filter_size],
                                               pm.math.exp(self.InitialSizeDeaths_log.reshape((self.nORs, 1)).repeat(
                                                   conv_padding, axis=1)))
@@ -6034,7 +6056,7 @@ class CMCombined_Final_ICL(BaseCMModel):
             R_cases = pm.math.exp(self.LogRCases)
             R_deaths = pm.math.exp(self.LogRDeaths)
 
-            for d in range(self.nDs):
+            for d in range(self.nDs-30):
                 val_c = pm.math.sum(
                     R_cases[:, d].reshape((self.nORs, 1)) * infected_cases[:, d:d + filter_size] * self.SI_rev,
                     axis=1)
@@ -6049,13 +6071,13 @@ class CMCombined_Final_ICL(BaseCMModel):
 
             expected_deaths = C.conv2d(
                 self.InfectedDeaths,
-                np.reshape(self.DelayProbDeaths, newshape=(1, self.DelayProbDeaths.size)),
+                self.DelayProbDeaths,
                 border_mode="full"
             )[:, :self.nDs]
 
             expected_cases = C.conv2d(
                 self.InfectedCases,
-                np.reshape(self.DelayProbCases, newshape=(1, self.DelayProbCases.size)),
+                self.DelayProbCases,
                 border_mode="full"
             )[:, :self.nDs]
 
