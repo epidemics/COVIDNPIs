@@ -63,7 +63,7 @@ def save_traces(model, model_type, filename):
         np.savetxt(filename[0:len(filename)-4] + '_base.txt', cm_base_trace) 
         
 
-def region_holdout_sensitivity(model_types, regions_heldout = ["CZ", "DE", "MX", "NL", "PL", "PT"], 
+def region_holdout_sensitivity(model_types, regions_heldout = ["NL", "PL", "PT", "CZ", "DE", "MX"],
                                daily_growth_noise=None, min_deaths=None, region_var_noise=0.1):
     dp = DataPreprocessor(drop_HS=True)
 
