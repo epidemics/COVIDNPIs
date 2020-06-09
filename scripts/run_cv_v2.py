@@ -109,7 +109,6 @@ if __name__ == "__main__":
             model.build_model()
 
     elif args.model == 3:
-        print("using ICL model")
         with cm_effect.models.CMCombined_Final_ICL(data, None) as model:
             model.build_model()
 

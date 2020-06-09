@@ -424,9 +424,10 @@ class PreprocessedData(object):
         im = plt.imshow(mat * 100, vmin=0, vmax=100, cmap="inferno", aspect="auto")
         ax.tick_params(axis="both", which="major", labelsize=8)
 
+        print(cm_plot_style)
         plt.xticks(
             np.arange(len(self.CMs)),
-            [f"{cm_plot_style[i][0]}" for i, f in enumerate(self.CMs)],
+            [f"{cm_plot_style[i]}" for i, f in enumerate(self.CMs)],
            fontproperties=fp2,
         )
 
