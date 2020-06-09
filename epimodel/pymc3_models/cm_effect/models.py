@@ -5912,7 +5912,7 @@ class CMCombined_Final_ICL(BaseCMModel):
         self.DelayProbDeaths = self.DelayProbDeaths.reshape((1, self.DelayProbDeaths.size))
 
         self.CMDelayCut = 30
-        self.DailyGrowthNoise = 0.2
+        self.DailyGrowthNoise = 0.7
 
         self.ObservedDaysIndx = np.arange(self.CMDelayCut, len(self.d.Ds))
         self.OR_indxs = np.arange(len(self.d.Rs))
