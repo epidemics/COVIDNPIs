@@ -5929,13 +5929,13 @@ class CMCombined_Final_ICL(BaseCMModel):
                         self.d.Confirmed.data[r, actual_day]) and d < (self.nODs - 7):
                     observed_active.append(r * self.nODs + d)
                 else:
-                    self.d.NewCases.mask[r, d] = True
+                    self.d.NewCases.mask[r, actual_day] = True
 
                 if self.d.NewDeaths.mask[r, actual_day] == False and not np.isnan(
                         self.d.Deaths.data[r, actual_day]):
                     observed_deaths.append(r * self.nODs + d)
                 else:
-                    self.d.NewDeaths.mask[r, d] = True
+                    self.d.NewDeaths.mask[r, actual_day] = True
 
         self.all_observed_active = np.array(observed_active)
         self.all_observed_deaths = np.array(observed_deaths)

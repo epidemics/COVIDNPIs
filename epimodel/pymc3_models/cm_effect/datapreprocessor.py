@@ -11,7 +11,6 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable
 from matplotlib.font_manager import FontProperties
 from matplotlib.ticker import PercentFormatter
 
-from epimodel import read_csv
 import os
 import logging
 
@@ -177,7 +176,8 @@ class DataMerger():
         logger.info(logger_str)
 
         # Johnhopkins Stuff
-        johnhop_ds = read_csv(os.path.join(data_base_path, self.johnhop_fname))
+        # TODO - this is out of date. to fix.
+        johnhop_ds = pd.read_csv(os.path.join(data_base_path, self.johnhop_fname))
         Confirmed = np.stack([johnhop_ds["Confirmed"].loc[(fc, Ds)] for fc in regions_epi])
         Active = np.stack([johnhop_ds["Active"].loc[(fc, Ds)] for fc in regions_epi])
         Deaths = np.stack([johnhop_ds["Deaths"].loc[(fc, Ds)] for fc in regions_epi])
