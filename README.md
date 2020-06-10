@@ -27,4 +27,7 @@ The file `notebooks/sensitivity_stability_checks/run_sensitivity_suite.sh` shows
 
 
 ## Plotting & Misc
-Python notebooks used for other experiments are found in the `notebooks/neurips` folder. Note, that you will need to save the sensitivity traces, categorised by model into different folders (i.e., all baseline results into the `notebooks/neurips/cm_traces/baselin`) model folder for the plotting to work correctly. 
+Python notebooks used for other experiments are found in the `notebooks/neurips` folder. Note, that you will need to save the sensitivity traces, categorised by model into different folders (i.e., all baseline results into the `notebooks/neurips/cm_traces/baselin`) model folder for the plotting to work correctly.
+
+## Data
+Data is in the `notebooks/final_data/` folder in CSV format. The file used for Monte Carlo Discretisation, `generating_delays.ipynb` can also be found there. 
