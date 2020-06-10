@@ -3,8 +3,9 @@
 # Parameters
 #------------
 # model_types: list of strings
-#   accepted values are: "combined", "active", "death", "combined_no_noise", 
-#   "combined_v3", "combined_icl", "combined_icl_no_noise", "combined_dif"
+#   accepted values are: "combined (baseline)",
+#   "combined_v3 (aka Noisy R)", "combined_additive (additive effects)", "combined_dif (different effects)",
+#   "combined_icl_no_noise" (Discrete Renewal Model, which actually only models deaths".)
 #   Must be entered as a list, even if only one element. 
 # daily_growth_noise: float
 #   If not specified, it uses the default. Can't enter more than one daily_growth_noise, except for 

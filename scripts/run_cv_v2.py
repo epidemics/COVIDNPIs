@@ -105,22 +105,14 @@ if __name__ == "__main__":
             model.build_model()
 
     elif args.model == 2:
-        with cm_effect.models.CMCombined_Final_NoNoise(data, None) as model:
-            model.build_model()
-
-    elif args.model == 3:
-        with cm_effect.models.CMCombined_Final_ICL(data, None) as model:
-            model.build_model()
-
-    elif args.model == 4:
         with cm_effect.models.CMCombined_ICL_NoNoise(data, None) as model:
             model.build_model()
 
-    elif args.model == 5:
+    elif args.model == 3:
         with cm_effect.models.CMCombined_Final_DifEffects(data, None) as model:
             model.build_model()
 
-    elif args.model == 6:
+    elif args.model == 4:
         with cm_effect.models.CMCombined_Additive(data, None) as model:
             model.build_model()
 
