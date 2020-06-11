@@ -526,7 +526,7 @@ class CMCombined_Final_V3(BaseCMModel):
         self.DelayProbDeaths = self.DelayProbDeaths.reshape((1, self.DelayProbDeaths.size))
 
         self.CMDelayCut = 30
-        self.DailyGrowthNoise = 0.3
+        self.DailyGrowthNoise = 0.7
 
         self.ObservedDaysIndx = np.arange(self.CMDelayCut, len(self.d.Ds))
         self.OR_indxs = np.arange(len(self.d.Rs))
@@ -1151,6 +1151,7 @@ class CMCombined_Final_DifEffects(BaseCMModel):
                 "Z2D",
                 self.ObservedDeaths - self.ExpectedDeaths.reshape((self.nORs * self.nDs,))[self.all_observed_deaths]
             )
+
 
 class CMCombined_ICL_NoNoise(BaseCMModel):
     def __init__(
