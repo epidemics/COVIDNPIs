@@ -329,6 +329,54 @@ class DataPreprocessor():
                                 NewCases,
                                 region_full_names)
 
+class ICLDataPreprocessor(DataPreprocessor):
+    def __init__(self, *args, **kwargs):
+        super().__init__()
+
+    def preprocess_data(self, data_path, ICL_data_path, days_max=None):
+        # load data
+        data = super().preprocess_data(data_path, days_max)
+
+        ICL_dict = {
+            "AT": "Austria",
+            "BE": "Belgium",
+            "DK": "Denmark",
+            "FR": "France",
+            "DE": "Germany",
+            "IT": "Italy",
+            "NO": "Norway",
+            "ES": "Spain",
+            "SE": "Sweden",
+            "CH": "Switzerland",
+            "GB": "United_Kingdom",
+            "GR": "Greece",
+            "PT": "Portugal",
+            "NL": "Netherlands",
+        }
+
+        ICL_c_i = [data.Rs.index(r) for r in ICL_dict.keys()]
+        data.reduce_regions_from_index(ICL_c_i)
+
+        df = pd.read_csv(ICL_data_path, parse_dates=["Date effective"], infer_datetime_format=True)
+
+        CMs = list(df.columns[4:])
+        nCMs = len(CMs)
+
+        ActiveCMs = np.zeros((nRs, nCMs, nDs))
+        ActiveCMs[r_i, :, :] = df.loc[r].loc[Ds][CMs].values.T
+
+
+        return PreprocessedData(Active,
+                                Confirmed,
+                                ActiveCMs,
+                                CMs,
+                                sorted_regions,
+                                Ds,
+                                Deaths,
+                                NewDeaths,
+                                NewCases,
+                                region_full_names)
+
 class PreprocessedData(object):
     def __init__(self,
                  Active,

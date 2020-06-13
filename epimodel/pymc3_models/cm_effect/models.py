@@ -224,18 +224,18 @@ class BaseCMModel(Model):
 
         plt.yticks(
             -np.arange(len(self.d.CMs)),
-            [f"     " for f in self.d.CMs]
+            [f"{f}" for f in self.d.CMs]
         )
 
         ax = plt.gca()
         x_min, x_max = plt.xlim()
         x_r = x_max - x_min
-        print(x_r)
-        for i, (ticklabel, tickloc) in enumerate(zip(ax.get_yticklabels(), ax.get_yticks())):
-            ticklabel.set_color(self.cm_plot_style[i][1])
-            plt.text(x_min - 0.13 * x_r, tickloc, self.cm_plot_style[i][0], horizontalalignment='center',
-                     verticalalignment='center',
-                     fontproperties=fp2, fontsize=10, color=self.cm_plot_style[i][1])
+        # print(x_r)
+        # for i, (ticklabel, tickloc) in enumerate(zip(ax.get_yticklabels(), ax.get_yticks())):
+        #     ticklabel.set_color(self.cm_plot_style[i][1])
+        #     plt.text(x_min - 0.13 * x_r, tickloc, self.cm_plot_style[i][0], horizontalalignment='center',
+        #              verticalalignment='center',
+        #              fontproperties=fp2, fontsize=10, color=self.cm_plot_style[i][1])
 
         plt.xticks(xtick_vals, xtick_str, fontsize=6)
         plt.xlabel("Average Additional Reduction in $R$", fontsize=8)
@@ -1473,6 +1473,18 @@ class CMCombined_Final_Old(BaseCMModel):
                 zorder=3,
             )
 
+            plt.scatter(
+                self.ObservedDaysIndx,
+                newcases.data[self.ObservedDaysIndx],
+                label="New Cases (Smoothed)",
+                marker="o",
+                s=10,
+                color="tab:blue",
+                alpha=0.9,
+                zorder=3,
+                facecolor="white"
+            )
+
             plt.plot(
                 days_x,
                 means_id,
@@ -1507,6 +1519,18 @@ class CMCombined_Final_Old(BaseCMModel):
                 color="tab:red",
                 alpha=0.9,
                 zorder=3,
+            )
+
+            plt.scatter(
+                self.ObservedDaysIndx,
+                deaths.data[self.ObservedDaysIndx],
+                label="New Deaths (Smoothed)",
+                marker="o",
+                s=10,
+                color="tab:red",
+                alpha=0.9,
+                zorder=3,
+                facecolor="white",
             )
 
             ax.set_yscale("log")
@@ -2185,6 +2209,18 @@ class CMCombined_Final(BaseCMModel):
                 zorder=3,
             )
 
+            plt.scatter(
+                self.ObservedDaysIndx,
+                newcases.data[self.ObservedDaysIndx],
+                label="New Cases (Smoothed)",
+                marker="o",
+                s=10,
+                color="tab:blue",
+                alpha=0.9,
+                zorder=4,
+                facecolor="white"
+            )
+
             plt.plot(
                 days_x,
                 means_id,
@@ -2206,6 +2242,7 @@ class CMCombined_Final(BaseCMModel):
                 color="tab:red"
             )
 
+
             plt.fill_between(
                 days_x, lu_ed, up_ed, alpha=0.25, color="tab:red", linewidth=0
             )
@@ -2219,6 +2256,18 @@ class CMCombined_Final(BaseCMModel):
                 color="tab:red",
                 alpha=0.9,
                 zorder=3,
+            )
+
+            plt.scatter(
+                self.ObservedDaysIndx,
+                deaths.data[self.ObservedDaysIndx],
+                label="New Deaths (Smoothed)",
+                marker="o",
+                s=10,
+                color="tab:red",
+                alpha=0.9,
+                zorder=4,
+                facecolor="white"
             )
 
             ax.set_yscale("log")
