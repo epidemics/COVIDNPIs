@@ -152,4 +152,4 @@ if __name__ == "__main__":
         model.trace = pm.sample(args.nS, chains=args.nC, target_accept=0.9)
 
     results_obj = ResultsObject(r_is, model.trace)
-    pickle.dump(results_obj, open(f"cv/model_{args.model}_fold_{args.fold}.pkl", "wb"))
+    pickle.dump(results_obj, open(f"cv_orders/model_{args.model}_fold_{args.fold}.pkl", "wb"))
