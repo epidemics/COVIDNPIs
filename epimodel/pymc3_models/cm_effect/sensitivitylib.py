@@ -16,7 +16,7 @@ import matplotlib.pyplot as plt
 
 
 def generate_out_dir(daily_growth_noise):
-    out_dir = '../../../sensitivity_tests'
+    out_dir = 'sensitivity_tests'
 
     # if region_heldout is not None:
     #    out_dir = out_dir + '_rho' + region_heldout 
