@@ -635,7 +635,7 @@ def smoothing_sensitivity(model_types, N_days=[1, 3, 7, 15],
                     model.build_model()
             model.run(1000, chains=8, cores=8)
             out_dir = generate_out_dir(daily_growth_noise)
-            filename = out_dir + '/smoothing_' + str(model_type) + '_' + str(N_days) + '.txt'
+            filename = out_dir + '/smoothing_' + str(model_type) + '_' + str(N_days[i]) + '.txt'
             save_traces(model, model_type, filename)
 
 
