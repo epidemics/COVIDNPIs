@@ -354,28 +354,54 @@ class ICLDataPreprocessor(DataPreprocessor):
             "NL": "Netherlands",
         }
 
-        ICL_c_i = [data.Rs.index(r) for r in ICL_dict.keys()]
+        def country_to_code(c):
+            for k, v in ICL_dict.items():
+                if c == v:
+                    return k
+
+        Rs = list(ICL_dict.keys())
+        RNames = [ICL_dict[k] for k in Rs]
+        ICL_c_i = [data.Rs.index(r) for r in Rs]
+        nRs = len(ICL_c_i)
         data.reduce_regions_from_index(ICL_c_i)
 
         df = pd.read_csv(ICL_data_path, parse_dates=["Date effective"], infer_datetime_format=True)
 
-        CMs = list(df.columns[4:])
+        CMs = ["Schools + Universities", "Self-isolating if ill", "Public events", "Lockdown",
+               "Social distancing encouraged", "Any"]
         nCMs = len(CMs)
 
+        _, _, nDs = data.ActiveCMs.shape
+
+        Ds = data.Ds
         ActiveCMs = np.zeros((nRs, nCMs, nDs))
-        ActiveCMs[r_i, :, :] = df.loc[r].loc[Ds][CMs].values.T
+
+        for x in df.index:
+            row = df.iloc[x]
+            c = row["Country"]
+            cm = row["Type"]
+            on_date = row["Date effective"].date()
+            on_date = pd.to_datetime(on_date, utc=True)
+            on_loc = Ds.index(on_date)
+
+            if cm in CMs[:-1]:
+                r_i = Rs.index(country_to_code(c))
+                f_i = CMs.index(cm)
+                ActiveCMs[r_i, f_i, on_loc:] = 1
+                ActiveCMs[r_i, len(CMs)-1, on_loc:] = 1
 
 
-        return PreprocessedData(Active,
-                                Confirmed,
+        return PreprocessedData(data.Active,
+                                data.Confirmed,
                                 ActiveCMs,
                                 CMs,
-                                sorted_regions,
+                                Rs,
                                 Ds,
-                                Deaths,
-                                NewDeaths,
-                                NewCases,
-                                region_full_names)
+                                data.Deaths,
+                                data.NewDeaths,
+                                data.NewCases,
+                                RNames
+                                )
 
 class PreprocessedData(object):
     def __init__(self,
@@ -617,3 +643,17 @@ class PreprocessedData(object):
         plt.title("Total Days Active", fontsize=8)
         plt.xlabel("Days", fontsize=8)
         plt.ylim([-len(self.CMs)+0.5, 0.5])
+
+    # def extend_window(self, n_days):
+    #     if n_days == 0:
+    #         return
+    #
+    #     nRs, nCMs, nDs = self.ActiveCMs.shape
+    #     ActiveCMs = np.zeros((nRs, nCMs, nDs + n_days))
+    #
+    #     ActiveCMs[:, :, :nDs] = self.ActiveCMs
+    #     ActiveCMs[:, :, nDs:] = np.repeat(self.ActiveCMs[:, :, -1].reshape((nRs, nCMs, 1)), n_days, axis=-1)
+    #
+    #     e_ts = [self.Ds[-1] + pd.Timedelta(f"{x} days") for x in range(n_days)]
+    #     self.Ds.extend(e_ts)
+    #     self.ActiveCMs = ActiveCMs
