@@ -29,6 +29,15 @@ def generate_out_dir(daily_growth_noise):
     return out_dir
 
 
+def save_traces(model, model_type, filename):
+    cm_trace = model.trace["CMReduction"]
+    np.savetxt(filename, cm_trace)
+
+    if model_type == 'combined_additive':
+        cm_base_trace = model.trace["Beta_hat"]
+        np.savetxt(filename[0:len(filename) - 4] + '_base.txt', cm_base_trace)
+
+
 def mask_region(d, region, days=14):
     i = d.Rs.index(region)
     c_s = np.nonzero(np.cumsum(d.NewCases.data[i, :] > 0) == days + 1)[0][0]
@@ -37,11 +46,14 @@ def mask_region(d, region, days=14):
         d_s = d_s[0]
     else:
         d_s = len(d.Ds)
+
+    # unmask everything else
     d.Active.mask = False
     d.Confirmed.mask = False
     d.Deaths.mask = False
     d.NewDeaths.mask = False
     d.NewCases.mask = False
+    # mask the right days
     d.Active.mask[i, c_s:] = True
     d.Confirmed.mask[i, c_s:] = True
     d.Deaths.mask[i, d_s:] = True
@@ -60,21 +72,12 @@ def leavout_cm(data, cm_leavouts, i):
     return data_cm_leavout
 
 
-def save_traces(model, model_type, filename):
-    cm_trace = model.trace["CMReduction"]
-    np.savetxt(filename, cm_trace)
-
-    if model_type == 'combined_additive':
-        cm_base_trace = model.trace["Beta_hat"]
-        np.savetxt(filename[0:len(filename) - 4] + '_base.txt', cm_base_trace)
-
-
 def region_holdout_sensitivity(model_types, regions_heldout=["NL", "PL", "PT", "CZ", "DE", "MX"],
-                               daily_growth_noise=None, min_deaths=None, region_var_noise=0.1):
+                               daily_growth_noise=None, min_deaths=None, region_var_noise=0.1, data_path="notebooks/final_data/data_final.csv"):
     dp = DataPreprocessor(drop_HS=True)
 
     for region in regions_heldout:
-        data = dp.preprocess_data("notebooks/final_data/data_final.csv")
+        data = dp.preprocess_data(data_path)
         if min_deaths is not None:
             data.filter_region_min_deaths(min_deaths)
         mask_region(data, region)
@@ -132,9 +135,9 @@ def region_holdout_sensitivity(model_types, regions_heldout=["NL", "PL", "PT", "
 
 
 def cm_leavout_sensitivity(model_types, daily_growth_noise=None, min_deaths=None,
-                           region_var_noise=0.1):
+                           region_var_noise=0.1, data_path="notebooks/final_data/data_final.csv"):
     dp = DataPreprocessor(drop_HS=True)
-    data = dp.preprocess_data("notebooks/final_data/data_final.csv")
+    data = dp.preprocess_data(data_path)
     if min_deaths is not None:
         data.filter_region_min_deaths(min_deaths)
 
@@ -195,9 +198,9 @@ def cm_leavout_sensitivity(model_types, daily_growth_noise=None, min_deaths=None
 
 
 def cm_prior_sensitivity(model_types, priors=['half_normal', 'wide'], sigma_wide=10,
-                         daily_growth_noise=None, min_deaths=None, region_var_noise=0.1):
+                         daily_growth_noise=None, min_deaths=None, region_var_noise=0.1, data_path="notebooks/final_data/data_final.csv"):
     dp = DataPreprocessor(drop_HS=True)
-    data = dp.preprocess_data("notebooks/final_data/data_final.csv")
+    data = dp.preprocess_data(data_path)
     if min_deaths is not None:
         data.filter_region_min_deaths(min_deaths)
 
@@ -298,7 +301,7 @@ def cm_prior_sensitivity(model_types, priors=['half_normal', 'wide'], sigma_wide
 
 
 def data_mob_sensitivity(model_types, daily_growth_noise=None, min_deaths=None,
-                         region_var_noise=0.1):
+                         region_var_noise=0.1, data_path="notebooks/final_data/data_final.csv"):
     dp = DataPreprocessor(drop_HS=True)
     data_mob_no_work = dp.preprocess_data("../final_data/data_mob_no_work.csv")
     data_mob = dp.preprocess_data("../final_data/data_mob.csv")
@@ -365,7 +368,7 @@ def data_mob_sensitivity(model_types, daily_growth_noise=None, min_deaths=None,
 
 
 def data_schools_open_sensitivity(model_types, daily_growth_noise=None, min_deaths=None,
-                                  region_var_noise=0.1):
+                                  region_var_noise=0.1, data_path="notebooks/final_data/data_final.csv"):
     dp = DataPreprocessor(drop_HS=True)
     data = dp.preprocess_data("../final_data/data_SE_schools_open.csv")
     if min_deaths is not None:
@@ -423,9 +426,9 @@ def data_schools_open_sensitivity(model_types, daily_growth_noise=None, min_deat
 
 
 def daily_growth_noise_sensitivity(model_types, daily_growth_noise=[0.05, 0.1, 0.4],
-                                   min_deaths=None, region_var_noise=0.1):
+                                   min_deaths=None, region_var_noise=0.1, data_path="notebooks/final_data/data_final.csv"):
     dp = DataPreprocessor(drop_HS=True)
-    data = dp.preprocess_data("notebooks/final_data/data_final.csv")
+    data = dp.preprocess_data(data_path)
     if min_deaths is not None:
         data.filter_region_min_deaths(min_deaths)
 
@@ -471,7 +474,7 @@ def daily_growth_noise_sensitivity(model_types, daily_growth_noise=[0.05, 0.1, 0
 
 def min_num_confirmed_sensitivity(model_types, min_conf_cases=[10, 30, 300, 500],
                                   daily_growth_noise=None, min_deaths=None,
-                                  region_var_noise=0.1):
+                                  region_var_noise=0.1, data_path="notebooks/final_data/data_final.csv"):
     dp = DataPreprocessor(drop_HS=True)
 
     for model_type in model_types:
@@ -479,7 +482,7 @@ def min_num_confirmed_sensitivity(model_types, min_conf_cases=[10, 30, 300, 500]
             print('Model: ' + str(model_type))
             print('Minimum number of confirmed cases: ' + str(min_conf_cases[i]))
             dp.min_confirmed = min_conf_cases[i]
-            data = dp.preprocess_data("notebooks/final_data/data_final.csv")
+            data = dp.preprocess_data(data_path)
             if min_deaths is not None:
                 data.filter_region_min_deaths(min_deaths)
 
@@ -527,8 +530,8 @@ def min_num_confirmed_sensitivity(model_types, min_conf_cases=[10, 30, 300, 500]
 
 
 def min_num_deaths_sensitivity(model_types, min_deaths_ths=[3, 5, 30, 50],
-                                  daily_growth_noise=None, min_deaths=None,
-                                  region_var_noise=0.1):
+                               daily_growth_noise=None, min_deaths=None,
+                               region_var_noise=0.1, data_path="notebooks/final_data/data_final.csv"):
     dp = DataPreprocessor(drop_HS=True)
 
     for model_type in model_types:
@@ -536,7 +539,7 @@ def min_num_deaths_sensitivity(model_types, min_deaths_ths=[3, 5, 30, 50],
             print('Model: ' + str(model_type))
             print('Minimum number of death cases: ' + str(min_deaths_ths[i]))
             dp.min_deaths = min_deaths_ths[i]
-            data = dp.preprocess_data("notebooks/final_data/data_final.csv")
+            data = dp.preprocess_data(data_path)
             if min_deaths is not None:
                 data.filter_region_min_deaths(min_deaths)
 
@@ -582,9 +585,10 @@ def min_num_deaths_sensitivity(model_types, min_deaths_ths=[3, 5, 30, 50],
             filename = out_dir + '/min_deaths_' + str(model_type) + '_' + str(min_deaths_ths[i]) + '.txt'
             save_traces(model, model_type, filename)
 
+
 def smoothing_sensitivity(model_types, N_days=[1, 3, 7, 15],
-                                  daily_growth_noise=None, min_deaths=None,
-                                  region_var_noise=0.1):
+                          daily_growth_noise=None, min_deaths=None,
+                          region_var_noise=0.1, data_path="notebooks/final_data/data_final.csv"):
     dp = DataPreprocessor(drop_HS=True)
 
     for model_type in model_types:
@@ -592,7 +596,7 @@ def smoothing_sensitivity(model_types, N_days=[1, 3, 7, 15],
             print('Model: ' + str(model_type))
             print('Minimum number of days: ' + str(N_days[i]))
             dp.N_smooth = N_days[i]
-            data = dp.preprocess_data("notebooks/final_data/data_final.csv")
+            data = dp.preprocess_data(data_path)
             if min_deaths is not None:
                 data.filter_region_min_deaths(min_deaths)
 
@@ -662,9 +666,9 @@ def calc_trace_statistic(model, stat_type):
 
 
 def MCMC_stability(model_types, daily_growth_noise=None, min_deaths=None,
-                   region_var_noise=0.1):
+                   region_var_noise=0.1, data_path="notebooks/final_data/data_final.csv"):
     dp = DataPreprocessor(drop_HS=True)
-    data = dp.preprocess_data("notebooks/final_data/data_final.csv")
+    data = dp.preprocess_data(data_path)
     if min_deaths is not None:
         data.filter_region_min_deaths(min_deaths)
 
@@ -726,9 +730,9 @@ def MCMC_stability(model_types, daily_growth_noise=None, min_deaths=None,
 
 def R_hyperprior_mean_sensitivity(model_types, hyperprior_means=[1.5, 5.5],
                                   daily_growth_noise=None, min_deaths=None,
-                                  region_var_noise=0.1):
+                                  region_var_noise=0.1, data_path="notebooks/final_data/data_final.csv"):
     dp = DataPreprocessor(drop_HS=True)
-    data = dp.preprocess_data("notebooks/final_data/data_final.csv")
+    data = dp.preprocess_data(data_path)
     if min_deaths is not None:
         data.filter_region_min_deaths(min_deaths)
 
@@ -787,9 +791,9 @@ def R_hyperprior_mean_sensitivity(model_types, hyperprior_means=[1.5, 5.5],
 
 def serial_interval_sensitivity(model_types, serial_interval=[4, 5, 6, 7, 8],
                                 daily_growth_noise=None, min_deaths=None,
-                                region_var_noise=0.1):
+                                region_var_noise=0.1, data_path="notebooks/final_data/data_final.csv"):
     dp = DataPreprocessor(drop_HS=True)
-    data = dp.preprocess_data("notebooks/final_data/data_final.csv")
+    data = dp.preprocess_data(data_path)
     if min_deaths is not None:
         data.filter_region_min_deaths(min_deaths)
 
@@ -929,7 +933,7 @@ def vary_delay_mean_death(model, mean_shift):
 
 
 def delay_mean_sensitivity(model_types, mean_shift=[-2, -1, 1, 2], daily_growth_noise=None,
-                           min_deaths=None, region_var_noise=0.1):
+                           min_deaths=None, region_var_noise=0.1, data_path="notebooks/final_data/data_final.csv"):
     '''
     mean_shift shifts the mean of the underlying distributions that will combine
     to form the delay distrobution. So the resulting total delay distribution
@@ -951,7 +955,7 @@ def delay_mean_sensitivity(model_types, mean_shift=[-2, -1, 1, 2], daily_growth_
     delay_probs_active = []
 
     dp = DataPreprocessor(drop_HS=True)
-    data = dp.preprocess_data("notebooks/final_data/data_final.csv")
+    data = dp.preprocess_data(data_path)
     if min_deaths is not None:
         data.filter_region_min_deaths(min_deaths)
     out_dir = generate_out_dir(daily_growth_noise)
