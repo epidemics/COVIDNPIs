@@ -2242,7 +2242,6 @@ class CMCombined_Final(BaseCMModel):
                 color="tab:red"
             )
 
-
             plt.fill_between(
                 days_x, lu_ed, up_ed, alpha=0.25, color="tab:red", linewidth=0
             )
@@ -6027,7 +6026,8 @@ class CMCombined_Final_ICL(BaseCMModel):
 
             self.ExpectedLogR = self.Det(
                 "ExpectedLogR",
-                T.reshape(T.reshape(self.RegionLogR, (self.nORs, 1)) - self.GrowthReduction, (1, self.nORs, self.nODs)).repeat(2, axis=0),
+                T.reshape(T.reshape(self.RegionLogR, (self.nORs, 1)) - self.GrowthReduction,
+                          (1, self.nORs, self.nODs)).repeat(2, axis=0),
                 plot_trace=False,
             )
 
@@ -6049,8 +6049,8 @@ class CMCombined_Final_ICL(BaseCMModel):
 
             infected = T.zeros((2, self.nORs, self.nODs + self.SI.size))
             infected = T.set_subtensor(infected[:, :, (filter_size - conv_padding):filter_size],
-                                             pm.math.exp(self.InitialSize_log.reshape((2, self.nORs, 1)).repeat(
-                                                 conv_padding, axis=2)))
+                                       pm.math.exp(self.InitialSize_log.reshape((2, self.nORs, 1)).repeat(
+                                           conv_padding, axis=2)))
 
             # R is a lognorm
             R = pm.math.exp(self.LogR)
@@ -6072,7 +6072,6 @@ class CMCombined_Final_ICL(BaseCMModel):
             # res, up = theano.scan(loop_fun, outputs_info=infected, non_sequences=R,
             #                       sequences=[T.arange(self.nODs)]
             #                       )
-
 
             self.InfectedDeaths = pm.Deterministic(
                 "InfectedCases",
@@ -6128,39 +6127,40 @@ class CMCombined_Final_ICL(BaseCMModel):
             )
 
 
-class CMCombined_ICL_NoNoise(BaseCMModel):
+class CMCombined_ICL_NoNoise_2(BaseCMModel):
     def __init__(
             self, data, name="", model=None, cm_plot_style=None
     ):
         super().__init__(data, cm_plot_style=cm_plot_style, name=name, model=model)
 
-        self.SI = np.array(
-            [0.04656309, 0.08698277, 0.1121656, 0.11937737, 0.11456359,
-             0.10308026, 0.08852893, 0.07356104, 0.059462, 0.04719909,
-             0.03683025, 0.02846977, 0.02163222, 0.01640488, 0.01221928,
-             0.00903811, 0.00670216, 0.00490314, 0.00361434, 0.00261552,
-             0.00187336, 0.00137485, 0.00100352, 0.00071164, 0.00050852,
-             0.00036433, 0.00025036]
-        )
+        self.SI = np.array([0.01833934, 0.06664012, 0.10198707, 0.11780131, 0.1184706,
+                            0.10971343, 0.09619224, 0.08111305, 0.0664308, 0.05318712,
+                            0.04181951, 0.0323983, 0.02479202, 0.01877475, 0.01409151,
+                            0.01049496, 0.00776363, 0.00570895, 0.00417584, 0.00303998,
+                            0.00220365, 0.00159125, 0.00114501, 0.00082127, 0.00058734,
+                            0.00041891, 0.00029803]
+                           )
 
         self.SI_rev = self.SI[::-1].reshape((1, self.SI.size))
         # infection --> confirmed delay
-        self.DelayProbDeaths = np.array([0.00000000e+00, 1.64635735e-06, 3.15032703e-05, 1.86360977e-04,
-                                         6.26527963e-04, 1.54172466e-03, 3.10103643e-03, 5.35663499e-03,
-                                         8.33979000e-03, 1.19404848e-02, 1.59939055e-02, 2.03185081e-02,
-                                         2.47732062e-02, 2.90464491e-02, 3.30612027e-02, 3.66089026e-02,
-                                         3.95642697e-02, 4.18957120e-02, 4.35715814e-02, 4.45816884e-02,
-                                         4.49543992e-02, 4.47474142e-02, 4.40036056e-02, 4.27545988e-02,
-                                         4.11952870e-02, 3.92608505e-02, 3.71824356e-02, 3.48457206e-02,
-                                         3.24845883e-02, 3.00814850e-02, 2.76519177e-02, 2.52792720e-02,
-                                         2.30103580e-02, 2.07636698e-02, 1.87005838e-02, 1.67560244e-02,
-                                         1.49600154e-02, 1.32737561e-02, 1.17831130e-02, 1.03716286e-02,
-                                         9.13757250e-03, 7.98287530e-03, 6.96265658e-03, 6.05951833e-03,
-                                         5.26450572e-03, 4.56833017e-03, 3.93189069e-03, 3.38098392e-03,
-                                         2.91542076e-03, 2.49468747e-03, 2.13152106e-03, 1.82750115e-03,
-                                         1.55693122e-03, 1.31909933e-03, 1.11729819e-03, 9.46588730e-04,
-                                         8.06525991e-04, 6.81336089e-04, 5.74623210e-04, 4.80157895e-04,
-                                         4.02211774e-04, 3.35345193e-04, 2.82450401e-04, 2.38109993e-04])
+        self.DelayProbDeaths = np.array([2.24600347e-06, 3.90382088e-05, 2.34307085e-04,
+                                         7.83555003e-04, 1.91221622e-03, 3.78718437e-03, 6.45923913e-03,
+                                         9.94265709e-03, 1.40610714e-02, 1.86527920e-02, 2.34311421e-02,
+                                         2.81965055e-02, 3.27668001e-02, 3.68031574e-02, 4.03026198e-02,
+                                         4.30521951e-02, 4.50637136e-02, 4.63315047e-02, 4.68794406e-02,
+                                         4.67334059e-02, 4.59561441e-02, 4.47164503e-02, 4.29327455e-02,
+                                         4.08614522e-02, 3.85082076e-02, 3.60294203e-02, 3.34601703e-02,
+                                         3.08064505e-02, 2.81766028e-02, 2.56165924e-02, 2.31354369e-02,
+                                         2.07837267e-02, 1.86074383e-02, 1.65505661e-02, 1.46527043e-02,
+                                         1.29409383e-02, 1.13695920e-02, 9.93233881e-03, 8.66063386e-03,
+                                         7.53805464e-03, 6.51560047e-03, 5.63512264e-03, 4.84296166e-03,
+                                         4.14793478e-03, 3.56267297e-03, 3.03480656e-03, 2.59406730e-03,
+                                         2.19519042e-03, 1.85454286e-03, 1.58333238e-03, 1.33002321e-03,
+                                         1.11716435e-03, 9.35360376e-04, 7.87780158e-04, 6.58601602e-04,
+                                         5.48147154e-04, 4.58151351e-04, 3.85878963e-04, 3.21623249e-04,
+                                         2.66129174e-04, 2.21364768e-04, 1.80736566e-04, 1.52350196e-04])
+
+        self.DPD_rev = self.DelayProbDeaths[::-1].reshape((1, self.DelayProbDeaths.size))
         self.DelayProbDeaths = self.DelayProbDeaths.reshape((1, self.DelayProbDeaths.size))
 
         self.CMDelayCut = 30
@@ -6189,8 +6189,8 @@ class CMCombined_ICL_NoNoise(BaseCMModel):
         with self.model:
             if cm_prior == 'normal':
                 # self.CM_Alpha = pm.Normal("CM_Alpha", 0, cm_prior_sigma, shape=(self.nCMs,))
-                self.CM_Alpha_t = pm.Gamma("CM_Alpha_t", 1/6, 1, shape=(self.nCMs,))
-                self.CM_Alpha = pm.Deterministic("CM_Alpha", self.CM_Alpha_t - np.log(1.05)/6)
+                self.CM_Alpha_t = pm.Gamma("CM_Alpha_t", 1 / 6, 1, shape=(self.nCMs,))
+                self.CM_Alpha = pm.Deterministic("CM_Alpha", self.CM_Alpha_t - np.log(1.05) / 6)
             if cm_prior == 'half_normal':
                 self.CM_Alpha = pm.HalfNormal("CM_Alpha", cm_prior_sigma, shape=(self.nCMs,))
 
@@ -6221,13 +6221,16 @@ class CMCombined_ICL_NoNoise(BaseCMModel):
             )
 
             self.InitialSizeDeaths_log = pm.Normal("InitialSizeDeaths_log", 0, 50, shape=(self.nORs,))
+            # change 2 initial sizes
+            # self.Tau = pm.Exponential("Tau", 1 / 0.03)
+            # self.InitialSizeDeaths = pm.Exponential("InitialSizeDeaths", self.Tau, shape=(self.nORs,))
+            # # # conv padding
 
-            # # conv padding
             filter_size = self.SI_rev.size
             conv_padding = 6
 
-            infected_deaths = T.zeros((self.nORs, self.nDs + self.SI_rev.size))
-            infected_deaths = T.set_subtensor(infected_deaths[:, (filter_size - conv_padding):filter_size],
+            infected_deaths = T.zeros((self.nORs, self.nDs + conv_padding))
+            infected_deaths = T.set_subtensor(infected_deaths[:, :conv_padding],
                                               pm.math.exp(self.InitialSizeDeaths_log.reshape((self.nORs, 1)).repeat(
                                                   conv_padding, axis=1)))
 
@@ -6235,18 +6238,41 @@ class CMCombined_ICL_NoNoise(BaseCMModel):
             R_deaths = pm.math.exp(self.ExpectedLogR)
 
             for d in range(self.nDs):
-                val_d = pm.math.sum(
-                    R_deaths[:, d].reshape((self.nORs, 1)) * infected_deaths[:, d:d + filter_size] * self.SI_rev,
-                    axis=1)
-                infected_deaths = T.set_subtensor(infected_deaths[:, d + filter_size], val_d)
+                n_t = d + conv_padding
+                if n_t < self.SI_rev.size:
+                    val_d = pm.math.sum(R_deaths[:, d].reshape((self.nORs, 1)) * infected_deaths[:,
+                                                                                 :n_t] * self.SI_rev[0, :n_t],
+                                        axis=1)
+                else:
+                    val_d = pm.math.sum(R_deaths[:, d].reshape((self.nORs, 1)) * infected_deaths[:,
+                                                                                 (
+                                                                                         n_t - filter_size):n_t] * self.SI_rev,
+                                        axis=1)
+                infected_deaths = T.set_subtensor(infected_deaths[:, n_t], val_d)
 
-            self.InfectedDeaths = pm.Deterministic("InfectedDeaths", infected_deaths[:, filter_size:])
+            self.InfectedDeaths = pm.Deterministic("InfectedDeaths", infected_deaths[:, conv_padding:])
 
             expected_deaths = C.conv2d(
                 self.InfectedDeaths,
-                np.reshape(self.DelayProbDeaths, newshape=(1, self.DelayProbDeaths.size)),
+                self.DelayProbDeaths,
                 border_mode="full"
             )[:, :self.nDs]
+
+            # change #1a change to our convolution implementation.
+            # change 1b - remove IFR factor
+            # expected_deaths = T.zeros((self.nORs, self.nDs))
+            # filter_size = self.DPD_rev.size
+            # for d in range(self.nDs):
+            #     if d > 1:
+            #         if d < filter_size:
+            #             val_d = pm.math.sum(
+            #                 0.01 * self.InfectedDeaths[:, :d] * self.DPD_rev[0, :d],
+            #                 axis=1)
+            #         else:
+            #             val_d = pm.math.sum(
+            #                 0.01 * self.InfectedDeaths[:, (d-filter_size):d] * self.DPD_rev,
+            #                 axis=1)
+            #         expected_deaths = T.set_subtensor(expected_deaths[:, d], val_d)
 
             self.ExpectedDeaths = pm.Deterministic("ExpectedDeaths", expected_deaths.reshape(
                 (self.nORs, self.nDs)))
@@ -6266,13 +6292,13 @@ class CMCombined_ICL_NoNoise(BaseCMModel):
                 observed=self.NewDeaths
             )
 
-
-class CMCombined_Final_ICL_LN(BaseCMModel):
+class CMCombined_ICL_NoNoise_3(BaseCMModel):
     def __init__(
             self, data, name="", model=None, cm_plot_style=None
     ):
         super().__init__(data, cm_plot_style=cm_plot_style, name=name, model=model)
 
+        # change 3 - SI reverted
         self.SI = np.array(
             [0.04656309, 0.08698277, 0.1121656, 0.11937737, 0.11456359,
              0.10308026, 0.08852893, 0.07356104, 0.059462, 0.04719909,
@@ -6282,18 +6308,177 @@ class CMCombined_Final_ICL_LN(BaseCMModel):
              0.00036433, 0.00025036]
         )
 
-        self.SI_rev = self.SI[::-1].reshape((1, 1, self.SI.size)).repeat(2, axis=0)
+        self.SI_rev = self.SI[::-1].reshape((1, self.SI.size))
         # infection --> confirmed delay
-        self.DelayProbCases = np.array([0., 0.0252817, 0.03717965, 0.05181224, 0.06274125,
-                                        0.06961334, 0.07277174, 0.07292397, 0.07077184, 0.06694868,
-                                        0.06209945, 0.05659917, 0.0508999, 0.0452042, 0.03976573,
-                                        0.03470891, 0.0299895, 0.02577721, 0.02199923, 0.01871723,
-                                        0.01577148, 0.01326564, 0.01110783, 0.00928827, 0.0077231,
-                                        0.00641162, 0.00530572, 0.00437895, 0.00358801, 0.00295791,
-                                        0.0024217, 0.00197484])
+        self.DelayProbDeaths = np.array([2.24600347e-06, 3.90382088e-05, 2.34307085e-04,
+                                         7.83555003e-04, 1.91221622e-03, 3.78718437e-03, 6.45923913e-03,
+                                         9.94265709e-03, 1.40610714e-02, 1.86527920e-02, 2.34311421e-02,
+                                         2.81965055e-02, 3.27668001e-02, 3.68031574e-02, 4.03026198e-02,
+                                         4.30521951e-02, 4.50637136e-02, 4.63315047e-02, 4.68794406e-02,
+                                         4.67334059e-02, 4.59561441e-02, 4.47164503e-02, 4.29327455e-02,
+                                         4.08614522e-02, 3.85082076e-02, 3.60294203e-02, 3.34601703e-02,
+                                         3.08064505e-02, 2.81766028e-02, 2.56165924e-02, 2.31354369e-02,
+                                         2.07837267e-02, 1.86074383e-02, 1.65505661e-02, 1.46527043e-02,
+                                         1.29409383e-02, 1.13695920e-02, 9.93233881e-03, 8.66063386e-03,
+                                         7.53805464e-03, 6.51560047e-03, 5.63512264e-03, 4.84296166e-03,
+                                         4.14793478e-03, 3.56267297e-03, 3.03480656e-03, 2.59406730e-03,
+                                         2.19519042e-03, 1.85454286e-03, 1.58333238e-03, 1.33002321e-03,
+                                         1.11716435e-03, 9.35360376e-04, 7.87780158e-04, 6.58601602e-04,
+                                         5.48147154e-04, 4.58151351e-04, 3.85878963e-04, 3.21623249e-04,
+                                         2.66129174e-04, 2.21364768e-04, 1.80736566e-04, 1.52350196e-04])
 
-        self.DelayProbCases = self.DelayProbCases.reshape((1, self.DelayProbCases.size))
+        self.DPD_rev = self.DelayProbDeaths[::-1].reshape((1, self.DelayProbDeaths.size))
+        self.DelayProbDeaths = self.DelayProbDeaths.reshape((1, self.DelayProbDeaths.size))
 
+        self.CMDelayCut = 30
+
+        self.ObservedDaysIndx = np.arange(self.CMDelayCut, len(self.d.Ds))
+        self.OR_indxs = np.arange(len(self.d.Rs))
+        self.nORs = self.nRs
+        self.nODs = len(self.ObservedDaysIndx)
+        self.ORs = copy.deepcopy(self.d.Rs)
+
+        observed_deaths = []
+        for r in range(self.nRs):
+            for d in range(self.nDs):
+                # if its not masked, after the cut, and not before 10 deaths
+                if self.d.NewDeaths.mask[r, d] == False and d > self.CMDelayCut and not np.isnan(
+                        self.d.Deaths.data[r, d]):
+                    observed_deaths.append(r * self.nDs + d)
+                else:
+                    self.d.NewDeaths.mask[r, d] = True
+
+        self.all_observed_deaths = np.array(observed_deaths)
+
+    def build_model(self, R_hyperprior_mean=3.25, cm_prior_sigma=0.2, cm_prior='normal',
+                    serial_interval_mean=SI_ALPHA / SI_BETA
+                    ):
+        with self.model:
+            if cm_prior == 'normal':
+                # self.CM_Alpha = pm.Normal("CM_Alpha", 0, cm_prior_sigma, shape=(self.nCMs,))
+                self.CM_Alpha_t = pm.Gamma("CM_Alpha_t", 1 / 6, 1, shape=(self.nCMs,))
+                self.CM_Alpha = pm.Deterministic("CM_Alpha", self.CM_Alpha_t - np.log(1.05) / 6)
+            if cm_prior == 'half_normal':
+                self.CM_Alpha = pm.HalfNormal("CM_Alpha", cm_prior_sigma, shape=(self.nCMs,))
+
+            self.CMReduction = pm.Deterministic("CMReduction", T.exp((-1.0) * self.CM_Alpha))
+
+            # self.RegionLogR = pm.Normal("RegionLogR", np.log(3.25),
+            #                             0.25,
+            #                             shape=(self.nORs,))
+
+            self.ActiveCMs = pm.Data("ActiveCMs", self.d.ActiveCMs)
+
+            self.ActiveCMReduction = (
+                    T.reshape(self.CM_Alpha, (1, self.nCMs, 1))
+                    * self.ActiveCMs[self.OR_indxs, :, :]
+            )
+
+            self.Det(
+                "GrowthReduction", T.sum(self.ActiveCMReduction, axis=1), plot_trace=False
+            )
+
+            self.kappa = pm.HalfNormal("kappa", 0.5)
+            self.R_0 = self.Normal("R_0", 3.28, self.kappa, shape=(self.nORs,))
+
+            self.ExpectedLogR = self.Det(
+                "ExpectedLogR",
+                pm.math.log(T.reshape(self.R_0, (self.nORs, 1))) - self.GrowthReduction,
+                plot_trace=False,
+            )
+
+            self.InitialSizeDeaths_log = pm.Normal("InitialSizeDeaths_log", 0, 50, shape=(self.nORs,))
+            # change 2 initial sizes
+            # self.Tau = pm.Exponential("Tau", 1 / 0.03)
+            # self.InitialSizeDeaths = pm.Exponential("InitialSizeDeaths", self.Tau, shape=(self.nORs,))
+            # # # conv padding
+
+            filter_size = self.SI_rev.size
+            conv_padding = 6
+
+            infected_deaths = T.zeros((self.nORs, self.nDs + conv_padding))
+            infected_deaths = T.set_subtensor(infected_deaths[:, :conv_padding],
+                                              pm.math.exp(self.InitialSizeDeaths_log.reshape((self.nORs, 1)).repeat(
+                                                  conv_padding, axis=1)))
+
+            # R is a lognorm
+            R_deaths = pm.math.exp(self.ExpectedLogR)
+
+            for d in range(self.nDs):
+                n_t = d + conv_padding
+                if n_t < self.SI_rev.size:
+                    val_d = pm.math.sum(R_deaths[:, d].reshape((self.nORs, 1)) * infected_deaths[:,
+                                                                                 :n_t] * self.SI_rev[0, :n_t],
+                                        axis=1)
+                else:
+                    val_d = pm.math.sum(R_deaths[:, d].reshape((self.nORs, 1)) * infected_deaths[:,
+                                                                                 (
+                                                                                         n_t - filter_size):n_t] * self.SI_rev,
+                                        axis=1)
+                infected_deaths = T.set_subtensor(infected_deaths[:, n_t], val_d)
+
+            self.InfectedDeaths = pm.Deterministic("InfectedDeaths", infected_deaths[:, conv_padding:])
+
+            expected_deaths = C.conv2d(
+                self.InfectedDeaths,
+                self.DelayProbDeaths,
+                border_mode="full"
+            )[:, :self.nDs]
+
+            # change #1a change to our convolution implementation.
+            # change 1b - remove IFR factor
+            # expected_deaths = T.zeros((self.nORs, self.nDs))
+            # filter_size = self.DPD_rev.size
+            # for d in range(self.nDs):
+            #     if d > 1:
+            #         if d < filter_size:
+            #             val_d = pm.math.sum(
+            #                 0.01 * self.InfectedDeaths[:, :d] * self.DPD_rev[0, :d],
+            #                 axis=1)
+            #         else:
+            #             val_d = pm.math.sum(
+            #                 0.01 * self.InfectedDeaths[:, (d-filter_size):d] * self.DPD_rev,
+            #                 axis=1)
+            #         expected_deaths = T.set_subtensor(expected_deaths[:, d], val_d)
+
+            self.ExpectedDeaths = pm.Deterministic("ExpectedDeaths", expected_deaths.reshape(
+                (self.nORs, self.nDs)))
+
+            self.Phi = pm.HalfNormal("Phi", 5)
+
+            self.NewDeaths = pm.Data("NewDeaths",
+                                     self.d.NewDeaths.data.reshape((self.nORs * self.nDs,))[
+                                         self.all_observed_deaths])
+
+            # effectively handle missing values ourselves
+            self.ObservedDeaths = pm.NegativeBinomial(
+                "ObservedDeaths",
+                mu=self.ExpectedDeaths.reshape((self.nORs * self.nDs,))[self.all_observed_deaths],
+                alpha=self.Phi,
+                shape=(len(self.all_observed_deaths),),
+                observed=self.NewDeaths
+            )
+
+class CMCombined_ICL_NoNoise_4(BaseCMModel):
+    def __init__(
+            self, data, name="", model=None, cm_plot_style=None
+    ):
+        super().__init__(data, cm_plot_style=cm_plot_style, name=name, model=model)
+
+        # change 3 - SI reverted
+        self.SI = np.array(
+            [0.04656309, 0.08698277, 0.1121656, 0.11937737, 0.11456359,
+             0.10308026, 0.08852893, 0.07356104, 0.059462, 0.04719909,
+             0.03683025, 0.02846977, 0.02163222, 0.01640488, 0.01221928,
+             0.00903811, 0.00670216, 0.00490314, 0.00361434, 0.00261552,
+             0.00187336, 0.00137485, 0.00100352, 0.00071164, 0.00050852,
+             0.00036433, 0.00025036]
+        )
+
+        self.SI_rev = self.SI[::-1].reshape((1, self.SI.size))
+        # infection --> confirmed delay
+
+        # change 4 - death delay prob reverted
         self.DelayProbDeaths = np.array([0.00000000e+00, 1.64635735e-06, 3.15032703e-05, 1.86360977e-04,
                                          6.26527963e-04, 1.54172466e-03, 3.10103643e-03, 5.35663499e-03,
                                          8.33979000e-03, 1.19404848e-02, 1.59939055e-02, 2.03185081e-02,
@@ -6310,10 +6495,11 @@ class CMCombined_Final_ICL_LN(BaseCMModel):
                                          1.55693122e-03, 1.31909933e-03, 1.11729819e-03, 9.46588730e-04,
                                          8.06525991e-04, 6.81336089e-04, 5.74623210e-04, 4.80157895e-04,
                                          4.02211774e-04, 3.35345193e-04, 2.82450401e-04, 2.38109993e-04])
+
+        self.DPD_rev = self.DelayProbDeaths[::-1].reshape((1, self.DelayProbDeaths.size))
         self.DelayProbDeaths = self.DelayProbDeaths.reshape((1, self.DelayProbDeaths.size))
 
         self.CMDelayCut = 30
-        self.DailyGrowthNoise = 0.2
 
         self.ObservedDaysIndx = np.arange(self.CMDelayCut, len(self.d.Ds))
         self.OR_indxs = np.arange(len(self.d.Rs))
@@ -6321,39 +6507,201 @@ class CMCombined_Final_ICL_LN(BaseCMModel):
         self.nODs = len(self.ObservedDaysIndx)
         self.ORs = copy.deepcopy(self.d.Rs)
 
-        observed_active = []
         observed_deaths = []
         for r in range(self.nRs):
-            for d in range(self.nODs):
-                actual_day = self.ObservedDaysIndx[d]
-                if self.d.NewCases.mask[r, actual_day] == False and not np.isnan(
-                        self.d.Confirmed.data[r, actual_day]) and d < (self.nODs - 7):
-                    observed_active.append(r * self.nODs + d)
-                else:
-                    self.d.NewCases.mask[r, d] = True
-
-                if self.d.NewDeaths.mask[r, actual_day] == False and not np.isnan(
-                        self.d.Deaths.data[r, actual_day]) and self.d.NewDeaths.data[r, actual_day]>0:
-                    observed_deaths.append(r * self.nODs + d)
+            for d in range(self.nDs):
+                # if its not masked, after the cut, and not before 10 deaths
+                if self.d.NewDeaths.mask[r, d] == False and d > self.CMDelayCut and not np.isnan(
+                        self.d.Deaths.data[r, d]):
+                    observed_deaths.append(r * self.nDs + d)
                 else:
                     self.d.NewDeaths.mask[r, d] = True
 
-        self.all_observed_active = np.array(observed_active)
         self.all_observed_deaths = np.array(observed_deaths)
 
     def build_model(self, R_hyperprior_mean=3.25, cm_prior_sigma=0.2, cm_prior='normal',
-                    serial_interval_mean=SI_ALPHA / SI_BETA):
-
+                    serial_interval_mean=SI_ALPHA / SI_BETA
+                    ):
         with self.model:
-
             if cm_prior == 'normal':
-                self.CM_Alpha = pm.Normal("CM_Alpha", 0, cm_prior_sigma, shape=(self.nCMs,))
-
+                # self.CM_Alpha = pm.Normal("CM_Alpha", 0, cm_prior_sigma, shape=(self.nCMs,))
+                self.CM_Alpha_t = pm.Gamma("CM_Alpha_t", 1 / 6, 1, shape=(self.nCMs,))
+                self.CM_Alpha = pm.Deterministic("CM_Alpha", self.CM_Alpha_t - np.log(1.05) / 6)
             if cm_prior == 'half_normal':
                 self.CM_Alpha = pm.HalfNormal("CM_Alpha", cm_prior_sigma, shape=(self.nCMs,))
 
             self.CMReduction = pm.Deterministic("CMReduction", T.exp((-1.0) * self.CM_Alpha))
 
+            # self.RegionLogR = pm.Normal("RegionLogR", np.log(3.25),
+            #                             0.25,
+            #                             shape=(self.nORs,))
+
+            self.ActiveCMs = pm.Data("ActiveCMs", self.d.ActiveCMs)
+
+            self.ActiveCMReduction = (
+                    T.reshape(self.CM_Alpha, (1, self.nCMs, 1))
+                    * self.ActiveCMs[self.OR_indxs, :, :]
+            )
+
+            self.Det(
+                "GrowthReduction", T.sum(self.ActiveCMReduction, axis=1), plot_trace=False
+            )
+
+            self.kappa = pm.HalfNormal("kappa", 0.5)
+            self.R_0 = self.Normal("R_0", 3.28, self.kappa, shape=(self.nORs,))
+
+            self.ExpectedLogR = self.Det(
+                "ExpectedLogR",
+                pm.math.log(T.reshape(self.R_0, (self.nORs, 1))) - self.GrowthReduction,
+                plot_trace=False,
+            )
+
+            self.InitialSizeDeaths_log = pm.Normal("InitialSizeDeaths_log", 0, 50, shape=(self.nORs,))
+            # change 2 initial sizes
+            # self.Tau = pm.Exponential("Tau", 1 / 0.03)
+            # self.InitialSizeDeaths = pm.Exponential("InitialSizeDeaths", self.Tau, shape=(self.nORs,))
+            # # # conv padding
+
+            filter_size = self.SI_rev.size
+            conv_padding = 6
+
+            infected_deaths = T.zeros((self.nORs, self.nDs + conv_padding))
+            infected_deaths = T.set_subtensor(infected_deaths[:, :conv_padding],
+                                              pm.math.exp(self.InitialSizeDeaths_log.reshape((self.nORs, 1)).repeat(
+                                                  conv_padding, axis=1)))
+
+            # R is a lognorm
+            R_deaths = pm.math.exp(self.ExpectedLogR)
+
+            for d in range(self.nDs):
+                n_t = d + conv_padding
+                if n_t < self.SI_rev.size:
+                    val_d = pm.math.sum(R_deaths[:, d].reshape((self.nORs, 1)) * infected_deaths[:,
+                                                                                 :n_t] * self.SI_rev[0, :n_t],
+                                        axis=1)
+                else:
+                    val_d = pm.math.sum(R_deaths[:, d].reshape((self.nORs, 1)) * infected_deaths[:,
+                                                                                 (
+                                                                                         n_t - filter_size):n_t] * self.SI_rev,
+                                        axis=1)
+                infected_deaths = T.set_subtensor(infected_deaths[:, n_t], val_d)
+
+            self.InfectedDeaths = pm.Deterministic("InfectedDeaths", infected_deaths[:, conv_padding:])
+
+            expected_deaths = C.conv2d(
+                self.InfectedDeaths,
+                self.DelayProbDeaths,
+                border_mode="full"
+            )[:, :self.nDs]
+
+            # change #1a change to our convolution implementation.
+            # change 1b - remove IFR factor
+            # expected_deaths = T.zeros((self.nORs, self.nDs))
+            # filter_size = self.DPD_rev.size
+            # for d in range(self.nDs):
+            #     if d > 1:
+            #         if d < filter_size:
+            #             val_d = pm.math.sum(
+            #                 0.01 * self.InfectedDeaths[:, :d] * self.DPD_rev[0, :d],
+            #                 axis=1)
+            #         else:
+            #             val_d = pm.math.sum(
+            #                 0.01 * self.InfectedDeaths[:, (d-filter_size):d] * self.DPD_rev,
+            #                 axis=1)
+            #         expected_deaths = T.set_subtensor(expected_deaths[:, d], val_d)
+
+            self.ExpectedDeaths = pm.Deterministic("ExpectedDeaths", expected_deaths.reshape(
+                (self.nORs, self.nDs)))
+
+            self.Phi = pm.HalfNormal("Phi", 5)
+
+            self.NewDeaths = pm.Data("NewDeaths",
+                                     self.d.NewDeaths.data.reshape((self.nORs * self.nDs,))[
+                                         self.all_observed_deaths])
+
+            # effectively handle missing values ourselves
+            self.ObservedDeaths = pm.NegativeBinomial(
+                "ObservedDeaths",
+                mu=self.ExpectedDeaths.reshape((self.nORs * self.nDs,))[self.all_observed_deaths],
+                alpha=self.Phi,
+                shape=(len(self.all_observed_deaths),),
+                observed=self.NewDeaths
+            )
+
+class CMCombined_ICL_NoNoise_5(BaseCMModel):
+    def __init__(
+            self, data, name="", model=None, cm_plot_style=None
+    ):
+        super().__init__(data, cm_plot_style=cm_plot_style, name=name, model=model)
+
+        # change 3 - SI reverted
+        self.SI = np.array(
+            [0.04656309, 0.08698277, 0.1121656, 0.11937737, 0.11456359,
+             0.10308026, 0.08852893, 0.07356104, 0.059462, 0.04719909,
+             0.03683025, 0.02846977, 0.02163222, 0.01640488, 0.01221928,
+             0.00903811, 0.00670216, 0.00490314, 0.00361434, 0.00261552,
+             0.00187336, 0.00137485, 0.00100352, 0.00071164, 0.00050852,
+             0.00036433, 0.00025036]
+        )
+
+        self.SI_rev = self.SI[::-1].reshape((1, self.SI.size))
+        # infection --> confirmed delay
+
+        # change 4 - death delay prob reverted
+        self.DelayProbDeaths = np.array([0.00000000e+00, 1.64635735e-06, 3.15032703e-05, 1.86360977e-04,
+                                         6.26527963e-04, 1.54172466e-03, 3.10103643e-03, 5.35663499e-03,
+                                         8.33979000e-03, 1.19404848e-02, 1.59939055e-02, 2.03185081e-02,
+                                         2.47732062e-02, 2.90464491e-02, 3.30612027e-02, 3.66089026e-02,
+                                         3.95642697e-02, 4.18957120e-02, 4.35715814e-02, 4.45816884e-02,
+                                         4.49543992e-02, 4.47474142e-02, 4.40036056e-02, 4.27545988e-02,
+                                         4.11952870e-02, 3.92608505e-02, 3.71824356e-02, 3.48457206e-02,
+                                         3.24845883e-02, 3.00814850e-02, 2.76519177e-02, 2.52792720e-02,
+                                         2.30103580e-02, 2.07636698e-02, 1.87005838e-02, 1.67560244e-02,
+                                         1.49600154e-02, 1.32737561e-02, 1.17831130e-02, 1.03716286e-02,
+                                         9.13757250e-03, 7.98287530e-03, 6.96265658e-03, 6.05951833e-03,
+                                         5.26450572e-03, 4.56833017e-03, 3.93189069e-03, 3.38098392e-03,
+                                         2.91542076e-03, 2.49468747e-03, 2.13152106e-03, 1.82750115e-03,
+                                         1.55693122e-03, 1.31909933e-03, 1.11729819e-03, 9.46588730e-04,
+                                         8.06525991e-04, 6.81336089e-04, 5.74623210e-04, 4.80157895e-04,
+                                         4.02211774e-04, 3.35345193e-04, 2.82450401e-04, 2.38109993e-04])
+
+        self.DPD_rev = self.DelayProbDeaths[::-1].reshape((1, self.DelayProbDeaths.size))
+        self.DelayProbDeaths = self.DelayProbDeaths.reshape((1, self.DelayProbDeaths.size))
+
+        self.CMDelayCut = 30
+
+        self.ObservedDaysIndx = np.arange(self.CMDelayCut, len(self.d.Ds))
+        self.OR_indxs = np.arange(len(self.d.Rs))
+        self.nORs = self.nRs
+        self.nODs = len(self.ObservedDaysIndx)
+        self.ORs = copy.deepcopy(self.d.Rs)
+
+        observed_deaths = []
+        for r in range(self.nRs):
+            for d in range(self.nDs):
+                # if its not masked, after the cut, and not before 10 deaths
+                if self.d.NewDeaths.mask[r, d] == False and d > self.CMDelayCut and not np.isnan(
+                        self.d.Deaths.data[r, d]):
+                    observed_deaths.append(r * self.nDs + d)
+                else:
+                    self.d.NewDeaths.mask[r, d] = True
+
+        self.all_observed_deaths = np.array(observed_deaths)
+
+    def build_model(self, R_hyperprior_mean=3.25, cm_prior_sigma=0.2, cm_prior='normal',
+                    serial_interval_mean=SI_ALPHA / SI_BETA
+                    ):
+        with self.model:
+            if cm_prior == 'normal':
+                # self.CM_Alpha = pm.Normal("CM_Alpha", 0, cm_prior_sigma, shape=(self.nCMs,))
+                self.CM_Alpha_t = pm.Gamma("CM_Alpha_t", 1 / 6, 1, shape=(self.nCMs,))
+                self.CM_Alpha = pm.Deterministic("CM_Alpha", self.CM_Alpha_t - np.log(1.05) / 6)
+            if cm_prior == 'half_normal':
+                self.CM_Alpha = pm.HalfNormal("CM_Alpha", cm_prior_sigma, shape=(self.nCMs,))
+
+            self.CMReduction = pm.Deterministic("CMReduction", T.exp((-1.0) * self.CM_Alpha))
+
+            # change 5 - prior over R
             self.HyperRMean = pm.StudentT(
                 "HyperRMean", nu=10, sigma=0.2, mu=np.log(R_hyperprior_mean),
             )
@@ -6370,106 +6718,424 @@ class CMCombined_Final_ICL_LN(BaseCMModel):
 
             self.ActiveCMReduction = (
                     T.reshape(self.CM_Alpha, (1, self.nCMs, 1))
-                    * self.ActiveCMs[self.OR_indxs, :, self.CMDelayCut:]
+                    * self.ActiveCMs[self.OR_indxs, :, :]
             )
 
             self.Det(
                 "GrowthReduction", T.sum(self.ActiveCMReduction, axis=1), plot_trace=False
             )
 
+            # self.kappa = pm.HalfNormal("kappa", 0.5)
+            # self.R_0 = self.Normal("R_0", 3.28, self.kappa, shape=(self.nORs,))
+
             self.ExpectedLogR = self.Det(
                 "ExpectedLogR",
-                T.reshape(T.reshape(self.RegionLogR, (self.nORs, 1)) - self.GrowthReduction, (1, self.nORs, self.nODs)).repeat(2, axis=0),
+                T.reshape(self.RegionLogR, (self.nORs, 1)) - self.GrowthReduction,
                 plot_trace=False,
             )
 
-            self.LogR = pm.Normal("LogR", self.ExpectedLogR, self.DailyGrowthNoise, shape=(2, self.nORs, self.nODs))
+            self.InitialSizeDeaths_log = pm.Normal("InitialSizeDeaths_log", 0, 50, shape=(self.nORs,))
+            # change 2 initial sizes
+            # self.Tau = pm.Exponential("Tau", 1 / 0.03)
+            # self.InitialSizeDeaths = pm.Exponential("InitialSizeDeaths", self.Tau, shape=(self.nORs,))
+            # # # conv padding
 
-            # self.LogRCases = pm.Deterministic(
-            #     "LogRCases",
-            #     self.LogR[0, :, :]
-            # )
-            # self.LogRCases = pm.Deterministic(
-            #     "LogRDeaths",
-            #     self.LogR[1, :, :]
-            # )
+            filter_size = self.SI_rev.size
+            conv_padding = 6
 
-            self.InitialSize_log = pm.Normal("InitialSizeCases_log", 0, 50, shape=(2, self.nORs))
-
-            filter_size = self.SI.size
-            conv_padding = 7
-
-            infected = T.zeros((2, self.nORs, self.nODs + self.SI.size))
-            infected = T.set_subtensor(infected[:, :, (filter_size - conv_padding):filter_size],
-                                             pm.math.exp(self.InitialSize_log.reshape((2, self.nORs, 1)).repeat(
-                                                 conv_padding, axis=2)))
+            infected_deaths = T.zeros((self.nORs, self.nDs + conv_padding))
+            infected_deaths = T.set_subtensor(infected_deaths[:, :conv_padding],
+                                              pm.math.exp(self.InitialSizeDeaths_log.reshape((self.nORs, 1)).repeat(
+                                                  conv_padding, axis=1)))
 
             # R is a lognorm
-            R = pm.math.exp(self.LogR)
-            for d in range(self.nODs):
-                val = pm.math.sum(
-                    R[:, :, d].reshape((2, self.nORs, 1)) * infected[:, :, d:(d + self.SI.size)] * self.SI_rev,
-                    axis=2)
-                infected = T.set_subtensor(infected[:, :, d + self.SI.size], val)
+            R_deaths = pm.math.exp(self.ExpectedLogR)
 
-            res = infected
+            for d in range(self.nDs):
+                n_t = d + conv_padding
+                if n_t < self.SI_rev.size:
+                    val_d = pm.math.sum(R_deaths[:, d].reshape((self.nORs, 1)) * infected_deaths[:,
+                                                                                 :n_t] * self.SI_rev[0, :n_t],
+                                        axis=1)
+                else:
+                    val_d = pm.math.sum(R_deaths[:, d].reshape((self.nORs, 1)) * infected_deaths[:,
+                                                                                 (
+                                                                                         n_t - filter_size):n_t] * self.SI_rev,
+                                        axis=1)
+                infected_deaths = T.set_subtensor(infected_deaths[:, n_t], val_d)
 
-            # surprisingly, when profiling, it seems that the above for loop is faster ?
-            # def loop_fun(ind, result, R):
-            #     val = pm.math.sum(
-            #         R[:, :, ind].reshape((2, self.nORs, 1 )) * result[:, :, ind:(ind + self.SI.size)] * self.SI_rev, axis=2)
-            #     inf = T.set_subtensor(result[:, :, ind + self.SI.size], val)
-            #     return inf
-            #
-            # res, up = theano.scan(loop_fun, outputs_info=infected, non_sequences=R,
-            #                       sequences=[T.arange(self.nODs)]
-            #                       )
-
-
-            self.InfectedDeaths = pm.Deterministic(
-                "InfectedCases",
-                res[0, :, self.SI.size:].reshape((self.nORs, self.nODs))
-            )
-
-            self.InfectedDeaths = pm.Deterministic(
-                "InfectedDeaths",
-                res[1, :, self.SI.size:].reshape((self.nORs, self.nODs))
-            )
+            self.InfectedDeaths = pm.Deterministic("InfectedDeaths", infected_deaths[:, conv_padding:])
 
             expected_deaths = C.conv2d(
                 self.InfectedDeaths,
                 self.DelayProbDeaths,
                 border_mode="full"
-            )[:, :self.nODs]
+            )[:, :self.nDs]
 
-            expected_cases = C.conv2d(
-                self.InfectedCases,
-                self.DelayProbCases,
-                border_mode="full"
-            )[:, :self.nODs]
+            # change #1a change to our convolution implementation.
+            # change 1b - remove IFR factor
+            # expected_deaths = T.zeros((self.nORs, self.nDs))
+            # filter_size = self.DPD_rev.size
+            # for d in range(self.nDs):
+            #     if d > 1:
+            #         if d < filter_size:
+            #             val_d = pm.math.sum(
+            #                 0.01 * self.InfectedDeaths[:, :d] * self.DPD_rev[0, :d],
+            #                 axis=1)
+            #         else:
+            #             val_d = pm.math.sum(
+            #                 0.01 * self.InfectedDeaths[:, (d-filter_size):d] * self.DPD_rev,
+            #                 axis=1)
+            #         expected_deaths = T.set_subtensor(expected_deaths[:, d], val_d)
 
             self.ExpectedDeaths = pm.Deterministic("ExpectedDeaths", expected_deaths.reshape(
-                (self.nORs, self.nODs)))
+                (self.nORs, self.nDs)))
 
-            self.ExpectedCases = pm.Deterministic("ExpectedCases", expected_cases.reshape(
-                (self.nORs, self.nODs)))
+            self.Phi = pm.HalfNormal("Phi", 5)
 
-            self.Phi = pm.HalfNormal("Phi", 1)
-
-            self.ObservedDeaths = pm.Normal(
-                "ObservedDeaths",
-                np.log(self.ExpectedDeaths.reshape((self.nORs * self.nODs,))[self.all_observed_deaths]),
-                self.Phi,
-                shape=(len(self.all_observed_deaths),),
-                observed=np.log(self.d.NewDeaths.data[:, self.CMDelayCut:].reshape((self.nORs * self.nODs,))[
+            self.NewDeaths = pm.Data("NewDeaths",
+                                     self.d.NewDeaths.data.reshape((self.nORs * self.nDs,))[
                                          self.all_observed_deaths])
+
+            # effectively handle missing values ourselves
+            self.ObservedDeaths = pm.NegativeBinomial(
+                "ObservedDeaths",
+                mu=self.ExpectedDeaths.reshape((self.nORs * self.nDs,))[self.all_observed_deaths],
+                alpha=self.Phi,
+                shape=(len(self.all_observed_deaths),),
+                observed=self.NewDeaths
             )
 
-            self.ObservedCases = pm.Normal(
-                "ObservedCases",
-                np.log(self.ExpectedCases.reshape((self.nORs * self.nODs,))[self.all_observed_active]),
-                self.Phi,
-                shape=(len(self.all_observed_active),),
-                observed=np.log(self.d.NewCases.data[:, self.CMDelayCut:].reshape((self.nORs * self.nODs,))[
-                                        self.all_observed_active])
+class CMCombined_ICL_NoNoise_6(BaseCMModel):
+    def __init__(
+            self, data, name="", model=None, cm_plot_style=None
+    ):
+        super().__init__(data, cm_plot_style=cm_plot_style, name=name, model=model)
+
+        # change 3 - SI reverted
+        self.SI = np.array(
+            [0.04656309, 0.08698277, 0.1121656, 0.11937737, 0.11456359,
+             0.10308026, 0.08852893, 0.07356104, 0.059462, 0.04719909,
+             0.03683025, 0.02846977, 0.02163222, 0.01640488, 0.01221928,
+             0.00903811, 0.00670216, 0.00490314, 0.00361434, 0.00261552,
+             0.00187336, 0.00137485, 0.00100352, 0.00071164, 0.00050852,
+             0.00036433, 0.00025036]
+        )
+
+        self.SI_rev = self.SI[::-1].reshape((1, self.SI.size))
+        # infection --> confirmed delay
+
+        # change 4 - death delay prob reverted
+        self.DelayProbDeaths = np.array([0.00000000e+00, 1.64635735e-06, 3.15032703e-05, 1.86360977e-04,
+                                         6.26527963e-04, 1.54172466e-03, 3.10103643e-03, 5.35663499e-03,
+                                         8.33979000e-03, 1.19404848e-02, 1.59939055e-02, 2.03185081e-02,
+                                         2.47732062e-02, 2.90464491e-02, 3.30612027e-02, 3.66089026e-02,
+                                         3.95642697e-02, 4.18957120e-02, 4.35715814e-02, 4.45816884e-02,
+                                         4.49543992e-02, 4.47474142e-02, 4.40036056e-02, 4.27545988e-02,
+                                         4.11952870e-02, 3.92608505e-02, 3.71824356e-02, 3.48457206e-02,
+                                         3.24845883e-02, 3.00814850e-02, 2.76519177e-02, 2.52792720e-02,
+                                         2.30103580e-02, 2.07636698e-02, 1.87005838e-02, 1.67560244e-02,
+                                         1.49600154e-02, 1.32737561e-02, 1.17831130e-02, 1.03716286e-02,
+                                         9.13757250e-03, 7.98287530e-03, 6.96265658e-03, 6.05951833e-03,
+                                         5.26450572e-03, 4.56833017e-03, 3.93189069e-03, 3.38098392e-03,
+                                         2.91542076e-03, 2.49468747e-03, 2.13152106e-03, 1.82750115e-03,
+                                         1.55693122e-03, 1.31909933e-03, 1.11729819e-03, 9.46588730e-04,
+                                         8.06525991e-04, 6.81336089e-04, 5.74623210e-04, 4.80157895e-04,
+                                         4.02211774e-04, 3.35345193e-04, 2.82450401e-04, 2.38109993e-04])
+
+        self.DPD_rev = self.DelayProbDeaths[::-1].reshape((1, self.DelayProbDeaths.size))
+        self.DelayProbDeaths = self.DelayProbDeaths.reshape((1, self.DelayProbDeaths.size))
+
+        self.CMDelayCut = 30
+
+        self.ObservedDaysIndx = np.arange(self.CMDelayCut, len(self.d.Ds))
+        self.OR_indxs = np.arange(len(self.d.Rs))
+        self.nORs = self.nRs
+        self.nODs = len(self.ObservedDaysIndx)
+        self.ORs = copy.deepcopy(self.d.Rs)
+
+        observed_deaths = []
+        for r in range(self.nRs):
+            for d in range(self.nDs):
+                # if its not masked, after the cut, and not before 10 deaths
+                if self.d.NewDeaths.mask[r, d] == False and d > self.CMDelayCut and not np.isnan(
+                        self.d.Deaths.data[r, d]):
+                    observed_deaths.append(r * self.nDs + d)
+                else:
+                    self.d.NewDeaths.mask[r, d] = True
+
+        self.all_observed_deaths = np.array(observed_deaths)
+
+    def build_model(self, R_hyperprior_mean=3.25, cm_prior_sigma=0.2, cm_prior='normal',
+                    serial_interval_mean=SI_ALPHA / SI_BETA
+                    ):
+        with self.model:
+            if cm_prior == 'normal':
+                # change 6 - Prior reverted
+                self.CM_Alpha = pm.Normal("CM_Alpha", 0, cm_prior_sigma, shape=(self.nCMs,))
+                # self.CM_Alpha_t = pm.Gamma("CM_Alpha_t", 1 / 6, 1, shape=(self.nCMs,))
+                # self.CM_Alpha = pm.Deterministic("CM_Alpha", self.CM_Alpha_t - np.log(1.05) / 6)
+            if cm_prior == 'half_normal':
+                self.CM_Alpha = pm.HalfNormal("CM_Alpha", cm_prior_sigma, shape=(self.nCMs,))
+
+            self.CMReduction = pm.Deterministic("CMReduction", T.exp((-1.0) * self.CM_Alpha))
+
+            # change 5 - prior over R
+            self.HyperRMean = pm.StudentT(
+                "HyperRMean", nu=10, sigma=0.2, mu=np.log(R_hyperprior_mean),
+            )
+
+            self.HyperRVar = pm.HalfStudentT(
+                "HyperRVar", nu=10, sigma=0.2
+            )
+
+            self.RegionLogR = pm.Normal("RegionLogR", self.HyperRMean,
+                                        self.HyperRVar,
+                                        shape=(self.nORs,))
+
+            self.ActiveCMs = pm.Data("ActiveCMs", self.d.ActiveCMs)
+
+            self.ActiveCMReduction = (
+                    T.reshape(self.CM_Alpha, (1, self.nCMs, 1))
+                    * self.ActiveCMs[self.OR_indxs, :, :]
+            )
+
+            self.Det(
+                "GrowthReduction", T.sum(self.ActiveCMReduction, axis=1), plot_trace=False
+            )
+
+            # self.kappa = pm.HalfNormal("kappa", 0.5)
+            # self.R_0 = self.Normal("R_0", 3.28, self.kappa, shape=(self.nORs,))
+
+            self.ExpectedLogR = self.Det(
+                "ExpectedLogR",
+                T.reshape(self.RegionLogR, (self.nORs, 1)) - self.GrowthReduction,
+                plot_trace=False,
+            )
+
+            self.InitialSizeDeaths_log = pm.Normal("InitialSizeDeaths_log", 0, 50, shape=(self.nORs,))
+            # change 2 initial sizes
+            # self.Tau = pm.Exponential("Tau", 1 / 0.03)
+            # self.InitialSizeDeaths = pm.Exponential("InitialSizeDeaths", self.Tau, shape=(self.nORs,))
+            # # # conv padding
+
+            filter_size = self.SI_rev.size
+            conv_padding = 6
+
+            infected_deaths = T.zeros((self.nORs, self.nDs + conv_padding))
+            infected_deaths = T.set_subtensor(infected_deaths[:, :conv_padding],
+                                              pm.math.exp(self.InitialSizeDeaths_log.reshape((self.nORs, 1)).repeat(
+                                                  conv_padding, axis=1)))
+
+            # R is a lognorm
+            R_deaths = pm.math.exp(self.ExpectedLogR)
+
+            for d in range(self.nDs):
+                n_t = d + conv_padding
+                if n_t < self.SI_rev.size:
+                    val_d = pm.math.sum(R_deaths[:, d].reshape((self.nORs, 1)) * infected_deaths[:,
+                                                                                 :n_t] * self.SI_rev[0, :n_t],
+                                        axis=1)
+                else:
+                    val_d = pm.math.sum(R_deaths[:, d].reshape((self.nORs, 1)) * infected_deaths[:,
+                                                                                 (
+                                                                                         n_t - filter_size):n_t] * self.SI_rev,
+                                        axis=1)
+                infected_deaths = T.set_subtensor(infected_deaths[:, n_t], val_d)
+
+            self.InfectedDeaths = pm.Deterministic("InfectedDeaths", infected_deaths[:, conv_padding:])
+
+            expected_deaths = C.conv2d(
+                self.InfectedDeaths,
+                self.DelayProbDeaths,
+                border_mode="full"
+            )[:, :self.nDs]
+
+            # change #1a change to our convolution implementation.
+            # change 1b - remove IFR factor
+            # expected_deaths = T.zeros((self.nORs, self.nDs))
+            # filter_size = self.DPD_rev.size
+            # for d in range(self.nDs):
+            #     if d > 1:
+            #         if d < filter_size:
+            #             val_d = pm.math.sum(
+            #                 0.01 * self.InfectedDeaths[:, :d] * self.DPD_rev[0, :d],
+            #                 axis=1)
+            #         else:
+            #             val_d = pm.math.sum(
+            #                 0.01 * self.InfectedDeaths[:, (d-filter_size):d] * self.DPD_rev,
+            #                 axis=1)
+            #         expected_deaths = T.set_subtensor(expected_deaths[:, d], val_d)
+
+            self.ExpectedDeaths = pm.Deterministic("ExpectedDeaths", expected_deaths.reshape(
+                (self.nORs, self.nDs)))
+
+            self.Phi = pm.HalfNormal("Phi", 5)
+
+            self.NewDeaths = pm.Data("NewDeaths",
+                                     self.d.NewDeaths.data.reshape((self.nORs * self.nDs,))[
+                                         self.all_observed_deaths])
+
+            # effectively handle missing values ourselves
+            self.ObservedDeaths = pm.NegativeBinomial(
+                "ObservedDeaths",
+                mu=self.ExpectedDeaths.reshape((self.nORs * self.nDs,))[self.all_observed_deaths],
+                alpha=self.Phi,
+                shape=(len(self.all_observed_deaths),),
+                observed=self.NewDeaths
+            )
+
+class CMCombined_ICL_NoNoise_7(BaseCMModel):
+    def __init__(
+            self, data, name="", model=None, cm_plot_style=None
+    ):
+        super().__init__(data, cm_plot_style=cm_plot_style, name=name, model=model)
+
+        # change 3 - SI reverted
+        self.SI = np.array(
+            [0.04656309, 0.08698277, 0.1121656, 0.11937737, 0.11456359,
+             0.10308026, 0.08852893, 0.07356104, 0.059462, 0.04719909,
+             0.03683025, 0.02846977, 0.02163222, 0.01640488, 0.01221928,
+             0.00903811, 0.00670216, 0.00490314, 0.00361434, 0.00261552,
+             0.00187336, 0.00137485, 0.00100352, 0.00071164, 0.00050852,
+             0.00036433, 0.00025036]
+        )
+
+        self.SI_rev = self.SI[::-1].reshape((1, self.SI.size))
+        # infection --> confirmed delay
+
+        # change 4 - death delay prob reverted
+        self.DelayProbDeaths = np.array([0.00000000e+00, 1.64635735e-06, 3.15032703e-05, 1.86360977e-04,
+                                         6.26527963e-04, 1.54172466e-03, 3.10103643e-03, 5.35663499e-03,
+                                         8.33979000e-03, 1.19404848e-02, 1.59939055e-02, 2.03185081e-02,
+                                         2.47732062e-02, 2.90464491e-02, 3.30612027e-02, 3.66089026e-02,
+                                         3.95642697e-02, 4.18957120e-02, 4.35715814e-02, 4.45816884e-02,
+                                         4.49543992e-02, 4.47474142e-02, 4.40036056e-02, 4.27545988e-02,
+                                         4.11952870e-02, 3.92608505e-02, 3.71824356e-02, 3.48457206e-02,
+                                         3.24845883e-02, 3.00814850e-02, 2.76519177e-02, 2.52792720e-02,
+                                         2.30103580e-02, 2.07636698e-02, 1.87005838e-02, 1.67560244e-02,
+                                         1.49600154e-02, 1.32737561e-02, 1.17831130e-02, 1.03716286e-02,
+                                         9.13757250e-03, 7.98287530e-03, 6.96265658e-03, 6.05951833e-03,
+                                         5.26450572e-03, 4.56833017e-03, 3.93189069e-03, 3.38098392e-03,
+                                         2.91542076e-03, 2.49468747e-03, 2.13152106e-03, 1.82750115e-03,
+                                         1.55693122e-03, 1.31909933e-03, 1.11729819e-03, 9.46588730e-04,
+                                         8.06525991e-04, 6.81336089e-04, 5.74623210e-04, 4.80157895e-04,
+                                         4.02211774e-04, 3.35345193e-04, 2.82450401e-04, 2.38109993e-04])
+
+        self.DPD_rev = self.DelayProbDeaths[::-1].reshape((1, self.DelayProbDeaths.size))
+        self.DelayProbDeaths = self.DelayProbDeaths.reshape((1, self.DelayProbDeaths.size))
+
+        self.CMDelayCut = 30
+
+        self.ObservedDaysIndx = np.arange(self.CMDelayCut, len(self.d.Ds))
+        self.OR_indxs = np.arange(len(self.d.Rs))
+        self.nORs = self.nRs
+        self.nODs = len(self.ObservedDaysIndx)
+        self.ORs = copy.deepcopy(self.d.Rs)
+
+        observed_deaths = []
+        for r in range(self.nRs):
+            for d in range(self.nDs):
+                # if its not masked, after the cut, and not before 10 deaths
+                if self.d.NewDeaths.mask[r, d] == False and d > self.CMDelayCut and not np.isnan(
+                        self.d.Deaths.data[r, d]):
+                    observed_deaths.append(r * self.nDs + d)
+                else:
+                    self.d.NewDeaths.mask[r, d] = True
+
+        self.all_observed_deaths = np.array(observed_deaths)
+
+    def build_model(self, R_hyperprior_mean=3.25, cm_prior_sigma=0.2, cm_prior='normal',
+                    serial_interval_mean=SI_ALPHA / SI_BETA
+                    ):
+        with self.model:
+            if cm_prior == 'normal':
+                # change 6 - Prior reverted
+                self.CM_Alpha = pm.Normal("CM_Alpha", 0, cm_prior_sigma, shape=(self.nCMs,))
+                # self.CM_Alpha_t = pm.Gamma("CM_Alpha_t", 1 / 6, 1, shape=(self.nCMs,))
+                # self.CM_Alpha = pm.Deterministic("CM_Alpha", self.CM_Alpha_t - np.log(1.05) / 6)
+            if cm_prior == 'half_normal':
+                self.CM_Alpha = pm.HalfNormal("CM_Alpha", cm_prior_sigma, shape=(self.nCMs,))
+
+            self.CMReduction = pm.Deterministic("CMReduction", T.exp((-1.0) * self.CM_Alpha))
+
+            # change 5 - prior over R
+            self.HyperRMean = pm.StudentT(
+                "HyperRMean", nu=10, sigma=0.2, mu=np.log(R_hyperprior_mean),
+            )
+
+            self.HyperRVar = pm.HalfStudentT(
+                "HyperRVar", nu=10, sigma=0.2
+            )
+
+            self.RegionLogR = pm.Normal("RegionLogR", self.HyperRMean,
+                                        self.HyperRVar,
+                                        shape=(self.nORs,))
+
+            self.ActiveCMs = pm.Data("ActiveCMs", self.d.ActiveCMs)
+
+            self.ActiveCMReduction = (
+                    T.reshape(self.CM_Alpha, (1, self.nCMs, 1))
+                    * self.ActiveCMs[self.OR_indxs, :, :]
+            )
+
+            self.Det(
+                "GrowthReduction", T.sum(self.ActiveCMReduction, axis=1), plot_trace=False
+            )
+
+            # self.kappa = pm.HalfNormal("kappa", 0.5)
+            # self.R_0 = self.Normal("R_0", 3.28, self.kappa, shape=(self.nORs,))
+
+            self.ExpectedLogR = self.Det(
+                "ExpectedLogR",
+                T.reshape(self.RegionLogR, (self.nORs, 1)) - self.GrowthReduction,
+                plot_trace=False,
+            )
+
+            self.InitialSizeDeaths_log = pm.Normal("InitialSizeDeaths_log", 0, 50, shape=(self.nORs,))
+            # change 2 initial sizes
+            # self.Tau = pm.Exponential("Tau", 1 / 0.03)
+            # self.InitialSizeDeaths = pm.Exponential("InitialSizeDeaths", self.Tau, shape=(self.nORs,))
+            # # # conv padding
+
+            # change 7 - convolution implementation reverted
+            filter_size = self.SI_rev.size
+            conv_padding = 7
+
+            infected = T.zeros((self.nORs, self.nDs + filter_size))
+            infected = T.set_subtensor(infected[:, (filter_size - conv_padding):filter_size],
+                                       pm.math.exp(
+                                           self.InitialSizeDeaths_log.reshape((self.nORs, 1)).repeat(conv_padding, axis=1)))
+
+            # R is a lognorm
+            R = pm.math.exp(self.ExpectedLogR)
+            for d in range(self.nDs):
+                val = pm.math.sum(
+                    R[:, d].reshape((self.nORs, 1)) * infected[:, d:d + filter_size] * self.SI_rev, axis=1)
+                infected = T.set_subtensor(infected[:, d + filter_size], val)
+
+            self.InfectedDeaths = pm.Deterministic("Infected", infected[:, filter_size:])
+
+            expected_deaths = C.conv2d(
+                self.InfectedDeaths,
+                self.DelayProbDeaths,
+                border_mode="full"
+            )[:, :self.nDs]
+
+            self.ExpectedDeaths = pm.Deterministic("ExpectedDeaths", expected_deaths.reshape(
+                (self.nORs, self.nDs)))
+
+            self.Phi = pm.HalfNormal("Phi", 5)
+
+            self.NewDeaths = pm.Data("NewDeaths",
+                                     self.d.NewDeaths.data.reshape((self.nORs * self.nDs,))[
+                                         self.all_observed_deaths])
+
+            # effectively handle missing values ourselves
+            self.ObservedDeaths = pm.NegativeBinomial(
+                "ObservedDeaths",
+                mu=self.ExpectedDeaths.reshape((self.nORs * self.nDs,))[self.all_observed_deaths],
+                alpha=self.Phi,
+                shape=(len(self.all_observed_deaths),),
+                observed=self.NewDeaths
             )

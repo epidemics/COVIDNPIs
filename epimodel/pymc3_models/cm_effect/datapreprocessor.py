@@ -269,8 +269,8 @@ class DataPreprocessor():
         # preprocess data
         Confirmed[Confirmed < self.min_confirmed] = np.nan
         Deaths[Deaths < self.min_deaths] = np.nan
-        NewCases[:, 1:] = Confirmed[:, 1:] - Confirmed[:, :-1]
-        NewDeaths[:, 1:] = Deaths[:, 1:] - Deaths[:, :-1]
+        NewCases[:, 2:] = (Confirmed[:, 1:] - Confirmed[:, :-1])[:, :-1]
+        NewDeaths[:, 2:] = (Deaths[:, 1:] - Deaths[:, :-1])[:, :-1]
         NewDeaths[NewDeaths < 0] = 0
         NewCases[NewCases < 0] = 0
 
