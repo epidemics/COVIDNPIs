@@ -370,7 +370,7 @@ def data_mob_sensitivity(model_types, daily_growth_noise=None, min_deaths=None,
 def data_schools_open_sensitivity(model_types, daily_growth_noise=None, min_deaths=None,
                                   region_var_noise=0.1, data_path="notebooks/final_data/data_final.csv"):
     dp = DataPreprocessor(drop_HS=True)
-    data = dp.preprocess_data("../final_data/data_SE_schools_open.csv")
+    data = dp.preprocess_data("notebooks/final_data/data_SE_schools_open.csv")
     if min_deaths is not None:
         data.filter_region_min_deaths(min_deaths)
 
