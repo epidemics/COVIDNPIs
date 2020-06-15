@@ -86,7 +86,7 @@ if __name__ == "__main__":
     dp.N_smooth = 1
     data = dp.preprocess_data("notebooks/final_data/data_final.csv", "notebooks/final_data/ICL.csv")
 
-    eur_df = pd.read_csv("../../data/eur_data.csv", parse_dates=["dateRep"], infer_datetime_format=True)
+    eur_df = pd.read_csv("notebooks/final_data/eur_data.csv", parse_dates=["dateRep"], infer_datetime_format=True)
     eur_df['dateRep'] = pd.to_datetime(eur_df['dateRep'], utc=True)
     epi_codes = [eur_to_epi_code(cc) for cc in eur_df["countryterritoryCode"]]
     dti = pd.to_datetime(eur_df['dateRep'], utc=True)
