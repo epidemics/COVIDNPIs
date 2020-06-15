@@ -303,8 +303,8 @@ def cm_prior_sensitivity(model_types, priors=['half_normal', 'wide'], sigma_wide
 def data_mob_sensitivity(model_types, daily_growth_noise=None, min_deaths=None,
                          region_var_noise=0.1, data_path="notebooks/final_data/data_final.csv"):
     dp = DataPreprocessor(drop_HS=True)
-    data_mob_no_work = dp.preprocess_data("../final_data/data_mob_no_work.csv")
-    data_mob = dp.preprocess_data("../final_data/data_mob.csv")
+    data_mob_no_work = dp.preprocess_data("notebooks/final_data/data_mob_no_work.csv")
+    data_mob = dp.preprocess_data("notebooks/final_data/data_mob.csv")
 
     data_mobility_types = ['no_work', 'rec_work']
 
