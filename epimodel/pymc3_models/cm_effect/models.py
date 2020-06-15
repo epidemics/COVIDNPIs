@@ -25,13 +25,13 @@ fp2 = FontProperties(fname=r"../../fonts/Font Awesome 5 Free-Solid-900.otf")
 # taken from Cereda et. al (2020).
 # https://arxiv.org/ftp/arxiv/papers/2003/2003.09320.pdf
 # alpha is shape, beta is inverse scale (reciprocal reported in the paper).
-SI_ALPHA = 1.87
-SI_BETA = 0.28
+# SI_ALPHA = 1.87
+# SI_BETA = 0.28
 
 
 # ICL paper versions.
-# SI_ALPHA = (1 / (0.62 ** 2))
-# SI_BETA = (1 / (6.5 * (0.62 ** 2)))
+SI_ALPHA = (1 / (0.62 ** 2))
+SI_BETA = (1 / (6.5 * (0.62 ** 2)))
 
 
 def save_fig_pdf(output_dir, figname):
@@ -6187,35 +6187,18 @@ class CMCombined_ICL_NoNoise(BaseCMModel):
                     serial_interval_mean=SI_ALPHA / SI_BETA
                     ):
         with self.model:
-
-            serial_interval_sigma = np.sqrt(SI_ALPHA / SI_BETA ** 2)
-            si_beta = serial_interval_mean / serial_interval_sigma ** 2
-            si_alpha = serial_interval_mean ** 2 / serial_interval_sigma ** 2
-            x = np.arange(len(self.SI)) * 1.
-            if serial_interval_mean < 5:  # to avoid inf first value for small means
-                x[0] = 0.001
-            self.SI = scipy.stats.gamma.pdf(x, si_alpha, scale=1 / si_beta)
-            self.SI_rev = self.SI[::-1].reshape((1, self.SI.size))
-
             if cm_prior == 'normal':
-                self.CM_Alpha = pm.Normal("CM_Alpha", 0, cm_prior_sigma, shape=(self.nCMs,))
-
+                # self.CM_Alpha = pm.Normal("CM_Alpha", 0, cm_prior_sigma, shape=(self.nCMs,))
+                self.CM_Alpha_t = pm.Gamma("CM_Alpha_t", 1/6, 1, shape=(self.nCMs,))
+                self.CM_Alpha = pm.Deterministic("CM_Alpha", self.CM_Alpha_t - np.log(1.05)/6)
             if cm_prior == 'half_normal':
                 self.CM_Alpha = pm.HalfNormal("CM_Alpha", cm_prior_sigma, shape=(self.nCMs,))
 
             self.CMReduction = pm.Deterministic("CMReduction", T.exp((-1.0) * self.CM_Alpha))
 
-            self.HyperRMean = pm.StudentT(
-                "HyperRMean", nu=10, sigma=0.2, mu=np.log(R_hyperprior_mean),
-            )
-
-            self.HyperRVar = pm.HalfStudentT(
-                "HyperRVar", nu=10, sigma=0.2
-            )
-
-            self.RegionLogR = pm.Normal("RegionLogR", self.HyperRMean,
-                                        self.HyperRVar,
-                                        shape=(self.nORs,))
+            # self.RegionLogR = pm.Normal("RegionLogR", np.log(3.25),
+            #                             0.25,
+            #                             shape=(self.nORs,))
 
             self.ActiveCMs = pm.Data("ActiveCMs", self.d.ActiveCMs)
 
@@ -6228,9 +6211,12 @@ class CMCombined_ICL_NoNoise(BaseCMModel):
                 "GrowthReduction", T.sum(self.ActiveCMReduction, axis=1), plot_trace=False
             )
 
+            self.kappa = pm.HalfNormal("kappa", 0.5)
+            self.R_0 = self.Normal("R_0", 3.28, self.kappa, shape=(self.nORs,))
+
             self.ExpectedLogR = self.Det(
                 "ExpectedLogR",
-                T.reshape(self.RegionLogR, (self.nORs, 1)) - self.GrowthReduction,
+                pm.math.log(T.reshape(self.R_0, (self.nORs, 1))) - self.GrowthReduction,
                 plot_trace=False,
             )
 
@@ -6238,7 +6224,7 @@ class CMCombined_ICL_NoNoise(BaseCMModel):
 
             # # conv padding
             filter_size = self.SI_rev.size
-            conv_padding = 7
+            conv_padding = 6
 
             infected_deaths = T.zeros((self.nORs, self.nDs + self.SI_rev.size))
             infected_deaths = T.set_subtensor(infected_deaths[:, (filter_size - conv_padding):filter_size],

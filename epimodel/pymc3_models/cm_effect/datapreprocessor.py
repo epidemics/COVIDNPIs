@@ -49,6 +49,7 @@ class DataMerger():
             selected_features_oxcgrt,
             selected_features_epi,
             ordered_features,
+            output_name="data_final.csv"
     ):
         # at the moment only features from the 0-1 countermeasures dataset
         Ds = pd.date_range(start=self.start_date, end=self.end_date, tz="utc")
@@ -177,7 +178,7 @@ class DataMerger():
 
         # Johnhopkins Stuff
         # TODO - this is out of date. to fix.
-        johnhop_ds = pd.read_csv(os.path.join(data_base_path, self.johnhop_fname))
+        johnhop_ds = pd.read_csv(os.path.join(data_base_path, self.johnhop_fname), index_col=["Code", "Date"], parse_dates=["Date"], infer_datetime_format=True)
         Confirmed = np.stack([johnhop_ds["Confirmed"].loc[(fc, Ds)] for fc in regions_epi])
         Active = np.stack([johnhop_ds["Active"].loc[(fc, Ds)] for fc in regions_epi])
         Deaths = np.stack([johnhop_ds["Deaths"].loc[(fc, Ds)] for fc in regions_epi])
@@ -196,7 +197,7 @@ class DataMerger():
 
         # save to new csv file!
         df = df.set_index(["Country Code", "Date"])
-        df.to_csv("data_final.csv")
+        df.to_csv(output_name)
         logger.info("Saved final CSV")
 
 class DataPreprocessor():

@@ -21,6 +21,7 @@ tqdm = "^4.45.0"
 graphviz = "^0.13.2"
 jupyterlab = "^2.1.1"
 nbdime = "^2.0.0"
+pyreadr = "^0.2.9"
 
 [tool.poetry.extras]
 pymc3 = ["pymc3", "jupyter", "seaborn"]
