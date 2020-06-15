@@ -20,19 +20,19 @@
 #   parameters if you want to try different values
 
 
-python3 -c 'from epimodel.pymc3_models.cm_effect.sensitivitylib import *; cm_leavout_sensitivity(["combined"], data_path="notebooks/final_data/final_data_extended.csv")'
-python3 -c 'from epimodel.pymc3_models.cm_effect.sensitivitylib import *; cm_prior_sensitivity(["combined"], data_path="notebooks/final_data/final_data_extended.csv")'
-python3 -c 'from epimodel.pymc3_models.cm_effect.sensitivitylib import *; daily_growth_noise_sensitivity(["combined"], data_path="notebooks/final_data/final_data_extended.csv")'
+python3 -c 'from epimodel.pymc3_models.cm_effect.sensitivitylib import *; cm_leavout_sensitivity(["combined"], data_path="notebooks/final_data/final_data_extended.csv")' &
+python3 -c 'from epimodel.pymc3_models.cm_effect.sensitivitylib import *; cm_prior_sensitivity(["combined"], data_path="notebooks/final_data/final_data_extended.csv")' &
+python3 -c 'from epimodel.pymc3_models.cm_effect.sensitivitylib import *; daily_growth_noise_sensitivity(["combined"], data_path="notebooks/final_data/final_data_extended.csv")' &
 python3 -c 'from epimodel.pymc3_models.cm_effect.sensitivitylib import *; data_mob_sensitivity(["combined"], data_path="notebooks/final_data/final_data_extended.csv")'
-python3 -c 'from epimodel.pymc3_models.cm_effect.sensitivitylib import *; data_schools_open_sensitivity(["combined"], data_path="notebooks/final_data/final_data_extended.csv")'
-python3 -c 'from epimodel.pymc3_models.cm_effect.sensitivitylib import *; delay_mean_sensitivity(["combined"], data_path="notebooks/final_data/final_data_extended.csv")'
-python3 -c 'from epimodel.pymc3_models.cm_effect.sensitivitylib import *; MCMC_stability(["combined"], data_path="notebooks/final_data/final_data_extended.csv")'
+python3 -c 'from epimodel.pymc3_models.cm_effect.sensitivitylib import *; data_schools_open_sensitivity(["combined"], data_path="notebooks/final_data/final_data_extended.csv")' &
+python3 -c 'from epimodel.pymc3_models.cm_effect.sensitivitylib import *; delay_mean_sensitivity(["combined"], data_path="notebooks/final_data/final_data_extended.csv")' &
+python3 -c 'from epimodel.pymc3_models.cm_effect.sensitivitylib import *; MCMC_stability(["combined"], data_path="notebooks/final_data/final_data_extended.csv")' &
 python3 -c 'from epimodel.pymc3_models.cm_effect.sensitivitylib import *; min_num_confirmed_sensitivity(["combined"], data_path="notebooks/final_data/final_data_extended.csv")'
-python3 -c 'from epimodel.pymc3_models.cm_effect.sensitivitylib import *; R_hyperprior_mean_sensitivity(["combined"], data_path="notebooks/final_data/final_data_extended.csv")'
-python3 -c 'from epimodel.pymc3_models.cm_effect.sensitivitylib import *; serial_interval_sensitivity(["combined"], data_path="notebooks/final_data/final_data_extended.csv")'
-python3 -c 'from epimodel.pymc3_models.cm_effect.sensitivitylib import *; region_holdout_sensitivity(["combined"], data_path="notebooks/final_data/final_data_extended.csv")'
+python3 -c 'from epimodel.pymc3_models.cm_effect.sensitivitylib import *; R_hyperprior_mean_sensitivity(["combined"], data_path="notebooks/final_data/final_data_extended.csv")' &
+python3 -c 'from epimodel.pymc3_models.cm_effect.sensitivitylib import *; serial_interval_sensitivity(["combined"], data_path="notebooks/final_data/final_data_extended.csv")' &
+python3 -c 'from epimodel.pymc3_models.cm_effect.sensitivitylib import *; region_holdout_sensitivity(["combined"], data_path="notebooks/final_data/final_data_extended.csv")'&
 python3 -c 'from epimodel.pymc3_models.cm_effect.sensitivitylib import *; min_num_deaths_sensitivity(["combined"], data_path="notebooks/final_data/final_data_extended.csv")'
-python3 -c 'from epimodel.pymc3_models.cm_effect.sensitivitylib import *; smoothing_sensitivity(["combined"], data_path="notebooks/final_data/final_data_extended.csv")'
+python3 -c 'from epimodel.pymc3_models.cm_effect.sensitivitylib import *; smoothing_sensitivity(["combined"], data_path="notebooks/final_data/final_data_extended.csv")'&
 
 # examples using some optional parameters
 #python3 -c 'from epimodel.pymc3_models.cm_effect.sensitivitylib import *; region_holdout_sensitivity(["combined_icl_no_noise"], min_deaths=50)'
