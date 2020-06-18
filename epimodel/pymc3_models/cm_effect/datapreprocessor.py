@@ -30,7 +30,8 @@ class DataMerger():
         self.min_num_confirmed_mask = 10
 
         self.episet_fname = "countermeasures_pretty120520.csv"
-        self.oxcgrt_fname = "OxCGRT_latest.csv"
+        # self.oxcgrt_fname = "OxCGRT_latest.csv"
+        self.oxcgrt_fname = "OxCGRT_16620.csv"
         self.johnhop_fname = "johns-hopkins.csv"
 
         # load parameters, first from dictionary and then from kwargs
@@ -97,8 +98,7 @@ class DataMerger():
         data_oxcgrt = pd.read_csv(os.path.join(data_base_path, self.oxcgrt_fname), index_col="CountryCode")
 
         columns_to_drop = ["CountryName", "Date", "ConfirmedCases", "ConfirmedDeaths",
-                           "StringencyIndex", "StringencyIndexForDisplay",
-                           "LegacyStringencyIndex", "LegacyStringencyIndexForDisplay"]
+                           "StringencyIndex", "StringencyIndexForDisplay"]
 
         dti = pd.DatetimeIndex(pd.to_datetime(data_oxcgrt["Date"], utc=True, format="%Y%m%d"))
         epi_codes = [oxcgrt_to_epimodel_index(cc) for cc in data_oxcgrt.index.array]
@@ -111,13 +111,243 @@ class DataMerger():
         data_oxcgrt.sort_index()
 
         data_oxcgrt_filtered = data_oxcgrt.loc[regions_epi, selected_features_oxcgrt]
+
         values_to_stack = []
+        Ds_l = list(Ds)
+
         for c in regions_epi:
             if c in data_oxcgrt_filtered.index:
-                values_to_stack.append(data_oxcgrt_filtered.loc[c].loc[Ds].T)
+                v = np.zeros((len(selected_features_oxcgrt), len(Ds)))
+
+                if data_oxcgrt_filtered.loc[c].index[0] in Ds_l:
+                    x_0 = list(Ds).index(data_oxcgrt_filtered.loc[c].index[0])
+                else:
+                    x_0 = 0
+
+                v[:, x_0:] = data_oxcgrt_filtered.loc[c].loc[Ds[x_0:]].T
+                values_to_stack.append(v)
             else:
                 logger.info(f"Missing {c} from OXCGRT. Assuming features are 0")
                 values_to_stack.append(np.zeros_like(values_to_stack[-1]))
+
+
+        # this has NaNs in!
+        ActiveCMs_temp = np.stack(values_to_stack)
+        nRs, _, nDs = ActiveCMs_temp.shape
+        nCMs_oxcgrt = len(oxcgrt_feature_info)
+        ActiveCMs_oxcgrt = np.zeros((nRs, nCMs_oxcgrt, nDs))
+        oxcgrt_derived_cm_names = [n for n, _ in oxcgrt_feature_info]
+
+        for r_indx in range(nRs):
+            for feature_indx, (_, feature_filter) in enumerate(oxcgrt_feature_info):
+                nConditions = len(feature_filter)
+                condition_mat = np.zeros((nConditions, nDs))
+                for condition, (row, poss_values) in enumerate(feature_filter):
+                    row_vals = ActiveCMs_temp[r_indx, row, :]
+                    # check if feature has any of its possible values
+                    for value in poss_values:
+                        condition_mat[condition, :] += (row_vals == value)
+                    # if it has any of them, this condition is satisfied
+                    condition_mat[condition, :] = condition_mat[condition, :] > 0
+                    # deal with missing data. nan * 0 = nan. Anything else is zero
+                    condition_mat[condition, :] += (row_vals * 0)
+                    # we need all conditions to be satisfied, hence a product
+                ActiveCMs_oxcgrt[r_indx, feature_indx, :] = (np.prod(condition_mat, axis=0) > 0) + 0 * (
+                    np.prod(condition_mat, axis=0))
+
+        # now forward fill in missing data!
+        for r in range(nRs):
+            for c in range(nCMs_oxcgrt):
+                for d in range(nDs):
+                    # if it starts off nan, assume that its zero
+                    if d == 0 and np.isnan(ActiveCMs_oxcgrt[r, c, d]):
+                        ActiveCMs_oxcgrt[r, c, d] = 0
+                    elif np.isnan(ActiveCMs_oxcgrt[r, c, d]):
+                        # if the value is nan, assume it takes the value of the previous day
+                        ActiveCMs_oxcgrt[r, c, d] = ActiveCMs_oxcgrt[r, c, d - 1]
+
+        logger_str = "\nCountermeasures: OxCGRT           min   ... mean  ... max   ... unique"
+        for i, cm in enumerate(oxcgrt_derived_cm_names):
+            logger_str = f"{logger_str}\n{i + 1:2} {cm:42} {np.min(ActiveCMs_oxcgrt[:, i, :]):.3f} ... {np.mean(ActiveCMs_oxcgrt[:, i, :]):.3f} ... {np.max(ActiveCMs_oxcgrt[:, i, :]):.3f} ... {np.unique(ActiveCMs_oxcgrt[:, i, :])[:5]}"
+        logger.info(logger_str)
+
+        nCMs = len(ordered_features)
+        ActiveCMs = np.zeros((nRs, nCMs, nDs))
+
+        for r in range(nRs):
+            for f_indx, f in enumerate(ordered_features):
+                if f in selected_features_epi.values():
+                    ActiveCMs[r, f_indx, :] = ActiveCMs_epi[r, list(selected_features_epi.values()).index(f), :]
+                else:
+                    ActiveCMs[r, f_indx, :] = ActiveCMs_oxcgrt[r, oxcgrt_derived_cm_names.index(f), :]
+
+        # [country, CM, day] Which CMs are active, and to what extent
+        ActiveCMs = ActiveCMs.astype(theano.config.floatX)
+        logger_str = "\nCountermeasures: Combined           min   ... mean  ... max   ... unique"
+        for i, cm in enumerate(ordered_features):
+            logger_str = f"{logger_str}\n{i + 1:2} {cm:42} {np.min(ActiveCMs[:, i, :]):.3f} ... {np.mean(ActiveCMs[:, i, :]):.3f} ... {np.max(ActiveCMs[:, i, :]):.3f} ... {np.unique(ActiveCMs[:, i, :])[:5]}"
+        logger.info(logger_str)
+
+        # Johnhopkins Stuff
+        # TODO - this is out of date. to fix.
+        johnhop_ds = pd.read_csv(os.path.join(data_base_path, self.johnhop_fname), index_col=["Code", "Date"], parse_dates=["Date"], infer_datetime_format=True)
+        Confirmed = np.stack([johnhop_ds["Confirmed"].loc[(fc, Ds)] for fc in regions_epi])
+        Active = np.stack([johnhop_ds["Active"].loc[(fc, Ds)] for fc in regions_epi])
+        Deaths = np.stack([johnhop_ds["Deaths"].loc[(fc, Ds)] for fc in regions_epi])
+
+        columns = ["Country Code", "Date", "Region Name", "Confirmed", "Active", "Deaths", *ordered_features]
+        df = pd.DataFrame(columns=columns)
+        for r_indx, r in enumerate(regions_epi):
+            for d_indx, d in enumerate(Ds):
+                rows, columns = df.shape
+                country_name = region_names[regions_epi.index(r)]
+                feature_list = []
+                for i in range(len(ordered_features)):
+                    feature_list.append(ActiveCMs[r_indx, i, d_indx])
+                df.loc[rows] = [r, d, country_name, Confirmed[r_indx, d_indx], Active[r_indx, d_indx],
+                                Deaths[r_indx, d_indx], *feature_list]
+
+        # save to new csv file!
+        df = df.set_index(["Country Code", "Date"])
+        df.to_csv(output_name)
+        logger.info("Saved final CSV")
+
+class DataMergerDoubleEntry():
+    def __init__(self, params_dict=None, *args, **kwargs):
+        self.start_date = "2020-2-10"
+        self.end_date = "2020-05-30"
+
+        # rather than being final this will probability want to be min max
+        self.min_final_num_active_cases = 100
+        self.min_num_active_mask = 10
+        self.min_num_confirmed_mask = 10
+
+        self.episet_fname = "double_entry.csv"
+        # self.oxcgrt_fname = "OxCGRT_latest.csv"
+        self.oxcgrt_fname = "OxCGRT_16620.csv"
+        self.johnhop_fname = "johns-hopkins.csv"
+
+        # load parameters, first from dictionary and then from kwargs
+        if params_dict is not None:
+            for key, value in params_dict.items():
+                setattr(self, key, value)
+
+        for key in kwargs:
+            setattr(self, key, kwargs[key])
+
+    def merge_data(
+            self,
+            data_base_path,
+            region_info,
+            oxcgrt_feature_info,
+            selected_features_oxcgrt,
+            selected_features_epi,
+            ordered_features,
+            output_name="data_final.csv"
+    ):
+        # at the moment only features from the 0-1 countermeasures dataset
+        Ds = pd.date_range(start=self.start_date, end=self.end_date, tz="utc")
+        self.Ds = Ds
+
+        # OUR STUFF
+
+        epi_cmset = pd.read_csv(os.path.join(data_base_path, self.episet_fname), skiprows=1).set_index("Code")
+        for c in epi_cmset.columns:
+            if "Code 3" in c or "comment" in c or "Oxford" in c or "Unnamed" in c or "Person" in c:
+                del epi_cmset[c]
+
+        region_names = list([x for x, _, _ in region_info])
+        regions_epi = list([x for _, x, _ in region_info])
+        regions_oxcgrt = list([x for _, _, x in region_info])
+
+        nRs = len(region_names)
+        nDs = len(Ds)
+        nCMs_epi = len(selected_features_epi.values())
+        ActiveCMs_epi = np.zeros((nRs, nCMs_epi, nDs))
+
+        def get_feature_index(col):
+            for i, c in enumerate(selected_features_epi.values()):
+                if c in col:
+                    return i
+
+        columns = epi_cmset.iloc[0].index.tolist()
+        for r, ccode in enumerate(regions_epi):
+            row = epi_cmset.loc[ccode]
+            for col in columns:
+                if "Start date" in col:
+                    f_i = get_feature_index(col)
+                    on_date = row.loc[col].strip()
+                    if not on_date == "no" and not on_date == "No":
+                        on_date = pd.to_datetime(on_date, dayfirst=True)
+                        if on_date in Ds:
+                            on_loc = Ds.get_loc(on_date)
+                            ActiveCMs_epi[r, f_i, on_loc:] = 1
+
+        for r, ccode in enumerate(regions_epi):
+            row = epi_cmset.loc[ccode]
+            for col in columns:
+                if "End date" in col:
+                    f_i = get_feature_index(col)
+                    if not pd.isna(row.loc[col]):
+                        off_date = row.loc[col].strip()
+                        if not off_date == "no" and not off_date == "No" and not off_date == "After 30 May" and not "TBD" in off_date:
+                            off_date = pd.to_datetime(off_date, dayfirst=True)
+                            if off_date in Ds:
+                                off_loc = Ds.get_loc(off_date)
+                                ActiveCMs_epi[r, f_i, off_loc:] = 0
+
+        logger_str = "\nCountermeasures: EpidemicForecasting.org           min   ... mean  ... max   ... unique"
+        for i, cm in enumerate(selected_features_epi.values()):
+            logger_str = f"{logger_str}\n{i + 1:2} {cm:42} {np.min(ActiveCMs_epi[:, i, :]):.3f} ... {np.mean(ActiveCMs_epi[:, i, :]):.3f} ... {np.max(ActiveCMs_epi[:, i, :]):.3f} ... {np.unique(ActiveCMs_epi[:, i, :])[:5]}"
+        logger.info(logger_str)
+
+        # OXCGRT STUFF
+        logger.info("Load OXCGRT")
+        unique_missing_countries = []
+
+        def oxcgrt_to_epimodel_index(ind):
+            try:
+                return regions_epi[regions_oxcgrt.index(ind)]
+            except ValueError:
+                if ind not in unique_missing_countries:
+                    unique_missing_countries.append(ind)
+                return ind
+
+        data_oxcgrt = pd.read_csv(os.path.join(data_base_path, self.oxcgrt_fname), index_col="CountryCode")
+
+        columns_to_drop = ["CountryName", "Date", "ConfirmedCases", "ConfirmedDeaths",
+                           "StringencyIndex", "StringencyIndexForDisplay"]
+
+        dti = pd.DatetimeIndex(pd.to_datetime(data_oxcgrt["Date"], utc=True, format="%Y%m%d"))
+        epi_codes = [oxcgrt_to_epimodel_index(cc) for cc in data_oxcgrt.index.array]
+        logger.warning(f"Missing {unique_missing_countries} from epidemicforecasting.org DB which are in OxCGRT")
+        data_oxcgrt.index = pd.MultiIndex.from_arrays([epi_codes, dti])
+
+        for col in columns_to_drop:
+            del data_oxcgrt[col]
+
+        data_oxcgrt.sort_index()
+
+        data_oxcgrt_filtered = data_oxcgrt.loc[regions_epi, selected_features_oxcgrt]
+
+        values_to_stack = []
+        Ds_l = list(Ds)
+
+        for c in regions_epi:
+            if c in data_oxcgrt_filtered.index:
+                v = np.zeros((len(selected_features_oxcgrt), len(Ds)))
+
+                if data_oxcgrt_filtered.loc[c].index[0] in Ds_l:
+                    x_0 = list(Ds).index(data_oxcgrt_filtered.loc[c].index[0])
+                else:
+                    x_0 = 0
+
+                v[:, x_0:] = data_oxcgrt_filtered.loc[c].loc[Ds[x_0:]].T
+                values_to_stack.append(v)
+            else:
+                logger.info(f"Missing {c} from OXCGRT. Assuming features are 0")
+                values_to_stack.append(np.zeros_like(values_to_stack[-1]))
+
 
         # this has NaNs in!
         ActiveCMs_temp = np.stack(values_to_stack)
@@ -211,7 +441,8 @@ class DataPreprocessor():
         self.smooth = True
         self.N_smooth = 5
 
-        self.drop_HS = False
+        self.drop_features = ["Travel Screen/Quarantine", "Travel Bans", "Public Transport Limited", "Internal Movement Limited",
+                              "Public Information Campaigns"]
 
         for key in kwargs:
             setattr(self, key, kwargs[key])
@@ -222,16 +453,17 @@ class DataPreprocessor():
             "confirmed_mask": self.min_num_active_mask,
         }
 
-    def preprocess_data(self, data_path, days_max=None):
+    def preprocess_data(self, data_path, last_day=None):
         # load data
         df = pd.read_csv(data_path, parse_dates=["Date"], infer_datetime_format=True).set_index(
             ["Country Code", "Date"])
 
-        if days_max is None:
+        if last_day is None:
             Ds = list(df.index.levels[1])
         else:
-            Ds = list(df.index.levels[1])[:days_max]
-            print(Ds[-1])
+            Ds = list(df.index.levels[1])
+            last_ts = pd.to_datetime(last_day,  utc=True)
+            Ds = Ds[:(1+Ds.index(last_ts))]
 
         nDs = len(Ds)
 
@@ -243,9 +475,9 @@ class DataPreprocessor():
         region_names = copy.deepcopy(sorted_regions)
         region_full_names = df.loc[region_names]["Region Name"]
 
-        if self.drop_HS:
-            logger.info("Dropping Healthcare Infection Control")
-            df = df.drop('Healthcare Infection Control', axis=1)
+        for f in self.drop_features:
+            logger.info(f"Dropping {f}")
+            df = df.drop(f, axis=1)
 
         CMs = list(df.columns[4:])
         nCMs = len(CMs)
@@ -502,7 +734,7 @@ class PreprocessedData(object):
         print(cm_plot_style)
         plt.xticks(
             np.arange(len(self.CMs)),
-            [f"{cm_plot_style[i]}" for i, f in enumerate(self.CMs)],
+            [f"{cm_plot_style[i][0]}" for i, f in enumerate(self.CMs)],
            fontproperties=fp2,
         )
 
