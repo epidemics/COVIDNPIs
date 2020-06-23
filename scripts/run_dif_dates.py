@@ -25,20 +25,20 @@ args = argparser.parse_args()
 
 if __name__ == "__main__":
 
-    last_dates = ["2020-04-27", "2020-05-04", "2020-05-11", "2020-05-18", "2020-05-25", None]
+    last_dates = ["2020-04-25", "2020-05-05", "2020-05-15", "2020-05-25", None]
     dp = DataPreprocessor(min_confirmed=100)
-    data = dp.preprocess_data("notebooks/double-entry-data/double_entry_with_OxCGRT.csv",
-                              last_day=last_dates[args.last_date])
-
+    data = dp.preprocess_data("notebooks/double-entry-data/double_entry_final.csv",
+                              last_day=last_dates[args.last_date], merge_schools_unis=False)
+    data.mask_reopenings()
 
     if args.model == 0:
         with cm_effect.models.CMCombined_Final(data, None) as model:
             model.build_model()
     else:
-        with cm_effect.models.CMCombined_Final_ICL(data, None) as model:
-            model.build_model()
+        with cm_effect.models.CMCombined_Final(data, None) as model:
+            model.build_model(serial_interval_mean=5.1, serial_interval_sigma=1.8)
 
     with model.model:
         model.trace = pm.sample(2000, chains=6, target_accept=0.9)
 
-    np.savetxt(f"double_final/res_model_{args.model}_date_{args.last_date}.csv", model.trace.CMReduction)
+    np.savetxt(f"double_fff/res_model_{args.model}_date_{args.last_date}.csv", model.trace.CMReduction)

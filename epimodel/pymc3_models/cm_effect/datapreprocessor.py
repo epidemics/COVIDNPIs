@@ -442,7 +442,7 @@ class DataPreprocessor():
         self.N_smooth = 5
 
         self.drop_features = ["Travel Screen/Quarantine", "Travel Bans", "Public Transport Limited", "Internal Movement Limited",
-                              "Public Information Campaigns"]
+                              "Public Information Campaigns", "Symptomatic Testing"]
 
         for key in kwargs:
             setattr(self, key, kwargs[key])

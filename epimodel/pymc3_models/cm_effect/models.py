@@ -1704,7 +1704,7 @@ class CMCombined_Final(BaseCMModel):
         self.all_observed_deaths = np.array(observed_deaths)
 
     def build_model(self, R_hyperprior_mean=3.25, cm_prior_sigma=0.2, cm_prior='normal',
-                    serial_interval_mean=SI_ALPHA / SI_BETA, conf_noise=None, deaths_noise=None
+                    serial_interval_mean=SI_ALPHA / SI_BETA, serial_interval_sigma = np.sqrt(SI_ALPHA / SI_BETA ** 2), conf_noise=None, deaths_noise=None
                     ):
         with self.model:
             if cm_prior == 'normal':
@@ -1748,7 +1748,6 @@ class CMCombined_Final(BaseCMModel):
                 plot_trace=False,
             )
 
-            serial_interval_sigma = np.sqrt(SI_ALPHA / SI_BETA ** 2)
             si_beta = serial_interval_mean / serial_interval_sigma ** 2
             si_alpha = serial_interval_mean ** 2 / serial_interval_sigma ** 2
 
