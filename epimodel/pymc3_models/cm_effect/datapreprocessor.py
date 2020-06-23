@@ -222,7 +222,7 @@ class DataMergerDoubleEntry():
         self.min_num_active_mask = 10
         self.min_num_confirmed_mask = 10
 
-        self.episet_fname = "double_entry.csv"
+        self.episet_fname = "double_entry_final.csv"
         # self.oxcgrt_fname = "OxCGRT_latest.csv"
         self.oxcgrt_fname = "OxCGRT_16620.csv"
         self.johnhop_fname = "johns-hopkins.csv"
@@ -253,7 +253,7 @@ class DataMergerDoubleEntry():
 
         epi_cmset = pd.read_csv(os.path.join(data_base_path, self.episet_fname), skiprows=1).set_index("Code")
         for c in epi_cmset.columns:
-            if "Code 3" in c or "comment" in c or "Oxford" in c or "Unnamed" in c or "Person" in c:
+            if "Code 3" in c or "comment" in c or "Oxford" in c or "Unnamed" in c or "Person" in c or "sources" in c or "oxford" in c:
                 del epi_cmset[c]
 
         region_names = list([x for x, _, _ in region_info])
@@ -277,7 +277,7 @@ class DataMergerDoubleEntry():
                 if "Start date" in col:
                     f_i = get_feature_index(col)
                     on_date = row.loc[col].strip()
-                    if not on_date == "no" and not on_date == "No":
+                    if not on_date == "no" and not on_date == "No" and not on_date == "needs checking" and not on_date == "Na":
                         on_date = pd.to_datetime(on_date, dayfirst=True)
                         if on_date in Ds:
                             on_loc = Ds.get_loc(on_date)
@@ -290,7 +290,7 @@ class DataMergerDoubleEntry():
                     f_i = get_feature_index(col)
                     if not pd.isna(row.loc[col]):
                         off_date = row.loc[col].strip()
-                        if not off_date == "no" and not off_date == "No" and not off_date == "After 30 May" and not "TBD" in off_date:
+                        if not off_date == "no" and not off_date == "No" and not off_date == "After 30 May" and not "TBD" in off_date and not off_date == "Na":
                             off_date = pd.to_datetime(off_date, dayfirst=True)
                             if off_date in Ds:
                                 off_loc = Ds.get_loc(off_date)
@@ -453,7 +453,7 @@ class DataPreprocessor():
             "confirmed_mask": self.min_num_active_mask,
         }
 
-    def preprocess_data(self, data_path, last_day=None):
+    def preprocess_data(self, data_path, last_day=None, merge_schools_unis=True):
         # load data
         df = pd.read_csv(data_path, parse_dates=["Date"], infer_datetime_format=True).set_index(
             ["Country Code", "Date"])
@@ -551,6 +551,18 @@ class DataPreprocessor():
         Deaths = np.ma.masked_invalid(Deaths.astype(theano.config.floatX))
         NewDeaths = np.ma.masked_invalid(NewDeaths.astype(theano.config.floatX))
         NewCases = np.ma.masked_invalid(NewCases.astype(theano.config.floatX))
+
+        if merge_schools_unis:
+            school_index = CMs.index("School Closure")
+            university_index = CMs.index("University Closure")
+
+            ActiveCMs_final = copy.deepcopy(ActiveCMs)
+            ActiveCMs_final[:, school_index, :] = np.logical_and(ActiveCMs[:, university_index, :], ActiveCMs[:, school_index, :])
+            ActiveCMs_final[:, university_index, :] =  np.logical_xor(ActiveCMs[:, university_index, :], ActiveCMs[:, school_index, :])
+            ActiveCMs = ActiveCMs_final
+            CMs[school_index] = "School and University Closure"
+            CMs[university_index] = "Schools xor University Closure"
+
         return PreprocessedData(Active,
                                 Confirmed,
                                 ActiveCMs,
@@ -890,3 +902,16 @@ class PreprocessedData(object):
     #     e_ts = [self.Ds[-1] + pd.Timedelta(f"{x} days") for x in range(n_days)]
     #     self.Ds.extend(e_ts)
     #     self.ActiveCMs = ActiveCMs
+
+    def mask_reopenings(self, d_min = 90):
+        total_cms = self.ActiveCMs
+        diff_cms = np.zeros_like(total_cms)
+        diff_cms[:, :, 1:] = total_cms[:, :, 1:] - total_cms[:, :, :-1]
+        rs, ds = np.nonzero(np.any(diff_cms < 0, axis=1))
+        nnz = rs.size
+
+        for nz_i in range(nnz):
+            if (ds[nz_i]+7) > d_min and ds[nz_i]+7 < len(self.Ds):
+                print(f"Masking {self.Rs[rs[nz_i]]} from {self.Ds[ds[nz_i]+3]}")
+                self.NewCases[rs[nz_i], ds[nz_i]+3:].mask = True
+                self.NewDeaths[rs[nz_i], ds[nz_i]+12:].mask = True

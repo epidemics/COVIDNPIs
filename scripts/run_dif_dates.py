@@ -41,4 +41,4 @@ if __name__ == "__main__":
     with model.model:
         model.trace = pm.sample(2000, chains=6, target_accept=0.9)
 
-    np.savetxt(f"double/res_model_{args.model}_date_{args.last_date}.csv", model.trace.CMReduction)
+    np.savetxt(f"double_final/res_model_{args.model}_date_{args.last_date}.csv", model.trace.CMReduction)

@@ -37,6 +37,12 @@ def save_traces(model, model_type, filename):
         cm_base_trace = model.trace["Beta_hat"]
         np.savetxt(filename[0:len(filename) - 4] + '_base.txt', cm_base_trace)
 
+    rhats = calc_trace_statistic(model, 'rhat')
+    ess = calc_trace_statistic(model, 'ess')
+
+    np.savetxt(filename[:-4]+"rhats.txt", rhats)
+    np.savetxt(filename[:-4]+"ess.txt", ess)
+
 
 def mask_region(d, region, days=14):
     i = d.Rs.index(region)
@@ -47,12 +53,6 @@ def mask_region(d, region, days=14):
     else:
         d_s = len(d.Ds)
 
-    # unmask everything else
-    d.Active.mask = False
-    d.Confirmed.mask = False
-    d.Deaths.mask = False
-    d.NewDeaths.mask = False
-    d.NewCases.mask = False
     # mask the right days
     d.Active.mask[i, c_s:] = True
     d.Confirmed.mask[i, c_s:] = True
@@ -197,7 +197,7 @@ def cm_leavout_sensitivity(model_types, daily_growth_noise=None, min_deaths=None
             save_traces(model, model_type, filename)
 
 
-def cm_prior_sensitivity(model_types, priors=['half_normal', 'wide'], sigma_wide=10,
+def cm_prior_sensitivity(model_types, priors=['half_normal', 'wide', "icl"], sigma_wide=10,
                          daily_growth_noise=None, min_deaths=None, region_var_noise=0.1, data_path="notebooks/final_data/data_final.csv"):
     dp = DataPreprocessor(drop_HS=True)
     data = dp.preprocess_data(data_path)
@@ -218,6 +218,8 @@ def cm_prior_sensitivity(model_types, priors=['half_normal', 'wide'], sigma_wide
                         model.build_model(cm_prior_sigma=sigma_wide)
                     if prior == 'half_normal':
                         model.build_model(cm_prior='half_normal')
+                    if prior == 'icl':
+                        model.build_model(cm_prior='icl')
             if model_type == 'active':
                 with cm_effect.models.CMActive_Final(data) as model:
                     if daily_growth_noise is not None:
@@ -861,7 +863,7 @@ def gamma_mu_cov_to_shape_scale(mu, cov):
 def calc_shifted_delay_mean_death(mean_shift):
     nRVs = int(9e7)
     shp1, scl1 = gamma_mu_cov_to_shape_scale(5.1 + mean_shift, 0.86)
-    shp2, scl2 = gamma_mu_cov_to_shape_scale(18.8 + mean_shift, 0.45)
+    shp2, scl2 = gamma_mu_cov_to_shape_scale(17.8 + mean_shift, 0.45)
     samples = np.random.gamma(shape=shp1, scale=scl1, size=nRVs) + np.random.gamma(shape=shp2, scale=scl2, size=nRVs)
     bins = np.arange(-1, 64.0)
     bins[2:] += 0.5

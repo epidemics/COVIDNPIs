@@ -25,13 +25,20 @@ fp2 = FontProperties(fname=r"../../fonts/Font Awesome 5 Free-Solid-900.otf")
 # taken from Cereda et. al (2020).
 # https://arxiv.org/ftp/arxiv/papers/2003/2003.09320.pdf
 # alpha is shape, beta is inverse scale (reciprocal reported in the paper).
-# SI_ALPHA = 1.87
-# SI_BETA = 0.28
+SI_ALPHA = 1.87
+SI_BETA = 0.28
 
+# # ICL paper versions.
+# SI_ALPHA = (1 / (0.62 ** 2))
+# SI_BETA = (1 / (6.5 * (0.62 ** 2)))
 
-# ICL paper versions.
-SI_ALPHA = (1 / (0.62 ** 2))
-SI_BETA = (1 / (6.5 * (0.62 ** 2)))
+# cereda mean, eurosurveilance SI
+# SI_ALPHA = 7.395
+# SI_BETA = 1.188
+
+# # eurosurveilance signapore
+# SI_ALPHA = 7.935
+# SI_BETA = 1.556
 
 
 def save_fig_pdf(output_dir, figname):
@@ -1645,22 +1652,22 @@ class CMCombined_Final(BaseCMModel):
 
         self.DelayProbCases = self.DelayProbCases.reshape((1, self.DelayProbCases.size))
 
-        self.DelayProbDeaths = np.array([0.00000000e+00, 1.64635735e-06, 3.15032703e-05, 1.86360977e-04,
-                                         6.26527963e-04, 1.54172466e-03, 3.10103643e-03, 5.35663499e-03,
-                                         8.33979000e-03, 1.19404848e-02, 1.59939055e-02, 2.03185081e-02,
-                                         2.47732062e-02, 2.90464491e-02, 3.30612027e-02, 3.66089026e-02,
-                                         3.95642697e-02, 4.18957120e-02, 4.35715814e-02, 4.45816884e-02,
-                                         4.49543992e-02, 4.47474142e-02, 4.40036056e-02, 4.27545988e-02,
-                                         4.11952870e-02, 3.92608505e-02, 3.71824356e-02, 3.48457206e-02,
-                                         3.24845883e-02, 3.00814850e-02, 2.76519177e-02, 2.52792720e-02,
-                                         2.30103580e-02, 2.07636698e-02, 1.87005838e-02, 1.67560244e-02,
-                                         1.49600154e-02, 1.32737561e-02, 1.17831130e-02, 1.03716286e-02,
-                                         9.13757250e-03, 7.98287530e-03, 6.96265658e-03, 6.05951833e-03,
-                                         5.26450572e-03, 4.56833017e-03, 3.93189069e-03, 3.38098392e-03,
-                                         2.91542076e-03, 2.49468747e-03, 2.13152106e-03, 1.82750115e-03,
-                                         1.55693122e-03, 1.31909933e-03, 1.11729819e-03, 9.46588730e-04,
-                                         8.06525991e-04, 6.81336089e-04, 5.74623210e-04, 4.80157895e-04,
-                                         4.02211774e-04, 3.35345193e-04, 2.82450401e-04, 2.38109993e-04])
+        self.DelayProbDeaths = np.array([0.00000000e+00, 2.24600347e-06, 3.90382088e-05, 2.34307085e-04,
+                                         7.83555003e-04, 1.91221622e-03, 3.78718437e-03, 6.45923913e-03,
+                                         9.94265709e-03, 1.40610714e-02, 1.86527920e-02, 2.34311421e-02,
+                                         2.81965055e-02, 3.27668001e-02, 3.68031574e-02, 4.03026198e-02,
+                                         4.30521951e-02, 4.50637136e-02, 4.63315047e-02, 4.68794406e-02,
+                                         4.67334059e-02, 4.59561441e-02, 4.47164503e-02, 4.29327455e-02,
+                                         4.08614522e-02, 3.85082076e-02, 3.60294203e-02, 3.34601703e-02,
+                                         3.08064505e-02, 2.81766028e-02, 2.56165924e-02, 2.31354369e-02,
+                                         2.07837267e-02, 1.86074383e-02, 1.65505661e-02, 1.46527043e-02,
+                                         1.29409383e-02, 1.13695920e-02, 9.93233881e-03, 8.66063386e-03,
+                                         7.53805464e-03, 6.51560047e-03, 5.63512264e-03, 4.84296166e-03,
+                                         4.14793478e-03, 3.56267297e-03, 3.03480656e-03, 2.59406730e-03,
+                                         2.19519042e-03, 1.85454286e-03, 1.58333238e-03, 1.33002321e-03,
+                                         1.11716435e-03, 9.35360376e-04, 7.87780158e-04, 6.58601602e-04,
+                                         5.48147154e-04, 4.58151351e-04, 3.85878963e-04, 3.21623249e-04,
+                                         2.66129174e-04, 2.21364768e-04, 1.80736566e-04, 1.52350196e-04])
         self.DelayProbDeaths = self.DelayProbDeaths.reshape((1, self.DelayProbDeaths.size))
 
         self.CMDelayCut = 30
@@ -1705,6 +1712,10 @@ class CMCombined_Final(BaseCMModel):
 
             if cm_prior == 'half_normal':
                 self.CM_Alpha = pm.HalfNormal("CM_Alpha", cm_prior_sigma, shape=(self.nCMs,))
+
+            if cm_prior == 'icl':
+                self.CM_Alpha_t = pm.Gamma("CM_Alpha_t", 1 / 6, 1, shape=(self.nCMs,))
+                self.CM_Alpha = pm.Deterministic("CM_Alpha", self.CM_Alpha_t - np.log(1.05) / 6)
 
             self.CMReduction = pm.Deterministic("CMReduction", T.exp((-1.0) * self.CM_Alpha))
 
@@ -1791,7 +1802,7 @@ class CMCombined_Final(BaseCMModel):
                 self.ObservedCases = pm.NegativeBinomial(
                     "ObservedCases",
                     mu=self.ExpectedCases.reshape((self.nORs * self.nDs,))[self.all_observed_active],
-                    alpha=self.Phi,
+                    alpha=1/self.Phi,
                     shape=(len(self.all_observed_active),),
                     observed=self.d.NewCases.data.reshape((self.nORs * self.nDs,))[self.all_observed_active]
                 )
@@ -1836,7 +1847,7 @@ class CMCombined_Final(BaseCMModel):
                 self.ObservedDeaths = pm.NegativeBinomial(
                     "ObservedDeaths",
                     mu=self.ExpectedDeaths.reshape((self.nORs * self.nDs,))[self.all_observed_deaths],
-                    alpha=self.Phi,
+                    alpha=1/self.Phi,
                     shape=(len(self.all_observed_deaths),),
                     observed=self.d.NewDeaths.data.reshape((self.nORs * self.nDs,))[self.all_observed_deaths]
                 )
@@ -2530,9 +2541,11 @@ class CMCombined_Final_DifDelays(BaseCMModel):
             # probably not the most efficient implementation
             expected_cases_temp = T.zeros_like(self.InfectedCases)
             expected_cases_temp = T.set_subtensor(expected_cases_temp[self.short_rs, :],
-                                                  expected_cases[0, self.short_rs, :].reshape((len(self.short_rs), self.nDs)))
+                                                  expected_cases[0, self.short_rs, :].reshape(
+                                                      (len(self.short_rs), self.nDs)))
             expected_cases_temp = T.set_subtensor(expected_cases_temp[self.long_rs, :],
-                                                  expected_cases[1, self.long_rs, :].reshape((len(self.long_rs), self.nDs)))
+                                                  expected_cases[1, self.long_rs, :].reshape(
+                                                      (len(self.long_rs), self.nDs)))
 
             self.ExpectedCases = pm.Deterministic("ExpectedCases", expected_cases_temp)
 
