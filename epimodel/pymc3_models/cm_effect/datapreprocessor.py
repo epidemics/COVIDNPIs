@@ -19,6 +19,7 @@ logger = logging.getLogger(__name__)
 
 fp2 = FontProperties(fname=r"../../fonts/Font Awesome 5 Free-Solid-900.otf")
 
+
 class DataMerger():
     def __init__(self, params_dict=None, *args, **kwargs):
         self.start_date = "2020-2-10"
@@ -130,7 +131,6 @@ class DataMerger():
                 logger.info(f"Missing {c} from OXCGRT. Assuming features are 0")
                 values_to_stack.append(np.zeros_like(values_to_stack[-1]))
 
-
         # this has NaNs in!
         ActiveCMs_temp = np.stack(values_to_stack)
         nRs, _, nDs = ActiveCMs_temp.shape
@@ -190,7 +190,8 @@ class DataMerger():
 
         # Johnhopkins Stuff
         # TODO - this is out of date. to fix.
-        johnhop_ds = pd.read_csv(os.path.join(data_base_path, self.johnhop_fname), index_col=["Code", "Date"], parse_dates=["Date"], infer_datetime_format=True)
+        johnhop_ds = pd.read_csv(os.path.join(data_base_path, self.johnhop_fname), index_col=["Code", "Date"],
+                                 parse_dates=["Date"], infer_datetime_format=True)
         Confirmed = np.stack([johnhop_ds["Confirmed"].loc[(fc, Ds)] for fc in regions_epi])
         Active = np.stack([johnhop_ds["Active"].loc[(fc, Ds)] for fc in regions_epi])
         Deaths = np.stack([johnhop_ds["Deaths"].loc[(fc, Ds)] for fc in regions_epi])
@@ -211,6 +212,7 @@ class DataMerger():
         df = df.set_index(["Country Code", "Date"])
         df.to_csv(output_name)
         logger.info("Saved final CSV")
+
 
 class DataMergerDoubleEntry():
     def __init__(self, params_dict=None, *args, **kwargs):
@@ -348,7 +350,6 @@ class DataMergerDoubleEntry():
                 logger.info(f"Missing {c} from OXCGRT. Assuming features are 0")
                 values_to_stack.append(np.zeros_like(values_to_stack[-1]))
 
-
         # this has NaNs in!
         ActiveCMs_temp = np.stack(values_to_stack)
         nRs, _, nDs = ActiveCMs_temp.shape
@@ -408,7 +409,8 @@ class DataMergerDoubleEntry():
 
         # Johnhopkins Stuff
         # TODO - this is out of date. to fix.
-        johnhop_ds = pd.read_csv(os.path.join(data_base_path, self.johnhop_fname), index_col=["Code", "Date"], parse_dates=["Date"], infer_datetime_format=True)
+        johnhop_ds = pd.read_csv(os.path.join(data_base_path, self.johnhop_fname), index_col=["Code", "Date"],
+                                 parse_dates=["Date"], infer_datetime_format=True)
         Confirmed = np.stack([johnhop_ds["Confirmed"].loc[(fc, Ds)] for fc in regions_epi])
         Active = np.stack([johnhop_ds["Active"].loc[(fc, Ds)] for fc in regions_epi])
         Deaths = np.stack([johnhop_ds["Deaths"].loc[(fc, Ds)] for fc in regions_epi])
@@ -430,6 +432,7 @@ class DataMergerDoubleEntry():
         df.to_csv(output_name)
         logger.info("Saved final CSV")
 
+
 class DataPreprocessor():
     def __init__(self, *args, **kwargs):
         self.min_confirmed = 100
@@ -441,7 +444,8 @@ class DataPreprocessor():
         self.smooth = True
         self.N_smooth = 5
 
-        self.drop_features = ["Travel Screen/Quarantine", "Travel Bans", "Public Transport Limited", "Internal Movement Limited",
+        self.drop_features = ["Travel Screen/Quarantine", "Travel Bans", "Public Transport Limited",
+                              "Internal Movement Limited",
                               "Public Information Campaigns", "Symptomatic Testing"]
 
         for key in kwargs:
@@ -453,7 +457,7 @@ class DataPreprocessor():
             "confirmed_mask": self.min_num_active_mask,
         }
 
-    def preprocess_data(self, data_path, last_day=None, merge_schools_unis=True):
+    def preprocess_data(self, data_path, last_day=None, schools_unis="xor"):
         # load data
         df = pd.read_csv(data_path, parse_dates=["Date"], infer_datetime_format=True).set_index(
             ["Country Code", "Date"])
@@ -462,8 +466,8 @@ class DataPreprocessor():
             Ds = list(df.index.levels[1])
         else:
             Ds = list(df.index.levels[1])
-            last_ts = pd.to_datetime(last_day,  utc=True)
-            Ds = Ds[:(1+Ds.index(last_ts))]
+            last_ts = pd.to_datetime(last_day, utc=True)
+            Ds = Ds[:(1 + Ds.index(last_ts))]
 
         nDs = len(Ds)
 
@@ -552,16 +556,30 @@ class DataPreprocessor():
         NewDeaths = np.ma.masked_invalid(NewDeaths.astype(theano.config.floatX))
         NewCases = np.ma.masked_invalid(NewCases.astype(theano.config.floatX))
 
-        if merge_schools_unis:
+        if schools_unis == "xor":
             school_index = CMs.index("School Closure")
             university_index = CMs.index("University Closure")
 
             ActiveCMs_final = copy.deepcopy(ActiveCMs)
-            ActiveCMs_final[:, school_index, :] = np.logical_and(ActiveCMs[:, university_index, :], ActiveCMs[:, school_index, :])
-            ActiveCMs_final[:, university_index, :] =  np.logical_xor(ActiveCMs[:, university_index, :], ActiveCMs[:, school_index, :])
+            ActiveCMs_final[:, school_index, :] = np.logical_and(ActiveCMs[:, university_index, :],
+                                                                 ActiveCMs[:, school_index, :])
+            ActiveCMs_final[:, university_index, :] = np.logical_xor(ActiveCMs[:, university_index, :],
+                                                                     ActiveCMs[:, school_index, :])
             ActiveCMs = ActiveCMs_final
             CMs[school_index] = "School and University Closure"
             CMs[university_index] = "Schools xor University Closure"
+        elif schools_unis == "single":
+            school_index = CMs.index("School Closure")
+            university_index = CMs.index("University Closure")
+
+            ActiveCMs_final = copy.deepcopy(ActiveCMs)
+            ActiveCMs_final[:, school_index, :] = np.logical_and(ActiveCMs[:, university_index, :],
+                                                                 ActiveCMs[:, school_index, :]) + 0.5 * np.logical_xor(
+                ActiveCMs[:, university_index, :],
+                ActiveCMs[:, school_index, :])
+
+            ActiveCMs = np.delete(ActiveCMs_final, university_index, axis=1)
+            CMs.remove("University Closure")
 
         return PreprocessedData(Active,
                                 Confirmed,
@@ -573,6 +591,7 @@ class DataPreprocessor():
                                 NewDeaths,
                                 NewCases,
                                 region_full_names)
+
 
 class ICLDataPreprocessor(DataPreprocessor):
     def __init__(self, *args, **kwargs):
@@ -633,8 +652,7 @@ class ICLDataPreprocessor(DataPreprocessor):
                 r_i = Rs.index(country_to_code(c))
                 f_i = CMs.index(cm)
                 ActiveCMs[r_i, f_i, on_loc:] = 1
-                ActiveCMs[r_i, len(CMs)-1, on_loc:] = 1
-
+                ActiveCMs[r_i, len(CMs) - 1, on_loc:] = 1
 
         return PreprocessedData(data.Active,
                                 data.Confirmed,
@@ -647,6 +665,7 @@ class ICLDataPreprocessor(DataPreprocessor):
                                 data.NewCases,
                                 RNames
                                 )
+
 
 class PreprocessedData(object):
     def __init__(self,
@@ -733,7 +752,7 @@ class PreprocessedData(object):
             plt.figure(figsize=(2, 3), dpi=300)
 
         nRs, nCMs, nDs = self.ActiveCMs.shape
-        plt.title("Frequency $i$ Active Given $j$ Active",  fontsize=8)
+        plt.title("Frequency $i$ Active Given $j$ Active", fontsize=8)
         ax = plt.gca()
         mat = np.zeros((nCMs, nCMs))
         for cm in range(nCMs):
@@ -747,7 +766,7 @@ class PreprocessedData(object):
         plt.xticks(
             np.arange(len(self.CMs)),
             [f"{cm_plot_style[i][0]}" for i, f in enumerate(self.CMs)],
-           fontproperties=fp2,
+            fontproperties=fp2,
         )
 
         for i, ticklabel in enumerate(ax.get_xticklabels()):
@@ -776,7 +795,6 @@ class PreprocessedData(object):
         ax = plt.gca()
         ax.tick_params(axis="both", which="major", labelsize=6)
 
-
         # sns.despine()
 
     def cumulative_days_plot(self, cm_plot_style, newfig=True, skip_yticks=False):
@@ -798,14 +816,15 @@ class PreprocessedData(object):
         x_r = x_max - x_min
         for i, (ticklabel, tickloc) in enumerate(zip(ax.get_yticklabels(), ax.get_yticks())):
             ticklabel.set_color(cm_plot_style[i][1])
-            plt.text(-0.09*x_r, tickloc, cm_plot_style[i][0], horizontalalignment='center', verticalalignment='center',
+            plt.text(-0.09 * x_r, tickloc, cm_plot_style[i][0], horizontalalignment='center',
+                     verticalalignment='center',
                      fontproperties=fp2, fontsize=8, color=cm_plot_style[i][1])
 
         plt.xticks([0, 500, 1000, 1500, 2000], fontsize=6)
         # ax.tick_params(axis="both", which="major", labelsize=10)
         plt.title("Total Days Active", fontsize=8)
         plt.xlabel("Days", fontsize=8)
-        plt.ylim([-len(self.CMs)+0.5, 0.5])
+        plt.ylim([-len(self.CMs) + 0.5, 0.5])
 
     def summary_plot(self, cm_plot_style):
         plt.figure(figsize=(10, 3), dpi=300)
@@ -887,7 +906,7 @@ class PreprocessedData(object):
         ax.tick_params(axis="both", which="major", labelsize=8)
         plt.title("Total Days Active", fontsize=8)
         plt.xlabel("Days", fontsize=8)
-        plt.ylim([-len(self.CMs)+0.5, 0.5])
+        plt.ylim([-len(self.CMs) + 0.5, 0.5])
 
     # def extend_window(self, n_days):
     #     if n_days == 0:
@@ -903,7 +922,7 @@ class PreprocessedData(object):
     #     self.Ds.extend(e_ts)
     #     self.ActiveCMs = ActiveCMs
 
-    def mask_reopenings(self, d_min = 90):
+    def mask_reopenings(self, d_min=90):
         total_cms = self.ActiveCMs
         diff_cms = np.zeros_like(total_cms)
         diff_cms[:, :, 1:] = total_cms[:, :, 1:] - total_cms[:, :, :-1]
@@ -911,7 +930,7 @@ class PreprocessedData(object):
         nnz = rs.size
 
         for nz_i in range(nnz):
-            if (ds[nz_i]+7) > d_min and ds[nz_i]+7 < len(self.Ds):
-                print(f"Masking {self.Rs[rs[nz_i]]} from {self.Ds[ds[nz_i]+3]}")
-                self.NewCases[rs[nz_i], ds[nz_i]+3:].mask = True
-                self.NewDeaths[rs[nz_i], ds[nz_i]+12:].mask = True
+            if (ds[nz_i] + 7) > d_min and ds[nz_i] + 7 < len(self.Ds):
+                print(f"Masking {self.Rs[rs[nz_i]]} from {self.Ds[ds[nz_i] + 3]}")
+                self.NewCases[rs[nz_i], ds[nz_i] + 3:].mask = True
+                self.NewDeaths[rs[nz_i], ds[nz_i] + 12:].mask = True

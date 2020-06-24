@@ -25,8 +25,8 @@ fp2 = FontProperties(fname=r"../../fonts/Font Awesome 5 Free-Solid-900.otf")
 # taken from Cereda et. al (2020).
 # https://arxiv.org/ftp/arxiv/papers/2003/2003.09320.pdf
 # alpha is shape, beta is inverse scale (reciprocal reported in the paper).
-SI_ALPHA = 1.87
-SI_BETA = 0.28
+# SI_ALPHA = 1.87
+# SI_BETA = 0.28
 
 
 # # ICL paper versions.
@@ -38,8 +38,8 @@ SI_BETA = 0.28
 # SI_BETA = 1.188
 
 # # eurosurveilance signapore
-# SI_ALPHA = 7.935
-# SI_BETA = 1.556
+SI_ALPHA = 7.935
+SI_BETA = 1.556
 
 
 def save_fig_pdf(output_dir, figname):
@@ -1680,28 +1680,30 @@ class CMCombined_Final(BaseCMModel):
         self.nODs = len(self.ObservedDaysIndx)
         self.ORs = copy.deepcopy(self.d.Rs)
 
+        self.ObservedDaysIndx = np.arange(self.CMDelayCut, len(self.d.Ds))
+        self.OR_indxs = np.arange(len(self.d.Rs))
+        self.nORs = self.nRs
+        self.nODs = len(self.ObservedDaysIndx)
+        self.ORs = copy.deepcopy(self.d.Rs)
+
         observed_active = []
-        for r in range(self.nRs):
-            for d in range(self.nDs):
-                # if its not masked, after the cut, and not before 100 confirmed
-                if self.d.NewCases.mask[r, d] == False and d > self.CMDelayCut and not np.isnan(
-                        self.d.Confirmed.data[r, d]):
-                    observed_active.append(r * self.nDs + d)
-                else:
-                    self.d.NewCases.mask[r, d] = True
-
-        self.all_observed_active = np.array(observed_active)
-
         observed_deaths = []
         for r in range(self.nRs):
-            for d in range(self.nDs):
-                # if its not masked, after the cut, and not before 10 deaths
-                if self.d.NewDeaths.mask[r, d] == False and d > self.CMDelayCut and not np.isnan(
-                        self.d.Deaths.data[r, d]):
-                    observed_deaths.append(r * self.nDs + d)
+            for d in range(self.nODs):
+                actual_day = self.ObservedDaysIndx[d]
+                if self.d.NewCases.mask[r, actual_day] == False and not np.isnan(
+                        self.d.Confirmed.data[r, actual_day]):
+                    observed_active.append(r * self.nODs + d)
                 else:
-                    self.d.NewDeaths.mask[r, d] = True
+                    self.d.NewCases.mask[r, actual_day] = True
 
+                if self.d.NewDeaths.mask[r, actual_day] == False and not np.isnan(
+                        self.d.Deaths.data[r, actual_day]):
+                    observed_deaths.append(r * self.nODs + d)
+                else:
+                    self.d.NewDeaths.mask[r, actual_day] = True
+
+        self.all_observed_active = np.array(observed_active)
         self.all_observed_deaths = np.array(observed_deaths)
 
     def build_model(self, R_hyperprior_mean=3.25, cm_prior_sigma=0.2, cm_prior='normal',
@@ -1721,22 +1723,18 @@ class CMCombined_Final(BaseCMModel):
 
             self.CMReduction = pm.Deterministic("CMReduction", T.exp((-1.0) * self.CM_Alpha))
 
-            self.HyperRMean = pm.StudentT(
-                "HyperRMean", nu=10, sigma=0.2, mu=np.log(R_hyperprior_mean),
+            self.HyperRVar = pm.HalfNormal(
+                "HyperRVar", sigma=0.5
             )
 
-            self.HyperRVar = pm.HalfStudentT(
-                "HyperRVar", nu=10, sigma=0.2
-            )
-
-            self.RegionLogR_noise = pm.Normal("RegionLogR_noise", 0, 1, shape=(self.nORs), )
-            self.RegionLogR = pm.Deterministic("RegionLogR", self.HyperRMean + self.RegionLogR_noise * self.HyperRVar)
+            self.RegionR_noise = pm.Normal("RegionLogR_noise", 0, 1, shape=(self.nORs),)
+            self.RegionR = pm.Deterministic("RegionR", R_hyperprior_mean + self.RegionLogR_noise * self.HyperRVar)
 
             self.ActiveCMs = pm.Data("ActiveCMs", self.d.ActiveCMs)
 
             self.ActiveCMReduction = (
                     T.reshape(self.CM_Alpha, (1, self.nCMs, 1))
-                    * self.ActiveCMs[self.OR_indxs, :, :]
+                    * self.ActiveCMs[self.OR_indxs, :, self.CMDelayCut:]
             )
 
             self.Det(
@@ -1745,7 +1743,7 @@ class CMCombined_Final(BaseCMModel):
 
             self.ExpectedLogR = self.Det(
                 "ExpectedLogR",
-                T.reshape(self.RegionLogR, (self.nORs, 1)) - self.GrowthReduction,
+                T.reshape(pm.math.log(self.RegionR), (self.nORs, 1)) - self.GrowthReduction,
                 plot_trace=False,
             )
 
@@ -1754,44 +1752,28 @@ class CMCombined_Final(BaseCMModel):
 
             self.ExpectedGrowth = self.Det("ExpectedGrowth",
                                            si_beta * (pm.math.exp(
-                                               self.ExpectedLogR / si_alpha) - T.ones_like(
-                                               self.ExpectedLogR)),
+                                               self.ExpectedLogR / si_alpha) - T.ones((self.nORs, self.nODs))),
                                            plot_trace=False
                                            )
 
-            self.Normal(
-                "GrowthCases",
-                self.ExpectedGrowth,
-                self.DailyGrowthNoise,
-                shape=(self.nORs, self.nDs),
-                plot_trace=False,
-            )
+            self.GrowthCasesNoise = pm.Normal("GrowthCasesNoise", 0, self.DailyGrowthNoise, shape=(self.nORs, self.nODs))
+            self.GrowthDeathsNoise = pm.Normal("GrowthDeathsNoise", 0, self.DailyGrowthNoise, shape=(self.nORs, self.nODs))
 
-            self.Normal(
-                "GrowthDeaths",
-                self.ExpectedGrowth,
-                self.DailyGrowthNoise,
-                shape=(self.nORs, self.nDs),
-                plot_trace=False,
-            )
+            self.GrowthCases = pm.Deterministic("GrowthCases", self.ExpectedGrowth + self.GrowthCasesNoise)
+            self.GrowthDeaths = pm.Deterministic("GrowthDeaths", self.ExpectedGrowth + self.GrowthDeathsNoise)
 
-            self.Det("Z1C", self.GrowthCases - self.ExpectedGrowth, plot_trace=False)
-            self.Det("Z1D", self.GrowthDeaths - self.ExpectedGrowth, plot_trace=False)
-
-            self.InitialSizeCases_log = pm.Normal("InitialSizeCases_log", 0, 50, shape=(self.nORs,))
-            self.InfectedCases_log = pm.Deterministic("InfectedCases_log", T.reshape(self.InitialSizeCases_log, (
-                self.nORs, 1)) + self.GrowthCases.cumsum(axis=1))
-
-            self.InfectedCases = pm.Deterministic("InfectedCases", pm.math.exp(self.InfectedCases_log))
+            self.Tau1 = pm.Exponential("Tau1", 1 / 0.03)
+            self.InitialSizeCases = pm.Exponential("InitialSizeCases", self.Tau1, shape=(self.nORs, 1))
+            self.InfectedCases = pm.Deterministic("InfectedCases", self.InitialSizeCases * pm.math.exp(self.GrowthCases.cumsum(axis=1)))
 
             expected_cases = C.conv2d(
                 self.InfectedCases,
                 np.reshape(self.DelayProbCases, newshape=(1, self.DelayProbCases.size)),
                 border_mode="full"
-            )[:, :self.nDs]
+            )[:, :self.nODs]
 
             self.ExpectedCases = pm.Deterministic("ExpectedCases", expected_cases.reshape(
-                (self.nORs, self.nDs)))
+                (self.nORs, self.nODs)))
 
             # can use learned or fixed conf noise
             if conf_noise is None:
@@ -1801,41 +1783,34 @@ class CMCombined_Final(BaseCMModel):
                 # effectively handle missing values ourselves
                 self.ObservedCases = pm.NegativeBinomial(
                     "ObservedCases",
-                    mu=self.ExpectedCases.reshape((self.nORs * self.nDs,))[self.all_observed_active],
+                    mu=self.ExpectedCases.reshape((self.nORs * self.nODs,))[self.all_observed_active],
                     alpha=1 / self.Phi,
                     shape=(len(self.all_observed_active),),
-                    observed=self.d.NewCases.data.reshape((self.nORs * self.nDs,))[self.all_observed_active]
+                    observed=self.d.NewCases.data[:, self.CMDelayCut:].reshape((self.nORs * self.nODs,))[self.all_observed_active]
                 )
 
             else:
                 # effectively handle missing values ourselves
                 self.ObservedCases = pm.NegativeBinomial(
                     "ObservedCases",
-                    mu=self.ExpectedCases.reshape((self.nORs * self.nDs,))[self.all_observed_active],
+                    mu=self.ExpectedCases.reshape((self.nORs * self.nODs,))[self.all_observed_active],
                     alpha=conf_noise,
                     shape=(len(self.all_observed_active),),
-                    observed=self.d.NewCases.data.reshape((self.nORs * self.nDs,))[self.all_observed_active]
+                    observed=self.d.NewCases.data[:, self.CMDelayCut:].reshape((self.nORs * self.nODs,))[self.all_observed_active]
                 )
 
-            self.Z2C = pm.Deterministic(
-                "Z2C",
-                self.ObservedCases - self.ExpectedCases.reshape((self.nORs * self.nDs,))[self.all_observed_active]
-            )
-
-            self.InitialSizeDeaths_log = pm.Normal("InitialSizeDeaths_log", 0, 50, shape=(self.nORs,))
-            self.InfectedDeaths_log = pm.Deterministic("InfectedDeaths_log", T.reshape(self.InitialSizeDeaths_log, (
-                self.nORs, 1)) + self.GrowthDeaths.cumsum(axis=1))
-
-            self.InfectedDeaths = pm.Deterministic("InfectedDeaths", pm.math.exp(self.InfectedDeaths_log))
+            self.Tau2 = pm.Exponential("Tau2", 1 / 0.03)
+            self.InitialSizeDeaths = pm.Exponential("InitialSizeDeaths", self.Tau2, shape=(self.nORs, 1))
+            self.InfectedDeaths = pm.Deterministic("InfectedDeaths", self.InitialSizeDeaths * pm.math.exp(self.GrowthDeaths.cumsum(axis=1)))
 
             expected_deaths = C.conv2d(
                 self.InfectedDeaths,
                 np.reshape(self.DelayProbDeaths, newshape=(1, self.DelayProbDeaths.size)),
                 border_mode="full"
-            )[:, :self.nDs]
+            )[:, :self.nODs]
 
             self.ExpectedDeaths = pm.Deterministic("ExpectedDeaths", expected_deaths.reshape(
-                (self.nORs, self.nDs)))
+                (self.nORs, self.nODs)))
 
             # can use learned or fixed deaths noise
             if deaths_noise is None:
@@ -1846,25 +1821,20 @@ class CMCombined_Final(BaseCMModel):
                 # effectively handle missing values ourselves
                 self.ObservedDeaths = pm.NegativeBinomial(
                     "ObservedDeaths",
-                    mu=self.ExpectedDeaths.reshape((self.nORs * self.nDs,))[self.all_observed_deaths],
+                    mu=self.ExpectedDeaths.reshape((self.nORs * self.nODs,))[self.all_observed_deaths],
                     alpha=1 / self.Phi,
                     shape=(len(self.all_observed_deaths),),
-                    observed=self.d.NewDeaths.data.reshape((self.nORs * self.nDs,))[self.all_observed_deaths]
+                    observed=self.d.NewDeaths.data[:, self.CMDelayCut:].reshape((self.nORs * self.nODs,))[self.all_observed_deaths]
                 )
             else:
                 # effectively handle missing values ourselves
                 self.ObservedDeaths = pm.NegativeBinomial(
                     "ObservedDeaths",
-                    mu=self.ExpectedDeaths.reshape((self.nORs * self.nDs,))[self.all_observed_deaths],
+                    mu=self.ExpectedDeaths.reshape((self.nORs * self.nODs,))[self.all_observed_deaths],
                     alpha=deaths_noise,
                     shape=(len(self.all_observed_deaths),),
-                    observed=self.d.NewDeaths.data.reshape((self.nORs * self.nDs,))[self.all_observed_deaths]
+                    observed=self.d.NewDeaths.data[:, self.CMDelayCut:].reshape((self.nORs * self.nODs,))[self.all_observed_deaths]
                 )
-
-            self.Det(
-                "Z2D",
-                self.ObservedDeaths - self.ExpectedDeaths.reshape((self.nORs * self.nDs,))[self.all_observed_deaths]
-            )
 
     def plot_region_predictions(self, plot_style, save_fig=True, output_dir="./out"):
         assert self.trace is not None
