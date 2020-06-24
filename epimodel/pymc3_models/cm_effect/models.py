@@ -34,12 +34,12 @@ fp2 = FontProperties(fname=r"../../fonts/Font Awesome 5 Free-Solid-900.otf")
 # SI_BETA = (1 / (6.5 * (0.62 ** 2)))
 
 # cereda mean, eurosurveilance SI
-# SI_ALPHA = 7.395
-# SI_BETA = 1.188
+SI_ALPHA = 7.395
+SI_BETA = 1.188
 
 # # eurosurveilance signapore
-SI_ALPHA = 7.935
-SI_BETA = 1.556
+# SI_ALPHA = 7.935
+# SI_BETA = 1.556
 
 
 def save_fig_pdf(output_dir, figname):
