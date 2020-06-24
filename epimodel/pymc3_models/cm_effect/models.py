@@ -28,6 +28,7 @@ fp2 = FontProperties(fname=r"../../fonts/Font Awesome 5 Free-Solid-900.otf")
 SI_ALPHA = 1.87
 SI_BETA = 0.28
 
+
 # # ICL paper versions.
 # SI_ALPHA = (1 / (0.62 ** 2))
 # SI_BETA = (1 / (6.5 * (0.62 ** 2)))
@@ -1704,7 +1705,8 @@ class CMCombined_Final(BaseCMModel):
         self.all_observed_deaths = np.array(observed_deaths)
 
     def build_model(self, R_hyperprior_mean=3.25, cm_prior_sigma=0.2, cm_prior='normal',
-                    serial_interval_mean=SI_ALPHA / SI_BETA, serial_interval_sigma = np.sqrt(SI_ALPHA / SI_BETA ** 2), conf_noise=None, deaths_noise=None
+                    serial_interval_mean=SI_ALPHA / SI_BETA, serial_interval_sigma=np.sqrt(SI_ALPHA / SI_BETA ** 2),
+                    conf_noise=None, deaths_noise=None
                     ):
         with self.model:
             if cm_prior == 'normal':
@@ -1727,9 +1729,8 @@ class CMCombined_Final(BaseCMModel):
                 "HyperRVar", nu=10, sigma=0.2
             )
 
-            self.RegionLogR = pm.Normal("RegionLogR", self.HyperRMean,
-                                        self.HyperRVar,
-                                        shape=(self.nORs,))
+            self.RegionLogR_noise = pm.Normal("RegionLogR_noise", 0, 1, shape=(self.nORs), )
+            self.RegionLogR = pm.Deterministic("RegionLogR", self.HyperRMean + self.RegionLogR_noise * self.HyperRVar)
 
             self.ActiveCMs = pm.Data("ActiveCMs", self.d.ActiveCMs)
 
@@ -1801,7 +1802,7 @@ class CMCombined_Final(BaseCMModel):
                 self.ObservedCases = pm.NegativeBinomial(
                     "ObservedCases",
                     mu=self.ExpectedCases.reshape((self.nORs * self.nDs,))[self.all_observed_active],
-                    alpha=1/self.Phi,
+                    alpha=1 / self.Phi,
                     shape=(len(self.all_observed_active),),
                     observed=self.d.NewCases.data.reshape((self.nORs * self.nDs,))[self.all_observed_active]
                 )
@@ -1846,7 +1847,7 @@ class CMCombined_Final(BaseCMModel):
                 self.ObservedDeaths = pm.NegativeBinomial(
                     "ObservedDeaths",
                     mu=self.ExpectedDeaths.reshape((self.nORs * self.nDs,))[self.all_observed_deaths],
-                    alpha=1/self.Phi,
+                    alpha=1 / self.Phi,
                     shape=(len(self.all_observed_deaths),),
                     observed=self.d.NewDeaths.data.reshape((self.nORs * self.nDs,))[self.all_observed_deaths]
                 )
