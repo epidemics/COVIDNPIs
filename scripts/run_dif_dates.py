@@ -28,7 +28,7 @@ if __name__ == "__main__":
     last_dates = ["2020-04-25", "2020-05-05", "2020-05-15", "2020-05-25", "2020-05-30"]
     dp = DataPreprocessor()
     data = dp.preprocess_data("notebooks/double-entry-data/double_entry_final.csv",
-                              last_day=last_dates[args.last_date], merge_schools_unis=False)
+                              last_day=last_dates[args.last_date])
     data.mask_reopenings()
 
     if args.model == 0:
