@@ -73,11 +73,11 @@ def leavout_cm(data, cm_leavouts, i):
 
 
 def region_holdout_sensitivity(model_types, regions_heldout=["NL", "PL", "PT", "CZ", "DE", "MX"],
-                               daily_growth_noise=None, min_deaths=None, region_var_noise=0.1, data_path="notebooks/final_data/data_final.csv"):
+                               daily_growth_noise=None, min_deaths=None, region_var_noise=0.1, data_path="notebooks/double-entry-data/double_entry_final.csv"):
     dp = DataPreprocessor(drop_HS=True)
 
     for region in regions_heldout:
-        data = dp.preprocess_data(data_path)
+        data = dp.preprocess_data(data_path, last_date="2020-05-30")
         if min_deaths is not None:
             data.filter_region_min_deaths(min_deaths)
         mask_region(data, region)
@@ -128,16 +128,16 @@ def region_holdout_sensitivity(model_types, regions_heldout=["NL", "PL", "PT", "
                         model.DailyGrowthNoise = daily_growth_noise
                     model.build_model()
 
-            model.run(1000, chains=8, cores=8)
+            model.run(2000, tune=500, chains=4, cores=4)
             out_dir = generate_out_dir(daily_growth_noise)
             filename = out_dir + '/regions_heldout_' + region + '_' + model_type + '.txt'
             save_traces(model, model_type, filename)
 
 
 def cm_leavout_sensitivity(model_types, daily_growth_noise=None, min_deaths=None,
-                           region_var_noise=0.1, data_path="notebooks/final_data/data_final.csv"):
+                           region_var_noise=0.1, data_path="notebooks/double-entry-data/double_entry_final.csv"):
     dp = DataPreprocessor(drop_HS=True)
-    data = dp.preprocess_data(data_path)
+    data = dp.preprocess_data(data_path, last_date="2020-05-30")
     if min_deaths is not None:
         data.filter_region_min_deaths(min_deaths)
 
@@ -191,16 +191,16 @@ def cm_leavout_sensitivity(model_types, daily_growth_noise=None, min_deaths=None
                         model.DailyGrowthNoise = daily_growth_noise
                     model.build_model()
 
-            model.run(1000, chains=8, cores=8)
+            model.run(2000, tune=500, chains=4, cores=4)
             out_dir = generate_out_dir(daily_growth_noise)
             filename = out_dir + '/cm_leavout_' + model_type + '_' + str(i) + '.txt'
             save_traces(model, model_type, filename)
 
 
 def cm_prior_sensitivity(model_types, priors=['half_normal', 'wide', "icl"], sigma_wide=10,
-                         daily_growth_noise=None, min_deaths=None, region_var_noise=0.1, data_path="notebooks/final_data/data_final.csv"):
+                         daily_growth_noise=None, min_deaths=None, region_var_noise=0.1, data_path="notebooks/double-entry-data/double_entry_final.csv"):
     dp = DataPreprocessor(drop_HS=True)
-    data = dp.preprocess_data(data_path)
+    data = dp.preprocess_data(data_path, last_date="2020-05-30")
     if min_deaths is not None:
         data.filter_region_min_deaths(min_deaths)
 
@@ -296,14 +296,14 @@ def cm_prior_sensitivity(model_types, priors=['half_normal', 'wide', "icl"], sig
                     if prior == 10:
                         model.build_model(cm_prior_conc=10)
 
-            model.run(1000, chains=8, cores=8)
+            model.run(2000, tune=500, chains=4, cores=4)
             out_dir = generate_out_dir(daily_growth_noise)
             filename = out_dir + '/cm_prior_' + model_type + '_' + str(prior) + '.txt'
             save_traces(model, model_type, filename)
 
 
 def data_mob_sensitivity(model_types, daily_growth_noise=None, min_deaths=None,
-                         region_var_noise=0.1, data_path="notebooks/final_data/data_final.csv"):
+                         region_var_noise=0.1, data_path="notebooks/double-entry-data/double_entry_final.csv"):
     dp = DataPreprocessor(drop_HS=True)
     data_mob_no_work = dp.preprocess_data("notebooks/final_data/data_mob_no_work.csv")
     data_mob = dp.preprocess_data("notebooks/final_data/data_mob.csv")
@@ -363,14 +363,14 @@ def data_mob_sensitivity(model_types, daily_growth_noise=None, min_deaths=None,
                         model.DailyGrowthNoise = daily_growth_noise
                     model.build_model()
 
-            model.run(1000, chains=8, cores=8)
+            model.run(2000, tune=500, chains=4, cores=4)
             out_dir = generate_out_dir(daily_growth_noise)
             filename = out_dir + '/data_mobility_' + data_mobility_type + '_' + model_type + '.txt'
             save_traces(model, model_type, filename)
 
 
 def data_schools_open_sensitivity(model_types, daily_growth_noise=None, min_deaths=None,
-                                  region_var_noise=0.1, data_path="notebooks/final_data/data_final.csv"):
+                                  region_var_noise=0.1, data_path="notebooks/double-entry-data/double_entry_final.csv"):
     dp = DataPreprocessor(drop_HS=True)
     data = dp.preprocess_data("notebooks/final_data/data_SE_schools_open.csv")
     if min_deaths is not None:
@@ -421,16 +421,16 @@ def data_schools_open_sensitivity(model_types, daily_growth_noise=None, min_deat
                     model.DailyGrowthNoise = daily_growth_noise
                 model.build_model()
 
-        model.run(1000, chains=8, cores=8)
+        model.run(2000, tune=500, chains=4, cores=4)
         out_dir = generate_out_dir(daily_growth_noise)
         filename = out_dir + '/schools_open_' + model_type + '.txt'
         save_traces(model, model_type, filename)
 
 
 def daily_growth_noise_sensitivity(model_types, daily_growth_noise=[0.05, 0.1, 0.4],
-                                   min_deaths=None, region_var_noise=0.1, data_path="notebooks/final_data/data_final.csv"):
+                                   min_deaths=None, region_var_noise=0.1, data_path="notebooks/double-entry-data/double_entry_final.csv"):
     dp = DataPreprocessor(drop_HS=True)
-    data = dp.preprocess_data(data_path)
+    data = dp.preprocess_data(data_path, last_date="2020-05-30")
     if min_deaths is not None:
         data.filter_region_min_deaths(min_deaths)
 
@@ -468,7 +468,7 @@ def daily_growth_noise_sensitivity(model_types, daily_growth_noise=[0.05, 0.1, 0
                     model.DailyGrowthNoise = daily_growth_noise[i]
                     model.build_model()
 
-            model.run(1000, chains=8, cores=8)
+            model.run(2000, tune=500, chains=4, cores=4)
             out_dir = '../../../notebooks/sensitivity_stability_checks/out'
             filename = out_dir + '/growth_noise_' + model_type + '_' + str(i) + '.txt'
             save_traces(model, model_type, filename)
@@ -476,7 +476,7 @@ def daily_growth_noise_sensitivity(model_types, daily_growth_noise=[0.05, 0.1, 0
 
 def min_num_confirmed_sensitivity(model_types, min_conf_cases=[10, 30, 300, 500],
                                   daily_growth_noise=None, min_deaths=None,
-                                  region_var_noise=0.1, data_path="notebooks/final_data/data_final.csv"):
+                                  region_var_noise=0.1, data_path="notebooks/double-entry-data/double_entry_final.csv"):
     dp = DataPreprocessor(drop_HS=True)
 
     for model_type in model_types:
@@ -484,7 +484,7 @@ def min_num_confirmed_sensitivity(model_types, min_conf_cases=[10, 30, 300, 500]
             print('Model: ' + str(model_type))
             print('Minimum number of confirmed cases: ' + str(min_conf_cases[i]))
             dp.min_confirmed = min_conf_cases[i]
-            data = dp.preprocess_data(data_path)
+            data = dp.preprocess_data(data_path, last_date="2020-05-30")
             if min_deaths is not None:
                 data.filter_region_min_deaths(min_deaths)
 
@@ -525,7 +525,7 @@ def min_num_confirmed_sensitivity(model_types, min_conf_cases=[10, 30, 300, 500]
                     if daily_growth_noise is not None:
                         model.DailyGrowthNoise = daily_growth_noise
                     model.build_model()
-            model.run(1000, chains=8, cores=8)
+            model.run(2000, tune=500, chains=4, cores=4)
             out_dir = generate_out_dir(daily_growth_noise)
             filename = out_dir + '/min_confirmed_' + str(model_type) + '_' + str(min_conf_cases[i]) + '.txt'
             save_traces(model, model_type, filename)
@@ -533,7 +533,7 @@ def min_num_confirmed_sensitivity(model_types, min_conf_cases=[10, 30, 300, 500]
 
 def min_num_deaths_sensitivity(model_types, min_deaths_ths=[3, 5, 30, 50],
                                daily_growth_noise=None, min_deaths=None,
-                               region_var_noise=0.1, data_path="notebooks/final_data/data_final.csv"):
+                               region_var_noise=0.1, data_path="notebooks/double-entry-data/double_entry_final.csv"):
     dp = DataPreprocessor(drop_HS=True)
 
     for model_type in model_types:
@@ -541,7 +541,7 @@ def min_num_deaths_sensitivity(model_types, min_deaths_ths=[3, 5, 30, 50],
             print('Model: ' + str(model_type))
             print('Minimum number of death cases: ' + str(min_deaths_ths[i]))
             dp.min_deaths = min_deaths_ths[i]
-            data = dp.preprocess_data(data_path)
+            data = dp.preprocess_data(data_path, last_date="2020-05-30")
             if min_deaths is not None:
                 data.filter_region_min_deaths(min_deaths)
 
@@ -582,7 +582,7 @@ def min_num_deaths_sensitivity(model_types, min_deaths_ths=[3, 5, 30, 50],
                     if daily_growth_noise is not None:
                         model.DailyGrowthNoise = daily_growth_noise
                     model.build_model()
-            model.run(1000, chains=8, cores=8)
+            model.run(2000, tune=500, chains=4, cores=4)
             out_dir = generate_out_dir(daily_growth_noise)
             filename = out_dir + '/min_deaths_' + str(model_type) + '_' + str(min_deaths_ths[i]) + '.txt'
             save_traces(model, model_type, filename)
@@ -590,7 +590,7 @@ def min_num_deaths_sensitivity(model_types, min_deaths_ths=[3, 5, 30, 50],
 
 def smoothing_sensitivity(model_types, N_days=[1, 3, 7, 15],
                           daily_growth_noise=None, min_deaths=None,
-                          region_var_noise=0.1, data_path="notebooks/final_data/data_final.csv"):
+                          region_var_noise=0.1, data_path="notebooks/double-entry-data/double_entry_final.csv"):
     dp = DataPreprocessor(drop_HS=True)
 
     for model_type in model_types:
@@ -598,7 +598,7 @@ def smoothing_sensitivity(model_types, N_days=[1, 3, 7, 15],
             print('Model: ' + str(model_type))
             print('Minimum number of days: ' + str(N_days[i]))
             dp.N_smooth = N_days[i]
-            data = dp.preprocess_data(data_path)
+            data = dp.preprocess_data(data_path, last_date="2020-05-30")
             if min_deaths is not None:
                 data.filter_region_min_deaths(min_deaths)
 
@@ -639,7 +639,7 @@ def smoothing_sensitivity(model_types, N_days=[1, 3, 7, 15],
                     if daily_growth_noise is not None:
                         model.DailyGrowthNoise = daily_growth_noise
                     model.build_model()
-            model.run(1000, chains=8, cores=8)
+            model.run(2000, tune=500, chains=4, cores=4)
             out_dir = generate_out_dir(daily_growth_noise)
             filename = out_dir + '/smoothing_' + str(model_type) + '_' + str(N_days[i]) + '.txt'
             save_traces(model, model_type, filename)
@@ -668,9 +668,9 @@ def calc_trace_statistic(model, stat_type):
 
 
 def MCMC_stability(model_types, daily_growth_noise=None, min_deaths=None,
-                   region_var_noise=0.1, data_path="notebooks/final_data/data_final.csv"):
+                   region_var_noise=0.1, data_path="notebooks/double-entry-data/double_entry_final.csv"):
     dp = DataPreprocessor(drop_HS=True)
-    data = dp.preprocess_data(data_path)
+    data = dp.preprocess_data(data_path, last_date="2020-05-30")
     if min_deaths is not None:
         data.filter_region_min_deaths(min_deaths)
 
@@ -719,7 +719,7 @@ def MCMC_stability(model_types, daily_growth_noise=None, min_deaths=None,
                     model.DailyGrowthNoise = daily_growth_noise
                 model.build_model()
 
-        model.run(1000, chains=8, cores=8)
+        model.run(2000, tune=500, chains=4, cores=4)
         rhats = calc_trace_statistic(model, 'rhat')
         ess = calc_trace_statistic(model, 'ess')
 
@@ -732,9 +732,9 @@ def MCMC_stability(model_types, daily_growth_noise=None, min_deaths=None,
 
 def R_hyperprior_mean_sensitivity(model_types, hyperprior_means=[1.5, 5.5],
                                   daily_growth_noise=None, min_deaths=None,
-                                  region_var_noise=0.1, data_path="notebooks/final_data/data_final.csv"):
+                                  region_var_noise=0.1, data_path="notebooks/double-entry-data/double_entry_final.csv"):
     dp = DataPreprocessor(drop_HS=True)
-    data = dp.preprocess_data(data_path)
+    data = dp.preprocess_data(data_path, last_date="2020-05-30")
     if min_deaths is not None:
         data.filter_region_min_deaths(min_deaths)
 
@@ -785,7 +785,7 @@ def R_hyperprior_mean_sensitivity(model_types, hyperprior_means=[1.5, 5.5],
                         model.DailyGrowthNoise = daily_growth_noise
                     model.build_model(R_hyperprior_mean=hyperprior_means[i])
 
-            model.run(1000, chains=8, cores=8)
+            model.run(2000, tune=500, chains=4, cores=4)
             out_dir = generate_out_dir(daily_growth_noise)
             filename = out_dir + '/R_hyperprior_' + model_type + '_' + str(i) + '.txt'
             save_traces(model, model_type, filename)
@@ -793,9 +793,9 @@ def R_hyperprior_mean_sensitivity(model_types, hyperprior_means=[1.5, 5.5],
 
 def serial_interval_sensitivity(model_types, serial_interval=[4, 5, 6, 7, 8],
                                 daily_growth_noise=None, min_deaths=None,
-                                region_var_noise=0.1, data_path="notebooks/final_data/data_final.csv"):
+                                region_var_noise=0.1, data_path="notebooks/double-entry-data/double_entry_final.csv"):
     dp = DataPreprocessor(drop_HS=True)
-    data = dp.preprocess_data(data_path)
+    data = dp.preprocess_data(data_path, last_date="2020-05-30")
     if min_deaths is not None:
         data.filter_region_min_deaths(min_deaths)
 
@@ -846,7 +846,7 @@ def serial_interval_sensitivity(model_types, serial_interval=[4, 5, 6, 7, 8],
                         model.DailyGrowthNoise = daily_growth_noise
                     model.build_model(serial_interval_mean=serial_interval[i])
 
-            model.run(1000, chains=8, cores=8)
+            model.run(2000, tune=500, chains=4, cores=4)
             out_dir = generate_out_dir(daily_growth_noise)
             filename = out_dir + '/serial_int_' + model_type + '_SI' + str(serial_interval[i]) + '.txt'
             save_traces(model, model_type, filename)
@@ -935,7 +935,7 @@ def vary_delay_mean_death(model, mean_shift):
 
 
 def delay_mean_sensitivity(model_types, mean_shift=[-2, -1, 1, 2], daily_growth_noise=None,
-                           min_deaths=None, region_var_noise=0.1, data_path="notebooks/final_data/data_final.csv"):
+                           min_deaths=None, region_var_noise=0.1, data_path="notebooks/double-entry-data/double_entry_final.csv"):
     '''
     mean_shift shifts the mean of the underlying distributions that will combine
     to form the delay distrobution. So the resulting total delay distribution
@@ -957,7 +957,7 @@ def delay_mean_sensitivity(model_types, mean_shift=[-2, -1, 1, 2], daily_growth_
     delay_probs_active = []
 
     dp = DataPreprocessor(drop_HS=True)
-    data = dp.preprocess_data(data_path)
+    data = dp.preprocess_data(data_path, last_date="2020-05-30")
     if min_deaths is not None:
         data.filter_region_min_deaths(min_deaths)
     out_dir = generate_out_dir(daily_growth_noise)
@@ -975,7 +975,7 @@ def delay_mean_sensitivity(model_types, mean_shift=[-2, -1, 1, 2], daily_growth_
                     model = vary_delay_mean_confirmed(model, mean_shift[i])
                     delay_probs_conf_combined.append(model.DelayProbCases)
                     model.build_model()
-                model.run(samples, chains=chains, cores=chains)
+                model.run(2000, tune=500, chains=4, cores=4)
                 filename = out_dir + '/delay_mean_confirmed_combined_' + str(i) + '.txt'
                 save_traces(model, model_type, filename)
 
@@ -985,7 +985,7 @@ def delay_mean_sensitivity(model_types, mean_shift=[-2, -1, 1, 2], daily_growth_
                     model = vary_delay_mean_death(model, mean_shift[i])
                     delay_probs_death_combined.append(model.DelayProbDeaths)
                     model.build_model()
-                model.run(samples, chains=chains, cores=cores)
+                model.run(2000, tune=500, chains=4, cores=4)
                 filename = out_dir + '/delay_mean_death_combined_' + str(i) + '.txt'
                 save_traces(model, model_type, filename)
         elif model_type == 'combined_v3':
@@ -999,7 +999,7 @@ def delay_mean_sensitivity(model_types, mean_shift=[-2, -1, 1, 2], daily_growth_
                     model = vary_delay_mean_confirmed(model, mean_shift[i])
                     # delay_probs_conf_combined.append(model.DelayProbCases) 
                     model.build_model()
-                model.run(samples, chains=chains, cores=cores)
+                model.run(2000, tune=500, chains=4, cores=4)
                 filename = out_dir + '/delay_mean_confirmed_combined_v3_' + str(i) + '.txt'
                 save_traces(model, model_type, filename)
 
@@ -1009,7 +1009,7 @@ def delay_mean_sensitivity(model_types, mean_shift=[-2, -1, 1, 2], daily_growth_
                     model = vary_delay_mean_death(model, mean_shift[i])
                     # delay_probs_death_combined.append(model.DelayProbDeaths) 
                     model.build_model()
-                model.run(samples, chains=chains, cores=cores)
+                model.run(2000, tune=500, chains=4, cores=4)
                 filename = out_dir + '/delay_mean_death_combined_v3_' + str(i) + '.txt'
                 save_traces(model, model_type, filename)
         elif model_type == 'combined_icl':
@@ -1023,7 +1023,7 @@ def delay_mean_sensitivity(model_types, mean_shift=[-2, -1, 1, 2], daily_growth_
                     model = vary_delay_mean_confirmed(model, mean_shift[i])
                     # delay_probs_conf_combined.append(model.DelayProbCases) 
                     model.build_model()
-                model.run(samples, chains=chains, cores=cores)
+                model.run(2000, tune=500, chains=4, cores=4)
                 filename = out_dir + '/delay_mean_confirmed_combined_icl_' + str(i) + '.txt'
                 save_traces(model, model_type, filename)
 
@@ -1033,7 +1033,7 @@ def delay_mean_sensitivity(model_types, mean_shift=[-2, -1, 1, 2], daily_growth_
                     model = vary_delay_mean_death(model, mean_shift[i])
                     # delay_probs_death_combined.append(model.DelayProbDeaths) 
                     model.build_model()
-                model.run(samples, chains=chains, cores=cores)
+                model.run(2000, tune=500, chains=4, cores=4)
                 filename = out_dir + '/delay_mean_death_combined_icl_' + str(i) + '.txt'
                 save_traces(model, model_type, filename)
         elif model_type == 'combined_dif':
@@ -1048,7 +1048,7 @@ def delay_mean_sensitivity(model_types, mean_shift=[-2, -1, 1, 2], daily_growth_
                     model = vary_delay_mean_confirmed(model, mean_shift[i])
                     # delay_probs_conf_combined.append(model.DelayProbCases) 
                     model.build_model()
-                model.run(samples, chains=chains, cores=cores)
+                model.run(2000, tune=500, chains=4, cores=4)
                 filename = out_dir + '/delay_mean_confirmed_combined_dif_' + str(i) + '.txt'
                 save_traces(model, model_type, filename)
 
@@ -1059,7 +1059,7 @@ def delay_mean_sensitivity(model_types, mean_shift=[-2, -1, 1, 2], daily_growth_
                     model = vary_delay_mean_death(model, mean_shift[i])
                     # delay_probs_death_combined.append(model.DelayProbDeaths) 
                     model.build_model()
-                model.run(samples, chains=chains, cores=cores)
+                model.run(2000, tune=500, chains=4, cores=4)
                 filename = out_dir + '/delay_mean_death_combined_dif_' + str(i) + '.txt'
                 save_traces(model, model_type, filename)
         elif model_type == 'combined_no_noise':
@@ -1071,14 +1071,14 @@ def delay_mean_sensitivity(model_types, mean_shift=[-2, -1, 1, 2], daily_growth_
                     model = vary_delay_mean_confirmed(model, mean_shift[i])
                     # delay_probs_conf_combined.append(model.DelayProbCases) 
                     model.build_model()
-                model.run(samples, chains=chains, cores=cores)
+                model.run(2000, tune=500, chains=4, cores=4)
                 filename = out_dir + '/delay_mean_confirmed_combined_no_noise_' + str(i) + '.txt'
                 save_traces(model, model_type, filename)
                 with cm_effect.models.CMCombined_Final_NoNoise(data) as model:
                     model = vary_delay_mean_death(model, mean_shift[i])
                     # delay_probs_death_combined.append(model.DelayProbDeaths) 
                     model.build_model()
-                model.run(samples, chains=chains, cores=cores)
+                model.run(2000, tune=500, chains=4, cores=4)
                 filename = out_dir + '/delay_mean_death_combined_no_noise_' + str(i) + '.txt'
                 save_traces(model, model_type, filename)
         elif model_type == 'combined_additive':
@@ -1092,7 +1092,7 @@ def delay_mean_sensitivity(model_types, mean_shift=[-2, -1, 1, 2], daily_growth_
                     model = vary_delay_mean_confirmed(model, mean_shift[i])
                     # delay_probs_conf_combined.append(model.DelayProbCases) 
                     model.build_model()
-                model.run(samples, chains=chains, cores=cores)
+                model.run(2000, tune=500, chains=4, cores=4)
                 filename = out_dir + '/delay_mean_confirmed_combined_additive_' + str(i) + '.txt'
                 save_traces(model, model_type, filename)
 
@@ -1102,7 +1102,7 @@ def delay_mean_sensitivity(model_types, mean_shift=[-2, -1, 1, 2], daily_growth_
                     model = vary_delay_mean_death(model, mean_shift[i])
                     # delay_probs_death_combined.append(model.DelayProbDeaths) 
                     model.build_model()
-                model.run(samples, chains=chains, cores=cores)
+                model.run(2000, tune=500, chains=4, cores=4)
                 filename = out_dir + '/delay_mean_death_combined_additive_' + str(i) + '.txt'
                 save_traces(model, model_type, filename)
         else:
@@ -1132,6 +1132,6 @@ def delay_mean_sensitivity(model_types, mean_shift=[-2, -1, 1, 2], daily_growth_
                         model = vary_delay_mean_death(model, mean_shift[i])
                         delay_probs_death.append(model.DelayProbDeaths)
                         model.build_model()
-                model.run(samples, chains=chains, cores=cores)
+                model.run(2000, tune=500, chains=4, cores=4)
                 filename = out_dir + '/delay_mean_' + model_type + '_' + str(i) + '.txt'
                 save_traces(model, model_type, filename)

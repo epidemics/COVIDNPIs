@@ -457,7 +457,7 @@ class DataPreprocessor():
             "confirmed_mask": self.min_num_active_mask,
         }
 
-    def preprocess_data(self, data_path, last_day=None, schools_unis="xor"):
+    def preprocess_data(self, data_path, last_day=None, schools_unis="default"):
         # load data
         df = pd.read_csv(data_path, parse_dates=["Date"], infer_datetime_format=True).set_index(
             ["Country Code", "Date"])
