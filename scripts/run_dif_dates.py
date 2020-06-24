@@ -25,7 +25,7 @@ args = argparser.parse_args()
 
 if __name__ == "__main__":
 
-    last_dates = ["2020-04-25", "2020-05-05", "2020-05-15", "2020-05-25", None]
+    last_dates = ["2020-04-25", "2020-05-05", "2020-05-15", "2020-05-25", "2020-05-30"]
     dp = DataPreprocessor()
     data = dp.preprocess_data("notebooks/double-entry-data/double_entry_final.csv",
                               last_day=last_dates[args.last_date], merge_schools_unis=False)
@@ -33,12 +33,12 @@ if __name__ == "__main__":
 
     if args.model == 0:
         with cm_effect.models.CMCombined_Final(data, None) as model:
-            model.build_model()
+            model.build_model(serial_interval_mean=6.7, serial_interval_sigma=2.1)
     else:
         with cm_effect.models.CMCombined_Final(data, None) as model:
             model.build_model(serial_interval_mean=5.1, serial_interval_sigma=1.8)
 
     with model.model:
-        model.trace = pm.sample(1000, cores=4, chains=4, target_accept=0.9)
+        model.trace = pm.sample(1000, cores=4, chains=4, target_accept=0.9, max_treedepth=10)
 
     np.savetxt(f"double_fff/res_model_{args.model}_date_{args.last_date}.csv", model.trace.CMReduction)
