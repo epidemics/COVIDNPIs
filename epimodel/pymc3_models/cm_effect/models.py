@@ -268,7 +268,7 @@ class BaseCMModel(Model):
     def run(self, N, chains=2, cores=2, **kwargs):
         print(self.check_test_point())
         with self.model:
-            self.trace = pm.sample(N, chains=chains, cores=cores, init="adapt_diag", **kwargs)
+            self.trace = pm.sample(N, chains=chains, cores=cores, init="jitter+adapt_diag", target_accept=0.9, max_treedepth=10, **kwargs)
 
 
 class CMDeath_Final(BaseCMModel):
