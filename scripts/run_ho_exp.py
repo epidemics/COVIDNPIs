@@ -57,8 +57,8 @@ if __name__ == "__main__":
 
     print(args.rgs)
     for rg in args.rgs:
-        dp = DataPreprocessor(min_confirmed=100, drop_HS=True)
-        data = dp.preprocess_data("notebooks/final_data/data_final.csv")
+        dp = DataPreprocessor()
+        data = dp.preprocess_data("notebooks/double-entry-data/double_entry_final.csv", last_day="2020-05-30", schools_unis="whoops")
 
         mask_region(data, rg)
         indx = data.Rs.index(rg)
@@ -68,7 +68,7 @@ if __name__ == "__main__":
             model.build_model()
 
         with model.model:
-            model.trace = pm.sample(args.nS, chains=args.nC, target_accept=0.95)
+            model.trace = pm.sample(2000, tune=500, cores=4, target_accept=0.9, max_treedepth=10)
 
         results_obj = ResultsObject(indx, model.trace)
-        pickle.dump(results_obj, open(f"ho_resultsv2/{rg}.pkl","wb"))
+        pickle.dump(results_obj, open(f"ho_results_final/{rg}.pkl","wb"))
