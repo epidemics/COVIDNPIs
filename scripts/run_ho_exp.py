@@ -47,7 +47,7 @@ if __name__ == "__main__":
     class ResultsObject():
         def __init__(self, indx, trace):
             self.CMReduction = trace.CMReduction
-            self.RegionR = trace.RegionLogR[:, indx]
+            self.RegionR = trace.RegionR[:, indx]
             self.InfectedCases = trace.InfectedCases[:, indx, :]
             self.InfectedDeaths = trace.InfectedDeaths[:, indx, :]
             self.ExpectedCases = trace.ExpectedCases[:, indx, :]
