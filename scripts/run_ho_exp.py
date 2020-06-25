@@ -56,7 +56,7 @@ if __name__ == "__main__":
     print(args.rgs)
     for rg in args.rgs:
         dp = DataPreprocessor()
-        data = dp.preprocess_data("notebooks/double-entry-data/double_entry_final.csv", last_day="2020-05-30", schools_unis="whoops")
+        data = dp.preprocess_data("../notebooks/double-entry-data/double_entry_final.csv", last_day="2020-05-30", schools_unis="whoops")
 
         mask_region(data, rg)
         indx = data.Rs.index(rg)
