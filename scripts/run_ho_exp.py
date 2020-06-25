@@ -31,11 +31,6 @@ def mask_region(d, region, days=14):
     else:
         d_s = len(d.Ds)
 
-    d.Active.mask = False
-    d.Confirmed.mask = False
-    d.Deaths.mask = False
-    d.NewDeaths.mask = False
-    d.NewCases.mask = False
     d.Active.mask[i,c_s:] = True
     d.Confirmed.mask[i,c_s:] = True
     d.Deaths.mask[i,d_s:] = True
@@ -58,6 +53,7 @@ if __name__ == "__main__":
         dp = DataPreprocessor()
         data = dp.preprocess_data("notebooks/double-entry-data/double_entry_final.csv", last_day="2020-05-30", schools_unis="whoops")
 
+        data.mask_reopenings()
         mask_region(data, rg)
         indx = data.Rs.index(rg)
 
