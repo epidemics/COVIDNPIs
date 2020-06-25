@@ -25,8 +25,8 @@ fp2 = FontProperties(fname=r"../../fonts/Font Awesome 5 Free-Solid-900.otf")
 # taken from Cereda et. al (2020).
 # https://arxiv.org/ftp/arxiv/papers/2003/2003.09320.pdf
 # alpha is shape, beta is inverse scale (reciprocal reported in the paper).
-SI_ALPHA = 1.87
-SI_BETA = 0.28
+# SI_ALPHA = 1.87
+# SI_BETA = 0.28
 
 
 # # ICL paper versions.
@@ -34,8 +34,8 @@ SI_BETA = 0.28
 # SI_BETA = (1 / (6.5 * (0.62 ** 2)))
 
 # cereda mean, eurosurveilance SI
-# SI_ALPHA = 7.395
-# SI_BETA = 1.188
+SI_ALPHA = 7.935
+SI_BETA = 1.188
 
 # # eurosurveilance signapore
 # SI_ALPHA = 7.935
@@ -1762,9 +1762,8 @@ class CMCombined_Final(BaseCMModel):
             self.GrowthCases = pm.Deterministic("GrowthCases", self.ExpectedGrowth + self.GrowthCasesNoise)
             self.GrowthDeaths = pm.Deterministic("GrowthDeaths", self.ExpectedGrowth + self.GrowthDeathsNoise)
 
-            self.Tau1 = pm.Exponential("Tau1", 1 / 0.03)
-            self.InitialSizeCases = pm.Exponential("InitialSizeCases", self.Tau1, shape=(self.nORs, 1))
-            self.InfectedCases = pm.Deterministic("InfectedCases", self.InitialSizeCases * pm.math.exp(self.GrowthCases.cumsum(axis=1)))
+            self.InitialSizeCases_log = pm.Normal("InitialSizeCases_log", 0, 50, shape=(self.nORs, 1))
+            self.InfectedCases = pm.Deterministic("InfectedCases", pm.math.exp(self.InitialSizeCases_log + self.GrowthCases.cumsum(axis=1)))
 
             expected_cases = C.conv2d(
                 self.InfectedCases,
@@ -1799,9 +1798,8 @@ class CMCombined_Final(BaseCMModel):
                     observed=self.d.NewCases.data[:, self.CMDelayCut:].reshape((self.nORs * self.nODs,))[self.all_observed_active]
                 )
 
-            self.Tau2 = pm.Exponential("Tau2", 1 / 0.03)
-            self.InitialSizeDeaths = pm.Exponential("InitialSizeDeaths", self.Tau2, shape=(self.nORs, 1))
-            self.InfectedDeaths = pm.Deterministic("InfectedDeaths", self.InitialSizeDeaths * pm.math.exp(self.GrowthDeaths.cumsum(axis=1)))
+            self.InitialSizeDeaths_log = pm.Normal("InitialSizeDeaths_log", 0, 50, shape=(self.nORs, 1))
+            self.InfectedDeaths = pm.Deterministic("InfectedDeaths", pm.math.exp(self.InitialSizeDeaths_log + self.GrowthDeaths.cumsum(axis=1)))
 
             expected_deaths = C.conv2d(
                 self.InfectedDeaths,
@@ -7725,7 +7723,6 @@ class CMCombined_ICL_NoNoise_6(BaseCMModel):
                 shape=(len(self.all_observed_deaths),),
                 observed=self.NewDeaths
             )
-
 
 class CMCombined_ICL_NoNoise_7(BaseCMModel):
     def __init__(
