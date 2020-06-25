@@ -34,9 +34,18 @@ if __name__ == "__main__":
     if args.model == 0:
         with cm_effect.models.CMCombined_Final(data, None) as model:
             model.build_model(serial_interval_mean=6.7, serial_interval_sigma=2.1)
-    else:
+    elif args.model == 1:
         with cm_effect.models.CMCombined_Final(data, None) as model:
             model.build_model(serial_interval_mean=5.1, serial_interval_sigma=1.8)
+    elif args.model == 2:
+        with cm_effect.models.CMCombined_Final(data, None) as model:
+            model.build_model(serial_interval_mean=6.68, serial_interval_sigma=4.88)
+    elif args.model == 3:
+        with cm_effect.models.CMCombined_Final_Reset1(data, None) as model:
+            model.build_model(serial_interval_mean=6.68, serial_interval_sigma=4.88)
+    elif args.model == 4:
+        with cm_effect.models.CMCombined_Final_Reset2(data, None) as model:
+            model.build_model(serial_interval_mean=6.68, serial_interval_sigma=4.88)
 
     with model.model:
         model.trace = pm.sample(1000, cores=4, chains=4, target_accept=0.9, max_treedepth=10)
