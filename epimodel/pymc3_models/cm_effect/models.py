@@ -1671,7 +1671,7 @@ class CMCombined_Final(BaseCMModel):
                                          2.66129174e-04, 2.21364768e-04, 1.80736566e-04, 1.52350196e-04])
         self.DelayProbDeaths = self.DelayProbDeaths.reshape((1, self.DelayProbDeaths.size))
 
-        self.CMDelayCut = 30
+        self.CMDelayCut = 7
         self.DailyGrowthNoise = 0.2
 
         self.ObservedDaysIndx = np.arange(self.CMDelayCut, len(self.d.Ds))
