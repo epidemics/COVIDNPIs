@@ -65,4 +65,4 @@ if __name__ == "__main__":
             model.trace = pm.sample(2000, tune=500, cores=4, target_accept=0.9, max_treedepth=10)
 
         results_obj = ResultsObject(indx, model.trace)
-        pickle.dump(results_obj, open(f"ho_results_final/{rg}.pkl","wb"))
+        pickle.dump(results_obj, open(f"ho_results_final2/{rg}.pkl","wb"))
