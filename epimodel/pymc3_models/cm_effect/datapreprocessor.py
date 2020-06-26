@@ -756,7 +756,7 @@ class PreprocessedData(object):
         ax = plt.gca()
         mat = np.zeros((nCMs, nCMs))
         for cm in range(nCMs):
-            mask = self.ActiveCMs[:, cm, :]
+            mask = self.ActiveCMs[:, cm, :] * (self.NewDeaths.mask == False)
             for cm2 in range(nCMs):
                 mat[cm, cm2] = np.sum(mask * self.ActiveCMs[:, cm2, :]) / np.sum(mask)
         im = plt.imshow(mat * 100, vmin=0, vmax=100, cmap="inferno", aspect="auto")
@@ -804,7 +804,8 @@ class PreprocessedData(object):
         nRs, nCMs, nDs = self.ActiveCMs.shape
 
         ax = plt.gca()
-        days_active = np.sum(np.sum(self.ActiveCMs, axis=0), axis=1)
+        mask = np.reshape((self.NewDeaths.mask == False), (nRs, 1, nDs))
+        days_active = np.sum(np.sum(self.ActiveCMs * np.repeat(mask, nCMs, axis=1), axis=0), axis=1)
         plt.barh(-np.arange(nCMs), days_active)
 
         plt.yticks(

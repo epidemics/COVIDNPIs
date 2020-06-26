@@ -78,6 +78,7 @@ def region_holdout_sensitivity(model_types, regions_heldout=["NL", "PL", "PT", "
 
     for region in regions_heldout:
         data = dp.preprocess_data(data_path, last_day="2020-05-30")
+        data.mask_reopenings()
         if min_deaths is not None:
             data.filter_region_min_deaths(min_deaths)
         mask_region(data, region)
@@ -138,6 +139,7 @@ def cm_leavout_sensitivity(model_types, daily_growth_noise=None, min_deaths=None
                            region_var_noise=0.1, data_path="notebooks/double-entry-data/double_entry_final.csv"):
     dp = DataPreprocessor(drop_HS=True)
     data = dp.preprocess_data(data_path, last_day="2020-05-30")
+    data.mask_reopenings()
     if min_deaths is not None:
         data.filter_region_min_deaths(min_deaths)
 
@@ -201,6 +203,7 @@ def cm_prior_sensitivity(model_types, priors=['half_normal', 'wide', "icl"], sig
                          daily_growth_noise=None, min_deaths=None, region_var_noise=0.1, data_path="notebooks/double-entry-data/double_entry_final.csv"):
     dp = DataPreprocessor(drop_HS=True)
     data = dp.preprocess_data(data_path, last_day="2020-05-30")
+    data.mask_reopenings()
     if min_deaths is not None:
         data.filter_region_min_deaths(min_deaths)
 
@@ -431,6 +434,7 @@ def daily_growth_noise_sensitivity(model_types, daily_growth_noise=[0.05, 0.1, 0
                                    min_deaths=None, region_var_noise=0.1, data_path="notebooks/double-entry-data/double_entry_final.csv"):
     dp = DataPreprocessor(drop_HS=True)
     data = dp.preprocess_data(data_path, last_day="2020-05-30")
+    data.mask_reopenings()
     if min_deaths is not None:
         data.filter_region_min_deaths(min_deaths)
 
@@ -485,6 +489,7 @@ def min_num_confirmed_sensitivity(model_types, min_conf_cases=[10, 30, 300, 500]
             print('Minimum number of confirmed cases: ' + str(min_conf_cases[i]))
             dp.min_confirmed = min_conf_cases[i]
             data = dp.preprocess_data(data_path, last_day="2020-05-30")
+            data.mask_reopenings()
             if min_deaths is not None:
                 data.filter_region_min_deaths(min_deaths)
 
@@ -542,6 +547,7 @@ def min_num_deaths_sensitivity(model_types, min_deaths_ths=[3, 5, 30, 50],
             print('Minimum number of death cases: ' + str(min_deaths_ths[i]))
             dp.min_deaths = min_deaths_ths[i]
             data = dp.preprocess_data(data_path, last_day="2020-05-30")
+            data.mask_reopenings()
             if min_deaths is not None:
                 data.filter_region_min_deaths(min_deaths)
 
@@ -599,6 +605,7 @@ def smoothing_sensitivity(model_types, N_days=[1, 3, 7, 15],
             print('Minimum number of days: ' + str(N_days[i]))
             dp.N_smooth = N_days[i]
             data = dp.preprocess_data(data_path, last_day="2020-05-30")
+            data.mask_reopenings()
             if min_deaths is not None:
                 data.filter_region_min_deaths(min_deaths)
 
@@ -671,6 +678,7 @@ def MCMC_stability(model_types, daily_growth_noise=None, min_deaths=None,
                    region_var_noise=0.1, data_path="notebooks/double-entry-data/double_entry_final.csv"):
     dp = DataPreprocessor(drop_HS=True)
     data = dp.preprocess_data(data_path, last_day="2020-05-30")
+    data.mask_reopenings()
     if min_deaths is not None:
         data.filter_region_min_deaths(min_deaths)
 
@@ -730,11 +738,12 @@ def MCMC_stability(model_types, daily_growth_noise=None, min_deaths=None,
         save_traces(model, model_type, filename)
 
 
-def R_hyperprior_mean_sensitivity(model_types, hyperprior_means=[1.5, 5.5],
+def R_hyperprior_mean_sensitivity(model_types, hyperprior_means=[2.5, 4.5],
                                   daily_growth_noise=None, min_deaths=None,
                                   region_var_noise=0.1, data_path="notebooks/double-entry-data/double_entry_final.csv"):
     dp = DataPreprocessor(drop_HS=True)
     data = dp.preprocess_data(data_path, last_day="2020-05-30")
+    data.mask_reopenings()
     if min_deaths is not None:
         data.filter_region_min_deaths(min_deaths)
 
@@ -796,6 +805,7 @@ def serial_interval_sensitivity(model_types, serial_interval=[4, 5, 6, 7, 8],
                                 region_var_noise=0.1, data_path="notebooks/double-entry-data/double_entry_final.csv"):
     dp = DataPreprocessor(drop_HS=True)
     data = dp.preprocess_data(data_path, last_day="2020-05-30")
+    data.mask_reopenings()
     if min_deaths is not None:
         data.filter_region_min_deaths(min_deaths)
 
@@ -958,6 +968,7 @@ def delay_mean_sensitivity(model_types, mean_shift=[-2, -1, 1, 2], daily_growth_
 
     dp = DataPreprocessor(drop_HS=True)
     data = dp.preprocess_data(data_path, last_day="2020-05-30")
+    data.mask_reopenings()
     if min_deaths is not None:
         data.filter_region_min_deaths(min_deaths)
     out_dir = generate_out_dir(daily_growth_noise)
