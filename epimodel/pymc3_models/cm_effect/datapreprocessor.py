@@ -930,7 +930,7 @@ class PreprocessedData(object):
         nnz = rs.size
 
         for nz_i in range(nnz):
-            if (ds[nz_i] + 7) > d_min and ds[nz_i] + 7 < len(self.Ds):
+            if (ds[nz_i] + 3) > d_min and ds[nz_i] + 3 < len(self.Ds):
                 print(f"Masking {self.Rs[rs[nz_i]]} from {self.Ds[ds[nz_i] + 3]}")
                 self.NewCases[rs[nz_i], ds[nz_i] + 3:].mask = True
                 self.NewDeaths[rs[nz_i], ds[nz_i] + 12:].mask = True
