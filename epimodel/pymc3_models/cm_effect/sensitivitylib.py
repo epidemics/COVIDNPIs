@@ -1,8 +1,9 @@
 import os
+
 os.environ["THEANO_FLAGS"] = "OMP_NUM_THREADS=1, MKL_NUM_THREADS=1, OPENBLAS_NUM_THREADS=1"
-os.environ["OMP_NUM_THREADS"] =  "1"
-os.environ["MKL_NUM_THREADS"] =  "1"
-os.environ["OPENBLAS_NUM_THREADS"] =  "1"
+os.environ["OMP_NUM_THREADS"] = "1"
+os.environ["MKL_NUM_THREADS"] = "1"
+os.environ["OPENBLAS_NUM_THREADS"] = "1"
 
 ### imports
 import logging
@@ -46,8 +47,8 @@ def save_traces(model, model_type, filename):
     rhats = calc_trace_statistic(model, 'rhat')
     ess = calc_trace_statistic(model, 'ess')
 
-    np.savetxt(filename[:-4]+"rhats.txt", rhats)
-    np.savetxt(filename[:-4]+"ess.txt", ess)
+    np.savetxt(filename[:-4] + "rhats.txt", rhats)
+    np.savetxt(filename[:-4] + "ess.txt", ess)
 
 
 def mask_region(d, region, days=14):
@@ -79,7 +80,8 @@ def leavout_cm(data, cm_leavouts, i):
 
 
 def region_holdout_sensitivity(model_types, regions_heldout=["NL", "PL", "PT", "CZ", "DE", "MX"],
-                               daily_growth_noise=None, min_deaths=None, region_var_noise=0.1, data_path="notebooks/double-entry-data/double_entry_final.csv"):
+                               daily_growth_noise=None, min_deaths=None, region_var_noise=0.1,
+                               data_path="notebooks/double-entry-data/double_entry_final.csv"):
     dp = DataPreprocessor(drop_HS=True)
 
     for region in regions_heldout:
@@ -206,7 +208,8 @@ def cm_leavout_sensitivity(model_types, daily_growth_noise=None, min_deaths=None
 
 
 def cm_prior_sensitivity(model_types, priors=['half_normal', 'wide', "icl"], sigma_wide=10,
-                         daily_growth_noise=None, min_deaths=None, region_var_noise=0.1, data_path="notebooks/double-entry-data/double_entry_final.csv"):
+                         daily_growth_noise=None, min_deaths=None, region_var_noise=0.1,
+                         data_path="notebooks/double-entry-data/double_entry_final.csv"):
     dp = DataPreprocessor(drop_HS=True)
     data = dp.preprocess_data(data_path, "2020-05-30")
     data.mask_reopenings()
@@ -437,7 +440,8 @@ def data_schools_open_sensitivity(model_types, daily_growth_noise=None, min_deat
 
 
 def daily_growth_noise_sensitivity(model_types, daily_growth_noise=[0.05, 0.1, 0.4],
-                                   min_deaths=None, region_var_noise=0.1, data_path="notebooks/double-entry-data/double_entry_final.csv"):
+                                   min_deaths=None, region_var_noise=0.1,
+                                   data_path="notebooks/double-entry-data/double_entry_final.csv"):
     dp = DataPreprocessor(drop_HS=True)
     data = dp.preprocess_data(data_path, "2020-05-30")
     data.mask_reopenings()
@@ -951,7 +955,8 @@ def vary_delay_mean_death(model, mean_shift):
 
 
 def delay_mean_sensitivity(model_types, mean_shift=[-2, -1, 1, 2], daily_growth_noise=None,
-                           min_deaths=None, region_var_noise=0.1, data_path="notebooks/double-entry-data/double_entry_final.csv"):
+                           min_deaths=None, region_var_noise=0.1,
+                           data_path="notebooks/double-entry-data/double_entry_final.csv"):
     '''
     mean_shift shifts the mean of the underlying distributions that will combine
     to form the delay distrobution. So the resulting total delay distribution
