@@ -484,7 +484,7 @@ def daily_growth_noise_sensitivity(model_types, daily_growth_noise=[0.05, 0.1, 0
                     model.build_model()
 
             model.run(2000, tune=500, chains=4, cores=4)
-            out_dir = '../../../notebooks/sensitivity_stability_checks/out'
+            out_dir = generate_out_dir(daily_growth_noise)
             filename = out_dir + '/growth_noise_' + model_type + '_' + str(i) + '.txt'
             save_traces(model, model_type, filename)
 

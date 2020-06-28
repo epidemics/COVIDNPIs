@@ -1,4 +1,7 @@
 #!/bin/bash
+export OMP_NUM_THREADS=1
+export MKL_NUM_THREADS=1
+export OPENBLAS_NUM_THREADS=1
 python scripts/run_ho_exp.py --s 2000 --c 4 --rg AL AD AT &
 python scripts/run_ho_exp.py --s 2000 --c 4 --rg DK EE FI &
 python scripts/run_ho_exp.py --s 2000 --c 4 --rg IS IE IL &
