@@ -355,7 +355,7 @@ class CMDeath_Final(BaseCMModel):
 
             self.ExpectedLogR = pm.Deterministic(
                 "ExpectedLogR",
-                T.reshape(self.RegionLogR, (self.nORs, 1)) - self.GrowthReduction
+                T.reshape(pm.math.log(self.RegionR), (self.nORs, 1)) - self.GrowthReduction
             )
 
             serial_interval_sigma = np.sqrt(SI_ALPHA / SI_BETA ** 2)

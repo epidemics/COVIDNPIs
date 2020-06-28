@@ -145,7 +145,7 @@ if __name__ == "__main__":
                                   schools_unis="whoops")
         data.mask_reopenings()
 
-        with cm_effect.models.CMCombined_Final_DifDelays(data, None) as model:
+        with cm_effect.models.CMCombined_Final(data, None) as model:
             model.build_model()
 
     elif exp_num == 11:
@@ -155,7 +155,7 @@ if __name__ == "__main__":
                                   schools_unis="whoops")
         data.mask_reopenings()
 
-        with cm_effect.models.CMCombined_Final_DifDelays(data, None) as model:
+        with cm_effect.models.CMCombined_Finals(data, None) as model:
             model.build_model()
 
     elif exp_num == 12:
@@ -164,7 +164,7 @@ if __name__ == "__main__":
                                   schools_unis="whoops")
         data.mask_reopenings()
 
-        with cm_effect.models.CMCombined_Final_DifDelays(data, None) as model:
+        with cm_effect.models.CMCombined_Final(data, None) as model:
             model.build_model()
 
     # any NPI active
@@ -172,7 +172,7 @@ if __name__ == "__main__":
         data = dp.preprocess_data("notebooks/double-entry-data/double_entry_final.csv", last_day="2020-05-30",
                                   schools_unis="whoops")
 
-        major_interventions = ["School Closure", "Stay Home Order", "Some Businesses Suspended",  "University Closure"
+        major_interventions = ["School Closure", "Stay Home Order", "Some Businesses Suspended",  "University Closure",
                                "Most Businesses Suspended", "Gatherings <10", "Gatherings <1000", "Gatherings <100"]
 
         nRs, nCMs, nDs = data.ActiveCMs.shape
@@ -199,7 +199,7 @@ if __name__ == "__main__":
         data = dp.preprocess_data("notebooks/double-entry-data/double_entry_final.csv", last_day="2020-05-30",
                                   schools_unis="whoops")
 
-        major_interventions = ["School Closure", "Stay Home Order", "Some Businesses Suspended", "University Closure"
+        major_interventions = ["School Closure", "Stay Home Order", "Some Businesses Suspended", "University Closure",
                                "Most Businesses Suspended", "Gatherings <10", "Gatherings <1000", "Gatherings <100"]
         minor_interventions = ["Mask Wearing"]
 
