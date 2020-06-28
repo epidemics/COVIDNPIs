@@ -155,7 +155,7 @@ if __name__ == "__main__":
                                   schools_unis="whoops")
         data.mask_reopenings()
 
-        with cm_effect.models.CMCombined_Finals(data, None) as model:
+        with cm_effect.models.CMCombined_Final(data, None) as model:
             model.build_model()
 
     elif exp_num == 12:
