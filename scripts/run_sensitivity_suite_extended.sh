@@ -19,7 +19,12 @@
 #   see sensitivitylib.py, most parameters for testing have optional 
 #   parameters if you want to try different values
 
+# to allow for proper parallelisation
+export OMP_NUM_THREADS=1
+export MKL_NUM_THREADS=1
+export OPENBLAS_NUM_THREADS=1
 
+# run stuff
 /home/mrinank/.cache/pypoetry/virtualenvs/epimodel-KvSMb--q-py3.7/bin/python -c 'from epimodel.pymc3_models.cm_effect.sensitivitylib import *; cm_leavout_sensitivity(["combined"])' &
 /home/mrinank/.cache/pypoetry/virtualenvs/epimodel-KvSMb--q-py3.7/bin/python -c 'from epimodel.pymc3_models.cm_effect.sensitivitylib import *; cm_prior_sensitivity(["combined"])' &
 /home/mrinank/.cache/pypoetry/virtualenvs/epimodel-KvSMb--q-py3.7/bin/python -c 'from epimodel.pymc3_models.cm_effect.sensitivitylib import *; daily_growth_noise_sensitivity(["combined"])' &
