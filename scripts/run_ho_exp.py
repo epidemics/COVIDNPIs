@@ -1,3 +1,10 @@
+### threading
+import os
+os.environ["THEANO_FLAGS"] = "OMP_NUM_THREADS=1, MKL_NUM_THREADS=1, OPENBLAS_NUM_THREADS=1"
+os.environ["OMP_NUM_THREADS"] =  "1"
+os.environ["MKL_NUM_THREADS"] =  "1"
+os.environ["OPENBLAS_NUM_THREADS"] =  "1"
+
 ### Initial imports
 import logging
 import numpy as np
@@ -51,7 +58,7 @@ if __name__ == "__main__":
     print(args.rgs)
     for rg in args.rgs:
         dp = DataPreprocessor()
-        data = dp.preprocess_data("notebooks/double-entry-data/double_entry_final.csv", last_day="2020-04-30", schools_unis="whoops")
+        data = dp.preprocess_data("notebooks/double-entry-data/double_entry_final.csv", last_day="2020-05-30", schools_unis="whoops")
 
         data.mask_reopenings()
         mask_region(data, rg)
@@ -65,4 +72,4 @@ if __name__ == "__main__":
             model.trace = pm.sample(1500, tune=500, cores=4, max_treedepth=12)
 
         results_obj = ResultsObject(indx, model.trace)
-        pickle.dump(results_obj, open(f"ho_results_final3/{rg}.pkl","wb"))
+        pickle.dump(results_obj, open(f"ho_results_final4/{rg}.pkl","wb"))

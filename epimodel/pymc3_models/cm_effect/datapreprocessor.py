@@ -759,10 +759,9 @@ class PreprocessedData(object):
             mask = self.ActiveCMs[:, cm, :] * (self.NewDeaths.mask == False)
             for cm2 in range(nCMs):
                 mat[cm, cm2] = np.sum(mask * self.ActiveCMs[:, cm2, :]) / np.sum(mask)
-        im = plt.imshow(mat * 100, vmin=0, vmax=100, cmap="inferno", aspect="auto")
+        im = plt.imshow(mat * 100, vmin=25, vmax=100, cmap="viridis", aspect="auto")
         ax.tick_params(axis="both", which="major", labelsize=8)
 
-        print(cm_plot_style)
         plt.xticks(
             np.arange(len(self.CMs)),
             [f"{cm_plot_style[i][0]}" for i, f in enumerate(self.CMs)],
@@ -786,15 +785,15 @@ class PreprocessedData(object):
             ticklabel.set_color(cm_plot_style[i][1])
             plt.text(-0.16 * x_r, tickloc, cm_plot_style[i][0], horizontalalignment='center',
                      verticalalignment='center',
-                     fontproperties=fp2, fontsize=8, color=cm_plot_style[i][1])
+                     fontproperties=fp2, fontsize=7, color=cm_plot_style[i][1])
 
-        plt.xticks(fontsize=8)
+        plt.xticks(fontsize=7)
         divider = make_axes_locatable(ax)
         cax = divider.append_axes("right", size="5%", pad=0.05)
-        plt.colorbar(im, cax=cax, format=PercentFormatter())
+        cbr = plt.colorbar(im, cax=cax, format=PercentFormatter())
         ax = plt.gca()
         ax.tick_params(axis="both", which="major", labelsize=6)
-
+        cbr.set_ticks([25, 50, 75, 100])
         # sns.despine()
 
     def cumulative_days_plot(self, cm_plot_style, newfig=True, skip_yticks=False):
@@ -819,9 +818,9 @@ class PreprocessedData(object):
             ticklabel.set_color(cm_plot_style[i][1])
             plt.text(-0.09 * x_r, tickloc, cm_plot_style[i][0], horizontalalignment='center',
                      verticalalignment='center',
-                     fontproperties=fp2, fontsize=8, color=cm_plot_style[i][1])
+                     fontproperties=fp2, fontsize=7, color=cm_plot_style[i][1])
 
-        plt.xticks([0, 500, 1000, 1500, 2000], fontsize=6)
+        plt.xticks([0, 500, 1000, 1500, 2000, 2500, 3000], fontsize=6)
         # ax.tick_params(axis="both", which="major", labelsize=10)
         plt.title("Total Days Active", fontsize=8)
         plt.xlabel("Days", fontsize=8)
