@@ -48,6 +48,7 @@ if __name__ == "__main__":
     dp = DataPreprocessor()
     exp_num = args.exp
 
+    print(f"running exp {exp_num}")
     # structural sensitivity
     if exp_num == 1:
         data = dp.preprocess_data("notebooks/double-entry-data/double_entry_final.csv", last_day="2020-05-30", schools_unis="whoops")
