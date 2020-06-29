@@ -256,13 +256,16 @@ if __name__ == "__main__":
 
     # aggregated holdouts
     elif exp_num == 17:
-        dp.drop_features = ["Travel Screen/Quarantine", "Travel Bans", "Public Transport Limited",
-                            "Internal Movement Limited"]
         data = dp.preprocess_data("notebooks/double-entry-data/double_entry_final.csv", last_day="2020-05-30",
                                   schools_unis="whoops")
+        # mask last 20 days everywhere
+        for rg in data.Rs:
+            mask_region(data, rg)
+
+        # and mask earlier if needed
         data.mask_reopenings(n_extra=20)
 
-        with cm_effect.models.CMCombined_Final_DifDelays(data, None) as model:
+        with cm_effect.models.CMCombined_Final(data, None) as model:
             model.build_model()
 
     elif exp_num == 18:
