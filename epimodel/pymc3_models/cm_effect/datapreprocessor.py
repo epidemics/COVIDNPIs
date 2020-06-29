@@ -620,9 +620,9 @@ class DataMergerDoubleEntryWithMobility():
         for r_i, r in enumerate(regions_epi):
             if r in df.index:
                 for d_i, d in enumerate(Ds):
-                    if d in df.index:
+                    if str(d) in df.index.get_level_values(1):
                         for cm in range(nCMs):
-                            ActiveCMs_mob[r_i, cm, d_i] = df.loc[r, d][cm]
+                            ActiveCMs_mob[r_i, cm, d_i] = df.loc[r, str(d)][cm]
 
         nCMs = len(ordered_features)
         ActiveCMs = np.zeros((nRs, nCMs, nDs))
@@ -632,7 +632,7 @@ class DataMergerDoubleEntryWithMobility():
                 if f in selected_features_epi.values():
                     ActiveCMs[r, f_indx, :] = ActiveCMs_epi[r, list(selected_features_epi.values()).index(f), :]
                 elif "Mobility" in f:
-                    ActiveCMs[r, f_indx, :] = ActiveCMs_epi[r, list(cols_mob).index(f), :]
+                    ActiveCMs[r, f_indx, :] = ActiveCMs_mob[r, list(cols_mob).index(f), :]
                 else:
                     ActiveCMs[r, f_indx, :] = ActiveCMs_oxcgrt[r, oxcgrt_derived_cm_names.index(f), :]
 
@@ -1156,8 +1156,14 @@ class PreprocessedData(object):
     #     self.Ds.extend(e_ts)
     #     self.ActiveCMs = ActiveCMs
 
-    def mask_reopenings(self, d_min=90, n_extra=0):
-        total_cms = self.ActiveCMs
+    def mask_reopenings(self, d_min=90, n_extra=0, max_cms=None):
+
+        if max_cms is not None:
+            n_max = max_cms
+        else:
+            n_max = len(self.CMs)
+
+        total_cms = self.ActiveCMs[:, :n_max, :]
         diff_cms = np.zeros_like(total_cms)
         diff_cms[:, :, 1:] = total_cms[:, :, 1:] - total_cms[:, :, :-1]
         rs, ds = np.nonzero(np.any(diff_cms < 0, axis=1))
@@ -1168,3 +1174,12 @@ class PreprocessedData(object):
                 print(f"Masking {self.Rs[rs[nz_i]]} from {self.Ds[ds[nz_i] + 3]}")
                 self.NewCases[rs[nz_i], ds[nz_i] + 3 - n_extra:].mask = True
                 self.NewDeaths[rs[nz_i], ds[nz_i] + 12 - n_extra:].mask = True
+
+    def mask_region_ends(self, ndays=20):
+        for rg in self.Rs:
+            i = self.Rs.index(rg)
+            self.Active.mask[i, -ndays:] = True
+            self.Confirmed.mask[i, -ndays:] = True
+            self.Deaths.mask[i, -ndays:] = True
+            self.NewDeaths.mask[i, -ndays:] = True
+            self.NewCases.mask[i, -ndays:] = True

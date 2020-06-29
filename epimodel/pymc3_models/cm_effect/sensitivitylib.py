@@ -207,6 +207,131 @@ def cm_leavout_sensitivity(model_types, daily_growth_noise=None, min_deaths=None
             filename = out_dir + '/cm_leavout_' + model_type + '_' + str(i) + '.txt'
             save_traces(model, model_type, filename)
 
+def cm_leavout_sensitivity(model_types, daily_growth_noise=None, min_deaths=None,
+                           region_var_noise=0.1, data_path="notebooks/double-entry-data/double_entry_final.csv"):
+    dp = DataPreprocessor(drop_HS=True)
+    data = dp.preprocess_data(data_path, "2020-05-30")
+    data.mask_reopenings()
+    if min_deaths is not None:
+        data.filter_region_min_deaths(min_deaths)
+
+    cm_leavouts = copy.deepcopy(data.CMs)[:5]
+    # cm_leavouts.append('None')
+
+    for model_type in model_types:
+        for i in range(len(cm_leavouts)):
+            data_cm_leavout = leavout_cm(data, cm_leavouts, i)
+            print('Model: ' + str(model_type))
+            if model_type == 'combined':
+                with cm_effect.models.CMCombined_Final(data_cm_leavout) as model:
+                    if daily_growth_noise is not None:
+                        model.DailyGrowthNoise = daily_growth_noise
+                    model.build_model()
+            if model_type == 'active':
+                with cm_effect.models.CMActive_Final(data_cm_leavout) as model:
+                    if daily_growth_noise is not None:
+                        model.DailyGrowthNoise = daily_growth_noise
+                    model.build_model()
+            if model_type == 'death':
+                with cm_effect.models.CMDeath_Final(data_cm_leavout) as model:
+                    if daily_growth_noise is not None:
+                        model.DailyGrowthNoise = daily_growth_noise
+                    model.build_model()
+            if model_type == 'combined_v3':
+                with cm_effect.models.CMCombined_Final_V3(data_cm_leavout) as model:
+                    if daily_growth_noise is not None:
+                        model.DailyGrowthNoise = daily_growth_noise
+                    model.build_model()
+            if model_type == 'combined_icl':
+                with cm_effect.models.CMCombined_Final_ICL(data_cm_leavout) as model:
+                    if daily_growth_noise is not None:
+                        model.DailyGrowthNoise = daily_growth_noise
+                    model.build_model()
+            if model_type == 'combined_dif':
+                with cm_effect.models.CMCombined_Final_DifEffects(data_cm_leavout) as model:
+                    if daily_growth_noise is not None:
+                        model.DailyGrowthNoise = daily_growth_noise
+                    model.RegionVariationNoise = region_var_noise
+                    model.build_model()
+            if model_type == 'combined_no_noise':
+                with cm_effect.models.CMCombined_Final_NoNoise(data_cm_leavout) as model:
+                    model.build_model()
+            if model_type == 'combined_icl_no_noise':
+                with cm_effect.models.CMCombined_ICL_NoNoise(data_cm_leavout) as model:
+                    model.build_model()
+            if model_type == 'combined_additive':
+                with cm_effect.models.CMCombined_Additive(data_cm_leavout) as model:
+                    if daily_growth_noise is not None:
+                        model.DailyGrowthNoise = daily_growth_noise
+                    model.build_model()
+
+            model.run(2000, tune=500, chains=4, cores=4)
+            out_dir = generate_out_dir(daily_growth_noise)
+            filename = out_dir + '/cm_leavout_' + model_type + '_' + str(i) + '.txt'
+            save_traces(model, model_type, filename)
+
+def cm_leavout_sensitivity2(model_types, daily_growth_noise=None, min_deaths=None,
+                           region_var_noise=0.1, data_path="notebooks/double-entry-data/double_entry_final.csv"):
+    dp = DataPreprocessor(drop_HS=True)
+    data = dp.preprocess_data(data_path, "2020-05-30")
+    data.mask_reopenings()
+    if min_deaths is not None:
+        data.filter_region_min_deaths(min_deaths)
+
+    cm_leavouts = copy.deepcopy(data.CMs)[5:]
+    # cm_leavouts.append('None')
+
+    for model_type in model_types:
+        for i in range(len(cm_leavouts)):
+            data_cm_leavout = leavout_cm(data, cm_leavouts, i+5)
+            print('Model: ' + str(model_type))
+            if model_type == 'combined':
+                with cm_effect.models.CMCombined_Final(data_cm_leavout) as model:
+                    if daily_growth_noise is not None:
+                        model.DailyGrowthNoise = daily_growth_noise
+                    model.build_model()
+            if model_type == 'active':
+                with cm_effect.models.CMActive_Final(data_cm_leavout) as model:
+                    if daily_growth_noise is not None:
+                        model.DailyGrowthNoise = daily_growth_noise
+                    model.build_model()
+            if model_type == 'death':
+                with cm_effect.models.CMDeath_Final(data_cm_leavout) as model:
+                    if daily_growth_noise is not None:
+                        model.DailyGrowthNoise = daily_growth_noise
+                    model.build_model()
+            if model_type == 'combined_v3':
+                with cm_effect.models.CMCombined_Final_V3(data_cm_leavout) as model:
+                    if daily_growth_noise is not None:
+                        model.DailyGrowthNoise = daily_growth_noise
+                    model.build_model()
+            if model_type == 'combined_icl':
+                with cm_effect.models.CMCombined_Final_ICL(data_cm_leavout) as model:
+                    if daily_growth_noise is not None:
+                        model.DailyGrowthNoise = daily_growth_noise
+                    model.build_model()
+            if model_type == 'combined_dif':
+                with cm_effect.models.CMCombined_Final_DifEffects(data_cm_leavout) as model:
+                    if daily_growth_noise is not None:
+                        model.DailyGrowthNoise = daily_growth_noise
+                    model.RegionVariationNoise = region_var_noise
+                    model.build_model()
+            if model_type == 'combined_no_noise':
+                with cm_effect.models.CMCombined_Final_NoNoise(data_cm_leavout) as model:
+                    model.build_model()
+            if model_type == 'combined_icl_no_noise':
+                with cm_effect.models.CMCombined_ICL_NoNoise(data_cm_leavout) as model:
+                    model.build_model()
+            if model_type == 'combined_additive':
+                with cm_effect.models.CMCombined_Additive(data_cm_leavout) as model:
+                    if daily_growth_noise is not None:
+                        model.DailyGrowthNoise = daily_growth_noise
+                    model.build_model()
+
+            model.run(2000, tune=500, chains=4, cores=4)
+            out_dir = generate_out_dir(daily_growth_noise)
+            filename = out_dir + '/cm_leavout_' + model_type + '_' + str(i+5) + '.txt'
+            save_traces(model, model_type, filename)
 
 def cm_prior_sensitivity(model_types, priors=['half_normal', 'wide', "icl"], sigma_wide=10,
                          daily_growth_noise=None, min_deaths=None, region_var_noise=0.1,

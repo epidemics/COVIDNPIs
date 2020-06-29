@@ -129,7 +129,7 @@ if __name__ == "__main__":
             model.build_model()
 
     elif exp_num == 9:
-        dp.drop_features = ["Travel Screen/Quarantine", "Travel Bans", "Public Transport Limited",
+        dp.drop_features = ["Travel Screen/Quarantine", "Travel Bans", "Public Transport Limited", "Public Information Campaigns",
                               "Internal Movement Limited"]
 
         data = dp.preprocess_data("notebooks/double-entry-data/double_entry_final.csv", last_day="2020-05-30",
@@ -143,7 +143,7 @@ if __name__ == "__main__":
         dp.drop_features.append("Mobility - retail and rec")
         data = dp.preprocess_data("notebooks/double-entry-data/double_entry_final_mob.csv", last_day="2020-05-30",
                                   schools_unis="whoops")
-        data.mask_reopenings()
+        data.mask_reopenings(max_cms=9)
 
         with cm_effect.models.CMCombined_Final(data, None) as model:
             model.build_model()
@@ -153,7 +153,7 @@ if __name__ == "__main__":
         dp.drop_features.append("Mobility - workplace")
         data = dp.preprocess_data("notebooks/double-entry-data/double_entry_final_mob.csv", last_day="2020-05-30",
                                   schools_unis="whoops")
-        data.mask_reopenings()
+        data.mask_reopenings(max_cms=9)
 
         with cm_effect.models.CMCombined_Final(data, None) as model:
             model.build_model()
@@ -162,7 +162,7 @@ if __name__ == "__main__":
         # mobility 3
         data = dp.preprocess_data("notebooks/double-entry-data/double_entry_final_mob.csv", last_day="2020-05-30",
                                   schools_unis="whoops")
-        data.mask_reopenings()
+        data.mask_reopenings(max_cms=9)
 
         with cm_effect.models.CMCombined_Final(data, None) as model:
             model.build_model()
@@ -233,7 +233,8 @@ if __name__ == "__main__":
     # Different Delays
     elif exp_num == 15:
         dp.drop_features = ["Travel Screen/Quarantine", "Travel Bans", "Public Transport Limited",
-                            "Internal Movement Limited"]
+                              "Internal Movement Limited",
+                              "Public Information Campaigns"]
         data = dp.preprocess_data("notebooks/double-entry-data/double_entry_final.csv", last_day="2020-05-30",
                                   schools_unis="whoops")
         data.mask_reopenings()
@@ -258,10 +259,8 @@ if __name__ == "__main__":
     elif exp_num == 17:
         data = dp.preprocess_data("notebooks/double-entry-data/double_entry_final.csv", last_day="2020-05-30",
                                   schools_unis="whoops")
-        # mask last 20 days everywhere
-        for rg in data.Rs:
-            mask_region(data, rg)
 
+        data.mask_region_ends()
         # and mask earlier if needed
         data.mask_reopenings(n_extra=20)
 
