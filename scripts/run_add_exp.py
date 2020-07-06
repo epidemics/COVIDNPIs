@@ -200,29 +200,18 @@ if __name__ == "__main__":
                                   schools_unis="whoops")
 
         major_interventions = ["School Closure", "Stay Home Order", "Some Businesses Suspended", "University Closure",
-                               "Most Businesses Suspended", "Gatherings <10", "Gatherings <1000", "Gatherings <100"]
-        minor_interventions = ["Mask Wearing"]
-
+                               "Most Businesses Suspended", "Gatherings <10", "Gatherings <1000", "Gatherings <100", "Mask Wearing"]
         ActiveCMs = copy.deepcopy(data.ActiveCMs)
-
         maj_indxs = np.array([data.CMs.index(x) for x in major_interventions])
-        min_indxs = np.array([data.CMs.index(x) for x in minor_interventions])
-
         nRs, nCMs, nDs = ActiveCMs.shape
-
         maj_mat = np.zeros((len(major_interventions), len(major_interventions)))
-        min_mat = np.zeros((len(minor_interventions), len(minor_interventions)))
-
         for r in range(nRs):
             maj_active = np.sum(data.ActiveCMs[r, maj_indxs, :], axis=0)
             for i in range(len(major_interventions)):
                 ActiveCMs[r, i, :] = maj_active > i
-            min_active = np.sum(data.ActiveCMs[r, min_indxs, :], axis=0)
-            for i in range(len(minor_interventions)):
-                ActiveCMs[r, i + len(major_interventions), :] = min_active > i
 
-        data.CMs = [*[f"Major {i + 1}" for i in range(len(major_interventions))],
-                    *[f"Minor {i + 1}" for i in range(len(minor_interventions))]]
+
+        data.CMs = [f"Major {i + 1}" for i in range(len(major_interventions))]
         data.ActiveCMs = ActiveCMs
 
         data.mask_reopenings()
@@ -281,6 +270,16 @@ if __name__ == "__main__":
         data.mask_reopenings()
 
         with cm_effect.models.CMDeath_Final(data, None) as model:
+            model.build_model()
+
+    elif exp_num == 20:
+        data = dp.preprocess_data("notebooks/double-entry-data/double_entry_final.csv", last_day="2020-05-30",
+                                  schools_unis="whoops")
+        data.mask_reopenings()
+        to_del_index = [data.CMs.index(cm) for cm in ["School Closure", "University Closure"]]
+        data.ActiveCMs[:, to_del_index, :] = 0
+
+        with cm_effect.models.CMCombined_Final(data, None) as model:
             model.build_model()
 
 
