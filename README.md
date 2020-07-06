@@ -1,63 +1,35 @@
-# Epidemics data processing and modelling toolkit
+# COVID-19 Countermeasure Effectiveness
 
-A data library and a toolkit for modelling COVID-19 epidemics.
-
-## Main concepts
-
-* Region database (continents, countries, provinces, GLEAM basins) - codes, names, basic stats, tree structure (TODO).
-* All data, including the region database, is stored in [epimodel-covid-data](https://github.com/epidemics/epimodel-covid-data) repo for asynchronous updates.
-* Each region has an ISO-based code, all datasets are organized by those codes (as a row index).
-* Built on Pandas with some helpers, using mostly CSVs and HDF5.
-* Algorithms and imports assuming common dataframe structure (with `Code` and optionally `Date` row index).
-* All dates are UTC timestamps, stored in ISO format with TZ.
+This repo contains the code used for [Brauner et al. *The effectiveness and perceived burden of nonpharmaceutical interventions against COVID-19 transmission: a modelling study with 41 countries* (2020)](https://www.medrxiv.org/content/10.1101/2020.05.28.20116129v2.article-info)
 
 ## Install
 
 * [Get Poetry](https://python-poetry.org/docs/#installation)
 * Clone this repository.
 * Install the dependencies and this lib `poetry install` (creates a virtual env by default).
-* Clone the [epimodel-covid-data](https://github.com/epidemics/epimodel-covid-data/) repository. For convenience, I recommend cloninig it inside the `epimodel` repo directory as `data`.
 
-```sh
-## Clone the repositories (or use their https://... withou github login)
-git clone git@github.com:epidemics/epimodel.git
-cd epimodel
-git clone git@github.com:epidemics/epimodel-covid-data.git data
+## Reproducibility
+`scripts/run_add_exps.sh` is used to run "additional" validation experiments, and this file saves full model traces as pickle files (these end up being quite large files). The experiments run are:
 
-## Install packages
-poetry install  # Best run it outside virtualenv - poetry will create its own
-# Alternatively, you can also install PyMC3 or Pyro, and jupyter (in both cases):
-poetry install -E pymc3
-poetry install -E pyro
+1. Additive model. 
+2. Noisy-R model. 
+3. Different-effects model (each NPI has a different effectiveness in each country).
+3. A noisy discrete-renewal model. 
+4. Inclusion of OxCGRT Travel NPIs. 
+5. Inclusion of OxCGRT public transport NPI. 
+5. Inclusion of OxCGRT internal movement NPI. 
+5. Inclusion of OxCGRT information campaign NPI. 
+5. Inclusion of OxCGRT symptomatic testing NPI. 
+5. Inclusion of bonus NPI indicating the onset of intervention.
+5. Estimating the effecting using the timing of each NPI i.e., the n-th NPI is used rather than the specific NPI . 
+5. Different delays in countries that had symptomatic testing. 
+5. Delaying schools and universities by approx. 1 generation interval. 
+5. Performing aggregrated holdouts. 
+5. Cases only model. 
+6. Deaths only model. 
 
-## Or, if using conda, install (a likely list): pandas pymc3 unidecode jupyter ...
+`scripts/run_ho_exps.sh` is used to perform holdout experiment. Custom `ResultsObject` pickle files are saved with data pertaining to the estimated NPI effectiveness and predictions for the unseen countries. We mask cases after the first 14 days of cases (likewise for deaths). 
 
-poetry shell # One way to enter the virtualenv (if not active already)
-poetry run jupyter notebook  # For example
-```
+See `notebooks/double-entry-data` for plotting code (plotting notebooks have `_plotter` in their name). Additionally, the file `final_results.ipynb` is used to peform a full run. 
 
-## Basic usage
-
-```python
-from epimodel import RegionDataset, read_csv
-
-# Read regions
-rds = RegionDataset.load('data/regions.csv')
-# Find by name or by code
-cz = rds['CZ']
-cz = rds.find_one_by_name('Czech Republic')
-# Use attribute access on Region
-print(cz.Name)
-# TODO: attributes for tree-structure access
-
-# Load John Hopkins CSSE dataset with our helper (creates indexes etc.)
-csse = read_csv('data/johns-hopkins.csv')
-print(csse.loc[('CZ', "2020-03-28")])
-```
-
-## Development
-
-* Use Poetry for dependency management.
-* We enforce [black](https://github.com/psf/black) formatting (with the default style).
-* Use `pytest` for testing, add tests for your code!
-* Use pull requests for both this and the data repository.
+`notebooks/double-entry-data/double_entry_final.csv` has the final CSV used for the code. 
