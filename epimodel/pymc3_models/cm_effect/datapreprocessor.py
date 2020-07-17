@@ -826,7 +826,6 @@ class DataPreprocessor():
                                 NewCases,
                                 region_full_names)
 
-
 class ICLDataPreprocessor(DataPreprocessor):
     def __init__(self, *args, **kwargs):
         super().__init__()
@@ -899,7 +898,6 @@ class ICLDataPreprocessor(DataPreprocessor):
                                 data.NewCases,
                                 RNames
                                 )
-
 
 class PreprocessedData(object):
     def __init__(self,
@@ -1141,20 +1139,6 @@ class PreprocessedData(object):
         plt.title("Total Days Active", fontsize=8)
         plt.xlabel("Days", fontsize=8)
         plt.ylim([-len(self.CMs) + 0.5, 0.5])
-
-    # def extend_window(self, n_days):
-    #     if n_days == 0:
-    #         return
-    #
-    #     nRs, nCMs, nDs = self.ActiveCMs.shape
-    #     ActiveCMs = np.zeros((nRs, nCMs, nDs + n_days))
-    #
-    #     ActiveCMs[:, :, :nDs] = self.ActiveCMs
-    #     ActiveCMs[:, :, nDs:] = np.repeat(self.ActiveCMs[:, :, -1].reshape((nRs, nCMs, 1)), n_days, axis=-1)
-    #
-    #     e_ts = [self.Ds[-1] + pd.Timedelta(f"{x} days") for x in range(n_days)]
-    #     self.Ds.extend(e_ts)
-    #     self.ActiveCMs = ActiveCMs
 
     def mask_reopenings(self, d_min=90, n_extra=0, max_cms=None):
 
