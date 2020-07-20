@@ -2,6 +2,10 @@
 
 This repo contains the code used for [Brauner et al. *The effectiveness and perceived burden of nonpharmaceutical interventions against COVID-19 transmission: a modelling study with 41 countries* (2020)](https://www.medrxiv.org/content/10.1101/2020.05.28.20116129v2.article-info)
 
+## Just here for the data?
+The data we collected, including sources, is abailable in the 'data' folder.
+
+
 ## Install
 
 * [Get Poetry](https://python-poetry.org/docs/#installation)
@@ -16,7 +20,7 @@ This repo contains the code used for [Brauner et al. *The effectiveness and perc
 * `sensitivitylib.py` contains a number of sensitivity analyses in library form. 
 
 ## NPI Data
-`notebooks/double-entry-data/double_entry_final.csv` has the final data CSV, containing NPI data for 10 NPIs that we collected across 41 regions. It also includes additional NPIs taken from the [OxCGRT](https://github.com/OxCGRT/covid-policy-tracker) dataset. This is the latest version of data, using NPI data that has had double-entry.  
+`notebooks/double-entry-data/double_entry_final.csv` has the final data CSV, containing NPI data for 9 NPIs that we collected across 41 regions. It also includes additional NPIs taken from the [OxCGRT](https://github.com/OxCGRT/covid-policy-tracker) dataset. This is the latest version of data, using NPI data that has had double-entry.  
 
 
 ## Reproducibility
