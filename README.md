@@ -1,6 +1,6 @@
 # COVID-19 Nonpharmaceutical Interventions Effectiveness
 
-This repo contains the code used for [Brauner et al. *The effectiveness and perceived burden of nonpharmaceutical interventions against COVID-19 transmission: a modelling study with 41 countries* (2020)](https://www.medrxiv.org/content/10.1101/2020.05.28.20116129v2.article-info)
+This repo contains the code used for [Brauner et al. *The effectiveness of eight nonpharmaceutical interventions againstCOVID-19 in 41 countries* (2020)](https://www.medrxiv.org/content/10.1101/2020.05.28.20116129v2.article-info)
 
 ## Just here for the data?
 The data we collected, including sources, is available in the 'data' folder. Please refer to the paper for a description of the data and the data collection process.
