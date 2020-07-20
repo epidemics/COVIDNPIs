@@ -1,4 +1,4 @@
-# COVID-19 Countermeasure Effectiveness
+# COVID-19 Nonpharmaceutical Interventions Effectiveness
 
 This repo contains the code used for [Brauner et al. *The effectiveness and perceived burden of nonpharmaceutical interventions against COVID-19 transmission: a modelling study with 41 countries* (2020)](https://www.medrxiv.org/content/10.1101/2020.05.28.20116129v2.article-info)
 
