@@ -9,7 +9,7 @@ do
   do
     if [ $a!="0.15" ] && [ $g!="0.25" ];then
         echo "Running Growth Noise $g region noise $a"
-        python scripts/run_diffeff_crossval.py --g $g --a $a &
+        python scripts/run_difeff_crossval.py --g $g --a $a &
         sleep 30
     fi
    done
