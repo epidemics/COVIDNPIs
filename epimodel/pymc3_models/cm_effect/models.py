@@ -4502,7 +4502,6 @@ class CMCombined_Final_DifEffects(BaseCMModel):
                                          5.48147154e-04, 4.58151351e-04, 3.85878963e-04, 3.21623249e-04,
                                          2.66129174e-04, 2.21364768e-04, 1.80736566e-04, 1.52350196e-04])
         self.DelayProbDeaths = self.DelayProbDeaths.reshape((1, self.DelayProbDeaths.size))
-
         self.CMDelayCut = 30
         self.DailyGrowthNoise = 0.2
         self.RegionVariationNoise = 0.1
