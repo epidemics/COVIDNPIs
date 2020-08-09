@@ -225,6 +225,7 @@ class DataMergerDoubleEntry():
         self.min_num_confirmed_mask = 10
 
         self.episet_fname = "double_entry_final.csv"
+        self.episet_fname = "data_alt_masks.csv"
         # self.oxcgrt_fname = "OxCGRT_latest.csv"
         self.oxcgrt_fname = "OxCGRT_16620.csv"
         self.johnhop_fname = "johns-hopkins.csv"
