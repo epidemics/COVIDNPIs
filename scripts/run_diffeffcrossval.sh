@@ -3,7 +3,7 @@ export OMP_NUM_THREADS=1
 export MKL_NUM_THREADS=1
 export OPENBLAS_NUM_THREADS=1
 
-for g in 0.001, 0.05, 0.1
+for g in 0.001 0.05 0.1
 do
   for a in 0.05 0.075 0.1 0.125 0.15
   do
