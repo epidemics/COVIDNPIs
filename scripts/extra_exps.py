@@ -54,21 +54,25 @@ if __name__ == "__main__":
     elif args.exp == 2:
         extra_cms = ["Travel Screen/Quarantine", "Travel Bans"]
         data = add_extra_cms(data, extra_cms)
+        print(f'Running with {len(data.CMs)} == {data.ActiveCMs.shape[1]} CMs')
         with cm_effect.models.CMCombined_Final(data, None) as model:
             model.build_model()
     elif args.exp == 3:
         extra_cms = ["Public Transport Limited"]
         data = add_extra_cms(data, extra_cms)
+        print(f'Running with {len(data.CMs)} == {data.ActiveCMs.shape[1]} CMs')
         with cm_effect.models.CMCombined_Final(data, None) as model:
             model.build_model()
     elif args.exp == 4:
         extra_cms = ["Internal Movement Limited"]
         data = add_extra_cms(data, extra_cms)
+        print(f'Running with {len(data.CMs)} == {data.ActiveCMs.shape[1]} CMs')
         with cm_effect.models.CMCombined_Final(data, None) as model:
             model.build_model()
     elif args.exp == 5:
-        extra_cms = ["Public Information Limited"]
+        extra_cms = ["Public Information Campaigns"]
         data = add_extra_cms(data, extra_cms)
+        print(f'Running with {len(data.CMs)} == {data.ActiveCMs.shape[1]} CMs')
         with cm_effect.models.CMCombined_Final(data, None) as model:
             model.build_model()
 
