@@ -23,14 +23,28 @@ argparser = argparse.ArgumentParser()
 argparser.add_argument("--e", dest="exp", type=int)
 args = argparser.parse_args()
 
+def add_extra_cms(data, cms):
+    dp = DataPreprocessor(min_confirmed=100, drop_HS=True)
+    data2 = dp.preprocess_data("notebooks/final_data/double_entry_oxcgrt_data.csv")
 
+    nRs, nCMs_orig, nDs = data.ActiveCMs.shape
+    nCMs = nCMs_orig + len(cms)
+
+    ActiveCMs = np.zeros((nRs, nCMs, nDs))
+    ActiveCMs[:, :nCMs_orig, :] = data.ActiveCMs
+
+    for i, cm in enumerate(cms):
+        ActiveCMs[:, nCMs_orig+i, :] = data2.ActiveCMs[:, data2.CMs.index(cm), :nDs]
+        data.CMs.append(cm)
+
+    data.ActiveCMs = ActiveCMs
+    return data
 
 
 if __name__ == "__main__":
 
     dp = DataPreprocessor(min_confirmed=100, drop_HS=True)
     data = dp.preprocess_data("notebooks/final_data/data_final.csv")
-
 
     if args.exp == 0:
         with cm_effect.models.CMCombined_Final(data, None) as model:
@@ -39,17 +53,25 @@ if __name__ == "__main__":
         with cm_effect.models.CMCombined_Final(data, None) as model:
             model.build_model(cm_prior='icl')
     elif args.exp == 2:
+        extra_cms = ["Travel Screen/Quarantine", "Travel Bans"]
+        data = add_extra_cms(data, extra_cms)
         with cm_effect.models.CMCombined_Final(data, None) as model:
-            model.build_model(cm_prior='icl')
+            model.build_model()
     elif args.exp == 3:
+        extra_cms = ["Public Transport Limited"]
+        data = add_extra_cms(data, extra_cms)
         with cm_effect.models.CMCombined_Final(data, None) as model:
-            model.build_model(cm_prior='icl')
+            model.build_model()
     elif args.exp == 4:
+        extra_cms = ["Internal Movement Limited"]
+        data = add_extra_cms(data, extra_cms)
         with cm_effect.models.CMCombined_Final(data, None) as model:
-            model.build_model(cm_prior='icl')
+            model.build_model()
     elif args.exp == 5:
+        extra_cms = ["Public Information Limited"]
+        data = add_extra_cms(data, extra_cms)
         with cm_effect.models.CMCombined_Final(data, None) as model:
-            model.build_model(cm_prior='icl')
+            model.build_model()
 
 
     with model.model:
