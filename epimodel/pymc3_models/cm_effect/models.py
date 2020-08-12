@@ -341,6 +341,10 @@ class CMCombined_Final(BaseCMModel):
             if cm_prior == 'half_normal':
                 self.CM_Alpha = pm.HalfNormal("CM_Alpha", cm_prior_sigma, shape=(self.nCMs,))
 
+            if cm_prior == 'icl':
+                self.CM_Alpha_t = pm.Gamma("CM_Alpha_t", 1 / self.nCMs, 1, shape=(self.nCMs,))
+                self.CM_Alpha = pm.Deterministic("CM_Alpha", self.CM_Alpha_t - np.log(1.05) / self.nCMs)
+
             self.CMReduction = pm.Deterministic("CMReduction", T.exp((-1.0) * self.CM_Alpha))
 
             self.HyperRMean = pm.StudentT(
