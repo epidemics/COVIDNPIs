@@ -16,7 +16,6 @@ warnings.simplefilter(action="ignore", category=FutureWarning)
 from epimodel.pymc3_models import cm_effect
 from epimodel.pymc3_models.cm_effect.datapreprocessor import DataPreprocessor
 import argparse
-import pickle
 import os
 
 argparser = argparse.ArgumentParser()
@@ -24,7 +23,7 @@ argparser.add_argument("--e", dest="exp", type=int)
 args = argparser.parse_args()
 
 def add_extra_cms(data, cms):
-    dp = DataPreprocessor(min_confirmed=100, drop_HS=True)
+    dp = DataPreprocessor(min_confirmed=100)
     data2 = dp.preprocess_data("notebooks/final_data/double_entry_oxcgrt_data.csv")
 
     nRs, nCMs_orig, nDs = data.ActiveCMs.shape
