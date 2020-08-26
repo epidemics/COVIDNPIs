@@ -6,9 +6,7 @@ from datetime import datetime
 import seaborn as sns
 
 import numpy as np
-import scipy.stats
 import pymc3 as pm
-import theano
 import theano.tensor as T
 import theano.tensor.signal.conv as C
 from pymc3 import Model
@@ -18,7 +16,6 @@ sns.set_style("ticks")
 
 from matplotlib.font_manager import FontProperties
 import matplotlib.pyplot as plt
-import matplotlib.patches as patches
 
 fp2 = FontProperties(fname=r"../../fonts/Font Awesome 5 Free-Solid-900.otf")
 
@@ -36,11 +33,6 @@ fp2 = FontProperties(fname=r"../../fonts/Font Awesome 5 Free-Solid-900.otf")
 # cereda mean, eurosurveilance SI
 SI_ALPHA = 7.935
 SI_BETA = 1.188
-
-
-# # eurosurveilance signapore
-# SI_ALPHA = 7.935
-# SI_BETA = 1.556
 
 
 def save_fig_pdf(output_dir, figname):
@@ -280,21 +272,21 @@ class CMDeath_Final(BaseCMModel):
         super().__init__(data, cm_plot_style, name=name, model=model)
 
         self.DelayProb = np.array([0.00000000e+00, 2.24600347e-06, 3.90382088e-05, 2.34307085e-04,
-                                         7.83555003e-04, 1.91221622e-03, 3.78718437e-03, 6.45923913e-03,
-                                         9.94265709e-03, 1.40610714e-02, 1.86527920e-02, 2.34311421e-02,
-                                         2.81965055e-02, 3.27668001e-02, 3.68031574e-02, 4.03026198e-02,
-                                         4.30521951e-02, 4.50637136e-02, 4.63315047e-02, 4.68794406e-02,
-                                         4.67334059e-02, 4.59561441e-02, 4.47164503e-02, 4.29327455e-02,
-                                         4.08614522e-02, 3.85082076e-02, 3.60294203e-02, 3.34601703e-02,
-                                         3.08064505e-02, 2.81766028e-02, 2.56165924e-02, 2.31354369e-02,
-                                         2.07837267e-02, 1.86074383e-02, 1.65505661e-02, 1.46527043e-02,
-                                         1.29409383e-02, 1.13695920e-02, 9.93233881e-03, 8.66063386e-03,
-                                         7.53805464e-03, 6.51560047e-03, 5.63512264e-03, 4.84296166e-03,
-                                         4.14793478e-03, 3.56267297e-03, 3.03480656e-03, 2.59406730e-03,
-                                         2.19519042e-03, 1.85454286e-03, 1.58333238e-03, 1.33002321e-03,
-                                         1.11716435e-03, 9.35360376e-04, 7.87780158e-04, 6.58601602e-04,
-                                         5.48147154e-04, 4.58151351e-04, 3.85878963e-04, 3.21623249e-04,
-                                         2.66129174e-04, 2.21364768e-04, 1.80736566e-04, 1.52350196e-04])
+                                   7.83555003e-04, 1.91221622e-03, 3.78718437e-03, 6.45923913e-03,
+                                   9.94265709e-03, 1.40610714e-02, 1.86527920e-02, 2.34311421e-02,
+                                   2.81965055e-02, 3.27668001e-02, 3.68031574e-02, 4.03026198e-02,
+                                   4.30521951e-02, 4.50637136e-02, 4.63315047e-02, 4.68794406e-02,
+                                   4.67334059e-02, 4.59561441e-02, 4.47164503e-02, 4.29327455e-02,
+                                   4.08614522e-02, 3.85082076e-02, 3.60294203e-02, 3.34601703e-02,
+                                   3.08064505e-02, 2.81766028e-02, 2.56165924e-02, 2.31354369e-02,
+                                   2.07837267e-02, 1.86074383e-02, 1.65505661e-02, 1.46527043e-02,
+                                   1.29409383e-02, 1.13695920e-02, 9.93233881e-03, 8.66063386e-03,
+                                   7.53805464e-03, 6.51560047e-03, 5.63512264e-03, 4.84296166e-03,
+                                   4.14793478e-03, 3.56267297e-03, 3.03480656e-03, 2.59406730e-03,
+                                   2.19519042e-03, 1.85454286e-03, 1.58333238e-03, 1.33002321e-03,
+                                   1.11716435e-03, 9.35360376e-04, 7.87780158e-04, 6.58601602e-04,
+                                   5.48147154e-04, 4.58151351e-04, 3.85878963e-04, 3.21623249e-04,
+                                   2.66129174e-04, 2.21364768e-04, 1.80736566e-04, 1.52350196e-04])
 
         self.CMDelayCut = 30
         self.DailyGrowthNoise = 0.2
@@ -593,12 +585,12 @@ class CMActive_Final(BaseCMModel):
 
         # infection --> confirmed delay
         self.DelayProb = np.array([0., 0.0252817, 0.03717965, 0.05181224, 0.06274125,
-                                        0.06961334, 0.07277174, 0.07292397, 0.07077184, 0.06694868,
-                                        0.06209945, 0.05659917, 0.0508999, 0.0452042, 0.03976573,
-                                        0.03470891, 0.0299895, 0.02577721, 0.02199923, 0.01871723,
-                                        0.01577148, 0.01326564, 0.01110783, 0.00928827, 0.0077231,
-                                        0.00641162, 0.00530572, 0.00437895, 0.00358801, 0.00295791,
-                                        0.0024217, 0.00197484])
+                                   0.06961334, 0.07277174, 0.07292397, 0.07077184, 0.06694868,
+                                   0.06209945, 0.05659917, 0.0508999, 0.0452042, 0.03976573,
+                                   0.03470891, 0.0299895, 0.02577721, 0.02199923, 0.01871723,
+                                   0.01577148, 0.01326564, 0.01110783, 0.00928827, 0.0077231,
+                                   0.00641162, 0.00530572, 0.00437895, 0.00358801, 0.00295791,
+                                   0.0024217, 0.00197484])
 
         self.CMDelayCut = 30
         self.DailyGrowthNoise = 0.2
@@ -1738,7 +1730,6 @@ class CMCombined_Final_DifDelays(BaseCMModel):
                 shape=(self.nORs, self.nDs),
                 plot_trace=False,
             )
-
 
             self.InitialSizeCases_log = pm.Normal("InitialSizeCases_log", 0, 50, shape=(self.nORs,))
             self.InfectedCases_log = pm.Deterministic("InfectedCases_log", T.reshape(self.InitialSizeCases_log, (
@@ -3891,7 +3882,6 @@ class CMCombined_Additive(BaseCMModel):
                 observed=self.d.NewDeaths.data.reshape((self.nORs * self.nDs,))[self.all_observed_deaths]
             )
 
-
     def plot_region_predictions(self, plot_style, save_fig=True, output_dir="./out"):
         assert self.trace is not None
 
@@ -5140,6 +5130,7 @@ class CMCombined_Final_DifEffects(BaseCMModel):
                         f"Fits{((country_indx + 1) / 5):.1f}"
                     )
 
+
 # ICL Model versions - not used for our results
 class CMCombined_Final_ICL(BaseCMModel):
     def __init__(
@@ -5148,13 +5139,13 @@ class CMCombined_Final_ICL(BaseCMModel):
         super().__init__(data, cm_plot_style=cm_plot_style, name=name, model=model)
 
         self.SI = np.array([5.86777778e-04, 1.15317556e-02, 5.22088556e-02, 1.14080678e-01,
-                   1.62762756e-01, 1.76006922e-01, 1.56763867e-01, 1.21060233e-01,
-                   8.38630333e-02, 5.32850556e-02, 3.15776111e-02, 1.76515889e-02,
-                   9.38466667e-03, 4.79226667e-03, 2.36040000e-03, 1.13427778e-03,
-                   5.26733333e-04, 2.38822222e-04, 1.03755556e-04, 4.56222222e-05,
-                   2.01333333e-05, 7.67777778e-06, 3.84444444e-06, 1.70000000e-06,
-                   5.66666667e-07, 2.22222222e-07, 1.11111111e-07, 2.22222222e-08,
-                   1.11111111e-08, 3.33333333e-08])
+                            1.62762756e-01, 1.76006922e-01, 1.56763867e-01, 1.21060233e-01,
+                            8.38630333e-02, 5.32850556e-02, 3.15776111e-02, 1.76515889e-02,
+                            9.38466667e-03, 4.79226667e-03, 2.36040000e-03, 1.13427778e-03,
+                            5.26733333e-04, 2.38822222e-04, 1.03755556e-04, 4.56222222e-05,
+                            2.01333333e-05, 7.67777778e-06, 3.84444444e-06, 1.70000000e-06,
+                            5.66666667e-07, 2.22222222e-07, 1.11111111e-07, 2.22222222e-08,
+                            1.11111111e-08, 3.33333333e-08])
 
         self.SI_rev = self.SI[::-1].reshape((1, 1, self.SI.size)).repeat(2, axis=0)
         # infection --> confirmed delay
@@ -5355,35 +5346,6 @@ class CMCombined_FinalMoreBayesian(BaseCMModel):
     ):
         super().__init__(data, cm_plot_style, name=name, model=model)
 
-        # infection --> confirmed delay
-        self.DelayProbCases = np.array([0., 0.0252817, 0.03717965, 0.05181224, 0.06274125,
-                                        0.06961334, 0.07277174, 0.07292397, 0.07077184, 0.06694868,
-                                        0.06209945, 0.05659917, 0.0508999, 0.0452042, 0.03976573,
-                                        0.03470891, 0.0299895, 0.02577721, 0.02199923, 0.01871723,
-                                        0.01577148, 0.01326564, 0.01110783, 0.00928827, 0.0077231,
-                                        0.00641162, 0.00530572, 0.00437895, 0.00358801, 0.00295791,
-                                        0.0024217, 0.00197484])
-
-        self.DelayProbCases = self.DelayProbCases.reshape((1, self.DelayProbCases.size))
-
-        self.DelayProbDeaths = np.array([0.00000000e+00, 2.24600347e-06, 3.90382088e-05, 2.34307085e-04,
-                                         7.83555003e-04, 1.91221622e-03, 3.78718437e-03, 6.45923913e-03,
-                                         9.94265709e-03, 1.40610714e-02, 1.86527920e-02, 2.34311421e-02,
-                                         2.81965055e-02, 3.27668001e-02, 3.68031574e-02, 4.03026198e-02,
-                                         4.30521951e-02, 4.50637136e-02, 4.63315047e-02, 4.68794406e-02,
-                                         4.67334059e-02, 4.59561441e-02, 4.47164503e-02, 4.29327455e-02,
-                                         4.08614522e-02, 3.85082076e-02, 3.60294203e-02, 3.34601703e-02,
-                                         3.08064505e-02, 2.81766028e-02, 2.56165924e-02, 2.31354369e-02,
-                                         2.07837267e-02, 1.86074383e-02, 1.65505661e-02, 1.46527043e-02,
-                                         1.29409383e-02, 1.13695920e-02, 9.93233881e-03, 8.66063386e-03,
-                                         7.53805464e-03, 6.51560047e-03, 5.63512264e-03, 4.84296166e-03,
-                                         4.14793478e-03, 3.56267297e-03, 3.03480656e-03, 2.59406730e-03,
-                                         2.19519042e-03, 1.85454286e-03, 1.58333238e-03, 1.33002321e-03,
-                                         1.11716435e-03, 9.35360376e-04, 7.87780158e-04, 6.58601602e-04,
-                                         5.48147154e-04, 4.58151351e-04, 3.85878963e-04, 3.21623249e-04,
-                                         2.66129174e-04, 2.21364768e-04, 1.80736566e-04, 1.52350196e-04])
-        self.DelayProbDeaths = self.DelayProbDeaths.reshape((1, self.DelayProbDeaths.size))
-
         self.CMDelayCut = 30
         self.DailyGrowthNoise = 0.2
 
@@ -5457,8 +5419,8 @@ class CMCombined_FinalMoreBayesian(BaseCMModel):
                 plot_trace=False,
             )
 
-            self.SI_mean = pm.Normal("SI_mean", SI_ALPHA/SI_BETA, 1.5)
-            self.SI_sigma = pm.Normal("SI_sigma", (SI_ALPHA**0.5)/SI_BETA, 0.75)
+            self.SI_mean = pm.Normal("SI_mean", SI_ALPHA / SI_BETA, 1.5)
+            self.SI_sigma = pm.Normal("SI_sigma", (SI_ALPHA ** 0.5) / SI_BETA, 0.75)
 
             si_beta = self.SI_mean / self.SI_sigma ** 2
             si_alpha = self.SI_mean ** 2 / self.SI_sigma ** 2
@@ -5480,9 +5442,25 @@ class CMCombined_FinalMoreBayesian(BaseCMModel):
             self.InfectedCases = pm.Deterministic("InfectedCases", pm.math.exp(
                 self.InitialSizeCases_log + self.GrowthCases.cumsum(axis=1)))
 
+            self.DelayDeathsMean = 22.9
+            self.DelayDeathsAlpha = 8.8
+            death_delay_dist = pm.NegativeBinomial.dist(mu=self.DelayDeathsMean, alpha=self.DelayDeathsAlpha)
+            bins = np.arange(0, 64)
+            pmf = T.exp(death_delay_dist.logp(bins))
+            pmf = pmf / T.sum(pmf)
+            self.DelayProbDeaths = pmf
+
+            self.DelayCasesMean = 10.135
+            self.DelayCasesAlpha = 3.9
+            cases_delay_dist = pm.NegativeBinomial.dist(mu=self.DelayCasesMean, alpha=self.DelayCasesAlpha)
+            bins = np.arange(0, 32)
+            pmf = T.exp(cases_delay_dist.logp(bins))
+            pmf = pmf / T.sum(pmf)
+            self.DelayProbCases = pmf
+
             expected_cases = C.conv2d(
                 self.InfectedCases,
-                np.reshape(self.DelayProbCases, newshape=(1, self.DelayProbCases.size)),
+                self.DelayProbCases.reshape((1, 32)),
                 border_mode="full"
             )[:, :self.nDs]
 
@@ -5519,7 +5497,7 @@ class CMCombined_FinalMoreBayesian(BaseCMModel):
 
             expected_deaths = C.conv2d(
                 self.InfectedDeaths,
-                np.reshape(self.DelayProbDeaths, newshape=(1, self.DelayProbDeaths.size)),
+                self.DelayProbDeaths.reshape((1, 64)),
                 border_mode="full"
             )[:, :self.nDs]
 

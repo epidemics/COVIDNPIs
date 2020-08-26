@@ -677,7 +677,7 @@ class DataPreprocessor():
         self.mask_zero_cases = False
 
         self.smooth = True
-        self.N_smooth = 5
+        self.N_smooth = 7
 
         self.drop_features = ["Travel Screen/Quarantine", "Travel Bans", "Public Transport Limited",
                               "Internal Movement Limited",
