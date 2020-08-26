@@ -15,7 +15,6 @@ warnings.simplefilter(action="ignore", category=FutureWarning)
 from epimodel.pymc3_models import cm_effect
 from epimodel.pymc3_models.cm_effect.datapreprocessor import DataPreprocessor
 import argparse
-import pickle
 
 argparser = argparse.ArgumentParser()
 argparser.add_argument("--cd", dest="cases_delay", type=int)
