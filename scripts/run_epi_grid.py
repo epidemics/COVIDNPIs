@@ -120,7 +120,7 @@ if __name__ == "__main__":
         model.build_model(serial_interval_mean=gi_mean)
 
     with model.model:
-        model.trace = pm.sample(2000, cores=4, chains=4, max_treedepth=12)
+        model.trace = pm.sample(4000, cores=2, chains=2, max_treedepth=12)
 
 
     out_dir = "grid"
