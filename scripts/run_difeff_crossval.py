@@ -12,8 +12,7 @@ import warnings
 
 warnings.simplefilter(action="ignore", category=FutureWarning)
 
-from epimodel.pymc3_models import cm_effect
-from epimodel.pymc3_models.cm_effect.datapreprocessor import DataPreprocessor
+from datapreprocessor import DataPreprocessor
 import argparse
 import pickle
 
@@ -97,7 +96,7 @@ if __name__ == "__main__":
             c_s, d_s = mask_region(data, rg)
             r_is.append(data.Rs.index(rg))
 
-        with cm_effect.models.CMCombined_Final_DifEffects(data, None) as model:
+        with models.CMCombined_Final_DifEffects(data, None) as model:
             model.DailyGrowthNoise = args.growth_noise
             model.RegionVariationNoise = args.country_noise
             model.build_model()
