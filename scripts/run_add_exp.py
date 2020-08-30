@@ -19,8 +19,7 @@ log = logging.getLogger(__name__)
 import warnings
 warnings.simplefilter(action="ignore", category=FutureWarning)
 
-from epimodel.pymc3_models import cm_effect
-from epimodel.pymc3_models.cm_effect.datapreprocessor import DataPreprocessor
+from datapreprocessor import DataPreprocessor
 import argparse
 import pickle
 
@@ -54,7 +53,7 @@ if __name__ == "__main__":
         data = dp.preprocess_data("notebooks/double-entry-data/double_entry_final.csv", last_day="2020-05-30", schools_unis="whoops")
         data.mask_reopenings()
 
-        with cm_effect.models.CMCombined_Additive(data, None) as model:
+        with models.CMCombined_Additive(data, None) as model:
             model.build_model()
 
     elif exp_num == 2:
@@ -62,7 +61,7 @@ if __name__ == "__main__":
                                   schools_unis="whoops")
         data.mask_reopenings()
 
-        with cm_effect.models.CMCombined_Final_V3(data, None) as model:
+        with models.CMCombined_Final_V3(data, None) as model:
             model.build_model()
 
     elif exp_num == 3:
@@ -70,7 +69,7 @@ if __name__ == "__main__":
                                   schools_unis="whoops")
         data.mask_reopenings()
 
-        with cm_effect.models.CMCombined_Final_DifEffects(data, None) as model:
+        with models.CMCombined_Final_DifEffects(data, None) as model:
             model.build_model()
 
     elif exp_num == 4:
@@ -78,7 +77,7 @@ if __name__ == "__main__":
                                   schools_unis="whoops")
         data.mask_reopenings()
 
-        with cm_effect.models.CMCombined_Final_ICL(data, None) as model:
+        with models.CMCombined_Final_ICL(data, None) as model:
             model.build_model()
 
     # OxCGRT Checks
@@ -91,7 +90,7 @@ if __name__ == "__main__":
                                   schools_unis="whoops")
         data.mask_reopenings()
 
-        with cm_effect.models.CMCombined_Final(data, None) as model:
+        with models.CMCombined_Final(data, None) as model:
             model.build_model()
 
     elif exp_num == 6:
@@ -103,7 +102,7 @@ if __name__ == "__main__":
                                   schools_unis="whoops")
         data.mask_reopenings()
 
-        with cm_effect.models.CMCombined_Final(data, None) as model:
+        with models.CMCombined_Final(data, None) as model:
             model.build_model()
 
     elif exp_num == 7:
@@ -114,7 +113,7 @@ if __name__ == "__main__":
                                   schools_unis="whoops")
         data.mask_reopenings()
 
-        with cm_effect.models.CMCombined_Final(data, None) as model:
+        with models.CMCombined_Final(data, None) as model:
             model.build_model()
 
     elif exp_num == 8:
@@ -125,7 +124,7 @@ if __name__ == "__main__":
                                   schools_unis="whoops")
         data.mask_reopenings()
 
-        with cm_effect.models.CMCombined_Final(data, None) as model:
+        with models.CMCombined_Final(data, None) as model:
             model.build_model()
 
     elif exp_num == 9:
@@ -136,7 +135,7 @@ if __name__ == "__main__":
                                   schools_unis="whoops")
         data.mask_reopenings()
 
-        with cm_effect.models.CMCombined_Final(data, None) as model:
+        with models.CMCombined_Final(data, None) as model:
             model.build_model()
 
     elif exp_num == 10:
@@ -145,7 +144,7 @@ if __name__ == "__main__":
                                   schools_unis="whoops")
         data.mask_reopenings(max_cms=9)
 
-        with cm_effect.models.CMCombined_Final(data, None) as model:
+        with models.CMCombined_Final(data, None) as model:
             model.build_model()
 
     elif exp_num == 11:
@@ -155,7 +154,7 @@ if __name__ == "__main__":
                                   schools_unis="whoops")
         data.mask_reopenings(max_cms=9)
 
-        with cm_effect.models.CMCombined_Final(data, None) as model:
+        with models.CMCombined_Final(data, None) as model:
             model.build_model()
 
     elif exp_num == 12:
@@ -164,7 +163,7 @@ if __name__ == "__main__":
                                   schools_unis="whoops")
         data.mask_reopenings(max_cms=9)
 
-        with cm_effect.models.CMCombined_Final(data, None) as model:
+        with models.CMCombined_Final(data, None) as model:
             model.build_model()
 
     # any NPI active
@@ -191,7 +190,7 @@ if __name__ == "__main__":
         data.ActiveCMs = ActiveCMs
 
         data.mask_reopenings()
-        with cm_effect.models.CMCombined_Final(data, None) as model:
+        with models.CMCombined_Final(data, None) as model:
             model.build_model()
 
     # NPI timing
@@ -216,7 +215,7 @@ if __name__ == "__main__":
 
         data.mask_reopenings()
 
-        with cm_effect.models.CMCombined_Final(data, None) as model:
+        with models.CMCombined_Final(data, None) as model:
             model.build_model()
 
     # Different Delays
@@ -228,7 +227,7 @@ if __name__ == "__main__":
                                   schools_unis="whoops")
         data.mask_reopenings()
 
-        with cm_effect.models.CMCombined_Final_DifDelays(data, None) as model:
+        with models.CMCombined_Final_DifDelays(data, None) as model:
             model.build_model()
 
     # delayed schools and universities
@@ -241,7 +240,7 @@ if __name__ == "__main__":
         active_cms = copy.deepcopy(data.ActiveCMs)
         data.ActiveCMs[:, to_delay_index, n_delay:] = active_cms[:, to_delay_index, :-n_delay]
         data.ActiveCMs[:, to_delay_index, :n_delay] = 0
-        with cm_effect.models.CMCombined_Final(data, None) as model:
+        with models.CMCombined_Final(data, None) as model:
             model.build_model()
 
     # aggregated holdouts
@@ -253,7 +252,7 @@ if __name__ == "__main__":
         # and mask earlier if needed
         data.mask_reopenings(n_extra=20)
 
-        with cm_effect.models.CMCombined_Final(data, None) as model:
+        with models.CMCombined_Final(data, None) as model:
             model.build_model()
 
     elif exp_num == 18:
@@ -261,7 +260,7 @@ if __name__ == "__main__":
                                   schools_unis="whoops")
         data.mask_reopenings()
 
-        with cm_effect.models.CMActive_Final(data, None) as model:
+        with models.CMActive_Final(data, None) as model:
             model.build_model()
 
     elif exp_num == 19:
@@ -269,7 +268,7 @@ if __name__ == "__main__":
                                   schools_unis="whoops")
         data.mask_reopenings()
 
-        with cm_effect.models.CMDeath_Final(data, None) as model:
+        with models.CMDeath_Final(data, None) as model:
             model.build_model()
 
     elif exp_num == 20:
@@ -279,7 +278,7 @@ if __name__ == "__main__":
         to_del_index = [data.CMs.index(cm) for cm in ["School Closure", "University Closure"]]
         data.ActiveCMs[:, to_del_index, :] = 0
 
-        with cm_effect.models.CMCombined_Final(data, None) as model:
+        with models.CMCombined_Final(data, None) as model:
             model.build_model()
 
 

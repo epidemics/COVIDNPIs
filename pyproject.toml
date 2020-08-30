@@ -23,6 +23,7 @@ jupyterlab = "^2.1.1"
 nbdime = "^2.0.0"
 pyreadr = "^0.2.9"
 sklearn = "^0.0"
+sphinx = "^3.2.1"
 
 [tool.poetry.extras]
 

@@ -18,8 +18,7 @@ log = logging.getLogger(__name__)
 import warnings
 warnings.simplefilter(action="ignore", category=FutureWarning)
 
-from epimodel.pymc3_models import cm_effect
-from epimodel.pymc3_models.cm_effect.datapreprocessor import DataPreprocessor
+from datapreprocessor import DataPreprocessor
 import argparse
 import pickle
 
@@ -65,7 +64,7 @@ if __name__ == "__main__":
         indx = data.Rs.index(rg)
 
         print(f"holdout {rg} w/ {indx}")
-        with cm_effect.models.CMCombined_Final(data, None) as model:
+        with models.CMCombined_Final(data, None) as model:
             model.build_model()
 
         with model.model:

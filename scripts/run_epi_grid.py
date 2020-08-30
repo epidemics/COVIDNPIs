@@ -12,8 +12,7 @@ import warnings
 
 warnings.simplefilter(action="ignore", category=FutureWarning)
 
-from epimodel.pymc3_models import cm_effect
-from epimodel.pymc3_models.cm_effect.datapreprocessor import DataPreprocessor
+from datapreprocessor import DataPreprocessor
 import argparse
 
 argparser = argparse.ArgumentParser()
@@ -114,14 +113,13 @@ if __name__ == "__main__":
     else:
         gi_mean = 8
 
-    with cm_effect.models.CMCombined_Final(data) as model:
+    with models.CMCombined_Final(data) as model:
         model.DelayProbCases = cases_delay.reshape((1, cases_delay.size))
         model.DelayProbDeaths = death_delay.reshape((1, death_delay.size))
         model.build_model(serial_interval_mean=gi_mean)
 
     with model.model:
         model.trace = pm.sample(4000, cores=2, chains=2, max_treedepth=12)
-
 
     out_dir = "grid"
     if not os.path.exists(out_dir):

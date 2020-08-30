@@ -13,8 +13,7 @@ import warnings
 
 warnings.simplefilter(action="ignore", category=FutureWarning)
 
-from epimodel.pymc3_models import cm_effect
-from epimodel.pymc3_models.cm_effect.datapreprocessor import DataPreprocessor
+from datapreprocessor import DataPreprocessor
 import argparse
 import pickle
 
@@ -97,31 +96,31 @@ if __name__ == "__main__":
         r_is.append(data.Rs.index(rg))
 
     if args.model == 0:
-        with cm_effect.models.CMCombined_Final(data, None) as model:
+        with models.CMCombined_Final(data, None) as model:
             model.build_model()
 
     elif args.model == 1:
-        with cm_effect.models.CMCombined_Final_V3(data, None) as model:
+        with models.CMCombined_Final_V3(data, None) as model:
             model.build_model()
 
     elif args.model == 2:
-        with cm_effect.models.CMCombined_Final_NoNoise(data, None) as model:
+        with models.CMCombined_Final_NoNoise(data, None) as model:
             model.build_model()
 
     elif args.model == 3:
-        with cm_effect.models.CMCombined_Final_ICL(data, None) as model:
+        with models.CMCombined_Final_ICL(data, None) as model:
             model.build_model()
 
     elif args.model == 4:
-        with cm_effect.models.CMCombined_ICL_NoNoise(data, None) as model:
+        with models.CMCombined_ICL_NoNoise(data, None) as model:
             model.build_model()
 
     elif args.model == 5:
-        with cm_effect.models.CMCombined_Final_DifEffects(data, None) as model:
+        with models.CMCombined_Final_DifEffects(data, None) as model:
             model.build_model()
 
     elif args.model == 6:
-        with cm_effect.models.CMCombined_Additive(data, None) as model:
+        with models.CMCombined_Additive(data, None) as model:
             model.build_model()
 
     with model.model:
