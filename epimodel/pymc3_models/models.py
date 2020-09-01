@@ -157,7 +157,7 @@ class DefaultModelFixedDispersion(BaseCMModel):
 
         At the moment, just calls the BaseCMModel Constructor
         """
-        super(DefaultModel, self).__init__(data, cm_plot_style, name, model)
+        super(DefaultModelFixedDispersion, self).__init__(data, cm_plot_style, name, model)
 
     def build_model(self, R_prior_mean=3.25, cm_prior_scale=10, cm_prior='skewed',
                     generation_interval_mean=5, generation_interval_sigma=2, growth_noise_scale=0.2,
@@ -282,7 +282,7 @@ class DefaultModelLognorm(BaseCMModel):
 
         At the moment, just calls the BaseCMModel Constructor
         """
-        super(DefaultModel, self).__init__(data, cm_plot_style, name, model)
+        super(DefaultModelLognorm, self).__init__(data, cm_plot_style, name, model)
 
     def build_model(self, R_prior_mean=3.25, cm_prior_scale=10, cm_prior='skewed',
                     generation_interval_mean=5, generation_interval_sigma=2, growth_noise_scale=0.2,
