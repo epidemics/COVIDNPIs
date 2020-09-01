@@ -150,14 +150,14 @@ if __name__ == '__main__':
         data = preprocess_data('notebooks/double-entry-data/double_entry_final.csv', last_day='2020-05-30',
                                smoothing=1)
         data.mask_reopenings()
-        with CMCombined_FinalLegacyLognorm(data) as model:
+        with CMCombined_FinalLegacy(data) as model:
             model.build_model()
 
     elif exp_num == 13:
         data = preprocess_data('notebooks/double-entry-data/double_entry_final.csv', last_day='2020-05-30',
                                schools_unis='one_and')
         data.mask_reopenings()
-        with CMCombined_FinalLegacyLognorm(data) as model:
+        with CMCombined_FinalLegacy(data) as model:
             model.build_model()
 
     time_start = time.time()
@@ -170,4 +170,4 @@ if __name__ == '__main__':
     out_dir = 'bug_exps'
     if not os.path.exists(out_dir):
         os.makedirs(out_dir)
-    pickle.dump(model.trace, open(f'additional_exps/exp_{exp_num}.pkl', 'wb'))
+    pickle.dump(model.trace, open(f'additional_exps/alt_exp_{exp_num}.pkl', 'wb'))
