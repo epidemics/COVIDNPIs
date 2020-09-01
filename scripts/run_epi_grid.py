@@ -12,7 +12,7 @@ import warnings
 
 warnings.simplefilter(action="ignore", category=FutureWarning)
 
-from datapreprocessor import DataPreprocessor
+from preprocessing.data_preprocessor import DataPreprocessor
 import argparse
 
 argparser = argparse.ArgumentParser()
