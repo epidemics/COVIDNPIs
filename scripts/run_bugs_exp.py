@@ -22,7 +22,7 @@ import warnings
 
 warnings.simplefilter(action='ignore', category=FutureWarning)
 
-from preprocessing.data_preprocessor import preprocess_data
+from epimodel.preprocessing.data_preprocessor import preprocess_data
 from epimodel import EpidemiologicalParameters, DefaultModel
 from epimodel.pymc3_models.legacy import CMCombined_FinalLegacy, CMCombined_FinalLegacyFixedDispersion, \
     CMCombined_FinalLegacyLognorm, CMCombined_FinalLegacyAltSize
