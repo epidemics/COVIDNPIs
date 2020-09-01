@@ -1841,7 +1841,7 @@ class CMCombined_FinalLegacyLognorm(BaseCMModelLegacy):
                 pm.math.log(self.ExpectedDeaths.reshape((self.nORs * self.nDs,))[self.all_observed_deaths]),
                 self.OutputNoiseScale,
                 shape=(len(self.all_observed_deaths),),
-                observed=pm.math.log(self.d.NewDeaths.data[:, self.CMDelayCut:].reshape((self.nORs * self.nDs,))[
+                observed=pm.math.log(self.d.NewDeaths.data.reshape((self.nORs * self.nDs,))[
                                          self.all_observed_deaths])
             )
 
@@ -2526,7 +2526,7 @@ class CMCombined_FinalLegacyAltSize(BaseCMModelLegacy):
                 pm.math.log(self.ExpectedDeaths.reshape((self.nORs * self.nDs,))[self.all_observed_deaths]),
                 self.OutputNoiseScale,
                 shape=(len(self.all_observed_deaths),),
-                observed=pm.math.log(self.d.NewDeaths.data[:, self.CMDelayCut:].reshape((self.nORs * self.nDs,))[
+                observed=pm.math.log(self.d.NewDeaths.data.reshape((self.nORs * self.nDs,))[
                                          self.all_observed_deaths])
             )
 
