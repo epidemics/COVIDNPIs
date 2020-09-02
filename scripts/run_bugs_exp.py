@@ -170,4 +170,4 @@ if __name__ == '__main__':
     out_dir = 'bug_exps'
     if not os.path.exists(out_dir):
         os.makedirs(out_dir)
-    pickle.dump(model.trace, open(f'additional_exps/alt_exp_{exp_num}.pkl', 'wb'))
+    pickle.dump(model.trace, open(f'{out_dir}/exp_{exp_num}.pkl', 'wb'))

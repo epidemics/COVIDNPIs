@@ -1813,7 +1813,7 @@ class CMCombined_FinalLegacyLognorm(BaseCMModelLegacy):
             self.OutputNoiseScale = pm.HalfNormal('OutputNoiseScale', 1)
 
             # effectively handle missing values ourselves
-            self.ObservedCases = pm.NegativeBinomial(
+            self.ObservedCases = pm.Normal(
                 "ObservedCases",
                 pm.math.log(self.ExpectedCases.reshape((self.nORs * self.nDs,))[self.all_observed_active]),
                 self.OutputNoiseScale,
@@ -1836,7 +1836,7 @@ class CMCombined_FinalLegacyLognorm(BaseCMModelLegacy):
 
             # can use learned or fixed deaths noise
             # effectively handle missing values ourselves
-            self.ObservedDeaths = pm.NegativeBinomial(
+            self.ObservedDeaths = pm.Normal(
                 "ObservedDeaths",
                 pm.math.log(self.ExpectedDeaths.reshape((self.nORs * self.nDs,))[self.all_observed_deaths]),
                 self.OutputNoiseScale,
@@ -2494,15 +2494,15 @@ class CMCombined_FinalLegacyAltSize(BaseCMModelLegacy):
                 (self.nORs, self.nDs)))
 
             # can use learned or fixed conf noise
-            self.OutputNoiseScale = pm.HalfNormal('OutputNoiseScale', 1)
+            self.Phi = pm.HalfNormal("Phi_1", 5)
 
             # effectively handle missing values ourselves
             self.ObservedCases = pm.NegativeBinomial(
                 "ObservedCases",
-                pm.math.log(self.ExpectedCases.reshape((self.nORs * self.nDs,))[self.all_observed_active]),
-                self.OutputNoiseScale,
+                mu=self.ExpectedCases.reshape((self.nORs * self.nDs,))[self.all_observed_active],
+                alpha=self.Phi,
                 shape=(len(self.all_observed_active),),
-                observed=pm.math.log(self.d.NewCases.data.reshape((self.nORs * self.nDs,))[self.all_observed_active])
+                observed=self.d.NewCases.data.reshape((self.nORs * self.nDs,))[self.all_observed_active]
             )
 
             self.Tau2 = pm.Exponential("Tau2", 1 / 0.03)
@@ -2519,16 +2519,14 @@ class CMCombined_FinalLegacyAltSize(BaseCMModelLegacy):
             self.ExpectedDeaths = pm.Deterministic("ExpectedDeaths", expected_deaths.reshape(
                 (self.nORs, self.nDs)))
 
-            # can use learned or fixed deaths noise
-            # effectively handle missing values ourselves
             self.ObservedDeaths = pm.NegativeBinomial(
                 "ObservedDeaths",
-                pm.math.log(self.ExpectedDeaths.reshape((self.nORs * self.nDs,))[self.all_observed_deaths]),
-                self.OutputNoiseScale,
+                mu=self.ExpectedDeaths.reshape((self.nORs * self.nDs,))[self.all_observed_deaths],
+                alpha=self.Phi,
                 shape=(len(self.all_observed_deaths),),
-                observed=pm.math.log(self.d.NewDeaths.data.reshape((self.nORs * self.nDs,))[
-                                         self.all_observed_deaths])
+                observed=self.d.NewCases.data.reshape((self.nORs * self.nDs,))[self.all_observed_deaths]
             )
+
 
     def plot_region_predictions(self, plot_style, save_fig=True, output_dir="./out"):
         assert self.trace is not None
