@@ -25,7 +25,7 @@ warnings.simplefilter(action='ignore', category=FutureWarning)
 from epimodel.preprocessing.data_preprocessor import preprocess_data
 from epimodel import EpidemiologicalParameters, DefaultModel
 from epimodel.pymc3_models.legacy import CMCombined_FinalLegacy, CMCombined_FinalLegacyFixedDispersion, \
-    CMCombined_FinalLegacyLognorm, CMCombined_FinalLegacyAltSize
+    CMCombined_FinalLegacyLognorm, CMCombined_FinalLegacyAltSize, CMCombined_FinalLegacyLessNoise
 from epimodel.pymc3_models.models import DefaultModelFixedDispersion, DefaultModelLognorm
 
 import argparse
@@ -158,6 +158,10 @@ if __name__ == '__main__':
                                schools_unis='one_and')
         data.mask_reopenings()
         with CMCombined_FinalLegacy(data) as model:
+            model.build_model()
+
+    elif exp_num == 14:
+        with CMCombined_FinalLegacyLessNoise(data) as model:
             model.build_model()
 
     time_start = time.time()
