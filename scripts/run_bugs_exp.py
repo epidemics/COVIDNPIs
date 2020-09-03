@@ -75,7 +75,6 @@ if __name__ == '__main__':
 
     data = preprocess_data('notebooks/double-entry-data/double_entry_final.csv', last_day='2020-05-30')
     data.mask_reopenings()
-
     exp_num = args.exp
 
     print(f'running exp {exp_num}')
@@ -163,6 +162,12 @@ if __name__ == '__main__':
     elif exp_num == 14:
         with CMCombined_FinalLegacyLessNoise(data) as model:
             model.build_model()
+
+    elif exp_num == 15:
+        with DefaultModel(data) as model:
+            model.build_model(fatality_delay=DelayProbDeaths_NEW, reporting_delay=DelayProbCases_NEW,
+                              generation_interval_mean=GI_MEAN_NEW, generation_interval_sigma=GI_SD_NEW,
+                              cm_prior='normal', cm_prior_scale=0.2)
 
     time_start = time.time()
     with model.model:

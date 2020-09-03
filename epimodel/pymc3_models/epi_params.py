@@ -45,11 +45,31 @@ class EpidemiologicalParameters():
                 'notes': 'Exact Numbers taken from https://github.com/epiforecasts/EpiNow2'
             }
 
+            self.generation_interval = {
+                'mean_mean': 5.06,
+                'mean_sd': 0.7109,
+                'sd_mean': 2.07532,
+                'sd_sd': 0.769517,
+                'source': 'https://www.eurosurveillance.org/content/10.2807/1560-7917.ES.2020.25.17.2000257',
+                'dist': 'gamma',
+                'notes': 'Exact Numbers taken from https://github.com/epiforecasts/EpiNow2'
+            }
+
         if incubation_period is not None:
             self.incubation_period = incubation_period
         else:
             self.incubation_period = {
                 'mean_mean': 1.621,
+                'mean_sd': 0.064,
+                'sd_mean': 0.518,
+                'sd_sd': 0.0691,
+                'source': 'Lauer et al, doi.org/10.7326/M20-0504',
+                'dist': 'lognorm',
+                'notes': 'Exact Numbers taken from https://github.com/epiforecasts/EpiNow2'
+            }
+
+            self.incubation_period = {
+                'mean_mean': 1.624,
                 'mean_sd': 0.064,
                 'sd_mean': 0.518,
                 'sd_sd': 0.0691,
@@ -72,6 +92,17 @@ class EpidemiologicalParameters():
                          '200 Bootstraps with 250 samples each.'
             }
 
+            self.onset_reporting_delay = {
+                'mean_mean': 5.2,
+                'mean_sd': 0.1583,
+                'sd_mean': 4.75,
+                'sd_sd': 0.120,
+                'source': 'https://github.com/beoutbreakprepared/nCoV2019',
+                'dist': 'gamma',
+                'notes': 'Produced using linelist data and the EpiNow2 Repo, fitting a lognorm variable.'
+                         '200 Bootstraps with 250 samples each.'
+            }
+
         if onset_fatality_delay is not None:
             self.onset_fatality_delay = onset_fatality_delay
         else:
@@ -82,6 +113,16 @@ class EpidemiologicalParameters():
                 'sd_sd': 0.0537,
                 'source': 'https://github.com/epiforecasts/covid-rt-estimates',
                 'dist': 'lognorm',
+                'notes': 'taken from data/onset_to_death_delay.rds'
+            }
+
+            self.onset_fatality_delay = {
+                'mean_mean': 16.71,
+                'mean_sd': 0.0685,
+                'sd_mean': 7.52,
+                'sd_sd': 0.0537,
+                'source': 'https://github.com/epiforecasts/covid-rt-estimates',
+                'dist': 'gamma',
                 'notes': 'taken from data/onset_to_death_delay.rds'
             }
 
@@ -100,6 +141,8 @@ class EpidemiologicalParameters():
         np.random.seed(self.seed)
         mean = np.random.normal(loc=dist['mean_mean'], scale=dist['mean_sd'] * with_noise)
         sd = np.random.normal(loc=dist['sd_mean'], scale=dist['sd_sd'] * with_noise)
+        print(mean)
+        print(sd)
         if dist['dist'] == 'gamma':
             k = mean ** 2 / sd ** 2
             theta = sd ** 2 / mean
@@ -110,7 +153,7 @@ class EpidemiologicalParameters():
 
         return samples
 
-    def discretise_samples(self, samples, max):
+    def discretise_samples(self, samples, max_int):
         """
         Discretise a set of samples to form a pmf, truncating to max.
 
@@ -118,7 +161,7 @@ class EpidemiologicalParameters():
         :param max: Truncation.
         :return: pmf - discretised distribution.
         """
-        bins = np.arange(-1.0, float(max))
+        bins = np.arange(-1.0, float(max_int))
         bins[2:] += 0.5
 
         counts = np.histogram(samples, bins)[0]
@@ -172,6 +215,8 @@ class EpidemiologicalParameters():
         reporting_samples = self.generate_dist_samples(self.onset_reporting_delay, nRVs, with_noise)
         fatality_samples = self.generate_dist_samples(self.onset_fatality_delay, nRVs, with_noise)
 
+        print(f'Raw: reporting delay mean {np.mean(incubation_period_samples + reporting_samples)}')
+        print(f'Raw: fatality delay mean {np.mean(incubation_period_samples + fatality_samples)}')
         reporting_delay = self.discretise_samples(incubation_period_samples + reporting_samples, max_reporting)
         fatality_delay = self.discretise_samples(incubation_period_samples + fatality_samples, max_fatality)
         print(f'Generated Reporting Delay: {self.generate_pmf_statistics_str(reporting_delay)}')
