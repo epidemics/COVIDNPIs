@@ -359,7 +359,7 @@ class DefaultModelPoissonOutput(BaseCMModel):
             # output distribution
             self.ObservedCases = pm.Poisson(
                 "ObservedCases",
-                mu=self.ExpectedCases.reshape((self.nRs * self.nDs,))[self.all_observed_active],
+                self.ExpectedCases.reshape((self.nRs * self.nDs,))[self.all_observed_active],
                 shape=(len(self.all_observed_active),),
                 observed=self.d.NewCases.data.reshape((self.nRs * self.nDs,))[self.all_observed_active]
             )
@@ -384,8 +384,7 @@ class DefaultModelPoissonOutput(BaseCMModel):
             # death output distribution
             self.ObservedDeaths = pm.Poisson(
                 "ObservedDeaths",
-                mu=self.ExpectedDeaths.reshape((self.nRs * self.nDs,))[self.all_observed_deaths],
-                alpha=1 / self.Dispersion,
+                self.ExpectedDeaths.reshape((self.nRs * self.nDs,))[self.all_observed_deaths],
                 shape=(len(self.all_observed_deaths),),
                 observed=self.d.NewDeaths.data.reshape((self.nRs * self.nDs,))[self.all_observed_deaths]
             )
