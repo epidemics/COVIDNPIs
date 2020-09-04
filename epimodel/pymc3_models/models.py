@@ -210,10 +210,10 @@ class DefaultModelFixedDispersion(BaseCMModel):
             self.GrowthDeathsNoise = pm.Normal("GrowthDeathsNoise", 0, growth_noise_scale,
                                                shape=(self.nRs, self.nDs))
 
-            self.GrowthCases = pm.Deterministic("GrowthCases", self.ExpectedGrowth + self.GrowthCasesNoise)
-            self.GrowthDeaths = pm.Deterministic("GrowthDeaths", self.ExpectedGrowth + self.GrowthDeathsNoise)
+            self.GrowthCases = self.ExpectedGrowth + self.GrowthCasesNoise
+            self.GrowthDeaths = self.ExpectedGrowth + self.GrowthDeathsNoise
 
-            self.Dispersion = 1. / 60.0
+            self.Dispersion = 0.0025
 
             # Confirmed Cases
             # seed and produce daily infections which become confirmed cases
