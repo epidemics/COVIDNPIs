@@ -40,7 +40,7 @@ if __name__ == '__main__':
     seed = args.seed
 
     data = preprocess_data('notebooks/double-entry-data/double_entry_final.csv', last_day='2020-05-30',
-                           n_smooth=args.n_smooth)
+                           smoothing=args.n_smooth)
     data.mask_reopenings()
 
     for run in range(args.n_runs):
