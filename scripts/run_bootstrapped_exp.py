@@ -62,10 +62,10 @@ if __name__ == '__main__':
 
         model.trace.time_elapsed = time_end - time_start
 
-        out_dir = f'bootstrapped_exps_{args.prior}'
+        out_dir = f'bootstrapped_exps_{args.prior}/'
         if not os.path.exists(out_dir):
             os.makedirs(out_dir)
-        pickle.dump(model.trace, open(f'{out_dir}/{seed}.pkl', 'wb'))
-        np.savetxt(f'{out_dir}/CMReductions/{seed}.txt', model.trace.CMReduction)
+
+        np.savetxt(f'{out_dir}/{seed}.txt', model.trace.CMReduction)
 
         seed += args.parallel_runs
