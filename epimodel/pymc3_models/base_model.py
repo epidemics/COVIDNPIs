@@ -14,7 +14,7 @@ from matplotlib.font_manager import FontProperties
 from epimodel.pymc3_distributions.asymmetric_laplace import AsymmetricLaplace
 from pymc3 import Model
 
-fp2 = FontProperties(fname=r"../../../fonts/Font Awesome 5 Free-Solid-900.otf")
+fp2 = FontProperties(fname=r"../../fonts/Font Awesome 5 Free-Solid-900.otf")
 sns.set_style("ticks")
 
 

@@ -47,9 +47,9 @@ class EpidemiologicalParameters():
 
             self.generation_interval = {
                 'mean_mean': 5.06,
-                'mean_sd': 0.7109,
-                'sd_mean': 2.07532,
-                'sd_sd': 0.769517,
+                'mean_sd': 0.32,
+                'sd_mean': 1.804,
+                'sd_sd': 1e-5,
                 'source': 'https://www.eurosurveillance.org/content/10.2807/1560-7917.ES.2020.25.17.2000257',
                 'dist': 'gamma',
                 'notes': 'Exact Numbers taken from https://github.com/epiforecasts/EpiNow2'
@@ -68,15 +68,15 @@ class EpidemiologicalParameters():
                 'notes': 'Exact Numbers taken from https://github.com/epiforecasts/EpiNow2'
             }
 
-            self.incubation_period = {
-                'mean_mean': 1.624,
-                'mean_sd': 0.064,
-                'sd_mean': 0.518,
-                'sd_sd': 0.0691,
-                'source': 'Lauer et al, doi.org/10.7326/M20-0504',
-                'dist': 'lognorm',
-                'notes': 'Exact Numbers taken from https://github.com/epiforecasts/EpiNow2'
-            }
+            # self.incubation_period = {
+            #     'mean_mean': 1.624,
+            #     'mean_sd': 0.064,
+            #     'sd_mean': 0.518,
+            #     'sd_sd': 0.0691,
+            #     'source': 'Lauer et al, doi.org/10.7326/M20-0504',
+            #     'dist': 'lognorm',
+            #     'notes': 'Exact Numbers taken from https://github.com/epiforecasts/EpiNow2'
+            # }
 
         if onset_reporting_delay is not None:
             self.onset_reporting_delay = onset_reporting_delay
@@ -94,9 +94,9 @@ class EpidemiologicalParameters():
 
             self.onset_reporting_delay = {
                 'mean_mean': 5.2,
-                'mean_sd': 0.1583,
-                'sd_mean': 4.75,
-                'sd_sd': 0.120,
+                'mean_sd': 0.6025,
+                'sd_mean': 4.78,
+                'sd_sd': 1e-5,
                 'source': 'https://github.com/beoutbreakprepared/nCoV2019',
                 'dist': 'gamma',
                 'notes': 'Produced using linelist data and the EpiNow2 Repo, fitting a lognorm variable.'
@@ -118,9 +118,9 @@ class EpidemiologicalParameters():
 
             self.onset_fatality_delay = {
                 'mean_mean': 16.71,
-                'mean_sd': 0.0685,
+                'mean_sd': 0.7,
                 'sd_mean': 7.52,
-                'sd_sd': 0.0537,
+                'sd_sd': 1e-5,
                 'source': 'https://github.com/epiforecasts/covid-rt-estimates',
                 'dist': 'gamma',
                 'notes': 'taken from data/onset_to_death_delay.rds'
@@ -141,8 +141,6 @@ class EpidemiologicalParameters():
         np.random.seed(self.seed)
         mean = np.random.normal(loc=dist['mean_mean'], scale=dist['mean_sd'] * with_noise)
         sd = np.random.normal(loc=dist['sd_mean'], scale=dist['sd_sd'] * with_noise)
-        print(mean)
-        print(sd)
         if dist['dist'] == 'gamma':
             k = mean ** 2 / sd ** 2
             theta = sd ** 2 / mean

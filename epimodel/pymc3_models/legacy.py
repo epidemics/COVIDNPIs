@@ -2524,7 +2524,7 @@ class CMCombined_FinalLegacyAltSize(BaseCMModelLegacy):
                 mu=self.ExpectedDeaths.reshape((self.nORs * self.nDs,))[self.all_observed_deaths],
                 alpha=self.Phi,
                 shape=(len(self.all_observed_deaths),),
-                observed=self.d.NewCases.data.reshape((self.nORs * self.nDs,))[self.all_observed_deaths]
+                observed=self.d.NewDeaths.data.reshape((self.nORs * self.nDs,))[self.all_observed_deaths]
             )
 
 
