@@ -41,6 +41,7 @@ if __name__ == '__main__':
     data.mask_reopenings()
 
     for run in range(args.n_runs):
+        print(f'New Run: Seed: {seed} Prior: {args.prior}')
         ep = EpidemiologicalParameters(seed)
         DelayProbCases, DelayProbDeaths = ep.generate_reporting_and_fatality_delays()
         GI_MEAN, GI_SD = ep.generate_gi()
