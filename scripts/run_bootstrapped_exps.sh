@@ -7,7 +7,7 @@ PRIOR_TYPE=$1
 
 for i in {0..23}
 do
-   python scripts/run_bootstrapped_exp.py --parallel_runs 24 --base_seed $i --prior PRIOR_TYPE --n_runs 4 &
+   python scripts/run_bootstrapped_exp.py --parallel_runs 24 --base_seed $i --prior $PRIOR_TYPE --n_runs 4 &
    sleep 30
 done
 
