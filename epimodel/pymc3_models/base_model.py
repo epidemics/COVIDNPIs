@@ -13,6 +13,8 @@ import seaborn as sns
 from matplotlib.font_manager import FontProperties
 from epimodel.pymc3_distributions.asymmetric_laplace import AsymmetricLaplace
 from pymc3 import Model
+import theano.tensor as T
+
 
 fp2 = FontProperties(fname=r"../../fonts/Font Awesome 5 Free-Solid-900.otf")
 sns.set_style("ticks")
@@ -235,6 +237,11 @@ class BaseCMModel(Model):
 
             elif prior_type == 'skewed':
                 self.CM_Alpha = AsymmetricLaplace('CM_Alpha', scale=prior_scale, symmetry=0.5, shape=(self.nCMs, ))
+
+            elif prior_type == 'reparam':
+                self.CM_Alpha_raw = pm.Normal("CM_Alpha", 0, prior_scale, shape=(self.nCMs,))
+                self.CM_Alpha = T.set_subtensor(self.CM_Alpha[6], self.CM_Alpha_raw[6] + self.CM_Alpha[7])
+                self.CM_Alpha = T.set_subtensor(self.CM_Alpha[7], self.CM_Alpha_raw[6] - self.CM_Alpha[7])
 
     def plot_effect(self):
         """

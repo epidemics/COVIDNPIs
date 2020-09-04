@@ -26,7 +26,7 @@ from epimodel.preprocessing.data_preprocessor import preprocess_data
 from epimodel import EpidemiologicalParameters, DefaultModel
 from epimodel.pymc3_models.legacy import CMCombined_FinalLegacy, CMCombined_FinalLegacyFixedDispersion, \
     CMCombined_FinalLegacyLognorm, CMCombined_FinalLegacyAltSize, CMCombined_FinalLegacyLessNoise
-from epimodel.pymc3_models.models import DefaultModelFixedDispersion, DefaultModelLognorm
+from epimodel.pymc3_models.models import DefaultModelFixedDispersion, DefaultModelLognorm, DefaultModelPoissonOutput
 
 import argparse
 import pickle
@@ -168,6 +168,33 @@ if __name__ == '__main__':
             model.build_model(fatality_delay=DelayProbDeaths_NEW, reporting_delay=DelayProbCases_NEW,
                               generation_interval_mean=GI_MEAN_NEW, generation_interval_sigma=GI_SD_NEW,
                               cm_prior='normal', cm_prior_scale=0.2)
+
+    elif exp_num == 16:
+        with DefaultModelPoissonOutput(data) as model:
+            model.build_model(fatality_delay=DelayProbDeaths_NEW, reporting_delay=DelayProbCases_NEW,
+                              generation_interval_mean=GI_MEAN_NEW, generation_interval_sigma=GI_SD_NEW,
+                              cm_prior='normal', cm_prior_scale=0.2)
+
+    elif exp_num == 17:
+        with DefaultModelPoissonOutput(data) as model:
+            model.build_model(fatality_delay=DelayProbDeaths_NEW, reporting_delay=DelayProbCases_NEW,
+                              generation_interval_mean=GI_MEAN_NEW, generation_interval_sigma=GI_SD_NEW,
+                              cm_prior='reparam', cm_prior_scale=0.2)
+
+    elif exp_num == 18:
+        with DefaultModel(data) as model:
+            model.build_model(fatality_delay=DelayProbDeaths_NEW, reporting_delay=DelayProbCases_NEW,
+                              generation_interval_mean=GI_MEAN_NEW, generation_interval_sigma=GI_SD_NEW,
+                              cm_prior='reparam', cm_prior_scale=0.2)
+
+    elif exp_num == 19:
+        data = preprocess_data('notebooks/double-entry-data/double_entry_final.csv', last_day='2020-05-30',
+                               smoothing=1)
+        data.mask_reopenings()
+        with DefaultModelFixedDispersion(data) as model:
+            model.build_model(fatality_delay=DelayProbDeaths_NEW, reporting_delay=DelayProbCases_NEW,
+                              generation_interval_mean=GI_MEAN_NEW, generation_interval_sigma=GI_SD_NEW,
+                              cm_prior='normal', cm_prior_scale=0.2, disp=0.2)
 
     time_start = time.time()
     with model.model:
