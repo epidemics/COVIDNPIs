@@ -197,12 +197,12 @@ if __name__ == '__main__':
                               cm_prior='normal', cm_prior_scale=0.2, disp=0.2)
 
     elif exp_num == 20:
-        data = preprocess_data('notebooks/double-entry-data/double_entry_final.csv', last_day='2020-05-30')
+        data = preprocess_data('notebooks/double-entry-data/double_entry_final.csv', last_day='2020-05-30', smoothing=1)
         data.mask_reopenings()
-        with DefaultModelFixedDispersion(data) as model:
+        with DefaultModel(data) as model:
             model.build_model(fatality_delay=DelayProbDeaths_NEW, reporting_delay=DelayProbCases_NEW,
                               generation_interval_mean=GI_MEAN_NEW, generation_interval_sigma=GI_SD_NEW,
-                              cm_prior='normal', cm_prior_scale=0.2, disp=0.0025)
+                              cm_prior='normal', cm_prior_scale=0.2)
 
     time_start = time.time()
     with model.model:
