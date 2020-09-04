@@ -32,12 +32,15 @@ argparser.add_argument('--base_seed', dest='seed', type=int)
 argparser.add_argument('--n_runs', dest='n_runs', type=int)
 argparser.add_argument('--parallel_runs', dest='parallel_runs', type=int)
 argparser.add_argument('--prior', dest='prior', type=str)
+argparser.add_argument('--n_smooth', dest='n_smooth', type=int, default=7)
+argparser.add_argument('--alpha', dest='alpha', type=float, default=50.0)
 args = argparser.parse_args()
 
 if __name__ == '__main__':
     seed = args.seed
 
-    data = preprocess_data('notebooks/double-entry-data/double_entry_final.csv', last_day='2020-05-30')
+    data = preprocess_data('notebooks/double-entry-data/double_entry_final.csv', last_day='2020-05-30',
+                           n_smooth=args.n_smooth)
     data.mask_reopenings()
 
     for run in range(args.n_runs):
@@ -51,7 +54,8 @@ if __name__ == '__main__':
         with DefaultModelFixedDispersion(data) as model:
             model.build_model(generation_interval_mean=GI_MEAN, generation_interval_sigma=GI_SD,
                               reporting_delay=DelayProbCases,
-                              fatality_delay=DelayProbDeaths, cm_prior=args.prior, cm_prior_scale=prior_scale)
+                              fatality_delay=DelayProbDeaths, cm_prior=args.prior, cm_prior_scale=prior_scale,
+                              disp=1. / args.alpha)
 
         with model.model:
             model.trace = pm.sample(1500, tune=500, cores=4, chains=4, max_treedepth=14, target_accept=0.95)
