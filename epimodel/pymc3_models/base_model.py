@@ -240,8 +240,10 @@ class BaseCMModel(Model):
 
             elif prior_type == 'reparam':
                 self.CM_Alpha_raw = pm.Normal("CM_Alpha", 0, prior_scale, shape=(self.nCMs,))
-                self.CM_Alpha = T.set_subtensor(self.CM_Alpha[6], self.CM_Alpha_raw[6] + self.CM_Alpha[7])
-                self.CM_Alpha = T.set_subtensor(self.CM_Alpha[7], self.CM_Alpha_raw[6] - self.CM_Alpha[7])
+                x6 = self.CM_Alpha_raw[6] + self.CM_Alpha_raw[7]
+                x7 = self.CM_Alpha_raw[6] - self.CM_Alpha_raw[7]
+                self.CM_Alpha = T.set_subtensor(self.CM_Alpha[6], x6)
+                self.CM_Alpha = T.set_subtensor(self.CM_Alpha[7], x7)
 
     def plot_effect(self):
         """
