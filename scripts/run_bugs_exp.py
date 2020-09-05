@@ -204,6 +204,25 @@ if __name__ == '__main__':
                               generation_interval_mean=GI_MEAN_NEW, generation_interval_sigma=GI_SD_NEW,
                               cm_prior='normal', cm_prior_scale=0.2)
 
+    elif exp_num == 21:
+        data = preprocess_data('notebooks/double-entry-data/double_entry_final.csv', last_day='2020-05-30',
+                               smoothing=3)
+        data.mask_reopenings()
+        with DefaultModel(data) as model:
+            model.build_model(fatality_delay=DelayProbDeaths_NEW, reporting_delay=DelayProbCases_NEW,
+                              generation_interval_mean=GI_MEAN_NEW, generation_interval_sigma=GI_SD_NEW,
+                              cm_prior='normal', cm_prior_scale=0.2)
+
+    elif exp_num == 22:
+        data = preprocess_data('notebooks/double-entry-data/double_entry_final.csv', last_day='2020-05-30',
+                               smoothing=5)
+        data.mask_reopenings()
+        with DefaultModel(data) as model:
+            model.build_model(fatality_delay=DelayProbDeaths_NEW, reporting_delay=DelayProbCases_NEW,
+                              generation_interval_mean=GI_MEAN_NEW, generation_interval_sigma=GI_SD_NEW,
+                              cm_prior='normal', cm_prior_scale=0.2)
+
+
     time_start = time.time()
     with model.model:
         model.trace = pm.sample(1000, tune=500, cores=4, chains=4, max_treedepth=14, target_accept=0.95)
