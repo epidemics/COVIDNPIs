@@ -15,7 +15,6 @@ from epimodel.pymc3_distributions.asymmetric_laplace import AsymmetricLaplace
 from pymc3 import Model
 import theano.tensor as T
 
-
 fp2 = FontProperties(fname=r"../../fonts/Font Awesome 5 Free-Solid-900.otf")
 sns.set_style("ticks")
 
@@ -236,14 +235,7 @@ class BaseCMModel(Model):
                 self.CM_Alpha = pm.Deterministic("CM_Alpha", self.CM_Alpha_t - np.log(1.05) / self.nCMs)
 
             elif prior_type == 'skewed':
-                self.CM_Alpha = AsymmetricLaplace('CM_Alpha', scale=prior_scale, symmetry=0.5, shape=(self.nCMs, ))
-
-            elif prior_type == 'reparam':
-                self.CM_Alpha_raw = pm.Normal("CM_Alpha", 0, prior_scale, shape=(self.nCMs,))
-                x6 = self.CM_Alpha_raw[6] + self.CM_Alpha_raw[7]
-                x7 = self.CM_Alpha_raw[6] - self.CM_Alpha_raw[7]
-                self.CM_Alpha = T.set_subtensor(self.CM_Alpha[6], x6)
-                self.CM_Alpha = T.set_subtensor(self.CM_Alpha[7], x7)
+                self.CM_Alpha = AsymmetricLaplace('CM_Alpha', scale=prior_scale, symmetry=0.5, shape=(self.nCMs,))
 
     def plot_effect(self):
         """
@@ -252,7 +244,7 @@ class BaseCMModel(Model):
         assert self.trace is not None
         plt.figure(figsize=(4, 3), dpi=300)
 
-        means, li, ui, lq, uq = produce_CIs(100*(1 - np.mean(self.trace["CMReduction"])))
+        means, li, ui, lq, uq = produce_CIs(100 * (1 - np.mean(self.trace["CMReduction"])))
 
         N_cms = means.size
 

@@ -14,7 +14,7 @@ from .preprocessed_data import PreprocessedData
 
 
 def preprocess_data(data_path, last_day=None, schools_unis='two_separate', drop_features=None, min_confirmed=100,
-                    min_deaths=10, smoothing=7, mask_zero_deaths=False, mask_zero_cases=False):
+                    min_deaths=10, smoothing=1, mask_zero_deaths=False, mask_zero_cases=False):
     """
     Preprocess data .csv file, in our post-merge format, with different options.
 

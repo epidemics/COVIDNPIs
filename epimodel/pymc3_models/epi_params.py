@@ -4,6 +4,50 @@ epidemiological parameters
 
 import numpy as np
 import pprint
+from tqdm import tqdm
+
+
+def bootstrapped_negbinom_values(delays, n_bootstrap=250, n_rvs=int(1e7), truncation=64, filter_disp_outliers = True):
+    """
+    Fit negative binomial to n_bootstrapped sets of n_rv samples, each set of samples drawn randomly from the priors
+    placed on the distributions in the delay array. e.g., this function is used to fit a single negative binomial
+    distribution (with uncertainty) to the sum of the incubation period and onset to death delay.
+
+    :param delays: list of distributions (with uncertainty), used to produce estimates.
+    :param n_bootstrap: number of bootstrapped to perform
+    :param n_rvs: number of samples to draw from each draw from prior
+    :param truncation: maximum value to truncate to.
+    :return: dictionary with uncertain NB values
+    """
+    means = np.zeros(n_bootstrap)
+    disps = np.zeros(n_bootstrap)
+
+    for seed in tqdm(range(n_bootstrap)):
+        ep = EpidemiologicalParameters(seed)
+        samples = np.zeros(n_rvs)
+
+        for dist in delays:
+            samples += ep.generate_dist_samples(dist, n_rvs, with_noise=True)
+
+        samples[samples > truncation] = truncation
+        means[seed] = np.mean(samples)
+        disps[seed] = ((np.var(samples) - np.mean(samples)) / (np.mean(samples) ** 2)) ** -1
+
+    if filter_disp_outliers:
+        # especially for the fatality delay, this can be an issue.
+        med_disp = np.median(disps)
+        abs_deviations = np.abs(disps - med_disp)
+        disps = disps[abs_deviations < 2*np.median(abs_deviations)]
+
+    ret = {
+        'mean_mean': np.mean(means),
+        'mean_sd': np.std(means),
+        'disp_mean': np.mean(disps),
+        'disp_sd': np.std(disps),
+        'dist': 'negbinom'
+    }
+
+    return ret
 
 
 class EpidemiologicalParameters():
@@ -13,8 +57,8 @@ class EpidemiologicalParameters():
     Wrapper Class, contains information about the epidemiological parameters used in this project.
     """
 
-    def __init__(self, seed=0, generation_interval=None, incubation_period=None, onset_reporting_delay=None,
-                 onset_fatality_delay=None):
+    def __init__(self, seed=0, generation_interval=None, incubation_period=None, infection_to_fatality_delay=None,
+                 infection_to_reporting_delay=None):
         """
         Constructor
 
@@ -27,32 +71,39 @@ class EpidemiologicalParameters():
             - distribution type: only 'gamma' and 'lognorm' are currently supported
             - notes: any other notes
 
+        :param numpy seed used for randomisation
         :param generation_interval: dictionary containing relevant distribution information
-        :param incubation_period: dictionary containing relevant distribution information
-        :param onset_reporting_delay: dictionary containing relevant distribution information
-        :param onset_fatality_delay: dictionary containing relevant distribution information
+        :param incubation_period : dictionary containing relevant distribution information
+        :param infection_to_fatality_delay: dictionaries containing relevant distribution information
+        :param infection_to_reporting_delay: dictionaries containing relevant distribution information
         """
         if generation_interval is not None:
             self.generation_interval = generation_interval
         else:
             self.generation_interval = {
-                'mean_mean': 3.635,
-                'mean_sd': 0.7109,
-                'sd_mean': 3.07532,
-                'sd_sd': 0.769517,
-                'source': 'https://www.eurosurveillance.org/content/10.2807/1560-7917.ES.2020.25.17.2000257',
-                'dist': 'gamma',
-                'notes': 'Exact Numbers taken from https://github.com/epiforecasts/EpiNow2'
-            }
-
-            self.generation_interval = {
                 'mean_mean': 5.06,
                 'mean_sd': 0.32,
                 'sd_mean': 1.804,
-                'sd_sd': 1e-5,
-                'source': 'https://www.eurosurveillance.org/content/10.2807/1560-7917.ES.2020.25.17.2000257',
+                'sd_sd': 0.114,
+                'source': 'mean: https://www.medrxiv.org/content/medrxiv/early/2020/06/19/2020.06.17.20133587.full.pdf'
+                          'CoV: https://www.eurosurveillance.org/content/10.2807/1560-7917.ES.2020.25.17.2000257',
                 'dist': 'gamma',
-                'notes': 'Exact Numbers taken from https://github.com/epiforecasts/EpiNow2'
+                'notes': 'mean_sd chosen to fill CIs from the medrxiv meta-analysis. sd_sd chosen for the same average'
+                         'CoV from Ganyani et al, using the sd for the mean.'
+            }
+
+        if infection_to_fatality_delay is not None:
+            self.infection_to_fatality_delay = infection_to_fatality_delay
+        else:
+            self.infection_to_fatality_delay = {
+                'mean_mean': 23.65,
+                'mean_sd': 1.07,
+                'disp_mean': 10.1,
+                'disp_sd': 3.17,
+                'source': 'incubation: Lauer et al, doi.org/10.7326/M20-0504'
+                          'onset-death: https://www.thelancet.com/journals/laninf/article/PIIS1473-3099(20)30243-7/fulltext',
+                'dist': 'negbinom',
+                'notes': 'Fitted as a bootstrapped NB. Dispersion outliers filtered during bootstrapping'
             }
 
         if incubation_period is not None:
@@ -68,62 +119,18 @@ class EpidemiologicalParameters():
                 'notes': 'Exact Numbers taken from https://github.com/epiforecasts/EpiNow2'
             }
 
-            # self.incubation_period = {
-            #     'mean_mean': 1.624,
-            #     'mean_sd': 0.064,
-            #     'sd_mean': 0.518,
-            #     'sd_sd': 0.0691,
-            #     'source': 'Lauer et al, doi.org/10.7326/M20-0504',
-            #     'dist': 'lognorm',
-            #     'notes': 'Exact Numbers taken from https://github.com/epiforecasts/EpiNow2'
-            # }
-
-        if onset_reporting_delay is not None:
-            self.onset_reporting_delay = onset_reporting_delay
+        if infection_to_reporting_delay is not None:
+            self.infection_to_reporting_delay = infection_to_reporting_delay
         else:
-            self.onset_reporting_delay = {
-                'mean_mean': 0.974,
-                'mean_sd': 0.1583,
-                'sd_mean': 1.4662,
-                'sd_sd': 0.120,
-                'source': 'https://github.com/beoutbreakprepared/nCoV2019',
-                'dist': 'lognorm',
-                'notes': 'Produced using linelist data and the EpiNow2 Repo, fitting a lognorm variable.'
-                         '200 Bootstraps with 250 samples each.'
-            }
-
-            self.onset_reporting_delay = {
-                'mean_mean': 5.2,
-                'mean_sd': 0.6025,
-                'sd_mean': 4.78,
-                'sd_sd': 1e-5,
-                'source': 'https://github.com/beoutbreakprepared/nCoV2019',
-                'dist': 'gamma',
-                'notes': 'Produced using linelist data and the EpiNow2 Repo, fitting a lognorm variable.'
-                         '200 Bootstraps with 250 samples each.'
-            }
-
-        if onset_fatality_delay is not None:
-            self.onset_fatality_delay = onset_fatality_delay
-        else:
-            self.onset_fatality_delay = {
-                'mean_mean': 2.28,
-                'mean_sd': 0.0685,
-                'sd_mean': 0.763,
-                'sd_sd': 0.0537,
-                'source': 'https://github.com/epiforecasts/covid-rt-estimates',
-                'dist': 'lognorm',
-                'notes': 'taken from data/onset_to_death_delay.rds'
-            }
-
-            self.onset_fatality_delay = {
-                'mean_mean': 16.71,
-                'mean_sd': 0.7,
-                'sd_mean': 7.52,
-                'sd_sd': 1e-5,
-                'source': 'https://github.com/epiforecasts/covid-rt-estimates',
-                'dist': 'gamma',
-                'notes': 'taken from data/onset_to_death_delay.rds'
+            self.infection_to_reporting_delay = {
+                'mean_mean': 11.1,
+                'mean_sd': 0.5,
+                'disp_mean': 5.46,
+                'disp_sd': 0.55,
+                'source': 'incubation: Lauer et al, doi.org/10.7326/M20-0504'
+                          'onset-reporting: Cereda et al, https://arxiv.org/abs/2003.09320',
+                'dist': 'negbinom',
+                'notes': 'Fitted as a bootstrapped NB.'
             }
 
         self.seed = seed
@@ -140,14 +147,25 @@ class EpidemiologicalParameters():
         # specify seed because everything here is random!!
         np.random.seed(self.seed)
         mean = np.random.normal(loc=dist['mean_mean'], scale=dist['mean_sd'] * with_noise)
-        sd = np.random.normal(loc=dist['sd_mean'], scale=dist['sd_sd'] * with_noise)
         if dist['dist'] == 'gamma':
+            sd = np.random.normal(loc=dist['sd_mean'], scale=dist['sd_sd'] * with_noise)
+            k = mean ** 2 / sd ** 2
+            theta = sd ** 2 / mean
+            samples = np.random.gamma(k, theta, size=nRVs)
+        if dist['dist'] == 'gamma_cov':
+            cov = np.random.normal(loc=dist['cov_mean'], scale=dist['cov_sd'] * with_noise)
+            sd = cov * mean
             k = mean ** 2 / sd ** 2
             theta = sd ** 2 / mean
             samples = np.random.gamma(k, theta, size=nRVs)
         elif dist['dist'] == 'lognorm':
+            sd = np.random.normal(loc=dist['sd_mean'], scale=dist['sd_sd'] * with_noise)
             # lognorm rv generated by e^z where z is normal
             samples = np.exp(np.random.normal(loc=mean, scale=sd, size=nRVs))
+        elif dist['dist'] == 'negbinom':
+            disp = np.random.normal(loc=dist['disp_mean'], scale=dist['disp_sd'] * with_noise)
+            p = disp / (disp + mean)
+            samples = np.random.negative_binomial(disp, p, size=nRVs)
 
         return samples
 
@@ -199,7 +217,7 @@ class EpidemiologicalParameters():
 
     def generate_reporting_and_fatality_delays(self, nRVs=int(1e7), with_noise=True, max_reporting=32, max_fatality=48):
         """
-        Generate reporting and fatality delays using Monte Carlo integration.
+        Generate reporting and fatality discretised delays using Monte Carlo integration.
 
         Note: this uses the random seed associated with the EpidemiologicalParameters() object, and will be consistent.
 
@@ -230,10 +248,30 @@ class EpidemiologicalParameters():
               '----------------------------------\n')
         print('Generation Interval')
         pprint.pprint(self.generation_interval)
-        print('Incubation Period')
-        pprint.pprint(self.incubation_period)
-        print('Symptom Onset to Reporting Delay')
-        pprint.pprint(self.onset_reporting_delay)
-        print('Symptom Onset to Fatality Delay')
-        pprint.pprint(self.onset_fatality_delay)
+        print('Infection to Reporting Delay')
+        pprint.pprint(self.infection_to_reporting_delay)
+        print('Infection to Fatality Delay')
+        pprint.pprint(self.infection_to_fatality_delay)
         print('----------------------------------\n')
+
+    def get_model_build_dict(self):
+        """
+        Grab parameters which can be conveniently passed to our model files.
+
+        :return: param dict
+        """
+        ret = {
+            'gi_mean_mean': self.generation_interval['mean_mean'],
+            'gi_mean_sd': self.generation_interval['mean_sd'],
+            'gi_sd_mean': self.generation_interval['sd_mean'],
+            'gi_sd_sd': self.generation_interval['sd_sd'],
+            'deaths_delay_mean_mean': self.infection_to_fatality_delay['mean_mean'],
+            'deaths_delay_mean_sd': self.infection_to_fatality_delay['mean_sd'],
+            'deaths_delay_disp_mean': self.infection_to_fatality_delay['disp_mean'],
+            'deaths_delay_disp_sd': self.infection_to_fatality_delay['disp_sd'],
+            'cases_delay_mean_mean': self.infection_to_reporting_delay['mean_mean'],
+            'cases_delay_mean_sd': self.infection_to_reporting_delay['mean_sd'],
+            'cases_delay_disp_mean': self.infection_to_reporting_delay['disp_mean'],
+            'cases_delay_disp_sd': self.infection_to_reporting_delay['disp_sd'],
+        }
+        return ret
