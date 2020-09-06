@@ -21,6 +21,7 @@ if __name__ == '__main__':
     prior_type = args.NPI_prior[0]
     prior_scale = float(args.NPI_prior[1])
 
+    output_fname = f'R_prior-{args.R_prior}-npi_prior-{args.NPI_prior[0]}-npi_prior_scale-{args.NPI_prior[1]}.txt'
     ep = EpidemiologicalParameters()
     model_class = get_model_class_from_str(args.model_type)
 
@@ -32,4 +33,4 @@ if __name__ == '__main__':
         model.trace = pm.sample(args.n_samples, tune=500, chains=args.n_chains, cores=args.n_chains, max_treedepth=14,
                                 target_accept=0.925)
 
-    save_cm_trace(output_string, model.trace.CMReduction, args.exp_tag, args.model_type)
+    save_cm_trace(output_fname, model.trace.CMReduction, args.exp_tag, args.model_type)
