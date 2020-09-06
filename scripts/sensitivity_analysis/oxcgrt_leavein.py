@@ -6,7 +6,7 @@ from epimodel.preprocessing.data_preprocessor import preprocess_data
 import argparse
 import copy
 
-from .utils import *
+from scripts.sensitivity_analysis.utils import *
 
 argparser = argparse.ArgumentParser()
 argparser.add_argument('--npis', nargs='+', dest='npis', type=int)
