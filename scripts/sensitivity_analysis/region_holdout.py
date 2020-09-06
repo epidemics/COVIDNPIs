@@ -6,7 +6,7 @@ from epimodel.preprocessing.data_preprocessor import preprocess_data
 import argparse
 import pickle
 
-from .utils import *
+from scripts.sensitivity_analysis.utils import *
 
 argparser = argparse.ArgumentParser()
 argparser.add_argument('--rg', dest='rg', type=str)
