@@ -4,7 +4,7 @@ import numpy as np
 
 
 def get_model_class_from_str(model_type_str):
-    if model_type_str == 'Default':
+    if model_type_str == 'default':
         return epm.DefaultModel
 
 
