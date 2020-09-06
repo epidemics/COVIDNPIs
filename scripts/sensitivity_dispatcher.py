@@ -28,8 +28,14 @@ def run_types_to_commands(run_types, exp_options):
             if isinstance(value, list):
                 for c in cmds:
                     for v in value:
-                        new_cmd = f'{c} --{key} {v}'
-                        new_cmds.append(new_cmd)
+                        if isinstance(v, list):
+                            new_cmd = f'{c} --{key}'
+                            for v_nest in v:
+                                new_cmd = f'{new_cmd} {v_nest}'
+                            new_cmds.append(new_cmd)
+                        else:
+                            new_cmd = f'{c} --{key} {v}'
+                            new_cmds.append(new_cmd)
             else:
                 for c in cmds:
                     new_cmd = f'{c} --{key} {value}'
