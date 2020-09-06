@@ -67,7 +67,7 @@ if __name__ == '__main__':
             print(c)
     else:
         processes = set()
-        max_processes = args.max_processess
+        max_processes = args.max_processes
 
         for command in commands:
             processes.add(subprocess.Popen(command, shell=True))
