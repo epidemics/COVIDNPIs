@@ -14,6 +14,7 @@ def add_argparse_arguments(argparse):
     argparse.add_argument('--n_chains', dest='n_chains', type=int)
     argparse.add_argument('--n_samples', dest='n_samples', type=int)
 
+
 def save_cm_trace(name, trace, tag, model_type):
     out_dir = os.path.join(f'sensitivity_{model_type}', tag, name)
     if not os.path.exists(out_dir):
