@@ -1,0 +1,138 @@
+region_holdout:
+  experiment_file: region_holdout.py
+  experiment_tag: region_holdout
+  model_type: default
+  n_chains: 4
+  n_samples: 2000
+  args:
+    rg:
+      - AL
+      - AD
+      - AT
+      - BE
+      - BA
+      - BG
+      - HR
+      - CZ
+      - DK
+      - EE
+      - FI
+      - FR
+      - GE
+      - DE
+      - GR
+      - HU
+      - IS
+      - IE
+      - IL
+      - IT
+      - LV
+      - LT
+      - MY
+      - MT
+      - MX
+      - MA
+      - NL
+      - NZ
+      - 'NO' # otherwise this evaluates to false!
+      - PL
+      - PT
+      - RO
+      - RS
+      - SG
+      - SK
+      - SI
+      - ZA
+      - ES
+      - SE
+      - CH
+      - GB
+
+npi_leaveout:
+  experiment_file: npi_leaveout.py
+  experiment_tag: npi_leaveout
+  model_type: default
+  n_chains: 4
+  n_samples: 2000
+  args:
+    npis:
+      - [0]
+      - [1]
+      - [2]
+      - [3]
+      - [4]
+      - [5]
+      - [6]
+      - [7]
+      - [8]
+      - [6, 7]
+
+cases_threshold:
+  experiment_file: preprocessing_tests.py
+  experiment_tag: cases_threshold
+  model_type: default
+  n_chains: 4
+  n_samples: 2000
+  args:
+    smoothing: 1
+    deaths_threshold: 10
+    cases_threshold: [10, 50, 150, 200]
+
+deaths_threshold:
+  experiment_file: preprocessing_tests.py
+  experiment_tag: deaths_threshold
+  model_type: default
+  n_chains: 4
+  n_samples: 2000
+  args:
+    smoothing: 1
+    deaths_threshold: [1, 5, 15, 20]
+    cases_threshold: 100
+
+smoothing:
+  experiment_file: preprocessing_tests.py
+  experiment_tag: smoothing
+  model_type: default
+  n_chains: 4
+  n_samples: 2000
+  args:
+    smoothing: [3, 5, 7, 9]
+    deaths_threshold: 10
+    cases_threshold: 100
+
+oxcgrt:
+  experiment_file: oxcgrt_leavein.py
+  experiment_tag: oxcgrt
+  model_type: default
+  n_chains: 4
+  n_samples: 2000
+  args:
+    npis:
+      - [0, 1]
+      - [2]
+      - [3]
+      - [4]
+      - [5]
+
+R_prior:
+  experiment_file: alternative_build_param.py
+  experiment_tag: R_prior
+  model_type: default
+  n_chains: 4
+  n_samples: 2000
+  args:
+    R_prior_mean: [2.5, 4.5]
+    NPI_prior: skewed 10
+
+NPI_prior:
+  experiment_file: alternative_build_param.py
+  experiment_tag: NPI_prior
+  model_type: default
+  n_chains: 4
+  n_samples: 2000
+  args:
+    R_prior_mean: 3.25
+    NPI_prior:
+      - skewed 10
+      - normal 0.2
+      - icl 0

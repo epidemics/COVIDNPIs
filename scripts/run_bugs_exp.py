@@ -25,7 +25,8 @@ warnings.simplefilter(action='ignore', category=FutureWarning)
 from epimodel.preprocessing.data_preprocessor import preprocess_data
 from epimodel import EpidemiologicalParameters, DefaultModel
 from epimodel.pymc3_models.legacy import CMCombined_FinalLegacy, CMCombined_FinalLegacyFixedDispersion, \
-    CMCombined_FinalLegacyLognorm, CMCombined_FinalLegacyAltSize, CMCombined_FinalLegacyLessNoise
+    CMCombined_FinalLegacyLognorm, CMCombined_FinalLegacyAltSize, CMCombined_FinalLegacyLessNoise, \
+    CMCombined_FinalMoreBayesian
 from epimodel.pymc3_models.models import DefaultModelFixedDispersion, DefaultModelLognorm, DefaultModelPoissonOutput
 
 import argparse
@@ -222,6 +223,12 @@ if __name__ == '__main__':
                               generation_interval_mean=GI_MEAN_NEW, generation_interval_sigma=GI_SD_NEW,
                               cm_prior='normal', cm_prior_scale=0.2)
 
+    elif exp_num == 23:
+        data = preprocess_data('notebooks/double-entry-data/double_entry_final.csv', last_day='2020-05-30',
+                               smoothing=1)
+        data.mask_reopenings()
+        with CMCombined_FinalMoreBayesian(data) as model:
+            model.build_model()
 
     time_start = time.time()
     with model.model:

@@ -28,26 +28,36 @@ class DefaultModel(BaseCMModel):
 
     def __init__(self, data, cm_plot_style=None, name="", model=None):
         """
-        Constructor function.
-
-        At the moment, just calls the BaseCMModel Constructor
+        Initialiser.
         """
-        super(DefaultModel, self).__init__(data, cm_plot_style, name, model)
+        super().__init__(data, cm_plot_style, name, model)
 
-    def build_model(self, R_prior_mean=3.25, cm_prior_scale=10, cm_prior='skewed',
-                    generation_interval_mean=5, generation_interval_sigma=2, growth_noise_scale=0.2,
-                    fatality_delay=np.array([[1.0]]), reporting_delay=np.array([[1.0]])):
+    def build_model(self, R_prior_mean=3.28, cm_prior_scale=10, cm_prior='skewed',
+                    gi_mean_mean=5, gi_mean_sd=1, gi_sd_mean=2, gi_sd_sd=2, growth_noise_scale=0.2,
+                    deaths_delay_mean_mean=21, deaths_delay_mean_sd=1, deaths_delay_disp_mean=9, deaths_delay_disp_sd=1,
+                    cases_delay_mean_mean=10, cases_delay_mean_sd=1, cases_delay_disp_mean=5, cases_delay_disp_sd=1,
+                    deaths_truncation=48, cases_truncation=32):
         """
-        Build PyMC3 model.
+        Build NPI effectiveness model
 
-        :param R_hyperprior_mean: mean for R hyperprior.
-        :param cm_prior_scale: prior scale parameter. See BaseCMModel.build_npi_prior()
-        :param cm_prior: prior type
-        :param generation_interval_mean: assumed fixed mean for gamma generation interval
-        :param generation_interval_sigma: assumed fixed sd for gamma generation interval
-        :param growth_noise_scale: growth noise scale hyperparamter. defaults to 0.2
-        :param fatality_delay: infection to fatality array delay.
-        :param reporting_delay: infection to reporting array delay.
+        :param R_prior_mean: R_0 prior mean
+        :param cm_prior_scale: NPI effectiveness prior scale
+        :param cm_prior: NPI effectiveness prior type. Either 'normal', 'icl' or skewed (asymmetric laplace)
+        :param gi_mean_mean: mean of normal prior placed over the generation interval mean
+        :param gi_mean_sd: sd of normal prior placed over the generation interval mean
+        :param gi_sd_mean: mean of normal prior placed over the generation interval sd
+        :param gi_sd_sd: sd of normal prior placed over the generation interval sd
+        :param growth_noise_scale: growth noise scale
+        :param deaths_delay_mean_mean: mean of normal prior placed over death delay mean
+        :param deaths_delay_mean_sd: sd of normal prior placed over death delay mean
+        :param deaths_delay_disp_mean: mean of normal prior placed over death delay dispersion (alpha / psi)
+        :param deaths_delay_disp_sd: sd of normal prior placed over death delay dispersion (alpha / psi)
+        :param cases_delay_mean_mean: mean of normal prior placed over cases delay mean
+        :param cases_delay_mean_sd: sd of normal prior placed over cases delay mean
+        :param cases_delay_disp_mean: mean of normal prior placed over cases delay dispersion
+        :param cases_delay_disp_sd: sd of normal prior placed over cases delay dispersion
+        :param deaths_truncation: maximum death delay
+        :param cases_truncation: maximum reporting delay
         """
         with self.model:
             # build NPI Effectiveness priors
@@ -76,25 +86,39 @@ class DefaultModel(BaseCMModel):
             self.ExpectedLogR = T.reshape(pm.math.log(self.RegionR), (self.nRs, 1)) - self.LogRReduction
 
             # convert R into growth rates
-            gi_beta = generation_interval_mean / generation_interval_sigma ** 2
-            gi_alpha = generation_interval_mean ** 2 / generation_interval_sigma ** 2
+            self.GI_mean = pm.Normal('GI_mean', gi_mean_mean, gi_mean_sd)
+            self.GI_sd = pm.Normal('GI_sd', gi_sd_mean, gi_sd_sd)
+
+            gi_beta = self.GI_mean / self.GI_sd ** 2
+            gi_alpha = self.GI_mean ** 2 / self.GI_sd ** 2
 
             self.ExpectedGrowth = gi_beta * (pm.math.exp(self.ExpectedLogR / gi_alpha) - T.ones((self.nRs, self.nDs)))
 
-            self.GrowthCasesNoise = pm.Normal("GrowthCasesNoise", 0, growth_noise_scale, shape=(self.nRs, self.nDs))
+            # exclude 40 days of noise, slight increase in runtime.
+            self.GrowthCasesNoise = pm.Normal("GrowthCasesNoise", 0, growth_noise_scale,
+                                              shape=(self.nRs, self.nDs - 40))
             self.GrowthDeathsNoise = pm.Normal("GrowthDeathsNoise", 0, growth_noise_scale,
-                                               shape=(self.nRs, self.nDs))
+                                               shape=(self.nRs, self.nDs - 40))
 
-            self.GrowthCases = pm.Deterministic("GrowthCases", self.ExpectedGrowth + self.GrowthCasesNoise)
-            self.GrowthDeaths = pm.Deterministic("GrowthDeaths", self.ExpectedGrowth + self.GrowthDeathsNoise)
+            self.GrowthCases = T.inc_subtensor(self.ExpectedGrowth[:, 30:-10], self.GrowthCasesNoise)
+            self.GrowthDeaths = T.inc_subtensor(self.ExpectedGrowth[:, 30:-10], self.GrowthDeathsNoise)
 
-            self.Dispersion = pm.HalfNormal("Dispersion", 0.1)
+            self.PsiCases = pm.HalfNormal('PsiCases', 5.)
+            self.PsiDeaths = pm.HalfNormal('PsiDeaths', 5.)
 
             # Confirmed Cases
             # seed and produce daily infections which become confirmed cases
             self.InitialSizeCases_log = pm.Normal("InitialSizeCases_log", 0, 50, shape=(self.nRs, 1))
             self.InfectedCases = pm.Deterministic("InfectedCases", pm.math.exp(
                 self.InitialSizeCases_log + self.GrowthCases.cumsum(axis=1)))
+
+            self.CasesDelayMean = pm.Normal('CasesDelayMean', cases_delay_mean_mean, cases_delay_mean_sd)
+            self.CasesDelayDisp = pm.Normal('CasesDelayDisp', cases_delay_disp_mean, cases_delay_disp_sd)
+            cases_delay_dist = pm.NegativeBinomial.dist(mu=self.CasesDelayMean, alpha=self.CasesDelayDisp)
+            bins = np.arange(0, cases_truncation)
+            pmf = T.exp(cases_delay_dist.logp(bins))
+            pmf = pmf / T.sum(pmf)
+            reporting_delay = pmf.reshape((1, cases_truncation))
 
             # convolve with delay to produce expectations
             expected_cases = C.conv2d(
@@ -111,7 +135,7 @@ class DefaultModel(BaseCMModel):
             self.ObservedCases = pm.NegativeBinomial(
                 "ObservedCases",
                 mu=self.ExpectedCases.reshape((self.nRs * self.nDs,))[self.all_observed_active],
-                alpha=1 / self.Dispersion,
+                alpha=self.PsiCases,
                 shape=(len(self.all_observed_active),),
                 observed=self.d.NewCases.data.reshape((self.nRs * self.nDs,))[self.all_observed_active]
             )
@@ -121,6 +145,14 @@ class DefaultModel(BaseCMModel):
             self.InitialSizeDeaths_log = pm.Normal("InitialSizeDeaths_log", 0, 50, shape=(self.nRs, 1))
             self.InfectedDeaths = pm.Deterministic("InfectedDeaths", pm.math.exp(
                 self.InitialSizeDeaths_log + self.GrowthDeaths.cumsum(axis=1)))
+
+            self.DeathsDelayMean = pm.Normal('DeathsDelayMean', deaths_delay_mean_mean, deaths_delay_mean_sd)
+            self.DeathsDelayDisp = pm.Normal('DeathsDelayDisp', deaths_delay_disp_mean, deaths_delay_disp_sd)
+            deaths_delay_dist = pm.NegativeBinomial.dist(mu=self.DeathsDelayMean, alpha=self.DeathsDelayDisp)
+            bins = np.arange(0, deaths_truncation)
+            pmf = T.exp(deaths_delay_dist.logp(bins))
+            pmf = pmf / T.sum(pmf)
+            fatality_delay = pmf.reshape((1, deaths_truncation))
 
             # convolve with delay to production reports
             expected_deaths = C.conv2d(
@@ -137,381 +169,9 @@ class DefaultModel(BaseCMModel):
             self.ObservedDeaths = pm.NegativeBinomial(
                 "ObservedDeaths",
                 mu=self.ExpectedDeaths.reshape((self.nRs * self.nDs,))[self.all_observed_deaths],
-                alpha=1 / self.Dispersion,
+                alpha=self.PsiDeaths,
                 shape=(len(self.all_observed_deaths),),
                 observed=self.d.NewDeaths.data.reshape((self.nRs * self.nDs,))[self.all_observed_deaths]
-            )
-
-
-class DefaultModelFixedDispersion(BaseCMModel):
-    """
-    Default Model
-
-    Default EpidemicForecasting.org NPI effectiveness model.
-    Please see also https://www.medrxiv.org/content/10.1101/2020.05.28.20116129v3
-    """
-
-    def __init__(self, data, cm_plot_style=None, name="", model=None):
-        """
-        Constructor function.
-
-        At the moment, just calls the BaseCMModel Constructor
-        """
-        super(DefaultModelFixedDispersion, self).__init__(data, cm_plot_style, name, model)
-
-    def build_model(self, R_prior_mean=3.25, cm_prior_scale=10, cm_prior='skewed',
-                    generation_interval_mean=5, generation_interval_sigma=2, growth_noise_scale=0.2,
-                    fatality_delay=np.array([[1.0]]), reporting_delay=np.array([[1.0]]), disp=0.0025):
-        """
-        Build PyMC3 model.
-
-        :param R_hyperprior_mean: mean for R hyperprior.
-        :param cm_prior_scale: prior scale parameter. See BaseCMModel.build_npi_prior()
-        :param cm_prior: prior type
-        :param generation_interval_mean: assumed fixed mean for gamma generation interval
-        :param generation_interval_sigma: assumed fixed sd for gamma generation interval
-        :param growth_noise_scale: growth noise scale hyperparamter. defaults to 0.2
-        :param fatality_delay: infection to fatality array delay.
-        :param reporting_delay: infection to reporting array delay.
-        """
-        with self.model:
-            # build NPI Effectiveness priors
-            self.build_npi_prior(cm_prior, cm_prior_scale)
-
-            self.CMReduction = pm.Deterministic("CMReduction", T.exp((-1.0) * self.CM_Alpha))
-
-            # build R_0 prior
-            self.HyperRVar = pm.HalfNormal(
-                "HyperRVar", sigma=0.5
-            )
-
-            self.RegionR_noise = pm.Normal("RegionLogR_noise", 0, 1, shape=(self.nRs))
-            self.RegionR = pm.Deterministic("RegionR", R_prior_mean + self.RegionLogR_noise * self.HyperRVar)
-
-            # load CMs active, compute log-R reduction and region log-R based on NPIs active
-            self.ActiveCMs = pm.Data("ActiveCMs", self.d.ActiveCMs)
-
-            self.ActiveCMReduction = (
-                    T.reshape(self.CM_Alpha, (1, self.nCMs, 1))
-                    * self.ActiveCMs
-            )
-
-            self.LogRReduction = T.sum(self.ActiveCMReduction, axis=1)
-
-            self.ExpectedLogR = T.reshape(pm.math.log(self.RegionR), (self.nRs, 1)) - self.LogRReduction
-
-            # convert R into growth rates
-            gi_beta = generation_interval_mean / generation_interval_sigma ** 2
-            gi_alpha = generation_interval_mean ** 2 / generation_interval_sigma ** 2
-
-            self.ExpectedGrowth = gi_beta * (pm.math.exp(self.ExpectedLogR / gi_alpha) - T.ones((self.nRs, self.nDs)))
-
-            self.GrowthCasesNoise = pm.Normal("GrowthCasesNoise", 0, growth_noise_scale, shape=(self.nRs, self.nDs))
-            self.GrowthDeathsNoise = pm.Normal("GrowthDeathsNoise", 0, growth_noise_scale,
-                                               shape=(self.nRs, self.nDs))
-
-            self.GrowthCases = self.ExpectedGrowth + self.GrowthCasesNoise
-            self.GrowthDeaths = self.ExpectedGrowth + self.GrowthDeathsNoise
-
-            self.Dispersion = disp
-
-            # Confirmed Cases
-            # seed and produce daily infections which become confirmed cases
-            self.InitialSizeCases_log = pm.Normal("InitialSizeCases_log", 0, 50, shape=(self.nRs, 1))
-            self.InfectedCases = pm.Deterministic("InfectedCases", pm.math.exp(
-                self.InitialSizeCases_log + self.GrowthCases.cumsum(axis=1)))
-
-            # convolve with delay to produce expectations
-            expected_cases = C.conv2d(
-                self.InfectedCases,
-                reporting_delay,
-                border_mode="full"
-            )[:, :self.nDs]
-
-            self.ExpectedCases = pm.Deterministic("ExpectedCases", expected_cases.reshape(
-                (self.nRs, self.nDs)))
-
-            # effectively handle missing values ourselves
-            # output distribution
-            self.ObservedCases = pm.NegativeBinomial(
-                "ObservedCases",
-                mu=self.ExpectedCases.reshape((self.nRs * self.nDs,))[self.all_observed_active],
-                alpha=1 / self.Dispersion,
-                shape=(len(self.all_observed_active),),
-                observed=self.d.NewCases.data.reshape((self.nRs * self.nDs,))[self.all_observed_active]
-            )
-
-            # Deaths
-            # seed and produce daily infections which become confirmed cases
-            self.InitialSizeDeaths_log = pm.Normal("InitialSizeDeaths_log", 0, 50, shape=(self.nRs, 1))
-            self.InfectedDeaths = pm.Deterministic("InfectedDeaths", pm.math.exp(
-                self.InitialSizeDeaths_log + self.GrowthDeaths.cumsum(axis=1)))
-
-            # convolve with delay to production reports
-            expected_deaths = C.conv2d(
-                self.InfectedDeaths,
-                fatality_delay,
-                border_mode="full"
-            )[:, :self.nDs]
-
-            self.ExpectedDeaths = pm.Deterministic("ExpectedDeaths", expected_deaths.reshape(
-                (self.nRs, self.nDs)))
-
-            # effectively handle missing values ourselves
-            # death output distribution
-            self.ObservedDeaths = pm.NegativeBinomial(
-                "ObservedDeaths",
-                mu=self.ExpectedDeaths.reshape((self.nRs * self.nDs,))[self.all_observed_deaths],
-                alpha=1 / self.Dispersion,
-                shape=(len(self.all_observed_deaths),),
-                observed=self.d.NewDeaths.data.reshape((self.nRs * self.nDs,))[self.all_observed_deaths]
-            )
-
-
-class DefaultModelPoissonOutput(BaseCMModel):
-    """
-    Default Model
-
-    Default EpidemicForecasting.org NPI effectiveness model.
-    Please see also https://www.medrxiv.org/content/10.1101/2020.05.28.20116129v3
-    """
-
-    def __init__(self, data, cm_plot_style=None, name="", model=None):
-        """
-        Constructor function.
-
-        At the moment, just calls the BaseCMModel Constructor
-        """
-        super(DefaultModelPoissonOutput, self).__init__(data, cm_plot_style, name, model)
-
-    def build_model(self, R_prior_mean=3.25, cm_prior_scale=10, cm_prior='skewed',
-                    generation_interval_mean=5, generation_interval_sigma=2, growth_noise_scale=0.2,
-                    fatality_delay=np.array([[1.0]]), reporting_delay=np.array([[1.0]])):
-        """
-        Build PyMC3 model.
-
-        :param R_hyperprior_mean: mean for R hyperprior.
-        :param cm_prior_scale: prior scale parameter. See BaseCMModel.build_npi_prior()
-        :param cm_prior: prior type
-        :param generation_interval_mean: assumed fixed mean for gamma generation interval
-        :param generation_interval_sigma: assumed fixed sd for gamma generation interval
-        :param growth_noise_scale: growth noise scale hyperparamter. defaults to 0.2
-        :param fatality_delay: infection to fatality array delay.
-        :param reporting_delay: infection to reporting array delay.
-        """
-        with self.model:
-            # build NPI Effectiveness priors
-            self.build_npi_prior(cm_prior, cm_prior_scale)
-
-            self.CMReduction = pm.Deterministic("CMReduction", T.exp((-1.0) * self.CM_Alpha))
-
-            # build R_0 prior
-            self.HyperRVar = pm.HalfNormal(
-                "HyperRVar", sigma=0.5
-            )
-
-            self.RegionR_noise = pm.Normal("RegionLogR_noise", 0, 1, shape=(self.nRs))
-            self.RegionR = pm.Deterministic("RegionR", R_prior_mean + self.RegionLogR_noise * self.HyperRVar)
-
-            # load CMs active, compute log-R reduction and region log-R based on NPIs active
-            self.ActiveCMs = pm.Data("ActiveCMs", self.d.ActiveCMs)
-
-            self.ActiveCMReduction = (
-                    T.reshape(self.CM_Alpha, (1, self.nCMs, 1))
-                    * self.ActiveCMs
-            )
-
-            self.LogRReduction = T.sum(self.ActiveCMReduction, axis=1)
-
-            self.ExpectedLogR = T.reshape(pm.math.log(self.RegionR), (self.nRs, 1)) - self.LogRReduction
-
-            # convert R into growth rates
-            gi_beta = generation_interval_mean / generation_interval_sigma ** 2
-            gi_alpha = generation_interval_mean ** 2 / generation_interval_sigma ** 2
-
-            self.ExpectedGrowth = gi_beta * (pm.math.exp(self.ExpectedLogR / gi_alpha) - T.ones((self.nRs, self.nDs)))
-
-            self.GrowthCasesNoise = pm.Normal("GrowthCasesNoise", 0, growth_noise_scale, shape=(self.nRs, self.nDs))
-            self.GrowthDeathsNoise = pm.Normal("GrowthDeathsNoise", 0, growth_noise_scale,
-                                               shape=(self.nRs, self.nDs))
-
-            self.GrowthCases = self.ExpectedGrowth + self.GrowthCasesNoise
-            self.GrowthDeaths = self.ExpectedGrowth + self.GrowthDeathsNoise
-
-
-            # Confirmed Cases
-            # seed and produce daily infections which become confirmed cases
-            self.InitialSizeCases_log = pm.Normal("InitialSizeCases_log", 0, 50, shape=(self.nRs, 1))
-            self.InfectedCases = pm.Deterministic("InfectedCases", pm.math.exp(
-                self.InitialSizeCases_log + self.GrowthCases.cumsum(axis=1)))
-
-            # convolve with delay to produce expectations
-            expected_cases = C.conv2d(
-                self.InfectedCases,
-                reporting_delay,
-                border_mode="full"
-            )[:, :self.nDs]
-
-            self.ExpectedCases = pm.Deterministic("ExpectedCases", expected_cases.reshape(
-                (self.nRs, self.nDs)))
-
-            # effectively handle missing values ourselves
-            # output distribution
-            self.ObservedCases = pm.Poisson(
-                "ObservedCases",
-                self.ExpectedCases.reshape((self.nRs * self.nDs,))[self.all_observed_active],
-                shape=(len(self.all_observed_active),),
-                observed=self.d.NewCases.data.reshape((self.nRs * self.nDs,))[self.all_observed_active]
-            )
-
-            # Deaths
-            # seed and produce daily infections which become confirmed cases
-            self.InitialSizeDeaths_log = pm.Normal("InitialSizeDeaths_log", 0, 50, shape=(self.nRs, 1))
-            self.InfectedDeaths = pm.Deterministic("InfectedDeaths", pm.math.exp(
-                self.InitialSizeDeaths_log + self.GrowthDeaths.cumsum(axis=1)))
-
-            # convolve with delay to production reports
-            expected_deaths = C.conv2d(
-                self.InfectedDeaths,
-                fatality_delay,
-                border_mode="full"
-            )[:, :self.nDs]
-
-            self.ExpectedDeaths = pm.Deterministic("ExpectedDeaths", expected_deaths.reshape(
-                (self.nRs, self.nDs)))
-
-            # effectively handle missing values ourselves
-            # death output distribution
-            self.ObservedDeaths = pm.Poisson(
-                "ObservedDeaths",
-                self.ExpectedDeaths.reshape((self.nRs * self.nDs,))[self.all_observed_deaths],
-                shape=(len(self.all_observed_deaths),),
-                observed=self.d.NewDeaths.data.reshape((self.nRs * self.nDs,))[self.all_observed_deaths]
-            )
-
-
-class DefaultModelLognorm(BaseCMModel):
-    """
-    Default Model
-
-    Default EpidemicForecasting.org NPI effectiveness model.
-    Please see also https://www.medrxiv.org/content/10.1101/2020.05.28.20116129v3
-    """
-
-    def __init__(self, data, cm_plot_style=None, name="", model=None):
-        """
-        Constructor function.
-
-        At the moment, just calls the BaseCMModel Constructor
-        """
-        super(DefaultModelLognorm, self).__init__(data, cm_plot_style, name, model)
-
-    def build_model(self, R_prior_mean=3.25, cm_prior_scale=10, cm_prior='skewed',
-                    generation_interval_mean=5, generation_interval_sigma=2, growth_noise_scale=0.2,
-                    fatality_delay=np.array([[1.0]]), reporting_delay=np.array([[1.0]])):
-        """
-        Build PyMC3 model.
-
-        :param R_hyperprior_mean: mean for R hyperprior.
-        :param cm_prior_scale: prior scale parameter. See BaseCMModel.build_npi_prior()
-        :param cm_prior: prior type
-        :param generation_interval_mean: assumed fixed mean for gamma generation interval
-        :param generation_interval_sigma: assumed fixed sd for gamma generation interval
-        :param growth_noise_scale: growth noise scale hyperparamter. defaults to 0.2
-        :param fatality_delay: infection to fatality array delay.
-        :param reporting_delay: infection to reporting array delay.
-        """
-        with self.model:
-            # build NPI Effectiveness priors
-            self.build_npi_prior(cm_prior, cm_prior_scale)
-
-            self.CMReduction = pm.Deterministic("CMReduction", T.exp((-1.0) * self.CM_Alpha))
-
-            # build R_0 prior
-            self.HyperRVar = pm.HalfNormal(
-                "HyperRVar", sigma=0.5
-            )
-
-            self.RegionR_noise = pm.Normal("RegionLogR_noise", 0, 1, shape=(self.nRs))
-            self.RegionR = pm.Deterministic("RegionR", R_prior_mean + self.RegionLogR_noise * self.HyperRVar)
-
-            # load CMs active, compute log-R reduction and region log-R based on NPIs active
-            self.ActiveCMs = pm.Data("ActiveCMs", self.d.ActiveCMs)
-
-            self.ActiveCMReduction = (
-                    T.reshape(self.CM_Alpha, (1, self.nCMs, 1))
-                    * self.ActiveCMs
-            )
-
-            self.LogRReduction = T.sum(self.ActiveCMReduction, axis=1)
-
-            self.ExpectedLogR = T.reshape(pm.math.log(self.RegionR), (self.nRs, 1)) - self.LogRReduction
-
-            # convert R into growth rates
-            gi_beta = generation_interval_mean / generation_interval_sigma ** 2
-            gi_alpha = generation_interval_mean ** 2 / generation_interval_sigma ** 2
-
-            self.ExpectedGrowth = gi_beta * (pm.math.exp(self.ExpectedLogR / gi_alpha) - T.ones((self.nRs, self.nDs)))
-
-            self.GrowthCasesNoise = pm.Normal("GrowthCasesNoise", 0, growth_noise_scale, shape=(self.nRs, self.nDs))
-            self.GrowthDeathsNoise = pm.Normal("GrowthDeathsNoise", 0, growth_noise_scale,
-                                               shape=(self.nRs, self.nDs))
-
-            self.GrowthCases = pm.Deterministic("GrowthCases", self.ExpectedGrowth + self.GrowthCasesNoise)
-            self.GrowthDeaths = pm.Deterministic("GrowthDeaths", self.ExpectedGrowth + self.GrowthDeathsNoise)
-
-            self.OutputNoiseScale = pm.HalfNormal('OutputNoiseScale', 0.5)
-
-            # Confirmed Cases
-            # seed and produce daily infections which become confirmed cases
-            self.InitialSizeCases_log = pm.Normal("InitialSizeCases_log", 0, 50, shape=(self.nRs, 1))
-            self.InfectedCases = pm.Deterministic("InfectedCases", pm.math.exp(
-                self.InitialSizeCases_log + self.GrowthCases.cumsum(axis=1)))
-
-            # convolve with delay to produce expectations
-            expected_cases = C.conv2d(
-                self.InfectedCases,
-                reporting_delay,
-                border_mode="full"
-            )[:, :self.nDs]
-
-            self.ExpectedCases = pm.Deterministic("ExpectedCases", expected_cases.reshape(
-                (self.nRs, self.nDs)))
-
-            # effectively handle missing values ourselves
-            # output distribution
-            self.LogObservedCases = pm.Normal(
-                "LogObservedCases",
-                pm.math.log(self.ExpectedCases.reshape((self.nRs * self.nDs,))[self.all_observed_active]),
-                self.OutputNoiseScale,
-                shape=(len(self.all_observed_active),),
-                observed=pm.math.log(self.d.NewCases.data.reshape((self.nRs * self.nDs,))[self.all_observed_active])
-            )
-
-            # Deaths
-            # seed and produce daily infections which become confirmed cases
-            self.InitialSizeDeaths_log = pm.Normal("InitialSizeDeaths_log", 0, 50, shape=(self.nRs, 1))
-            self.InfectedDeaths = pm.Deterministic("InfectedDeaths", pm.math.exp(
-                self.InitialSizeDeaths_log + self.GrowthDeaths.cumsum(axis=1)))
-
-            # convolve with delay to production reports
-            expected_deaths = C.conv2d(
-                self.InfectedDeaths,
-                fatality_delay,
-                border_mode="full"
-            )[:, :self.nDs]
-
-            self.ExpectedDeaths = pm.Deterministic("ExpectedDeaths", expected_deaths.reshape(
-                (self.nRs, self.nDs)))
-
-            # effectively handle missing values ourselves
-            # death output distribution
-            self.LogObservedDeaths = pm.Normal(
-                "LogObservedDeaths",
-                pm.math.log(self.ExpectedDeaths.reshape((self.nRs * self.nDs,))[self.all_observed_deaths]),
-                self.OutputNoiseScale,
-                shape=(len(self.all_observed_deaths),),
-                observed=pm.math.log(self.d.NewDeaths.data.reshape((self.nRs * self.nDs,))[self.all_observed_deaths])
             )
 
 
