@@ -42,7 +42,7 @@ if __name__ == '__main__':
                                 target_accept=0.95)
 
     results_obj = ResultsObject(region_index, model.trace)
-    out_dir = os.path.join(f'sensitivity_{args.model}', 'region_holdout')
+    out_dir = os.path.join(f'sensitivity_{args.model_type}', 'region_holdout')
     if not os.path.exists(out_dir):
         os.makedirs(out_dir)
     pickle.dump(results_obj, open(os.path.join(out_dir, f'{args.rg}.pkl'), 'wb'))
