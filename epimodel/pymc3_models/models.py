@@ -263,7 +263,7 @@ class DeathsOnlyModel(BaseCMModel):
             )[:, :self.nDs]
 
             self.ExpectedDeaths = pm.Deterministic('ExpectedDeaths', expected_deaths.reshape(
-                (self.nORs, self.nDs)))
+                (self.nRs, self.nDs)))
 
             self.Psi = pm.HalfNormal('Psi', 5)
 
@@ -322,7 +322,7 @@ class CasesOnlyModel(BaseCMModel):
                 'HyperRVar', sigma=0.5
             )
 
-            self.RegionR_noise = pm.Normal('RegionLogR_noise', 0, 1, shape=(self.nORs), )
+            self.RegionR_noise = pm.Normal('RegionLogR_noise', 0, 1, shape=(self.nRs), )
             self.RegionR = pm.Deterministic('RegionR', R_prior_mean + self.RegionLogR_noise * self.HyperRVar)
 
             self.ActiveCMs = pm.Data('ActiveCMs', self.d.ActiveCMs)
@@ -338,7 +338,7 @@ class CasesOnlyModel(BaseCMModel):
 
             self.ExpectedLogR = self.Det(
                 'ExpectedLogR',
-                T.reshape(pm.math.log(self.RegionR), (self.nORs, 1)) - self.GrowthReduction,
+                T.reshape(pm.math.log(self.RegionR), (self.nRs, 1)) - self.GrowthReduction,
                 plot_trace=False,
             )
 
@@ -753,7 +753,7 @@ class AdditiveModel(BaseCMModel):
                 'HyperRVar', sigma=0.5
             )
 
-            self.RegionR_noise = pm.Normal('RegionLogR_noise', 0, 1, shape=(self.nORs), )
+            self.RegionR_noise = pm.Normal('RegionLogR_noise', 0, 1, shape=(self.nRs), )
             self.RegionR = pm.Deterministic('RegionR', R_prior_mean + self.RegionLogR_noise * self.HyperRVar)
 
             self.ActiveCMs = pm.Data('ActiveCMs', self.d.ActiveCMs)
@@ -808,7 +808,7 @@ class AdditiveModel(BaseCMModel):
             )[:, :self.nDs]
 
             self.ExpectedCases = pm.Deterministic('ExpectedCases', expected_cases.reshape(
-                (self.nORs, self.nDs)))
+                (self.nRs, self.nDs)))
 
             # learn the output noise for this.
             self.ObservedCases = pm.NegativeBinomial(
@@ -840,7 +840,7 @@ class AdditiveModel(BaseCMModel):
             )[:, :self.nDs]
 
             self.ExpectedDeaths = pm.Deterministic('ExpectedDeaths', expected_deaths.reshape(
-                (self.nORs, self.nDs)))
+                (self.nRs, self.nDs)))
 
             # effectively handle missing values ourselves
             self.ObservedDeaths = pm.NegativeBinomial(
@@ -928,9 +928,9 @@ class DifferentEffectsModel(BaseCMModel):
             self.PsiCases = pm.HalfNormal('PsiCases', 5.)
             self.PsiDeaths = pm.HalfNormal('PsiDeaths', 5.)
 
-            self.InitialSizeCases_log = pm.Normal('InitialSizeCases_log', 0, 50, shape=(self.nORs,))
+            self.InitialSizeCases_log = pm.Normal('InitialSizeCases_log', 0, 50, shape=(self.nRs,))
             self.InfectedCases_log = pm.Deterministic('InfectedCases_log', T.reshape(self.InitialSizeCases_log, (
-                self.nORs, 1)) + self.GrowthCases.cumsum(axis=1))
+                self.nRs, 1)) + self.GrowthCases.cumsum(axis=1))
             self.InfectedCases = pm.Deterministic('InfectedCases', pm.math.exp(self.InfectedCases_log))
 
             self.CasesDelayMean = pm.Normal('CasesDelayMean', cases_delay_mean_mean, cases_delay_mean_sd)
