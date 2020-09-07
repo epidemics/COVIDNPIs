@@ -56,7 +56,9 @@ Please run `notebooks/double-entry-data/final_results.ipynb` to do a complete mo
 Please run `scripts/run_ho_exps.sh`. Custom `ResultsObject` pickle files are saved with data pertaining to the estimated NPI effectiveness and predictions for the unseen countries. We mask cases after the first 14 days of cases (likewise for deaths) and use this to assess model quality. 
 
 ### Sensitivity Analyses
-Please run `scripts/run_sensitivity_suite_extended.sh`. This will automatically save effectiveness estimates, which you will need to move to the `notebooks/double-entry-data/traces` folder (create the folder if it does not exist) for plotting code. 
+Please run 
+```python scripts/sensitivity_dispatcher.py --max_processes 24 --categories region_holdout npi_leaveout cases_threshold deaths_threshold smoothing oxcgrt R_prior NPI_prior```. 
+This will automatically save effectiveness estimates, which you will need to move to the `notebooks/double-entry-data/traces` folder (create the folder if it does not exist) for plotting code. 
 
 ### Plotting code
 See `notebooks/double-entry-data` for plotting code (plotting notebooks have `_plotter` in their name). These notebooks expect the relevant `.pkl` files and NPI effectiveness traces from the above experiments placed into the appropriate directories. Usually, `.pkl` files are expected in the notebook directory `notebooks/double-entry-data` (using the `local` flag in the notebooks). NPI effectiveness traces (`.txt` files produced from the sensitivity analysis suite) are expected in the `notebooks/double-entry-data/traces` directory. 

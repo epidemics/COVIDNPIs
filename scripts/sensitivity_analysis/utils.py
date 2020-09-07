@@ -16,7 +16,7 @@ def add_argparse_arguments(argparse):
 
 
 def save_cm_trace(name, trace, tag, model_type):
-    out_dir = os.path.join(f'sensitivity_{model_type}', tag, name)
+    out_dir = os.path.join(f'sensitivity_{model_type}', tag)
     if not os.path.exists(out_dir):
         os.makedirs(out_dir)
-    np.savetxt(out_dir, trace)
+    np.savetxt(os.path.join(out_dir, name), trace)
