@@ -136,3 +136,50 @@ NPI_prior:
       - skewed 10
       - normal 0.2
       - icl 0
+
+agg_holdout:
+  experiment_file: agg_holdout.py
+  experiment_tag: agg_holdout
+  model_type: default
+  n_chains: 4
+  n_samples: 2000
+  args: {}
+
+any_npi_active:
+  experiment_file: any_npi_active.py
+  experiment_tag: any_npi_active
+  model_type: default
+  n_chains: 4
+  n_samples: 2000
+  args: {}
+
+delay_schools:
+  experiment_file: delay_schools.py
+  experiment_tag: delay_schools
+  model_type: default
+  n_chains: 4
+  n_samples: 2000
+  args: {}
+
+npi_timing:
+  experiment_file: npi_timing.py
+  experiment_tag: npi_timing
+  model_type: default
+  n_chains: 4
+  n_samples: 2000
+  args: {}
+
+structural:
+  experiment_file: structural.py
+  experiment_tag: structural
+  model_type: default # note this argument is neglected here
+  n_chains: 4
+  n_samples: 2000
+  args:
+    model_structure:
+      - additive
+      - discrete_renewal
+      - noisy_r
+      - different_effects
+      - cases_only
+      - deaths_only

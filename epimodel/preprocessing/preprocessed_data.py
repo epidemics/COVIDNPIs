@@ -222,7 +222,7 @@ class PreprocessedData(object):
         plt.savefig("FigureCA.pdf", bbox_inches='tight')
         # sns.despine()
 
-    def mask_reopenings(self, d_min=90, n_extra=0):
+    def mask_reopenings(self, d_min=90, n_extra=0, print=True):
         """
         Mask reopenings.
 
@@ -239,7 +239,8 @@ class PreprocessedData(object):
 
         for nz_i in range(nnz):
             if (ds[nz_i] + 3) > d_min and ds[nz_i] + 3 < len(self.Ds):
-                print(f"Masking {self.Rs[rs[nz_i]]} from {self.Ds[ds[nz_i] + 3]}")
+                if print:
+                    print(f"Masking {self.Rs[rs[nz_i]]} from {self.Ds[ds[nz_i] + 3]}")
                 self.NewCases[rs[nz_i], ds[nz_i] + 3 - n_extra:].mask = True
                 self.NewDeaths[rs[nz_i], ds[nz_i] + 12 - n_extra:].mask = True
 
@@ -277,3 +278,15 @@ class PreprocessedData(object):
         self.Deaths.mask[i, d_s:] = True
         self.NewDeaths.mask[i, d_s:] = True
         self.NewCases.mask[i, c_s:] = True
+
+        return c_s, d_s
+
+    def unmask_all(self):
+        """
+        Unmask all cases, deaths.
+        """
+        self.Active.mask = False
+        self.Confirmed.mask = False
+        self.Deaths.mask = False
+        self.NewDeaths.mask = False
+        self.NewCases.mask = False
