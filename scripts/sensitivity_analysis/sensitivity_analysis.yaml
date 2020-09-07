@@ -179,6 +179,7 @@ structural:
     model_structure:
       - additive
       - discrete_renewal
+      - discrete_renewal_fixed_gi
       - noisy_r
       - different_effects
       - cases_only
