@@ -2,6 +2,7 @@ import os
 import subprocess
 import argparse
 import yaml
+import time
 
 os.environ['OMP_NUM_THREADS'] = '1'
 os.environ['MKL_NUM_THREADS'] = '1'
@@ -75,6 +76,7 @@ if __name__ == '__main__':
 
         for command in commands:
             processes.add(subprocess.Popen(command, shell=True))
+            time.sleep(30.0)
             if len(processes) >= max_processes:
                 os.wait()
                 processes.difference_update([
