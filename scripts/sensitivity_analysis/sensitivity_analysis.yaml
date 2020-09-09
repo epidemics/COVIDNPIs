@@ -201,7 +201,7 @@ epiparam_prior:
     gi_mean_sd: 0.3265
     deaths_mean_mean: [17.82, 19.82, 21.82, 23.82, 25.82]
     deaths_mean_sd: 1.607
-    cases_mean_mean: [6.92, 8.92., 10.92, 12.92, 14.92]
+    cases_mean_mean: [6.92, 8.92, 10.92, 12.92, 14.92]
     cases_mean_sd: 0.5
 
 epiparam_fixed:
@@ -215,5 +215,5 @@ epiparam_fixed:
     gi_mean_sd: 0.0
     deaths_mean_mean: [17.82, 19.82, 21.82, 23.82, 25.82]
     deaths_mean_sd: 0.0
-    cases_mean_mean: [6.92, 8.92., 10.92, 12.92, 14.92]
+    cases_mean_mean: [6.92, 8.92, 10.92, 12.92, 14.92]
     cases_mean_sd: 0.0
