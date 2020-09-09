@@ -132,7 +132,7 @@ class PreprocessedData(object):
             mask = self.ActiveCMs[:, cm, :] * (self.NewDeaths.mask == False)
             for cm2 in range(nCMs):
                 mat[cm, cm2] = np.sum(mask * self.ActiveCMs[:, cm2, :]) / np.sum(mask)
-        im = plt.imshow(mat * 100, vmin=25, vmax=100, cmap="viridis", aspect="auto")
+        im = plt.imshow(mat * 100, vmin=25, vmax=100, cmap="magma", aspect="auto")
         ax.tick_params(axis="both", which="major", labelsize=8)
 
         plt.xticks(
@@ -184,7 +184,7 @@ class PreprocessedData(object):
         ax = plt.gca()
         mask = np.reshape((self.NewDeaths.mask == False), (nRs, 1, nDs))
         days_active = np.sum(np.sum(self.ActiveCMs * np.repeat(mask, nCMs, axis=1), axis=0), axis=1)
-        plt.barh(-np.arange(nCMs), days_active)
+        plt.barh(-np.arange(nCMs), days_active, color=[0.4627010031973002, 0.2693410356621817, 0.46634810758714684])
 
         plt.yticks(
             -np.arange(len(self.CMs)),
