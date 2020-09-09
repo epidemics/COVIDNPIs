@@ -3,11 +3,12 @@ epidemiological parameters
 """
 
 import numpy as np
+from scipy.stats import norm
 import pprint
 from tqdm import tqdm
 
 
-def bootstrapped_negbinom_values(delays, n_bootstrap=250, n_rvs=int(1e7), truncation=64, filter_disp_outliers = True):
+def bootstrapped_negbinom_values(delays, n_bootstrap=250, n_rvs=int(1e7), truncation=64, filter_disp_outliers=True):
     """
     Fit negative binomial to n_bootstrapped sets of n_rv samples, each set of samples drawn randomly from the priors
     placed on the distributions in the delay array. e.g., this function is used to fit a single negative binomial
@@ -37,7 +38,7 @@ def bootstrapped_negbinom_values(delays, n_bootstrap=250, n_rvs=int(1e7), trunca
         # especially for the fatality delay, this can be an issue.
         med_disp = np.median(disps)
         abs_deviations = np.abs(disps - med_disp)
-        disps = disps[abs_deviations < 2*np.median(abs_deviations)]
+        disps = disps[abs_deviations < 2 * np.median(abs_deviations)]
 
     ret = {
         'mean_mean': np.mean(means),
@@ -47,7 +48,13 @@ def bootstrapped_negbinom_values(delays, n_bootstrap=250, n_rvs=int(1e7), trunca
         'dist': 'negbinom'
     }
 
-    return ret
+    return ret, means, disps
+
+
+def ci_to_mean_sd(mean, ci, percent=0.95):
+    sf = np.abs(norm.ppf((1 - percent) * 0.5))
+    mean_sd = np.max(np.abs(ci - mean)) / sf
+    return mean, mean_sd
 
 
 class EpidemiologicalParameters():
@@ -82,13 +89,13 @@ class EpidemiologicalParameters():
         else:
             self.generation_interval = {
                 'mean_mean': 5.06,
-                'mean_sd': 0.32,
-                'sd_mean': 1.804,
-                'sd_sd': 0.114,
+                'mean_sd': 0.3265,
+                'sd_mean': 1.72,
+                'sd_sd': 1.13,
                 'source': 'mean: https://www.medrxiv.org/content/medrxiv/early/2020/06/19/2020.06.17.20133587.full.pdf'
                           'CoV: https://www.eurosurveillance.org/content/10.2807/1560-7917.ES.2020.25.17.2000257',
                 'dist': 'gamma',
-                'notes': 'mean_sd chosen to fill CIs from the medrxiv meta-analysis. sd_sd chosen for the same average'
+                'notes': 'mean_sd chosen to "fill CIs" from the medrxiv meta-analysis. sd_sd chosen for the same average'
                          'CoV from Ganyani et al, using the sd for the mean.'
             }
 
@@ -96,14 +103,14 @@ class EpidemiologicalParameters():
             self.infection_to_fatality_delay = infection_to_fatality_delay
         else:
             self.infection_to_fatality_delay = {
-                'mean_mean': 23.65,
-                'mean_sd': 1.07,
-                'disp_mean': 10.1,
-                'disp_sd': 3.17,
-                'source': 'incubation: Lauer et al, doi.org/10.7326/M20-0504'
-                          'onset-death: https://www.thelancet.com/journals/laninf/article/PIIS1473-3099(20)30243-7/fulltext',
+                'mean_mean': 20.88499992704522,
+                'mean_sd': 1.6078311893096533,
+                'disp_mean': 11.063081266841987,
+                'disp_sd': 3.870808096034033,
+                'source': 'incubation: Lauer et al, doi.org/10.7326/M20-0504, '
+                          'onset-death hi',
                 'dist': 'negbinom',
-                'notes': 'Fitted as a bootstrapped NB. Dispersion outliers filtered during bootstrapping'
+                'notes': 'Fitted as a bootstrapped NB.'
             }
 
         if incubation_period is not None:
@@ -111,12 +118,13 @@ class EpidemiologicalParameters():
         else:
             self.incubation_period = {
                 'mean_mean': 1.621,
-                'mean_sd': 0.064,
-                'sd_mean': 0.518,
-                'sd_sd': 0.0691,
-                'source': 'Lauer et al, doi.org/10.7326/M20-0504',
+                'mean_sd': 0.0684,
+                'sd_mean': 0.418,
+                'sd_sd': 0.0759,
+                'source': 'sd: Lauer et al, doi.org/10.7326/M20-0504',
                 'dist': 'lognorm',
-                'notes': 'Exact Numbers taken from https://github.com/epiforecasts/EpiNow2'
+                'notes': 'mean_mean, mean_sd chosen to "fill CIs" from the medrxiv meta-analysis.  '
+                         '(log) sd, sd_sd taken from Lauer et al'
             }
 
         if infection_to_reporting_delay is not None:
