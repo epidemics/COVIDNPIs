@@ -87,11 +87,23 @@ class EpidemiologicalParameters():
         if generation_interval is not None:
             self.generation_interval = generation_interval
         else:
+            # self.generation_interval = {
+            #     'mean_mean': 5.06,
+            #     'mean_sd': 0.3265,
+            #     'sd_mean': 1.72,
+            #     'sd_sd': 1.13,
+            #     'source': 'mean: https://www.medrxiv.org/content/medrxiv/early/2020/06/19/2020.06.17.20133587.full.pdf'
+            #               'CoV: https://www.eurosurveillance.org/content/10.2807/1560-7917.ES.2020.25.17.2000257',
+            #     'dist': 'gamma',
+            #     'notes': 'mean_sd chosen to "fill CIs" from the medrxiv meta-analysis. sd_sd chosen for the same average'
+            #              'CoV from Ganyani et al, using the sd for the mean.'
+            # }
+
             self.generation_interval = {
                 'mean_mean': 5.06,
                 'mean_sd': 0.3265,
-                'sd_mean': 1.72,
-                'sd_sd': 1.13,
+                'sd_mean': 3.08,
+                'sd_sd': 0.77,
                 'source': 'mean: https://www.medrxiv.org/content/medrxiv/early/2020/06/19/2020.06.17.20133587.full.pdf'
                           'CoV: https://www.eurosurveillance.org/content/10.2807/1560-7917.ES.2020.25.17.2000257',
                 'dist': 'gamma',
@@ -103,42 +115,43 @@ class EpidemiologicalParameters():
             self.infection_to_fatality_delay = infection_to_fatality_delay
         else:
             self.infection_to_fatality_delay = {
-                'mean_mean': 20.88499992704522,
-                'mean_sd': 1.6078311893096533,
-                'disp_mean': 11.063081266841987,
-                'disp_sd': 3.870808096034033,
+                'mean_mean': 21.819649695284962,
+                'mean_sd': 1.0056755718977664,
+                'disp_mean': 14.26238141720708,
+                'disp_sd': 5.177442947725441,
                 'source': 'incubation: Lauer et al, doi.org/10.7326/M20-0504, '
                           'onset-death hi',
                 'dist': 'negbinom',
-                'notes': 'Fitted as a bootstrapped NB.'
+                'notes': 'Fitted as a bootstrapped NB.'  # TODO update notes
             }
 
         if incubation_period is not None:
             self.incubation_period = incubation_period
         else:
-            self.incubation_period = {
-                'mean_mean': 1.621,
-                'mean_sd': 0.0684,
+            incubation_period = {
+                'mean_mean': 1.53,
+                'mean_sd': 0.051,
                 'sd_mean': 0.418,
                 'sd_sd': 0.0759,
-                'source': 'sd: Lauer et al, doi.org/10.7326/M20-0504',
+                'source': 'Lauer et al, doi.org/10.7326/M20-0504'
+                          'Fonfria et al, https://www.medrxiv.org/content/medrxiv/early/2020/06/19/2020.06.17.20133587',
                 'dist': 'lognorm',
-                'notes': 'mean_mean, mean_sd chosen to "fill CIs" from the medrxiv meta-analysis.  '
-                         '(log) sd, sd_sd taken from Lauer et al'
+                'notes': 'mean_mean, mean_sd chosen from Fonfria et al, after fitting using Lauer values.'
+                         '(log) sd, sd_sd taken from Lauer et al.'
             }
 
         if infection_to_reporting_delay is not None:
             self.infection_to_reporting_delay = infection_to_reporting_delay
         else:
             self.infection_to_reporting_delay = {
-                'mean_mean': 11.1,
-                'mean_sd': 0.5,
-                'disp_mean': 5.46,
-                'disp_sd': 0.55,
+                'mean_mean': 10.92830227448381,
+                'mean_sd': 0.9387435298564465,
+                'disp_mean': 5.406593726647138,
+                'disp_sd': 0.2689502951493133,
+                'dist': 'negbinom',
                 'source': 'incubation: Lauer et al, doi.org/10.7326/M20-0504'
                           'onset-reporting: Cereda et al, https://arxiv.org/abs/2003.09320',
-                'dist': 'negbinom',
-                'notes': 'Fitted as a bootstrapped NB.'
+                'notes': 'Fitted as a bootstrapped NB.'  # TODO update notes
             }
 
         self.seed = seed
