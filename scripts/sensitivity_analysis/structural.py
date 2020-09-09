@@ -1,10 +1,14 @@
+import os
+os.environ['OMP_NUM_THREADS'] = '1'
+os.environ['MKL_NUM_THREADS'] = '1'
+os.environ['OPENBLAS_NUM_THREADS'] = '1'
+
 import pymc3 as pm
 
 from epimodel import EpidemiologicalParameters
 from epimodel.preprocessing.data_preprocessor import preprocess_data
 
 import argparse
-import copy
 
 from scripts.sensitivity_analysis.utils import *
 

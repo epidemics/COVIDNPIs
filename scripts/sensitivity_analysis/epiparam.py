@@ -10,9 +10,9 @@ from scripts.sensitivity_analysis.utils import *
 argparser = argparse.ArgumentParser()
 argparser.add_argument('--gi_mean_mean', dest='gi_mean_mean', type=float)
 argparser.add_argument('--gi_mean_sd', dest='gi_mean_sd', type=float)
-argparser.add_argument('--deaths_mean_mean', dest='deaths_mean_sd', type=float)
+argparser.add_argument('--deaths_mean_mean', dest='deaths_mean_mean', type=float)
 argparser.add_argument('--deaths_mean_sd', dest='deaths_mean_sd', type=float)
-argparser.add_argument('--cases_mean_mean', dest='cases_mean_sd', type=float)
+argparser.add_argument('--cases_mean_mean', dest='cases_mean_mean', type=float)
 argparser.add_argument('--cases_mean_sd', dest='cases_mean_sd', type=float)
 
 add_argparse_arguments(argparser)

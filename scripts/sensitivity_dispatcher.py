@@ -3,6 +3,10 @@ import subprocess
 import argparse
 import yaml
 
+os.environ['OMP_NUM_THREADS'] = '1'
+os.environ['MKL_NUM_THREADS'] = '1'
+os.environ['OPENBLAS_NUM_THREADS'] = '1'
+
 argparser = argparse.ArgumentParser()
 argparser.add_argument('--max_processes', dest='max_processes', type=int)
 argparser.add_argument('--categories', nargs='+', dest='categories', type=str)
