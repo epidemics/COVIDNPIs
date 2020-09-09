@@ -13,9 +13,12 @@ argparser.add_argument('--NPI_prior', nargs=2, dest='NPI_prior', type=str)
 argparser.add_argument('--growth_noise', dest='growth_noise', type=float)
 
 add_argparse_arguments(argparser)
-args = argparser.parse_args()
+
 
 if __name__ == '__main__':
+
+    args = argparser.parse_args()
+
     data = preprocess_data('notebooks/double-entry-data/double_entry_final.csv', last_day='2020-05-30')
     data.mask_reopenings()
 

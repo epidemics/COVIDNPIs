@@ -1,0 +1,298 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Data Preprocessing &#8212; COVIDNPIs  documentation</title>
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+    <script src="_static/jquery.js"></script>
+    <script src="_static/underscore.js"></script>
+    <script src="_static/doctools.js"></script>
+    <script src="_static/language_data.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="PyMC3 Distributions" href="distributions.html" />
+    <link rel="prev" title="Welcome to COVIDNPIs’s documentation!" href="index.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <div class="section" id="data-preprocessing">
+<h1>Data Preprocessing<a class="headerlink" href="#data-preprocessing" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="module-epimodel.preprocessing.data_merger">
+<span id="id1"></span><span id="data-merger"></span><h2>Data Merger<a class="headerlink" href="#module-epimodel.preprocessing.data_merger" title="Permalink to this headline">¶</a></h2>
+<p>data_merger.py</p>
+<p>This file contains the merge_data function, which takes data from different sources and parses it into our own format.
+If you are a user of EpidemicForecasting.org, you will not need to use this function.</p>
+</div>
+<div class="section" id="module-epimodel.preprocessing.data_preprocessor">
+<span id="data-preprocessor"></span><span id="id2"></span><h2>Data Preprocessor<a class="headerlink" href="#module-epimodel.preprocessing.data_preprocessor" title="Permalink to this headline">¶</a></h2>
+<p>Data Preprocessing</p>
+<p>Contains preprocess_data function</p>
+<dl class="py function">
+<dt id="epimodel.preprocessing.data_preprocessor.preprocess_data">
+<code class="sig-prename descclassname">epimodel.preprocessing.data_preprocessor.</code><code class="sig-name descname">preprocess_data</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">data_path</span></em>, <em class="sig-param"><span class="n">last_day</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">schools_unis</span><span class="o">=</span><span class="default_value">'two_separate'</span></em>, <em class="sig-param"><span class="n">drop_features</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">min_confirmed</span><span class="o">=</span><span class="default_value">100</span></em>, <em class="sig-param"><span class="n">min_deaths</span><span class="o">=</span><span class="default_value">10</span></em>, <em class="sig-param"><span class="n">smoothing</span><span class="o">=</span><span class="default_value">1</span></em>, <em class="sig-param"><span class="n">mask_zero_deaths</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">mask_zero_cases</span><span class="o">=</span><span class="default_value">False</span></em><span class="sig-paren">)</span><a class="headerlink" href="#epimodel.preprocessing.data_preprocessor.preprocess_data" title="Permalink to this definition">¶</a></dt>
+<dd><p>Preprocess data .csv file, in our post-merge format, with different options.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>data_path</strong> – Path of .csv file to process.</p></li>
+<li><p><strong>last_day</strong> – Last day of window to analysis to use e.g. str ‘2020-05-30’. If None (default), go to the last day
+in the .csv file.</p></li>
+<li><p><strong>schools_unis</strong> – <div class="line-block">
+<div class="line">how to process schools and unis. Options are:</div>
+<div class="line-block">
+<div class="line">- two_xor. One xor feature, one and feature.</div>
+<div class="line">- two_separate. One schools feature, one university feature.</div>
+<div class="line">- one_tiered. One tiered feature. 0 if none active, 0.5 if either active, 1 if both active.</div>
+<div class="line">- one_and. One feature, 1 if both active.</div>
+</div>
+</div>
+</p></li>
+<li><p><strong>drop_features</strong> – list of strs, names of NPI features to drop. Defaults to all NPIs not collected by the
+EpidemicForecasting.org team.</p></li>
+<li><p><strong>min_confirmed</strong> – confirmed cases threshold, below which new (daily) cases are ignored.</p></li>
+<li><p><strong>min_deaths</strong> – deaths threshold, below which new (daily) deaths are ignored.</p></li>
+<li><p><strong>smoothing</strong> – number of days over which to smooth. This should be an odd number. If 1, no smoothing occurs.</p></li>
+<li><p><strong>mask_zero_deaths</strong> – bool, whether to ignore (i.e., mask) days with zero deaths.</p></li>
+<li><p><strong>mask_zero_cases</strong> – bool, whether to ignore (i.e., mask) days with zero cases.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>PreprocessedData object.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="section" id="module-epimodel.preprocessing.preprocessed_data">
+<span id="id3"></span><span id="preprocessed-data"></span><h2>Preprocessed Data<a class="headerlink" href="#module-epimodel.preprocessing.preprocessed_data" title="Permalink to this headline">¶</a></h2>
+<p>Contains PreprocessedData Class definition.</p>
+<dl class="py class">
+<dt id="epimodel.preprocessing.preprocessed_data.PreprocessedData">
+<em class="property">class </em><code class="sig-prename descclassname">epimodel.preprocessing.preprocessed_data.</code><code class="sig-name descname">PreprocessedData</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">Active</span></em>, <em class="sig-param"><span class="n">Confirmed</span></em>, <em class="sig-param"><span class="n">ActiveCMs</span></em>, <em class="sig-param"><span class="n">CMs</span></em>, <em class="sig-param"><span class="n">Rs</span></em>, <em class="sig-param"><span class="n">Ds</span></em>, <em class="sig-param"><span class="n">Deaths</span></em>, <em class="sig-param"><span class="n">NewDeaths</span></em>, <em class="sig-param"><span class="n">NewCases</span></em>, <em class="sig-param"><span class="n">RNames</span></em><span class="sig-paren">)</span><a class="headerlink" href="#epimodel.preprocessing.preprocessed_data.PreprocessedData" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>PreprocessedData Class</p>
+<p>Class to hold data which is subsequently passed onto a PyMC3 model. Mostly a data wrapper, with some utility
+functions.</p>
+<dl class="py method">
+<dt id="epimodel.preprocessing.preprocessed_data.PreprocessedData.conditional_activation_plot">
+<code class="sig-name descname">conditional_activation_plot</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">cm_plot_style</span></em>, <em class="sig-param"><span class="n">newfig</span><span class="o">=</span><span class="default_value">True</span></em>, <em class="sig-param"><span class="n">skip_yticks</span><span class="o">=</span><span class="default_value">False</span></em><span class="sig-paren">)</span><a class="headerlink" href="#epimodel.preprocessing.preprocessed_data.PreprocessedData.conditional_activation_plot" title="Permalink to this definition">¶</a></dt>
+<dd><p>Draw conditional-activation plot.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>cm_plot_style</strong> – Countermeasure plot style array.</p></li>
+<li><p><strong>newfig</strong> – boolean, whether to create plot in a new figure</p></li>
+<li><p><strong>skip_yticks</strong> – boolean, whether to draw yticks.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="epimodel.preprocessing.preprocessed_data.PreprocessedData.cumulative_days_plot">
+<code class="sig-name descname">cumulative_days_plot</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">cm_plot_style</span></em>, <em class="sig-param"><span class="n">newfig</span><span class="o">=</span><span class="default_value">True</span></em>, <em class="sig-param"><span class="n">skip_yticks</span><span class="o">=</span><span class="default_value">False</span></em><span class="sig-paren">)</span><a class="headerlink" href="#epimodel.preprocessing.preprocessed_data.PreprocessedData.cumulative_days_plot" title="Permalink to this definition">¶</a></dt>
+<dd><p>Draw cumulative days plot.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>cm_plot_style</strong> – Countermeasure plot style array.</p></li>
+<li><p><strong>newfig</strong> – boolean, whether to create plot in a new figure</p></li>
+<li><p><strong>skip_yticks</strong> – boolean, whether to draw yticks.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="epimodel.preprocessing.preprocessed_data.PreprocessedData.mask_region">
+<code class="sig-name descname">mask_region</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">region</span></em>, <em class="sig-param"><span class="n">days</span><span class="o">=</span><span class="default_value">14</span></em><span class="sig-paren">)</span><a class="headerlink" href="#epimodel.preprocessing.preprocessed_data.PreprocessedData.mask_region" title="Permalink to this definition">¶</a></dt>
+<dd><p>Mask all but the first 14 days of cases and deaths for a specific region</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>region</strong> – region code (2 digit EpidemicForecasting.org) code to mask</p></li>
+<li><p><strong>days</strong> – Number of days to provide to the model</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="epimodel.preprocessing.preprocessed_data.PreprocessedData.mask_region_ends">
+<code class="sig-name descname">mask_region_ends</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">n_days</span><span class="o">=</span><span class="default_value">20</span></em><span class="sig-paren">)</span><a class="headerlink" href="#epimodel.preprocessing.preprocessed_data.PreprocessedData.mask_region_ends" title="Permalink to this definition">¶</a></dt>
+<dd><p>Mask the final n_days days across all countries.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>n_days</strong> – number of days to mask.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="epimodel.preprocessing.preprocessed_data.PreprocessedData.mask_reopenings">
+<code class="sig-name descname">mask_reopenings</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">d_min</span><span class="o">=</span><span class="default_value">90</span></em>, <em class="sig-param"><span class="n">n_extra</span><span class="o">=</span><span class="default_value">0</span></em>, <em class="sig-param"><span class="n">print_out</span><span class="o">=</span><span class="default_value">True</span></em><span class="sig-paren">)</span><a class="headerlink" href="#epimodel.preprocessing.preprocessed_data.PreprocessedData.mask_reopenings" title="Permalink to this definition">¶</a></dt>
+<dd><p>Mask reopenings.</p>
+<p>This finds dates NPIs reactivate, then mask forwards, giving 3 days for cases and 12 days for deaths.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>d_min</strong> – day after which to mask reopening.</p></li>
+<li><p><strong>n_extra</strong> – int, number of extra days to mask</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="epimodel.preprocessing.preprocessed_data.PreprocessedData.reduce_regions_from_index">
+<code class="sig-name descname">reduce_regions_from_index</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">reduced_regions_indx</span></em><span class="sig-paren">)</span><a class="headerlink" href="#epimodel.preprocessing.preprocessed_data.PreprocessedData.reduce_regions_from_index" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reduce data to only pertain to region indices given. Occurs in place.</p>
+<p>e.g., if reduced_regions_indx = [0], the resulting data object will contain data about only the first region.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>reduced_regions_indx</strong> – region indices to retain.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="epimodel.preprocessing.preprocessed_data.PreprocessedData.remove_regions_from_codes">
+<code class="sig-name descname">remove_regions_from_codes</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">regions_to_remove</span></em><span class="sig-paren">)</span><a class="headerlink" href="#epimodel.preprocessing.preprocessed_data.PreprocessedData.remove_regions_from_codes" title="Permalink to this definition">¶</a></dt>
+<dd><p>Remove region codes corresponding to regions in regions_to_remove. Occurs in place.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>regions_to_remove</strong> – Region codes, corresponding to regions to remove.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="epimodel.preprocessing.preprocessed_data.PreprocessedData.remove_regions_min_deaths">
+<code class="sig-name descname">remove_regions_min_deaths</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">min_num_deaths</span><span class="o">=</span><span class="default_value">100</span></em><span class="sig-paren">)</span><a class="headerlink" href="#epimodel.preprocessing.preprocessed_data.PreprocessedData.remove_regions_min_deaths" title="Permalink to this definition">¶</a></dt>
+<dd><p>Remove regions which have fewer than min_num_deaths at the end of the considered time period. Occurs in place.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>min_num_deaths</strong> – Minimum number of (total) deaths.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="epimodel.preprocessing.preprocessed_data.PreprocessedData.summary_plot">
+<code class="sig-name descname">summary_plot</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">cm_plot_style</span></em><span class="sig-paren">)</span><a class="headerlink" href="#epimodel.preprocessing.preprocessed_data.PreprocessedData.summary_plot" title="Permalink to this definition">¶</a></dt>
+<dd><p>Draw summary plot.</p>
+<p>This includes both the cumulative days plot, and the conditional activation plot.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>cm_plot_style</strong> – Countermeasure plot style array.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="epimodel.preprocessing.preprocessed_data.PreprocessedData.unmask_all">
+<code class="sig-name descname">unmask_all</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#epimodel.preprocessing.preprocessed_data.PreprocessedData.unmask_all" title="Permalink to this definition">¶</a></dt>
+<dd><p>Unmask all cases, deaths.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="index.html">COVIDNPIs</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Data Preprocessing</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#module-epimodel.preprocessing.data_merger">Data Merger</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-epimodel.preprocessing.data_preprocessor">Data Preprocessor</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-epimodel.preprocessing.preprocessed_data">Preprocessed Data</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="distributions.html">PyMC3 Distributions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="models.html">Model Classes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="experiments.html">Experiments</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="index.html" title="previous chapter">Welcome to COVIDNPIs’s documentation!</a></li>
+      <li>Next: <a href="distributions.html" title="next chapter">PyMC3 Distributions</a></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2020, Epidemic Forecasting.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.2.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+      |
+      <a href="_sources/preprocessing.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

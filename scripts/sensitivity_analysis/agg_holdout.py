@@ -10,9 +10,11 @@ from scripts.sensitivity_analysis.utils import *
 
 argparser = argparse.ArgumentParser()
 add_argparse_arguments(argparser)
-args = argparser.parse_args()
 
 if __name__ == '__main__':
+
+    args = argparser.parse_args()
+
     class ResultsObject():
         def __init__(self, trace):
             self.CMReduction = trace.CMReduction

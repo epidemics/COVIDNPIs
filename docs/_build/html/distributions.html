@@ -1,0 +1,160 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>PyMC3 Distributions &#8212; COVIDNPIs  documentation</title>
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+    <script src="_static/jquery.js"></script>
+    <script src="_static/underscore.js"></script>
+    <script src="_static/doctools.js"></script>
+    <script src="_static/language_data.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Model Classes" href="models.html" />
+    <link rel="prev" title="Data Preprocessing" href="preprocessing.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <div class="section" id="pymc3-distributions">
+<h1>PyMC3 Distributions<a class="headerlink" href="#pymc3-distributions" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="module-epimodel.pymc3_distributions.asymmetric_laplace">
+<span id="asymmetric-laplace-distribution"></span><span id="asymmetric-laplace"></span><h2>Asymmetric Laplace Distribution<a class="headerlink" href="#module-epimodel.pymc3_distributions.asymmetric_laplace" title="Permalink to this headline">¶</a></h2>
+<p>Asymmetric Laplace Distribution</p>
+<p>Asymmetric Laplace Distribution, with location parameter 0. This is used as our NPI Effectiveness prior.</p>
+<p>See also: <a class="reference external" href="https://en.wikipedia.org/wiki/Asymmetric_Laplace_distribution">https://en.wikipedia.org/wiki/Asymmetric_Laplace_distribution</a></p>
+<dl class="py class">
+<dt id="epimodel.pymc3_distributions.asymmetric_laplace.AsymmetricLaplace">
+<em class="property">class </em><code class="sig-prename descclassname">epimodel.pymc3_distributions.asymmetric_laplace.</code><code class="sig-name descname">AsymmetricLaplace</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">name</span></em>, <em class="sig-param"><span class="o">*</span><span class="n">args</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#epimodel.pymc3_distributions.asymmetric_laplace.AsymmetricLaplace" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">pymc3.distributions.distribution.Continuous</span></code></p>
+<p>Assymetric Laplace Distribution</p>
+<p>See also: <a class="reference external" href="https://en.wikipedia.org/wiki/Asymmetric_Laplace_distribution">https://en.wikipedia.org/wiki/Asymmetric_Laplace_distribution</a></p>
+<dl class="py method">
+<dt id="epimodel.pymc3_distributions.asymmetric_laplace.AsymmetricLaplace.logp">
+<code class="sig-name descname">logp</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">value</span></em><span class="sig-paren">)</span><a class="headerlink" href="#epimodel.pymc3_distributions.asymmetric_laplace.AsymmetricLaplace.logp" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute logp.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>value</strong> – evaluation point</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>log probability at evaluation point</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="epimodel.pymc3_distributions.asymmetric_laplace.AsymmetricLaplace.random">
+<code class="sig-name descname">random</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">point</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">size</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#epimodel.pymc3_distributions.asymmetric_laplace.AsymmetricLaplace.random" title="Permalink to this definition">¶</a></dt>
+<dd><p>Draw random samples from this distribution, using the inverse CDF method.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>point</strong> – not used</p></li>
+<li><p><strong>size</strong> – size of sample to draw</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Samples</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="index.html">COVIDNPIs</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="preprocessing.html">Data Preprocessing</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">PyMC3 Distributions</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#module-epimodel.pymc3_distributions.asymmetric_laplace">Asymmetric Laplace Distribution</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="models.html">Model Classes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="experiments.html">Experiments</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="preprocessing.html" title="previous chapter">Data Preprocessing</a></li>
+      <li>Next: <a href="models.html" title="next chapter">Model Classes</a></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2020, Epidemic Forecasting.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.2.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+      |
+      <a href="_sources/distributions.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

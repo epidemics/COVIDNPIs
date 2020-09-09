@@ -1,0 +1,189 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Sensitivity Dispatcher &#8212; COVIDNPIs  documentation</title>
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+    <script src="_static/jquery.js"></script>
+    <script src="_static/underscore.js"></script>
+    <script src="_static/doctools.js"></script>
+    <script src="_static/language_data.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Individual Sensitivity Experiments" href="individual_sensitivity_experiments.html" />
+    <link rel="prev" title="Experiments" href="experiments.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <div class="section" id="sensitivity-dispatcher">
+<h1>Sensitivity Dispatcher<a class="headerlink" href="#sensitivity-dispatcher" title="Permalink to this headline">¶</a></h1>
+<p>The sensitivity dispatchers is a tool for running one or more predefined sensitivity analysis experiments.</p>
+<div class="section" id="sensitivity-dispatcher-usage">
+<span id="id1"></span><h2>Sensitivity Dispatcher Usage<a class="headerlink" href="#sensitivity-dispatcher-usage" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">usage</span><span class="p">:</span> <span class="n">python</span> <span class="n">sensitivity_dispatcher</span><span class="o">.</span><span class="n">py</span> <span class="p">[</span><span class="o">-</span><span class="n">h</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">max_processes</span> <span class="n">MAX_PROCESSES</span><span class="p">]</span>
+                                        <span class="p">[</span><span class="o">--</span><span class="n">categories</span> <span class="n">CATEGORIES</span> <span class="p">[</span><span class="n">CATEGORIES</span> <span class="o">...</span><span class="p">]]</span>
+                                        <span class="p">[</span><span class="o">--</span><span class="n">dry_run</span><span class="p">]</span>
+</pre></div>
+</div>
+<div class="section" id="Named Arguments">
+<h3>Named Arguments<a class="headerlink" href="#Named Arguments" title="Permalink to this headline">¶</a></h3>
+<dl class="option-list">
+<dt><kbd>--max_processes</kbd></dt>
+<dd></dd>
+<dt><kbd>--categories</kbd></dt>
+<dd></dd>
+<dt><kbd>--dry_run</kbd></dt>
+<dd><p>Default: False</p>
+</dd>
+</dl>
+</div>
+</div>
+<div class="section" id="sensitivity-analysis-dispatcher-run-types">
+<span id="sensitivity-dispatcher-run-types"></span><h2>Sensitivity Analysis Dispatcher Run Types<a class="headerlink" href="#sensitivity-analysis-dispatcher-run-types" title="Permalink to this headline">¶</a></h2>
+<p>region_holdout<dd><p>Mask data for one region and output prediction for the masked region. Runs once for each region.</p>
+</dd>
+</p>
+<p>npi_leaveout<dd><p>Remove NPI indicators from dataset and fit model with the remaining set of NPIs. Runs once for each NPI, and additionally leaves out school and university closures jointly</p>
+</dd>
+</p>
+<p>cases_threshold<dd><p>Run the model excluding regions with less than [10, 50, 150, 200] cases</p>
+</dd>
+</p>
+<p>deaths_threshold<dd><p>Run the model excluding regions with less than [1, 5, 15, 20] deaths</p>
+</dd>
+</p>
+<p>smoothing<dd><p>smoothing: Run the model smoothing cases and deaths over [3, 5, 7, 9] days</p>
+</dd>
+</p>
+<p>oxcgrt<dd><div class="line-block">
+<div class="line">Run the model with additional featurs from OxCGRT: </div>
+<div class="line">[‘Travel Screen/Quarantine’, ‘Travel Bans’, ‘Public Transport Limited’,</div>
+<div class="line">’Internal Movement Limited’, ‘Public Information Campaigns’, ‘Symptomatic Testing’]</div>
+</div>
+</dd>
+</p>
+<p>R_prior<dd><p>Run the model with a prior mean R0 of [2.5, 4.5]</p>
+</dd>
+</p>
+<p>NPI_prior<dd><p>Run the model with an NPI effetiveness prior of [skewed 10, Normal(0,0.2), ICL]</p>
+</dd>
+</p>
+<p>agg_holdout<dd><p>Mask the final 20 days of data and predict this period with the model</p>
+</dd>
+</p>
+<p>any_npi_active<dd><p>Add an additional dummy NPI representing whether any major NPI is active</p>
+</dd>
+</p>
+<p>delay_schools<dd><p>Run the model with an additional 5 day delay to school and university closures</p>
+</dd>
+</p>
+<p>npi_timing<dd><p>Run the model with NPI indices 0-8 representing 0,…,8 active NPIs</p>
+</dd>
+</p>
+<p>structural<dd><div class="line-block">
+<div class="line">Run the model with alternative structures: </div>
+<div class="line">[additive, discrete_renewal, discrete_renewal_fixed_gi,</div>
+<div class="line">noisy_r, different_effects, cases_only, deaths_only]</div>
+</div>
+</dd>
+</p>
+</div>
+</div>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="index.html">COVIDNPIs</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="preprocessing.html">Data Preprocessing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="distributions.html">PyMC3 Distributions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="models.html">Model Classes</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="experiments.html">Experiments</a><ul class="current">
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Sensitivity Dispatcher</a></li>
+<li class="toctree-l2"><a class="reference internal" href="individual_sensitivity_experiments.html">Individual Sensitivity Experiments</a></li>
+</ul>
+</li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+  <li><a href="experiments.html">Experiments</a><ul>
+      <li>Previous: <a href="experiments.html" title="previous chapter">Experiments</a></li>
+      <li>Next: <a href="individual_sensitivity_experiments.html" title="next chapter">Individual Sensitivity Experiments</a></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2020, Epidemic Forecasting.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.2.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+      |
+      <a href="_sources/sensitivity_dispatcher.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

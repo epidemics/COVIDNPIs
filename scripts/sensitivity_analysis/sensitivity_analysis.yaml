@@ -1,3 +1,6 @@
+
+###
+# Mask data for one region and output prediction for the masked region. Runs once for each region.
 region_holdout:
   experiment_file: region_holdout.py
   experiment_tag: region_holdout
@@ -48,6 +51,8 @@ region_holdout:
       - CH
       - GB
 
+###
+# Remove NPI indicators from dataset and fit model with the remaining set of NPIs. Runs once for each NPI, and additionally leaves out school and university closures jointly
 npi_leaveout:
   experiment_file: npi_leaveout.py
   experiment_tag: npi_leaveout
@@ -67,6 +72,8 @@ npi_leaveout:
       - [8]
       - [6, 7]
 
+###
+# Run the model excluding regions with less than [10, 50, 150, 200] cases
 cases_threshold:
   experiment_file: preprocessing_tests.py
   experiment_tag: cases_threshold
@@ -78,6 +85,8 @@ cases_threshold:
     deaths_threshold: 10
     cases_threshold: [10, 50, 200, 300]
 
+###
+# Run the model excluding regions with less than [1, 5, 30, 50] deaths
 deaths_threshold:
   experiment_file: preprocessing_tests.py
   experiment_tag: deaths_threshold
@@ -89,6 +98,10 @@ deaths_threshold:
     deaths_threshold: [1, 5, 30, 50]
     cases_threshold: 100
 
+###
+# | Run the model with additional featurs from OxCGRT: 
+# | ['Travel Screen/Quarantine', 'Travel Bans', 'Public Transport Limited',
+# | 'Internal Movement Limited', 'Public Information Campaigns', 'Symptomatic Testing']
 oxcgrt:
   experiment_file: oxcgrt_leavein.py
   experiment_tag: oxcgrt
@@ -103,6 +116,8 @@ oxcgrt:
       - [4]
       - [5]
 
+###
+# Run the model with a prior mean R0 of [2.5, 4.5]
 R_prior:
   experiment_file: alternative_build_param.py
   experiment_tag: R_prior
@@ -129,6 +144,8 @@ growth_noise:
       - 0.3
       - 0.4
 
+###
+# Run the model with an NPI effetiveness prior of [skewed 10, Normal(0,0.2), ICL]
 NPI_prior:
   experiment_file: alternative_build_param.py
   experiment_tag: NPI_prior
@@ -142,6 +159,8 @@ NPI_prior:
       - icl 0
     growth_noise: 0.2
 
+###
+# Mask the final 20 days of data and predict this period with the model
 agg_holdout:
   experiment_file: agg_holdout.py
   experiment_tag: agg_holdout
@@ -150,6 +169,8 @@ agg_holdout:
   n_samples: 2000
   args: {}
 
+###
+# Add an additional dummy NPI representing whether any major NPI is active
 any_npi_active:
   experiment_file: any_npi_active.py
   experiment_tag: any_npi_active
@@ -158,6 +179,8 @@ any_npi_active:
   n_samples: 2000
   args: {}
 
+###
+# Run the model with an additional 5 day delay to school and university closures
 delay_schools:
   experiment_file: delay_schools.py
   experiment_tag: delay_schools
@@ -166,6 +189,8 @@ delay_schools:
   n_samples: 2000
   args: {}
 
+###
+# Run the model with NPI indices 0-8 representing 0,...,8 active NPIs
 npi_timing:
   experiment_file: npi_timing.py
   experiment_tag: npi_timing
@@ -174,6 +199,10 @@ npi_timing:
   n_samples: 2000
   args: {}
 
+###
+# | Run the model with alternative structures: 
+# | [additive, discrete_renewal, discrete_renewal_fixed_gi,
+# | noisy_r, different_effects, cases_only, deaths_only]
 structural:
   experiment_file: structural.py
   experiment_tag: structural

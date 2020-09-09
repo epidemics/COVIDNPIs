@@ -1,0 +1,233 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Individual Sensitivity Experiments &#8212; COVIDNPIs  documentation</title>
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+    <script src="_static/jquery.js"></script>
+    <script src="_static/underscore.js"></script>
+    <script src="_static/doctools.js"></script>
+    <script src="_static/language_data.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="prev" title="Sensitivity Dispatcher" href="sensitivity_dispatcher.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <div class="section" id="individual-sensitivity-experiments">
+<h1>Individual Sensitivity Experiments<a class="headerlink" href="#individual-sensitivity-experiments" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="holdout-final-20-days">
+<span id="agg-holdout"></span><h2>Holdout Final 20 Days<a class="headerlink" href="#holdout-final-20-days" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">usage</span><span class="p">:</span> <span class="n">python</span> <span class="n">agg_holdout</span><span class="o">.</span><span class="n">py</span> <span class="p">[</span><span class="o">-</span><span class="n">h</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">model_type</span> <span class="n">MODEL_TYPE</span><span class="p">]</span>
+                             <span class="p">[</span><span class="o">--</span><span class="n">exp_tag</span> <span class="n">EXP_TAG</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">n_chains</span> <span class="n">N_CHAINS</span><span class="p">]</span>
+                             <span class="p">[</span><span class="o">--</span><span class="n">n_samples</span> <span class="n">N_SAMPLES</span><span class="p">]</span>
+</pre></div>
+</div>
+<div class="section" id="Named Arguments">
+<h3>Named Arguments<a class="headerlink" href="#Named Arguments" title="Permalink to this headline">¶</a></h3>
+<dl class="option-list">
+<dt><kbd>--model_type</kbd></dt>
+<dd><dl>
+<dt>model structure choice:</dt><dd><div class="line-block">
+<div class="line">- additive: the reproduction rate is given by R_t=R0*(sum_i phi_{i,t} beta_i)</div>
+<div class="line">- discrete_renewal_fixed_gi: uses discrete renewal model to convert reproduction rate R into growth rate g with fixed generation interval</div>
+<div class="line">- discrete_renewal: uses discrete renewal model to convert reproduction rate R into growth rate g with prior over generation intervals</div>
+<div class="line">- noisy_r: noise is added to R_t before conversion to growth rate g_t (default model adds noise to g_t after conversion)</div>
+<div class="line">- different_effects: each region c has a unique NPI reduction coefficient alpha_{i,c}</div>
+<div class="line">- cases_only: the number of infections is estimated from case data only</div>
+<div class="line">- deaths_only: the number of infections is estimated from death data only</div>
+</div>
+</dd>
+</dl>
+</dd>
+<dt><kbd>--exp_tag</kbd></dt>
+<dd><p>experiment identification tag</p>
+</dd>
+<dt><kbd>--n_chains</kbd></dt>
+<dd><p>the number of chains to run in parallel</p>
+</dd>
+<dt><kbd>--n_samples</kbd></dt>
+<dd><p>the number of samples to draw</p>
+</dd>
+</dl>
+</div>
+</div>
+<div class="section" id="alternative-priors">
+<span id="id1"></span><h2>Alternative Priors<a class="headerlink" href="#alternative-priors" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">usage</span><span class="p">:</span> <span class="n">python</span> <span class="n">alternative_build_param</span><span class="o">.</span><span class="n">py</span> <span class="p">[</span><span class="o">-</span><span class="n">h</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">R_prior_mean</span> <span class="n">R_PRIOR</span><span class="p">]</span>
+                                         <span class="p">[</span><span class="o">--</span><span class="n">NPI_prior</span> <span class="n">NPI_PRIOR</span> <span class="n">NPI_PRIOR</span><span class="p">]</span>
+                                         <span class="p">[</span><span class="o">--</span><span class="n">model_type</span> <span class="n">MODEL_TYPE</span><span class="p">]</span>
+                                         <span class="p">[</span><span class="o">--</span><span class="n">exp_tag</span> <span class="n">EXP_TAG</span><span class="p">]</span>
+                                         <span class="p">[</span><span class="o">--</span><span class="n">n_chains</span> <span class="n">N_CHAINS</span><span class="p">]</span>
+                                         <span class="p">[</span><span class="o">--</span><span class="n">n_samples</span> <span class="n">N_SAMPLES</span><span class="p">]</span>
+</pre></div>
+</div>
+<div class="section" id="Named Arguments">
+<h3>Named Arguments<a class="headerlink" href="#Named Arguments" title="Permalink to this headline">¶</a></h3>
+<dl class="option-list">
+<dt><kbd>--R_prior_mean</kbd></dt>
+<dd></dd>
+<dt><kbd>--NPI_prior</kbd></dt>
+<dd></dd>
+<dt><kbd>--model_type</kbd></dt>
+<dd><dl>
+<dt>model structure choice:</dt><dd><div class="line-block">
+<div class="line">- additive: the reproduction rate is given by R_t=R0*(sum_i phi_{i,t} beta_i)</div>
+<div class="line">- discrete_renewal_fixed_gi: uses discrete renewal model to convert reproduction rate R into growth rate g with fixed generation interval</div>
+<div class="line">- discrete_renewal: uses discrete renewal model to convert reproduction rate R into growth rate g with prior over generation intervals</div>
+<div class="line">- noisy_r: noise is added to R_t before conversion to growth rate g_t (default model adds noise to g_t after conversion)</div>
+<div class="line">- different_effects: each region c has a unique NPI reduction coefficient alpha_{i,c}</div>
+<div class="line">- cases_only: the number of infections is estimated from case data only</div>
+<div class="line">- deaths_only: the number of infections is estimated from death data only</div>
+</div>
+</dd>
+</dl>
+</dd>
+<dt><kbd>--exp_tag</kbd></dt>
+<dd><p>experiment identification tag</p>
+</dd>
+<dt><kbd>--n_chains</kbd></dt>
+<dd><p>the number of chains to run in parallel</p>
+</dd>
+<dt><kbd>--n_samples</kbd></dt>
+<dd><p>the number of samples to draw</p>
+</dd>
+</dl>
+</div>
+</div>
+<div class="section" id="npi-leaveout">
+<span id="id2"></span><h2>NPI Leaveout<a class="headerlink" href="#npi-leaveout" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">usage</span><span class="p">:</span> <span class="n">python</span> <span class="n">npi_leaveout</span><span class="o">.</span><span class="n">py</span> <span class="p">[</span><span class="o">-</span><span class="n">h</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">npis</span> <span class="n">NPIS</span> <span class="p">[</span><span class="n">NPIS</span> <span class="o">...</span><span class="p">]]</span>
+                              <span class="p">[</span><span class="o">--</span><span class="n">model_type</span> <span class="n">MODEL_TYPE</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">exp_tag</span> <span class="n">EXP_TAG</span><span class="p">]</span>
+                              <span class="p">[</span><span class="o">--</span><span class="n">n_chains</span> <span class="n">N_CHAINS</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">n_samples</span> <span class="n">N_SAMPLES</span><span class="p">]</span>
+</pre></div>
+</div>
+<div class="section" id="Named Arguments">
+<h3>Named Arguments<a class="headerlink" href="#Named Arguments" title="Permalink to this headline">¶</a></h3>
+<dl class="option-list">
+<dt><kbd>--npis</kbd></dt>
+<dd></dd>
+<dt><kbd>--model_type</kbd></dt>
+<dd><dl>
+<dt>model structure choice:</dt><dd><div class="line-block">
+<div class="line">- additive: the reproduction rate is given by R_t=R0*(sum_i phi_{i,t} beta_i)</div>
+<div class="line">- discrete_renewal_fixed_gi: uses discrete renewal model to convert reproduction rate R into growth rate g with fixed generation interval</div>
+<div class="line">- discrete_renewal: uses discrete renewal model to convert reproduction rate R into growth rate g with prior over generation intervals</div>
+<div class="line">- noisy_r: noise is added to R_t before conversion to growth rate g_t (default model adds noise to g_t after conversion)</div>
+<div class="line">- different_effects: each region c has a unique NPI reduction coefficient alpha_{i,c}</div>
+<div class="line">- cases_only: the number of infections is estimated from case data only</div>
+<div class="line">- deaths_only: the number of infections is estimated from death data only</div>
+</div>
+</dd>
+</dl>
+</dd>
+<dt><kbd>--exp_tag</kbd></dt>
+<dd><p>experiment identification tag</p>
+</dd>
+<dt><kbd>--n_chains</kbd></dt>
+<dd><p>the number of chains to run in parallel</p>
+</dd>
+<dt><kbd>--n_samples</kbd></dt>
+<dd><p>the number of samples to draw</p>
+</dd>
+</dl>
+</div>
+</div>
+</div>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="index.html">COVIDNPIs</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="preprocessing.html">Data Preprocessing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="distributions.html">PyMC3 Distributions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="models.html">Model Classes</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="experiments.html">Experiments</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="sensitivity_dispatcher.html">Sensitivity Dispatcher</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Individual Sensitivity Experiments</a></li>
+</ul>
+</li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+  <li><a href="experiments.html">Experiments</a><ul>
+      <li>Previous: <a href="sensitivity_dispatcher.html" title="previous chapter">Sensitivity Dispatcher</a></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2020, Epidemic Forecasting.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.2.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+      |
+      <a href="_sources/individual_sensitivity_experiments.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

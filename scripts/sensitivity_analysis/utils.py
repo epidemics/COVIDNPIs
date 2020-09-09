@@ -23,10 +23,18 @@ def get_model_class_from_str(model_type_str):
 
 
 def add_argparse_arguments(argparse):
-    argparse.add_argument('--model_type', dest='model_type', type=str)
-    argparse.add_argument('--exp_tag', dest='exp_tag', type=str)
-    argparse.add_argument('--n_chains', dest='n_chains', type=int)
-    argparse.add_argument('--n_samples', dest='n_samples', type=int)
+    argparse.add_argument('--model_type', dest='model_type', type=str,
+    help="""model structure choice:
+              | - additive: the reproduction rate is given by R_t=R0*(sum_i phi_{i,t} beta_i)
+              | - discrete_renewal_fixed_gi: uses discrete renewal model to convert reproduction rate R into growth rate g with fixed generation interval
+              | - discrete_renewal: uses discrete renewal model to convert reproduction rate R into growth rate g with prior over generation intervals
+              | - noisy_r: noise is added to R_t before conversion to growth rate g_t (default model adds noise to g_t after conversion)
+              | - different_effects: each region c has a unique NPI reduction coefficient alpha_{i,c}
+              | - cases_only: the number of infections is estimated from case data only
+              | - deaths_only: the number of infections is estimated from death data only""")
+    argparse.add_argument('--exp_tag', dest='exp_tag', type=str, help='experiment identification tag')
+    argparse.add_argument('--n_chains', dest='n_chains', type=int, help='the number of chains to run in parallel')
+    argparse.add_argument('--n_samples', dest='n_samples', type=int, help='the number of samples to draw')
 
 
 def save_cm_trace(name, trace, tag, model_type):
