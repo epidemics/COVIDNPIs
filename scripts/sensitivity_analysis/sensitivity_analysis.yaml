@@ -112,7 +112,7 @@ R_prior:
   args:
     R_prior_mean: [2.5, 4.5]
     NPI_prior: skewed 10
-    growth_noise: 0.1
+  growth_noise: 0.2
 
 growth_noise:
   experiment_file: alternative_build_param.py
@@ -140,7 +140,7 @@ NPI_prior:
     NPI_prior:
       - normal 0.2
       - icl 0
-      - growth_noise: 0.1
+    growth_noise: 0.2
 
 agg_holdout:
   experiment_file: agg_holdout.py
@@ -183,7 +183,6 @@ structural:
   args:
     model_structure:
       - additive
-      - discrete_renewal
       - discrete_renewal_fixed_gi
       - noisy_r
       - different_effects

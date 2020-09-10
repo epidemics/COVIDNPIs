@@ -87,7 +87,7 @@ class DefaultModel(BaseCMModel):
                 print('Using a fixed value for the generation interval mean')
                 self.GI_mean = gi_mean_mean
 
-            self.GI_sd = pm.TruncatedNormal('GI_sd', gi_sd_mean, gi_sd_sd, lower=0.5)
+            self.GI_sd = pm.Normal('GI_sd', gi_sd_mean, gi_sd_sd)
 
             gi_beta = self.GI_mean / self.GI_sd ** 2
             gi_alpha = self.GI_mean ** 2 / self.GI_sd ** 2

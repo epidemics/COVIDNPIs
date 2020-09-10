@@ -18,3 +18,5 @@ Additional results referenced in the paper (effectiveness of NPI combinations, v
 
 ##
 Stay tuned: more detailed documentation coming soon !
+
+`python scripts/sensitivity_dispatcher.py --max_processes 24 --categories structural npi_timing delay_schools any_npi_active agg_holdout growth_noise oxcgrt deaths_threshold cases_threshold npi_leaveout region_leaveout`

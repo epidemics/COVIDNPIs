@@ -132,8 +132,17 @@ class PreprocessedData(object):
             mask = self.ActiveCMs[:, cm, :] * (self.NewDeaths.mask == False)
             for cm2 in range(nCMs):
                 mat[cm, cm2] = np.sum(mask * self.ActiveCMs[:, cm2, :]) / np.sum(mask)
-        im = plt.imshow(mat * 100, vmin=25, vmax=100, cmap="magma", aspect="auto")
+        im = plt.imshow(mat * 100, vmin=25, vmax=100, cmap='inferno', aspect="auto")
         ax.tick_params(axis="both", which="major", labelsize=8)
+
+        for i in range(nCMs):
+            for j in range(nCMs):
+                if mat[i, j] < 0.75:
+                    plt.text(j, i, f'{int(100 * mat[i, j]):d}%', fontsize=3.5, ha='center', va='center', color='white',
+                             rotation=45)
+                else:
+                    plt.text(j, i, f'{int(100 * mat[i, j]):d}%', fontsize=3.5, ha='center', va='center', color=[0.4627010031973002, 0.2693410356621817, 0.46634810758714684],
+                             rotation=45)
 
         plt.xticks(
             np.arange(len(self.CMs)),
@@ -161,12 +170,12 @@ class PreprocessedData(object):
                      fontproperties=fp2, fontsize=7, color=cm_plot_style[i][1])
 
         plt.xticks(fontsize=7)
-        divider = make_axes_locatable(ax)
-        cax = divider.append_axes("right", size="5%", pad=0.05)
-        cbr = plt.colorbar(im, cax=cax, format=PercentFormatter())
-        ax = plt.gca()
-        ax.tick_params(axis="both", which="major", labelsize=6)
-        cbr.set_ticks([25, 50, 75, 100])
+        # divider = make_axes_locatable(ax)
+        # cax = divider.append_axes("right", size="5%", pad=0.05)
+        # cbr = plt.colorbar(im, cax=cax, format=PercentFormatter())
+        # ax = plt.gca()
+        # ax.tick_params(axis="both", which="major", labelsize=6)
+        # cbr.set_ticks([25, 50, 75, 100])
 
     def cumulative_days_plot(self, cm_plot_style, newfig=True, skip_yticks=False):
         """
@@ -184,7 +193,7 @@ class PreprocessedData(object):
         ax = plt.gca()
         mask = np.reshape((self.NewDeaths.mask == False), (nRs, 1, nDs))
         days_active = np.sum(np.sum(self.ActiveCMs * np.repeat(mask, nCMs, axis=1), axis=0), axis=1)
-        plt.barh(-np.arange(nCMs), days_active, color=[0.4627010031973002, 0.2693410356621817, 0.46634810758714684])
+        plt.barh(-np.arange(nCMs), days_active, color=[0.7522446028276593, 0.5089037847613617, 0.6733963201089419])
 
         plt.yticks(
             -np.arange(len(self.CMs)),
