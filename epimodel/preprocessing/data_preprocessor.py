@@ -1,7 +1,7 @@
 """
-Data Preprocessing
+data_preprocessor.py
 
-Contains preprocess_data function
+Preprocess appropriately formatted csv data into PreprocessedData object
 """
 import copy
 

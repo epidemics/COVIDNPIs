@@ -8,9 +8,11 @@ import argparse
 from scripts.sensitivity_analysis.utils import *
 
 argparser = argparse.ArgumentParser()
-argparser.add_argument('--R_prior_mean', dest='R_prior', type=float)
-argparser.add_argument('--NPI_prior', nargs=2, dest='NPI_prior', type=str)
-argparser.add_argument('--growth_noise', dest='growth_noise', type=float)
+
+argparser.add_argument('--R_prior_mean', dest='R_prior', type=float, help='Prior mean basic reproductive number R0')
+argparser.add_argument('--NPI_prior', nargs=2, dest='NPI_prior', type=str, help='Prior for NPI effectiveness')
+argparser.add_argument('--growth_noise', dest='growth_noise', type=float, help='Growth noise scale parameter')
+
 
 add_argparse_arguments(argparser)
 

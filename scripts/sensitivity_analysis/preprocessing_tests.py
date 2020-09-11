@@ -8,13 +8,16 @@ import argparse
 from scripts.sensitivity_analysis.utils import *
 
 argparser = argparse.ArgumentParser()
-argparser.add_argument('--smoothing', dest='smoothing', type=int)
-argparser.add_argument('--cases_threshold', dest='cases_threshold', type=int)
-argparser.add_argument('--deaths_threshold', dest='deaths_threshold', type=int)
+argparser.add_argument('--smoothing', dest='smoothing', type=int, help='Number of days over which to smooth. This should be an odd number. If 1, no smoothing occurs.')
+argparser.add_argument('--cases_threshold', dest='cases_threshold', type=int, help='Deaths threshold, below which new daily deaths are ignored.')
+argparser.add_argument('--deaths_threshold', dest='deaths_threshold', type=int, help='Confirmed cases threshold, below which new daily cases are ignored.')
 add_argparse_arguments(argparser)
-args = argparser.parse_args()
+
 
 if __name__ == '__main__':
+
+    args = argparser.parse_args()
+    
     data = preprocess_data('notebooks/double-entry-data/double_entry_final.csv', last_day='2020-05-30',
                            smoothing=args.smoothing, min_confirmed=args.cases_threshold,
                            min_deaths=args.deaths_threshold)

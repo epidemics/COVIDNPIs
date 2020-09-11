@@ -9,11 +9,20 @@ import copy
 from scripts.sensitivity_analysis.utils import *
 
 argparser = argparse.ArgumentParser()
-argparser.add_argument('--npis', nargs='+', dest='npis', type=int)
+argparser.add_argument('--npis', nargs='+', dest='npis', type=int, help = '''OxCGRT NPIs to include. One or more of:
+                                                                        | Travel Screen/Quarantine
+                                                                        | Travel Bans
+                                                                        | Public Transport Limited
+                                                                        | Internal Movement Limited
+                                                                        | Public Information Campaigns
+                                                                        | Symptomatic Testing''')
 add_argparse_arguments(argparser)
-args = argparser.parse_args()
+
 
 if __name__ == '__main__':
+
+    args = argparser.parse_args()
+
     # this is the default drop values
     drop_features_full = ['Travel Screen/Quarantine', 'Travel Bans', 'Public Transport Limited',
                           'Internal Movement Limited', 'Public Information Campaigns', 'Symptomatic Testing']

@@ -24,9 +24,11 @@ argparser.add_argument('--model_structure', dest='model_structure', type=str,
           | - different_effects: each region c has a unique NPI reduction coefficient alpha_{i,c}\
           | - cases_only: the number of infections is estimated from case data only\
           | - deaths_only: the number of infections is estimated from death data only')
-args = argparser.parse_args()
 
 if __name__ == '__main__':
+
+    args = argparser.parse_args()
+
     data = preprocess_data('notebooks/double-entry-data/double_entry_final.csv', last_day='2020-05-30')
     data.mask_reopenings()
 

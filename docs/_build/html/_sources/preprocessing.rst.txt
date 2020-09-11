@@ -2,6 +2,12 @@
 Data Preprocessing
 ******************
 
+.. seealso::
+	`Preprocessing Examples`_
+
+.. _Preprocessing Examples: Preprocessing_Examples.ipynb
+
+
 .. _data_merger:
 
 Data Merger
@@ -12,7 +18,7 @@ Data Merger
    :undoc-members:
    :show-inheritance:
 
-.. _data_merger:
+.. _data_preprocessor:
 
 Data Preprocessor
 =================

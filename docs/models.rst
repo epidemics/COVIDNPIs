@@ -1,17 +1,15 @@
 
+.. _model_classes:
+
+
 *************
 Model Classes
 *************
 
-.. _model_parameters:
+.. seealso::
+	`Default Model Example`_
 
-Model Parameters
-================
-
-.. automodule:: epimodel.pymc3_models.epi_params
-   :members:
-   :undoc-members:
-   :show-inheritance:
+.. _Default Model Example: CM_Model_Examples.ipynb
 
 
 .. _base_cm_model:

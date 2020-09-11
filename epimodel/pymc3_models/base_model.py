@@ -1,9 +1,9 @@
 """
-base_model file
-
-This file contains contains:
-- utility functions used often with models
-- BaseCMModel class, which other classes inherit from
+| base_model.py
+| 
+| This file contains contains:
+| - utility functions used often with models
+| - BaseCMModel class, which other classes inherit from
 """
 
 import matplotlib.pyplot as plt
@@ -243,7 +243,7 @@ class BaseCMModel(Model):
         assert self.trace is not None
         plt.figure(figsize=(4, 3), dpi=300)
 
-        means, li, ui, lq, uq = produce_CIs(100 * (1 - np.mean(self.trace["CMReduction"])))
+        means, li, ui, lq, uq = produce_CIs(100 * (1 - self.trace["CMReduction"]))
 
         N_cms = means.size
 

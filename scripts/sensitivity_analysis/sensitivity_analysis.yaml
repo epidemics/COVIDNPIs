@@ -73,7 +73,7 @@ npi_leaveout:
       - [6, 7]
 
 ###
-# Run the model excluding regions with less than [10, 50, 150, 200] cases
+# Run the model masking daily confirmed cases when a region's total number of confirmed cases is below [10, 50, 150, 200] cases
 cases_threshold:
   experiment_file: preprocessing_tests.py
   experiment_tag: cases_threshold
@@ -86,7 +86,8 @@ cases_threshold:
     cases_threshold: [10, 50, 200, 300]
 
 ###
-# Run the model excluding regions with less than [1, 5, 30, 50] deaths
+# Run the model masking daily death counts when a region's total number of deaths is below [1, 5, 30, 50] deaths
+>>>>>>> documentation
 deaths_threshold:
   experiment_file: preprocessing_tests.py
   experiment_tag: deaths_threshold
@@ -190,7 +191,7 @@ delay_schools:
   args: {}
 
 ###
-# Run the model with NPI indices 0-8 representing 0,...,8 active NPIs
+# Run the model with NPI indices 0-8 representing 0,...,8 active NPIs, ignoring NPI type
 npi_timing:
   experiment_file: npi_timing.py
   experiment_tag: npi_timing

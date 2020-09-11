@@ -9,11 +9,14 @@ import pickle
 from scripts.sensitivity_analysis.utils import *
 
 argparser = argparse.ArgumentParser()
-argparser.add_argument('--rg', dest='rg', type=str)
+argparser.add_argument('--rg', dest='rg', type=str, help='Region to leave out - alpha 2 code')
 add_argparse_arguments(argparser)
-args = argparser.parse_args()
+
 
 if __name__ == '__main__':
+
+    args = argparser.parse_args()
+
     class ResultsObject():
         def __init__(self, indx, trace):
             self.CMReduction = trace.CMReduction
