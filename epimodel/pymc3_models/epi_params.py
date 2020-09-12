@@ -128,7 +128,7 @@ class EpidemiologicalParameters():
         if incubation_period is not None:
             self.incubation_period = incubation_period
         else:
-            incubation_period = {
+            self.incubation_period = {
                 'mean_mean': 1.53,
                 'mean_sd': 0.051,
                 'sd_mean': 0.418,
