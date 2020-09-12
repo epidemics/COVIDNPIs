@@ -1,3 +1,9 @@
+"""
+:code:`utils.py`
+
+Utilities to support the use of command line sensitivity experiments
+"""
+
 import epimodel.pymc3_models.models as epm
 import os
 import numpy as np

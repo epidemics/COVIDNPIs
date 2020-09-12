@@ -1,5 +1,5 @@
 """
-models.py
+:code:`models.py`
 
 Contains a variety of models of NPI effectiveness, all subclassed from BaseCMModel. 
 """

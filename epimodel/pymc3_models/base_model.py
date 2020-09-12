@@ -1,5 +1,5 @@
 """
-| base_model.py
+| :code:`base_model.py`
 | 
 | This file contains contains:
 | - utility functions used often with models

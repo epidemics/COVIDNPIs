@@ -2,7 +2,7 @@
 Sensitivity Dispatcher
 *******************************
 
-The sensitivity dispatcher is a tool for running one or more predefined sensitivity experiments using the dataset ``notebooks/double-entry-data/double_entry_final.csv``.
+The sensitivity dispatcher is a tool for running one or more predefined sensitivity experiments using the dataset ``notebooks/double-entry-data/double_entry_final.csv``. It is intended to use when running experiments on a server.
 
 .. seealso::
 	| Documentation for :ref:`sensitivity_dispatcher_examples`
@@ -23,5 +23,7 @@ Sensitivity Dispatcher Usage
 
 Sensitivity Analysis Dispatcher Run Types
 =========================================
+
+Full specifications can be found in :code:`scripts/sensitivity_analysis/sensitivity_analysis.yaml`, which can also be customised to your needs.
 
 .. autoyaml:: /scripts/sensitivity_analysis/sensitivity_analysis.yaml

@@ -1,3 +1,9 @@
+"""
+:code:`npi_timing.py`
+
+Model the effect of the number of NPIs active, rather than the particular NPIs deployed.
+"""
+
 import pymc3 as pm
 
 from epimodel import EpidemiologicalParameters

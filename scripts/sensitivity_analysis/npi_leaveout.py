@@ -1,3 +1,9 @@
+"""
+:code:`npi_leaveout.py`
+
+Leave our specified NPIs. Useful to study the sensitivity of the results to the inclusion of particular NPIs.
+"""
+
 import pymc3 as pm
 
 from epimodel import EpidemiologicalParameters

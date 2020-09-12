@@ -6,7 +6,7 @@ Epidemiological Parameters
 .. seealso::
 	`Default Model Example`_
 
-.. _Default Model Example: CM_Model_Examples.ipynb
+.. _Default Model Example: examples/CM_Model_Examples.ipynb
 
 
 .. automodule:: epimodel.pymc3_models.epi_params

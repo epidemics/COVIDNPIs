@@ -1,3 +1,10 @@
+"""
+:code:`region_holdout.py`
+
+Hold out data for a specified region. Useful for exploring how well the model predicts the infection course in held-out data.
+"""
+
+
 import pymc3 as pm
 
 from epimodel import EpidemiologicalParameters

@@ -1,3 +1,10 @@
+"""
+:code:'oxcgrt_leavein.py'
+
+Include extra NPIs from the OxCGRT dataset.
+"""
+
+
 import pymc3 as pm
 
 from epimodel import EpidemiologicalParameters

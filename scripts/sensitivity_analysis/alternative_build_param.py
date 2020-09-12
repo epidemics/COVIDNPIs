@@ -1,3 +1,12 @@
+"""
+:code:`alternative_build_param.py`
+
+Initialise model with alternative command line specified build parameters:
+| --R_prior_mean: Prior mean basic reproductive number R0
+| --NPI_prior: Prior for NPI effectiveness
+| --growth_noise: Add noise to case growth rate
+"""
+
 import pymc3 as pm
 
 from epimodel import EpidemiologicalParameters

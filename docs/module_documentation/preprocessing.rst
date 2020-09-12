@@ -5,7 +5,7 @@ Data Preprocessing
 .. seealso::
 	`Preprocessing Examples`_
 
-.. _Preprocessing Examples: Preprocessing_Examples.ipynb
+.. _Preprocessing Examples: examples/Preprocessing_Examples.ipynb
 
 
 .. _data_merger:

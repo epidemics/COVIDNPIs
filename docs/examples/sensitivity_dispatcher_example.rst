@@ -4,6 +4,11 @@
 Sensitivity Dispatcher Examples
 -------------------------------
 
+The sensitivity dispatcher is a tool for running one or more predefined sensitivity experiments using the dataset ``notebooks/double-entry-data/double_entry_final.csv``. It is intended to use when running experiments on a server. This page gives some example commands to run with it.
+
+.. seealso::
+	The :ref:`sensitivity_dispatcher` documentation.
+
 Example 1::
 
 	python scripts/sensitivity_dispatcher.py --max_processes 4 --categories region_holdout

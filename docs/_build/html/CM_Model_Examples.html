@@ -36,9 +36,7 @@
 
     
     <link rel="index" title="Index" href="genindex.html" />
-    <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="Sensitivity Dispatcher Examples" href="sensitivity_dispatcher_example.html" />
-    <link rel="prev" title="Preprocessing Examples" href="Preprocessing_Examples.html" /> 
+    <link rel="search" title="Search" href="search.html" /> 
 </head>
 
 <body class="wy-body-for-nav">
@@ -84,23 +82,11 @@
             
             
               <p class="caption"><span class="caption-text">Contents:</span></p>
-<ul class="current">
-<li class="toctree-l1 current"><a class="reference internal" href="examples.html">Examples</a><ul class="current">
-<li class="toctree-l2"><a class="reference internal" href="Preprocessing_Examples.html">Preprocessing Examples</a></li>
-<li class="toctree-l2 current"><a class="current reference internal" href="#">Default Model Example</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#Load-Data">Load Data</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#Create-custom-infection-to-fatality-delay-using-default-generation-interval">Create custom infection to fatality delay using default generation interval</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#Initialise-model-with-epidemiological-parameters">Initialise model with epidemiological parameters</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#Run-model">Run model</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#Plot-results">Plot results</a></li>
-</ul>
-</li>
-<li class="toctree-l2"><a class="reference internal" href="sensitivity_dispatcher_example.html">Sensitivity Dispatcher Examples</a></li>
-</ul>
-</li>
-<li class="toctree-l1"><a class="reference internal" href="module_documentation.html">Module Documentation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="experiments.html">Experiments</a></li>
-<li class="toctree-l1"><a class="reference internal" href="reproduction.html">Reproducing Results from Paper</a></li>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="examples/examples.html">Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="module_documentation/module_documentation.html">Module Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="experiments/experiments.html">Experiments</a></li>
+<li class="toctree-l1"><a class="reference internal" href="reproduction/reproduction.html">Reproducing Results from Paper</a></li>
 </ul>
 
             
@@ -146,8 +132,6 @@
   <ul class="wy-breadcrumbs">
     
       <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
-        
-          <li><a href="examples.html">Examples</a> &raquo;</li>
         
       <li>Default Model Example</li>
     
@@ -425,8 +409,9 @@ div.rendered_html tbody tr:hover {
 </style>
 <div class="section" id="Default-Model-Example">
 <h1>Default Model Example<a class="headerlink" href="#Default-Model-Example" title="Permalink to this headline">¶</a></h1>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[19]:
+<p>Preprocess dataset, build and run default model with a custom infection-to-fatality delay.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
@@ -437,10 +422,26 @@ div.rendered_html tbody tr:hover {
 </pre></div>
 </div>
 </div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+WARNING (theano.tensor.blas): Using NumPy C-API based implementation for BLAS functions.
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Set Theano Environmental Variables for Parallelisation
+</pre></div></div>
+</div>
 <div class="section" id="Load-Data">
 <h2>Load Data<a class="headerlink" href="#Load-Data" title="Permalink to this headline">¶</a></h2>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[16]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
@@ -466,7 +467,7 @@ Masking invalid values
 <div class="section" id="Create-custom-infection-to-fatality-delay-using-default-generation-interval">
 <h2>Create custom infection to fatality delay using default generation interval<a class="headerlink" href="#Create-custom-infection-to-fatality-delay-using-default-generation-interval" title="Permalink to this headline">¶</a></h2>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[21]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
@@ -484,7 +485,7 @@ Masking invalid values
 </div>
 </div>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[22]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
@@ -493,11 +494,11 @@ Masking invalid values
 </div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[23]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
-<span></span><span class="n">infection_to_fatality_delay</span> <span class="o">=</span> <span class="n">bootstrapped_negbinom_values</span><span class="p">([</span><span class="n">ep</span><span class="o">.</span><span class="n">generation_interval</span><span class="p">,</span>
+<span></span><span class="n">infection_to_fatality_delay</span> <span class="o">=</span> <span class="n">bootstrapped_negbinom_values</span><span class="p">([</span><span class="n">ep</span><span class="o">.</span><span class="n">incubation_period</span><span class="p">,</span>
                                                             <span class="n">example_symptom_to_fatality_delay</span><span class="p">])</span>
 </pre></div>
 </div>
@@ -507,15 +508,15 @@ Masking invalid values
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-100%|██████████| 250/250 [06:00&lt;00:00,  1.44s/it]
+100%|██████████| 250/250 [05:54&lt;00:00,  1.42s/it]
 </pre></div></div>
 </div>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[25]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
-<span></span><span class="n">ep</span><span class="o">.</span><span class="n">infection_to_fatality_delay</span> <span class="o">=</span> <span class="n">infection_to_fatality_delay</span>
+<span></span><span class="n">ep</span><span class="o">.</span><span class="n">infection_to_fatality_delay</span> <span class="o">=</span> <span class="n">infection_to_fatality_delay</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
 </pre></div>
 </div>
 </div>
@@ -523,13 +524,12 @@ Masking invalid values
 <div class="section" id="Initialise-model-with-epidemiological-parameters">
 <h2>Initialise model with epidemiological parameters<a class="headerlink" href="#Initialise-model-with-epidemiological-parameters" title="Permalink to this headline">¶</a></h2>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[28]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
 <span></span><span class="k">with</span> <span class="n">DefaultModel</span><span class="p">(</span><span class="n">data</span><span class="p">)</span> <span class="k">as</span> <span class="n">model</span><span class="p">:</span>
     <span class="n">model</span><span class="o">.</span><span class="n">build_model</span><span class="p">(</span><span class="o">**</span><span class="n">ep</span><span class="o">.</span><span class="n">get_model_build_dict</span><span class="p">())</span>
-
 </pre></div>
 </div>
 </div>
@@ -538,12 +538,12 @@ Masking invalid values
 <h2>Run model<a class="headerlink" href="#Run-model" title="Permalink to this headline">¶</a></h2>
 <p>The notebook features a small number of samples to make documentation compilation proceed quickly. For a serious run, use at least 1000 samples and 500 tuning steps.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
 <span></span><span class="k">with</span> <span class="n">model</span><span class="o">.</span><span class="n">model</span><span class="p">:</span>
-    <span class="n">model</span><span class="o">.</span><span class="n">trace</span> <span class="o">=</span> <span class="n">pm</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="mi">50</span><span class="p">,</span> <span class="n">tune</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span> <span class="n">cores</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">chains</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">max_treedepth</span><span class="o">=</span><span class="mi">12</span><span class="p">)</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">trace</span> <span class="o">=</span> <span class="n">pm</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="mi">100</span><span class="p">,</span> <span class="n">tune</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">cores</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">chains</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">max_treedepth</span><span class="o">=</span><span class="mi">12</span><span class="p">,</span> <span class="n">target_accept</span><span class="o">=</span><span class="mf">0.95</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -552,7 +552,7 @@ Masking invalid values
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-Only 50 samples in chain.
+Only 100 samples in chain.
 Auto-assigning NUTS sampler...
 Initializing NUTS using jitter+adapt_diag...
 Multiprocess sampling (4 chains in 4 jobs)
@@ -576,8 +576,8 @@ NUTS: [DeathsDelayDisp, DeathsDelayMean, InitialSizeDeaths_log, CasesDelayDisp, 
             background: #F44336;
         }
     </style>
-  <progress value='400' class='' max='400' style='width:300px; height:20px; vertical-align: middle;'></progress>
-  100.00% [400/400 00:56<00:00 Sampling 4 chains, 46 divergences]
+  <progress value='800' class='' max='800' style='width:300px; height:20px; vertical-align: middle;'></progress>
+  100.00% [800/800 13:21<00:00 Sampling 4 chains, 0 divergences]
 </div></div>
 </div>
 <div class="nboutput nblast docutils container">
@@ -585,39 +585,52 @@ NUTS: [DeathsDelayDisp, DeathsDelayMean, InitialSizeDeaths_log, CasesDelayDisp, 
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-Sampling 4 chains for 50 tune and 50 draw iterations (200 + 200 draws total) took 58 seconds.
-/home/davidj/.cache/pypoetry/virtualenvs/epimodel-2aoiW435-py3.8/lib/python3.8/site-packages/pymc3/sampling.py:628: UserWarning: The number of samples is too small to check convergence reliably.
-  warnings.warn(
-There were 15 divergences after tuning. Increase `target_accept` or reparameterize.
-There were 16 divergences after tuning. Increase `target_accept` or reparameterize.
-There were 15 divergences after tuning. Increase `target_accept` or reparameterize.
+Sampling 4 chains for 100 tune and 100 draw iterations (400 + 400 draws total) took 803 seconds.
+The rhat statistic is larger than 1.4 for some parameters. The sampler did not converge.
+The number of effective samples is smaller than 10% for some parameters.
 </pre></div></div>
 </div>
-</div>
-<div class="section" id="Plot-results">
-<h2>Plot results<a class="headerlink" href="#Plot-results" title="Permalink to this headline">¶</a></h2>
+<p>Trace variables</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
-<span></span><span class="n">model</span><span class="o">.</span><span class="n">plot_effect</span><span class="p">()</span>
+<span></span><span class="n">model</span><span class="o">.</span><span class="n">trace</span><span class="o">.</span><span class="n">varnames</span>
 </pre></div>
 </div>
 </div>
-<div class="nboutput docutils container">
-<div class="prompt empty docutils container">
-</div>
-<div class="output_area docutils container">
-<img alt="_images/CM_Model_Examples_14_0.png" src="_images/CM_Model_Examples_14_0.png" />
-</div>
-</div>
 <div class="nboutput nblast docutils container">
-<div class="prompt empty docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
+</pre></div>
 </div>
 <div class="output_area docutils container">
-<img alt="_images/CM_Model_Examples_14_1.png" src="_images/CM_Model_Examples_14_1.png" />
-</div>
+<div class="highlight"><pre>
+[&#39;CM_Alpha&#39;,
+ &#39;HyperRVar_log__&#39;,
+ &#39;RegionLogR_noise&#39;,
+ &#39;GI_mean&#39;,
+ &#39;GI_sd&#39;,
+ &#39;GrowthCasesNoise&#39;,
+ &#39;GrowthDeathsNoise&#39;,
+ &#39;PsiCases_log__&#39;,
+ &#39;PsiDeaths_log__&#39;,
+ &#39;InitialSizeCases_log&#39;,
+ &#39;CasesDelayMean&#39;,
+ &#39;CasesDelayDisp&#39;,
+ &#39;InitialSizeDeaths_log&#39;,
+ &#39;DeathsDelayMean&#39;,
+ &#39;DeathsDelayDisp&#39;,
+ &#39;CMReduction&#39;,
+ &#39;HyperRVar&#39;,
+ &#39;RegionR&#39;,
+ &#39;PsiCases&#39;,
+ &#39;PsiDeaths&#39;,
+ &#39;InfectedCases&#39;,
+ &#39;ExpectedCases&#39;,
+ &#39;InfectedDeaths&#39;,
+ &#39;ExpectedDeaths&#39;]
+</pre></div></div>
 </div>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
@@ -636,15 +649,6 @@ There were 15 divergences after tuning. Increase `target_accept` or reparameteri
            
           </div>
           <footer>
-  
-    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
-      
-        <a href="sensitivity_dispatcher_example.html" class="btn btn-neutral float-right" title="Sensitivity Dispatcher Examples" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
-      
-      
-        <a href="Preprocessing_Examples.html" class="btn btn-neutral float-left" title="Preprocessing Examples" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
-      
-    </div>
   
 
   <hr/>

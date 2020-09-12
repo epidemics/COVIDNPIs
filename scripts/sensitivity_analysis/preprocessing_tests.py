@@ -1,3 +1,10 @@
+"""
+:code:`preprocessing_tests.py`
+
+Control the smoothing of case and death data, threshold number of cases for data inclusion or threshold number of deaths for data inclusion via command line options.
+"""
+
+
 import pymc3 as pm
 
 from epimodel import EpidemiologicalParameters

@@ -1,3 +1,10 @@
+"""
+:code:`agg_holdout.py`
+
+Mask 20 extra days from the end of the data.
+"""
+
+
 import pymc3 as pm
 
 from epimodel import EpidemiologicalParameters

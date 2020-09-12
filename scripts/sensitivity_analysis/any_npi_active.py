@@ -1,3 +1,13 @@
+"""
+:code:`any_npi_active.py`
+
+Add an additional NPI that indicates whether any major NPI is active. Major NPIs: 
+|['School Closure', 'Stay Home Order', 'Some Businesses Suspended', 'University Closure',
+|'Most Businesses Suspended', 'Gatherings <10', 'Gatherings <1000', 'Gatherings <100']
+
+"""
+
+
 import pymc3 as pm
 
 from epimodel import EpidemiologicalParameters

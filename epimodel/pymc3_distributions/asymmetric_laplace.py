@@ -1,5 +1,5 @@
 """
-asymmetric_laplace.py
+:code:`asymmetric_laplace.py`
 
 Asymmetric Laplace Distribution, with location parameter 0. This is used as our NPI Effectiveness prior.
 

@@ -1,3 +1,9 @@
+"""
+:code:`delay_schools.py`
+
+Add an artificial delay of 5 days to the school and university closure NPIs.
+"""
+
 import pymc3 as pm
 
 from epimodel import EpidemiologicalParameters

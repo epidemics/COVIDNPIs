@@ -1,5 +1,5 @@
 """
-preprocessed_data.py
+:code:`preprocessed_data.py`
 
 PreprocessedData Class definition.
 """

@@ -1,5 +1,5 @@
 """
-data_preprocessor.py
+:code:`data_preprocessor.py`
 
 Preprocess appropriately formatted csv data into PreprocessedData object
 """

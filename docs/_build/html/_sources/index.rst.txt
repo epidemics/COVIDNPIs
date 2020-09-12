@@ -12,14 +12,61 @@ COVIDNPIs provides a :ref:`data_preprocessor` for converting time-series case an
 
 The :ref:`examples` walk through using the PreprocessedData object, initialising and running a model with custom delay parameters. Many pre-defined :ref:`experiments` are can also be run as scripts.
 
+Installation
+============
+
+Install dependencies, then activate the virtual environment:
+
+.. code-block::
+
+    poetry install
+
+.. code-block::
+
+    poetry shell
+
+Minimal Example
+===============
+
+.. seealso::
+    `Default Model Example`_
+
+.. _Default Model Example: examples/CM_Model_Examples.ipynb
+
+
+The following steps are sufficient to run the default model with the dataset ``notebooks/double-entry-data/double_entry_final.csv`` and save the NPI reduction trace to ``CMReduction_trace.txt`` which can be loaded with :code:`numpy.loadtext`
+
+
+.. code-block::
+
+    from epimodel.preprocessing.data_preprocessor import preprocess_data
+    from epimodel.pymc3_models.models import DefaultModel
+    from epimodel.pymc3_models.epi_params import EpidemiologicalParameters, bootstrapped_negbinom_values
+    import pymc3 as pm
+
+    data = preprocess_data('../notebooks/double-entry-data/double_entry_final.csv')
+
+    with DefaultModel(data) as model:
+        model.build_model()
+
+    with model.model:
+        model.trace = pm.sample(2000, tune=1000, cores=4, chains=4, max_treedepth=12)
+
+    numpy.savetext('CMReduction_trace.txt',model.trace['CMReduction'])
+
+
+
+Table of Contents
+=================
+
 .. toctree::
    :maxdepth: 2
    :caption: Contents:
 
-   examples
-   module_documentation
-   experiments
-   reproduction
+   examples/examples
+   module_documentation/module_documentation
+   experiments/experiments
+   reproduction/reproduction
 
 
 

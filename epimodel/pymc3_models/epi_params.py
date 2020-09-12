@@ -1,5 +1,5 @@
 """
-epi_params.py
+:code:`epi_params.py`
 
 Calculate delay distributions and generate delay parameter dictionaries for model building.
 """
