@@ -8,3 +8,4 @@ __pycache__
 /epimodel/data
 /out
 config-local.yaml
+/docs/_build
