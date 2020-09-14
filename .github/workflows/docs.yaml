@@ -3,7 +3,7 @@ name: Build and publish documentation
 on:
   push:
     branches:
-      - docs-pipeline
+      - master
     paths:
       - 'docs/**'
       - '.github/workflows/docs.yaml'
