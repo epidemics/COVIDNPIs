@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - master
+      - revisions # remove this before merging into master
     paths:
       - 'docs/**'
       - '.github/workflows/docs.yaml'
