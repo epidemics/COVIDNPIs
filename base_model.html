@@ -173,8 +173,109 @@
     text-align: unset;
 }
 </style>
-<div class="section" id="base-cm-model-class">
-<h1>Base CM Model Class<a class="headerlink" href="#base-cm-model-class" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="module-epimodel.pymc3_models.base_model">
+<span id="base-cm-model-class"></span><h1>Base CM Model Class<a class="headerlink" href="#module-epimodel.pymc3_models.base_model" title="Permalink to this headline">¶</a></h1>
+<p>base_model file</p>
+<p>This file contains contains:
+- utility functions used often with models
+- BaseCMModel class, which other classes inherit from</p>
+<dl class="py class">
+<dt id="epimodel.pymc3_models.base_model.BaseCMModel">
+<em class="property">class </em><code class="sig-prename descclassname">epimodel.pymc3_models.base_model.</code><code class="sig-name descname">BaseCMModel</code><span class="sig-paren">(</span><em class="sig-param"><span class="o">*</span><span class="n">args</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#epimodel.pymc3_models.base_model.BaseCMModel" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">pymc3.model.Model</span></code></p>
+<p>BaseCMModel Class.</p>
+<p>Other NPI models inherit from this class</p>
+<dl class="py method">
+<dt id="epimodel.pymc3_models.base_model.BaseCMModel.build_npi_prior">
+<code class="sig-name descname">build_npi_prior</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">prior_type</span></em>, <em class="sig-param"><span class="n">prior_scale</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#epimodel.pymc3_models.base_model.BaseCMModel.build_npi_prior" title="Permalink to this definition">¶</a></dt>
+<dd><p>Build NPI Effectiveness Prior.</p>
+<p>There are four options:
+Normal - alpha_i is normally distributed with given scale.
+Half Normal - alpha_i is half normally distributed with given scale (i.e., restricted to positive effect)
+Flaxman/ICL prior - As used in Flaxman et al.
+Skewed - asymmetric laplace prior.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>prior_type</strong> – Choose one of normal, half-normal, icl or skewed.</p></li>
+<li><p><strong>prior_scale</strong> – Prior scale. Relevant for normal, half-normal and skewed distributions.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="epimodel.pymc3_models.base_model.BaseCMModel.nCMs">
+<em class="property">property </em><code class="sig-name descname">nCMs</code><a class="headerlink" href="#epimodel.pymc3_models.base_model.BaseCMModel.nCMs" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>number of countermeasures</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="epimodel.pymc3_models.base_model.BaseCMModel.nDs">
+<em class="property">property </em><code class="sig-name descname">nDs</code><a class="headerlink" href="#epimodel.pymc3_models.base_model.BaseCMModel.nDs" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>number of days</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="epimodel.pymc3_models.base_model.BaseCMModel.nRs">
+<em class="property">property </em><code class="sig-name descname">nRs</code><a class="headerlink" href="#epimodel.pymc3_models.base_model.BaseCMModel.nRs" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>number of regions / countries</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="epimodel.pymc3_models.base_model.BaseCMModel.plot_effect">
+<code class="sig-name descname">plot_effect</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#epimodel.pymc3_models.base_model.BaseCMModel.plot_effect" title="Permalink to this definition">¶</a></dt>
+<dd><p>If model.trace has been set, plot the NPI effectiveness estimates.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt id="epimodel.pymc3_models.base_model.add_cms_to_plot">
+<code class="sig-prename descclassname">epimodel.pymc3_models.base_model.</code><code class="sig-name descname">add_cms_to_plot</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">ax</span></em>, <em class="sig-param"><span class="n">ActiveCMs</span></em>, <em class="sig-param"><span class="n">country_indx</span></em>, <em class="sig-param"><span class="n">min_x</span></em>, <em class="sig-param"><span class="n">max_x</span></em>, <em class="sig-param"><span class="n">days</span></em>, <em class="sig-param"><span class="n">plot_style</span></em><span class="sig-paren">)</span><a class="headerlink" href="#epimodel.pymc3_models.base_model.add_cms_to_plot" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plotter helper.</p>
+<p>This takes a plot and adds NPI logos on them.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>ax</strong> – axis to draw</p></li>
+<li><p><strong>ActiveCMs</strong> – Standard ActiveCMs numpy array</p></li>
+<li><p><strong>country_indx</strong> – Country to pull CM data from</p></li>
+<li><p><strong>min_x</strong> – x limit - left</p></li>
+<li><p><strong>max_x</strong> – x limit - right</p></li>
+<li><p><strong>days</strong> – days to plot</p></li>
+<li><p><strong>plot_style</strong> – NPI Plot style</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="epimodel.pymc3_models.base_model.produce_CIs">
+<code class="sig-prename descclassname">epimodel.pymc3_models.base_model.</code><code class="sig-name descname">produce_CIs</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">array</span></em><span class="sig-paren">)</span><a class="headerlink" href="#epimodel.pymc3_models.base_model.produce_CIs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Produce 95%, 50% Confidence intervals from a Numpy array, taking CIs using the 0th axis.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>array</strong> – Numpy array from which to compute CIs.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>(median, 2.5 percentile, 97.5 percentile, 25th percentile, 75th percentile) tuple.</p>
+</dd>
+</dl>
+</dd></dl>
+
 </div>
 
 
