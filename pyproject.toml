@@ -23,10 +23,15 @@ jupyterlab = "^2.1.1"
 nbdime = "^2.0.0"
 pyreadr = "^0.2.9"
 sklearn = "^0.0"
-sphinx = "^3.2.1"
 pyyaml = "^5.3.1"
+sphinx = {version = "^3.2.1", extras = ["documentation"]}
+sphinx-argparse = {version = "^0.2.5", extras = ["documentation"]}
+sphinxcontrib-autoyaml = {version = "^0.5.0", extras = ["documentation"]}
+nbsphinx = {version = "^0.7.1", extras = ["documentation"]}
+sphinx_rtd_theme = {version = "^0.5.0", extras = ["documentation"]}
 
 [tool.poetry.extras]
+documentation = ["sphinx^3.2.1", "sphinx-argparse^0.2.5", "sphinxcontrib-autoyaml^0.5.0", "nbsphinx^0.7.1", "sphinx_rtd_theme^0.5.0"]
 
 [tool.poetry.dev-dependencies]
 black = "^19.10b0"
