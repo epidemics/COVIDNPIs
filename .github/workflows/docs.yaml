@@ -28,14 +28,16 @@ jobs:
         uses: actions/cache@v1
         with:
           path: .venv
-          key: venv-${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-${{ hashFiles('**/poetry.lock') }}
+          key: venv-${{ runner.os }}-documentation-${{ hashFiles('**/poetry.lock') }}
       - name: Install dependencies
         run: |
           source $HOME/.poetry/env
-          poetry install
-      - uses: ammaraskar/sphinx-action@master
-        with:
-          docs-folder: "docs/"
+          poetry install -E documentation
+      - name: Generate Documentation
+        working-directory: docs
+        run: |
+          source $HOME/.poetry/env
+          poetry run make html
       - name: Commit documentation changes
         run: |
           git clone https://github.com/epidemics/COVIDNPIs.git --depth 1 --branch gh-pages --single-branch gh-pages
