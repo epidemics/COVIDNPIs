@@ -36,7 +36,8 @@
 
     
     <link rel="index" title="Index" href="genindex.html" />
-    <link rel="search" title="Search" href="search.html" /> 
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Examples" href="examples/examples.html" /> 
 </head>
 
 <body class="wy-body-for-nav">
@@ -81,11 +82,14 @@
               
             
             
-              <!-- Local TOC -->
-              <div class="local-toc"><ul>
-<li><a class="reference internal" href="#">Welcome to COVIDNPIs’ documentation!</a></li>
+              <p class="caption"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="examples/examples.html">Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="module_documentation/module_documentation.html">Module Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="experiments/experiments.html">Experiments</a></li>
+<li class="toctree-l1"><a class="reference internal" href="reproduction/reproduction.html">Reproducing Results from Paper</a></li>
 </ul>
-</div>
+
             
           
         </div>
@@ -176,6 +180,77 @@
 <div class="section" id="welcome-to-covidnpis-documentation">
 <h1>Welcome to COVIDNPIs’ documentation!<a class="headerlink" href="#welcome-to-covidnpis-documentation" title="Permalink to this headline">¶</a></h1>
 <p>This is the documentation for the <a class="reference external" href="https://github.com/epidemics/COVIDNPIs/tree/revisions">COVIDNPIs project</a>, Bayesian modelling the impact of non-pharmaceutical interventions (NPIs) on the rate of transmission of COVID-19 in 41 countries around the world. See the paper <a class="reference external" href="https://www.medrxiv.org/content/10.1101/2020.05.28.20116129v3">The effectiveness of eight nonpharmaceutical interventions against COVID-19 in 41 countries</a> by Brauner et. al. for details of the model.</p>
+<p>COVIDNPIs provides a <a class="reference internal" href="module_documentation/preprocessing.html#data-preprocessor"><span class="std std-ref">Data Preprocessor</span></a> for converting time-series case and death data along with NPI activation indicators to <a class="reference internal" href="module_documentation/preprocessing.html#preprocessed-data"><span class="std std-ref">PreprocessedData</span></a> objects, ready to use for inference in any of several <a class="reference internal" href="module_documentation/models.html#cm-model-zoo"><span class="std std-ref">NPI models</span></a>. In addition, the <a class="reference internal" href="module_documentation/parameters.html#model-parameters"><span class="std std-ref">Epidemiological Parameters</span></a> module provides utilities for computing delay distributions, which can then be provided as initialisation parameters to the NPI models.</p>
+<p>The <a class="reference internal" href="examples/examples.html#examples"><span class="std std-ref">Examples</span></a> walk through using the PreprocessedData object, initialising and running a model with custom delay parameters. Many pre-defined <a class="reference internal" href="experiments/experiments.html#experiments"><span class="std std-ref">Experiments</span></a> are can also be run as scripts.</p>
+</div>
+<div class="section" id="installation">
+<h1>Installation<a class="headerlink" href="#installation" title="Permalink to this headline">¶</a></h1>
+<p>Install dependencies, then activate the virtual environment:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">poetry</span> <span class="n">install</span>
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">poetry</span> <span class="n">shell</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="minimal-example">
+<h1>Minimal Example<a class="headerlink" href="#minimal-example" title="Permalink to this headline">¶</a></h1>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="examples/CM_Model_Examples.html"><span class="doc">Default Model Example</span></a></p>
+</div>
+<p>The following steps are sufficient to run the default model with the dataset <code class="docutils literal notranslate"><span class="pre">notebooks/double-entry-data/double_entry_final.csv</span></code> and save the NPI reduction trace to <code class="docutils literal notranslate"><span class="pre">CMReduction_trace.txt</span></code> which can be loaded with <code class="code docutils literal notranslate"><span class="pre">numpy.loadtext</span></code></p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">epimodel.preprocessing.data_preprocessor</span> <span class="kn">import</span> <span class="n">preprocess_data</span>
+<span class="kn">from</span> <span class="nn">epimodel.pymc3_models.models</span> <span class="kn">import</span> <span class="n">DefaultModel</span>
+<span class="kn">from</span> <span class="nn">epimodel.pymc3_models.epi_params</span> <span class="kn">import</span> <span class="n">EpidemiologicalParameters</span><span class="p">,</span> <span class="n">bootstrapped_negbinom_values</span>
+<span class="kn">import</span> <span class="nn">pymc3</span> <span class="k">as</span> <span class="nn">pm</span>
+
+<span class="n">data</span> <span class="o">=</span> <span class="n">preprocess_data</span><span class="p">(</span><span class="s1">&#39;../notebooks/double-entry-data/double_entry_final.csv&#39;</span><span class="p">)</span>
+
+<span class="k">with</span> <span class="n">DefaultModel</span><span class="p">(</span><span class="n">data</span><span class="p">)</span> <span class="k">as</span> <span class="n">model</span><span class="p">:</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">build_model</span><span class="p">()</span>
+
+<span class="k">with</span> <span class="n">model</span><span class="o">.</span><span class="n">model</span><span class="p">:</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">trace</span> <span class="o">=</span> <span class="n">pm</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="mi">2000</span><span class="p">,</span> <span class="n">tune</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span> <span class="n">cores</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">chains</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">max_treedepth</span><span class="o">=</span><span class="mi">12</span><span class="p">)</span>
+
+<span class="n">numpy</span><span class="o">.</span><span class="n">savetext</span><span class="p">(</span><span class="s1">&#39;CMReduction_trace.txt&#39;</span><span class="p">,</span><span class="n">model</span><span class="o">.</span><span class="n">trace</span><span class="p">[</span><span class="s1">&#39;CMReduction&#39;</span><span class="p">])</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="table-of-contents">
+<h1>Table of Contents<a class="headerlink" href="#table-of-contents" title="Permalink to this headline">¶</a></h1>
+<div class="toctree-wrapper compound">
+<p class="caption"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="examples/examples.html">Examples</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="examples/Preprocessing_Examples.html">Preprocessing Examples</a></li>
+<li class="toctree-l2"><a class="reference internal" href="examples/CM_Model_Examples.html">Default Model Example</a></li>
+<li class="toctree-l2"><a class="reference internal" href="examples/sensitivity_dispatcher_example.html">Sensitivity Dispatcher Examples</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="module_documentation/module_documentation.html">Module Documentation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="module_documentation/parameters.html">Epidemiological Parameters</a></li>
+<li class="toctree-l2"><a class="reference internal" href="module_documentation/preprocessing.html">Data Preprocessing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="module_documentation/models.html">Model Classes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="module_documentation/distributions.html">PyMC3 Distributions</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="experiments/experiments.html">Experiments</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="experiments/sensitivity_dispatcher.html">Sensitivity Dispatcher</a></li>
+<li class="toctree-l2"><a class="reference internal" href="experiments/individual_sensitivity_experiments.html">Individual Sensitivity Experiments</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="reproduction/reproduction.html">Reproducing Results from Paper</a></li>
+</ul>
+</div>
+</div>
+<div class="section" id="indices-and-tables">
+<h1>Indices and tables<a class="headerlink" href="#indices-and-tables" title="Permalink to this headline">¶</a></h1>
+<ul class="simple">
+<li><p><a class="reference internal" href="genindex.html"><span class="std std-ref">Index</span></a></p></li>
+<li><p><a class="reference internal" href="py-modindex.html"><span class="std std-ref">Module Index</span></a></p></li>
+<li><p><a class="reference internal" href="search.html"><span class="std std-ref">Search Page</span></a></p></li>
+</ul>
 </div>
 
 
@@ -183,6 +258,13 @@
            
           </div>
           <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="examples/examples.html" class="btn btn-neutral float-right" title="Examples" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+    </div>
   
 
   <hr/>
