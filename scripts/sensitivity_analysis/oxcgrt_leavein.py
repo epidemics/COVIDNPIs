@@ -42,7 +42,7 @@ if __name__ == '__main__':
         output_string = f'{output_string}{npi_index}'
     output_string = f'{output_string}.txt'
 
-    data = preprocess_data('notebooks/double-entry-data/double_entry_final.csv', last_day='2020-05-30',
+    data = preprocess_data('merged_data/double_entry_final.csv', last_day='2020-05-30',
                            drop_features=drop_features)
     data.mask_reopenings()
 

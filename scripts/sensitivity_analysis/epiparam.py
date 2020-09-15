@@ -26,7 +26,7 @@ add_argparse_arguments(argparser)
 args = argparser.parse_args()
 
 if __name__ == '__main__':
-    data = preprocess_data('notebooks/double-entry-data/double_entry_final.csv', last_day='2020-05-30')
+    data = preprocess_data('merged_data/double_entry_final.csv', last_day='2020-05-30')
     data.mask_reopenings()
 
     output_fname = f'gi_mean_mean-{args.gi_mean_mean}-gi_mean_sd-{args.gi_mean_sd}' \

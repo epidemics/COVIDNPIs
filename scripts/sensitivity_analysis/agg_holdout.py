@@ -33,7 +33,7 @@ if __name__ == '__main__':
             self.PsiCases = trace.PsiCases
             self.PsiDeaths = trace.PsiDeaths
 
-    data = preprocess_data('notebooks/double-entry-data/double_entry_final.csv', last_day='2020-05-30')
+    data = preprocess_data('merged_data/double_entry_final.csv', last_day='2020-05-30')
     # mask 20 extra days
     data.mask_reopenings(n_extra=20)
 

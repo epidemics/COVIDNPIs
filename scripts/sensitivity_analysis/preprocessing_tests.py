@@ -25,7 +25,7 @@ if __name__ == '__main__':
 
     args = argparser.parse_args()
     
-    data = preprocess_data('notebooks/double-entry-data/double_entry_final.csv', last_day='2020-05-30',
+    data = preprocess_data('merged_data/double_entry_final.csv', last_day='2020-05-30',
                            smoothing=args.smoothing, min_confirmed=args.cases_threshold,
                            min_deaths=args.deaths_threshold)
     data.mask_reopenings()

@@ -40,7 +40,7 @@ if __name__ == '__main__':
             self.GrowthDeathsNoise = trace.GrowthCasesNoise[:, indx, :]
 
 
-    data = preprocess_data('notebooks/double-entry-data/double_entry_final.csv', last_day='2020-05-30')
+    data = preprocess_data('merged_data/double_entry_final.csv', last_day='2020-05-30')
     data.mask_reopenings()
     data.mask_region(args.rg)
     region_index = data.Rs.index(args.rg)
