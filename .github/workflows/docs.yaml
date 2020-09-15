@@ -21,6 +21,9 @@ jobs:
           python get-poetry.py --preview -y
           source $HOME/.poetry/env
           poetry config virtualenvs.in-project true
+      - uses: r-lib/actions/setup-pandoc@v1
+        with:
+          pandoc-version: '2.7.3'
       - name: Set up cache
         uses: actions/cache@v1
         with:
