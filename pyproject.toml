@@ -35,7 +35,7 @@ pypandoc = {version = "^1.5", extras = ["documentation"]}
 
 
 [tool.poetry.extras]
-documentation = ["sphinx^3.2.1", "sphinx-argparse^0.2.5", "sphinxcontrib-autoyaml^0.5.0", "nbsphinx^0.7.1", "sphinx_rtd_theme^0.5.0"]
+documentation = ["sphinx^3.2.1", "sphinx-argparse^0.2.5", "sphinxcontrib-autoyaml^0.5.0", "nbsphinx^0.7.1", "sphinx_rtd_theme^0.5.0", "pypandoc^1.5"]
 
 [tool.poetry.dev-dependencies]
 black = "^19.10b0"
