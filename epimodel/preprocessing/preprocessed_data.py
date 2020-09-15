@@ -1,5 +1,7 @@
 """
-Contains PreprocessedData Class definition.
+:code:`preprocessed_data.py`
+
+PreprocessedData Class definition.
 """
 import numpy as np
 import matplotlib.pyplot as plt
@@ -7,9 +9,10 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable
 from matplotlib.font_manager import FontProperties
 from matplotlib.ticker import PercentFormatter
 import seaborn as sns
+import os
 
 sns.set_style('ticks')
-fp2 = FontProperties(fname=r"../../fonts/Font Awesome 5 Free-Solid-900.otf")
+fp2 = FontProperties(fname=os.path.join(os.path.dirname(__file__), "../../fonts/Font Awesome 5 Free-Solid-900.otf"))
 
 
 class PreprocessedData(object):
@@ -146,11 +149,11 @@ class PreprocessedData(object):
 
         plt.xticks(
             np.arange(len(self.CMs)),
-            [f"{cm_plot_style[i][0]}" for i, f in enumerate(self.CMs)],
-            fontproperties=fp2,
+            [f"{cm_plot_style[i][0]}" for i, f in enumerate(self.CMs)]
         )
 
         for i, ticklabel in enumerate(ax.get_xticklabels()):
+            ticklabel.set_fontproperties(fp2)
             ticklabel.set_color(cm_plot_style[i][1])
 
         plt.yticks(
@@ -224,7 +227,7 @@ class PreprocessedData(object):
         """
         plt.figure(figsize=(10, 3), dpi=300)
         plt.subplot(1, 2, 1)
-        self.coactivation_plot(cm_plot_style, False)
+        self.conditional_activation_plot(cm_plot_style, False)
         plt.subplot(1, 2, 2)
         self.cumulative_days_plot(cm_plot_style, False)
         plt.tight_layout()

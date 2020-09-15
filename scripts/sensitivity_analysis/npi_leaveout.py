@@ -1,3 +1,9 @@
+"""
+:code:`npi_leaveout.py`
+
+Leave our specified NPIs. Useful to study the sensitivity of the results to the inclusion of particular NPIs.
+"""
+
 import pymc3 as pm
 
 from epimodel import EpidemiologicalParameters
@@ -10,9 +16,11 @@ from scripts.sensitivity_analysis.utils import *
 argparser = argparse.ArgumentParser()
 argparser.add_argument('--npis', nargs='+', dest='npis', type=int)
 add_argparse_arguments(argparser)
-args = argparser.parse_args()
 
 if __name__ == '__main__':
+
+    args = argparser.parse_args()
+
     data = preprocess_data('notebooks/double-entry-data/double_entry_final.csv', last_day='2020-05-30')
     data.mask_reopenings()
 

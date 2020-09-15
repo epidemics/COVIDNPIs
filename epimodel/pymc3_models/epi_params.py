@@ -1,5 +1,7 @@
 """
-epidemiological parameters
+:code:`epi_params.py`
+
+Calculate delay distributions and generate delay parameter dictionaries for model building.
 """
 
 import numpy as np
@@ -69,7 +71,7 @@ class EpidemiologicalParameters():
         """
         Constructor
 
-        Input dictionarys corresponding to the relevant delay with the following fields:
+        Input dictionaries corresponding to the relevant delay with the following fields:
             - mean_mean: mean of the mean value
             - mean_sd: sd of the mean value
             - sd_mean: mean of the sd value
@@ -249,8 +251,8 @@ class EpidemiologicalParameters():
         :return: reporting_delay, fatality_delay tuple
         """
         incubation_period_samples = self.generate_dist_samples(self.incubation_period, nRVs, with_noise)
-        reporting_samples = self.generate_dist_samples(self.onset_reporting_delay, nRVs, with_noise)
-        fatality_samples = self.generate_dist_samples(self.onset_fatality_delay, nRVs, with_noise)
+        reporting_samples = self.generate_dist_samples(self.infection_to_reporting_delay, nRVs, with_noise)
+        fatality_samples = self.generate_dist_samples(self.infection_to_fatality_delay, nRVs, with_noise)
 
         print(f'Raw: reporting delay mean {np.mean(incubation_period_samples + reporting_samples)}')
         print(f'Raw: fatality delay mean {np.mean(incubation_period_samples + fatality_samples)}')
