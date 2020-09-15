@@ -24,6 +24,10 @@ if __name__ == '__main__':
             self.ExpectedDeaths = trace.ExpectedDeaths[:, indx, :]
             self.PsiCases = trace.PsiCases
             self.PsiDeaths = trace.PsiDeaths
+            self.InitialSizeCases_log = trace.InitialSizeCases_log[:, indx]
+            self.InitialSizeDeaths_log = trace.InitialSizeCases_log[:, indx]
+            self.GrowthCasesNoise = trace.GrowthCasesNoise[:, indx, :]
+            self.GrowthDeathsNoise = trace.GrowthCasesNoise[:, indx, :]
 
 
     data = preprocess_data('notebooks/double-entry-data/double_entry_final.csv', last_day='2020-05-30')

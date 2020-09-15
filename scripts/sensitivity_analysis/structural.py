@@ -25,8 +25,15 @@ if __name__ == '__main__':
     ep = EpidemiologicalParameters()
     model_class = get_model_class_from_str(args.model_structure)
 
+    bd = ep.get_model_build_dict()
+
+    if args.model_structure == 'discrete_renewal_fixed_gi':
+        # posterior means from a full model run
+        bd['gi_mean_mean'] = 5.12
+        bd['gi_sd_mean'] = 2.20
+
     with model_class(data) as model:
-        model.build_model(**ep.get_model_build_dict())
+        model.build_model(**bd)
 
     with model.model:
         model.trace = pm.sample(args.n_samples, tune=500, chains=args.n_chains, cores=args.n_chains, max_treedepth=14,

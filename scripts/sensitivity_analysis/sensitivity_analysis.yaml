@@ -76,7 +76,7 @@ cases_threshold:
   args:
     smoothing: 1
     deaths_threshold: 10
-    cases_threshold: [10, 50, 200, 300]
+    cases_threshold: [10, 30, 50, 200, 300]
 
 deaths_threshold:
   experiment_file: preprocessing_tests.py
@@ -110,7 +110,7 @@ R_prior:
   n_chains: 4
   n_samples: 2000
   args:
-    R_prior_mean: [2.5, 4.5]
+    R_prior_mean: [2.38, 4.38]
     NPI_prior: skewed 10
   growth_noise: 0.2
 
@@ -216,3 +216,45 @@ epiparam_fixed:
     deaths_mean_sd: 0.0
     cases_mean_mean: [6.92, 8.92, 10.92, 12.92, 14.92]
     cases_mean_sd: 0.0
+
+gi_prior_sd:
+  experiment_file: epiparam_sds.py
+  experiment_tag: gi_prior_sd
+  model_type: default
+  n_chains: 4
+  n_samples: 2000
+  args:
+    gi_sd_mean: [1.1, 3.1, 4.1]
+    gi_sd_sd: 0.5
+    deaths_disp_mean: 14.26
+    deaths_disp_sd: 5.18
+    cases_disp_mean: 5.41
+    cases_disp_sd: 0.27
+
+death_delay_prior_sd:
+  experiment_file: epiparam_sds.py
+  experiment_tag: death_delay_prior_sd
+  model_type: default
+  n_chains: 4
+  n_samples: 2000
+  args:
+    gi_sd_mean: 2.1
+    gi_sd_sd: 0.5
+    deaths_disp_mean: [8.26, 11.26, 17.26, 20.26]
+    deaths_disp_sd: 5.18
+    cases_disp_mean: 5.41
+    cases_disp_sd: 0.27
+
+cases_delay_prior_sd:
+  experiment_file: epiparam_sds.py
+  experiment_tag: cases_delay_prior_sd
+  model_type: default
+  n_chains: 4
+  n_samples: 2000
+  args:
+    gi_sd_mean: 2.1
+    gi_sd_sd: 0.5
+    deaths_disp_mean: 14.26
+    deaths_disp_sd: 5.18
+    cases_disp_mean: [2.41, 4.41, 5.41, 7.41]
+    cases_disp_sd: 0.27
