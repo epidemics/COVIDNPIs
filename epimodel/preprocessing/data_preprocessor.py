@@ -1,7 +1,7 @@
 """
-Data Preprocessing
+:code:`data_preprocessor.py`
 
-Contains preprocess_data function
+Preprocess appropriately formatted csv data into PreprocessedData object
 """
 import copy
 
@@ -21,11 +21,11 @@ def preprocess_data(data_path, last_day=None, schools_unis='two_separate', drop_
     :param data_path: Path of .csv file to process.
     :param last_day: Last day of window to analysis to use e.g. str '2020-05-30'. If None (default), go to the last day
                      in the .csv file.
-    :param schools_unis: how to process schools and unis. Options are:
-                            - two_xor. One xor feature, one and feature.
-                            - two_separate. One schools feature, one university feature.
-                            - one_tiered. One tiered feature. 0 if none active, 0.5 if either active, 1 if both active.
-                            - one_and. One feature, 1 if both active.
+    :param schools_unis: | how to process schools and unis. Options are:
+                         |   - two_xor. One xor feature, one and feature.
+                         |   - two_separate. One schools feature, one university feature.
+                         |   - one_tiered. One tiered feature. 0 if none active, 0.5 if either active, 1 if both active.
+                         |   - one_and. One feature, 1 if both active.
     :param drop_features: list of strs, names of NPI features to drop. Defaults to all NPIs not collected by the
                             EpidemicForecasting.org team.
     :param min_confirmed: confirmed cases threshold, below which new (daily) cases are ignored. 

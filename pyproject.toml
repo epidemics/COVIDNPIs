@@ -29,6 +29,10 @@ sphinx-argparse = {version = "^0.2.5", extras = ["documentation"]}
 sphinxcontrib-autoyaml = {version = "^0.5.0", extras = ["documentation"]}
 nbsphinx = {version = "^0.7.1", extras = ["documentation"]}
 sphinx_rtd_theme = {version = "^0.5.0", extras = ["documentation"]}
+pandoc = {version = "^1.0.2", extras = ["documentation"]}
+pypandoc = {version = "^1.5", extras = ["documentation"]}
+
+
 
 [tool.poetry.extras]
 documentation = ["sphinx^3.2.1", "sphinx-argparse^0.2.5", "sphinxcontrib-autoyaml^0.5.0", "nbsphinx^0.7.1", "sphinx_rtd_theme^0.5.0"]

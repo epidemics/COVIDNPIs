@@ -1,7 +1,7 @@
 """
-Models file
+:code:`models.py`
 
-Contains several different model implementations.
+Contains a variety of models of NPI effectiveness, all subclassed from BaseCMModel. 
 """
 import numpy as np
 import pymc3 as pm

@@ -1,5 +1,5 @@
 """
-data_merger.py
+:code:`data_merger.py`
 
 This file contains the merge_data function, which takes data from different sources and parses it into our own format.
 If you are a user of EpidemicForecasting.org, you will not need to use this function.

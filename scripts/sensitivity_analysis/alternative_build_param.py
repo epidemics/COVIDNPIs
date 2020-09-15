@@ -1,3 +1,12 @@
+"""
+:code:`alternative_build_param.py`
+
+Initialise model with alternative command line specified build parameters:
+| --R_prior_mean: Prior mean basic reproductive number R0
+| --NPI_prior: Prior for NPI effectiveness
+| --growth_noise: Add noise to case growth rate
+"""
+
 import pymc3 as pm
 
 from epimodel import EpidemiologicalParameters
@@ -8,14 +17,19 @@ import argparse
 from scripts.sensitivity_analysis.utils import *
 
 argparser = argparse.ArgumentParser()
-argparser.add_argument('--R_prior_mean', dest='R_prior', type=float)
-argparser.add_argument('--NPI_prior', nargs=2, dest='NPI_prior', type=str)
-argparser.add_argument('--growth_noise', dest='growth_noise', type=float)
+
+argparser.add_argument('--R_prior_mean', dest='R_prior', type=float, help='Prior mean basic reproductive number R0')
+argparser.add_argument('--NPI_prior', nargs=2, dest='NPI_prior', type=str, help='Prior for NPI effectiveness')
+argparser.add_argument('--growth_noise', dest='growth_noise', type=float, help='Growth noise scale parameter')
+
 
 add_argparse_arguments(argparser)
-args = argparser.parse_args()
+
 
 if __name__ == '__main__':
+
+    args = argparser.parse_args()
+
     data = preprocess_data('notebooks/double-entry-data/double_entry_final.csv', last_day='2020-05-30')
     data.mask_reopenings()
 

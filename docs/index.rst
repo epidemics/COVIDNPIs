@@ -8,3 +8,71 @@ Welcome to COVIDNPIs' documentation!
 
 This is the documentation for the `COVIDNPIs project <https://github.com/epidemics/COVIDNPIs/tree/revisions>`_, Bayesian modelling the impact of non-pharmaceutical interventions (NPIs) on the rate of transmission of COVID-19 in 41 countries around the world. See the paper `The effectiveness of eight nonpharmaceutical interventions against COVID-19 in 41 countries <https://www.medrxiv.org/content/10.1101/2020.05.28.20116129v3>`_ by Brauner et. al. for details of the model.
 
+COVIDNPIs provides a :ref:`data_preprocessor` for converting time-series case and death data along with NPI activation indicators to :ref:`PreprocessedData<preprocessed_data>` objects, ready to use for inference in any of several :ref:`NPI models<cm_model_zoo>`. In addition, the :ref:`model_parameters` module provides utilities for computing delay distributions, which can then be provided as initialisation parameters to the NPI models.
+
+The :ref:`examples` walk through using the PreprocessedData object, initialising and running a model with custom delay parameters. Many pre-defined :ref:`experiments` are can also be run as scripts.
+
+Installation
+============
+
+Install dependencies, then activate the virtual environment:
+
+.. code-block::
+
+    poetry install
+
+.. code-block::
+
+    poetry shell
+
+Minimal Example
+===============
+
+.. seealso::
+    `Default Model Example`_
+
+.. _Default Model Example: examples/CM_Model_Examples.ipynb
+
+
+The following steps are sufficient to run the default model with the dataset ``notebooks/double-entry-data/double_entry_final.csv`` and save the NPI reduction trace to ``CMReduction_trace.txt`` which can be loaded with :code:`numpy.loadtext`
+
+
+.. code-block::
+
+    from epimodel.preprocessing.data_preprocessor import preprocess_data
+    from epimodel.pymc3_models.models import DefaultModel
+    from epimodel.pymc3_models.epi_params import EpidemiologicalParameters, bootstrapped_negbinom_values
+    import pymc3 as pm
+
+    data = preprocess_data('../notebooks/double-entry-data/double_entry_final.csv')
+
+    with DefaultModel(data) as model:
+        model.build_model()
+
+    with model.model:
+        model.trace = pm.sample(2000, tune=1000, cores=4, chains=4, max_treedepth=12)
+
+    numpy.savetext('CMReduction_trace.txt',model.trace['CMReduction'])
+
+
+
+Table of Contents
+=================
+
+.. toctree::
+   :maxdepth: 2
+   :caption: Contents:
+
+   examples/examples
+   module_documentation/module_documentation
+   experiments/experiments
+   reproduction/reproduction
+
+
+
+Indices and tables
+==================
+
+* :ref:`genindex`
+* :ref:`modindex`
+* :ref:`search`
