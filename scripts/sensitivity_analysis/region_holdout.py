@@ -35,9 +35,9 @@ if __name__ == '__main__':
             self.PsiCases = trace.PsiCases
             self.PsiDeaths = trace.PsiDeaths
             self.InitialSizeCases_log = trace.InitialSizeCases_log[:, indx]
-            self.InitialSizeDeaths_log = trace.InitialSizeCases_log[:, indx]
+            self.InitialSizeDeaths_log = trace.InitialSizeDeaths_log[:, indx]
             self.GrowthCasesNoise = trace.GrowthCasesNoise[:, indx, :]
-            self.GrowthDeathsNoise = trace.GrowthCasesNoise[:, indx, :]
+            self.GrowthDeathsNoise = trace.GrowthDeathsNoise[:, indx, :]
 
 
     data = preprocess_data('merged_data/double_entry_final.csv', last_day='2020-05-30')
