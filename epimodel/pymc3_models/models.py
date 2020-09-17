@@ -82,12 +82,12 @@ class DefaultModel(BaseCMModel):
 
             # convert R into growth rates
             if gi_mean_sd > 0:
-                self.GI_mean = pm.Normal('GI_mean', gi_mean_mean, gi_mean_sd)
+                self.GI_mean = pm.TruncatedNormal('GI_mean', gi_mean_mean, gi_mean_sd, lower=0.01)
             else:
                 print('Using a fixed value for the generation interval mean')
                 self.GI_mean = gi_mean_mean
 
-            self.GI_sd = pm.Normal('GI_sd', gi_sd_mean, gi_sd_sd)
+            self.GI_sd = pm.TruncatedNormal('GI_sd', gi_sd_mean, gi_sd_sd, lower=0.01)
 
             gi_beta = self.GI_mean / self.GI_sd ** 2
             gi_alpha = self.GI_mean ** 2 / self.GI_sd ** 2
@@ -113,12 +113,14 @@ class DefaultModel(BaseCMModel):
                 self.InitialSizeCases_log + self.GrowthCases.cumsum(axis=1)))
 
             if cases_delay_mean_sd > 0:
-                self.CasesDelayMean = pm.Normal('CasesDelayMean', cases_delay_mean_mean, cases_delay_mean_sd)
+                self.CasesDelayMean = pm.TruncatedNormal('CasesDelayMean', cases_delay_mean_mean, cases_delay_mean_sd,
+                                                         lower=0.01)
             else:
                 print('Using a fixed value for the reporting delay mean')
                 self.CasesDelayMean = cases_delay_mean_mean
 
-            self.CasesDelayDisp = pm.Normal('CasesDelayDisp', cases_delay_disp_mean, cases_delay_disp_sd)
+            self.CasesDelayDisp = pm.TruncatedNormal('CasesDelayDisp', cases_delay_disp_mean, cases_delay_disp_sd,
+                                                     lower=0.01)
             cases_delay_dist = pm.NegativeBinomial.dist(mu=self.CasesDelayMean, alpha=self.CasesDelayDisp)
             bins = np.arange(0, cases_truncation)
             pmf = T.exp(cases_delay_dist.logp(bins))
@@ -152,12 +154,14 @@ class DefaultModel(BaseCMModel):
                 self.InitialSizeDeaths_log + self.GrowthDeaths.cumsum(axis=1)))
 
             if deaths_delay_mean_sd > 0:
-                self.DeathsDelayMean = pm.Normal('DeathsDelayMean', deaths_delay_mean_mean, deaths_delay_mean_sd)
+                self.DeathsDelayMean = pm.TruncatedNormal('DeathsDelayMean', deaths_delay_mean_mean,
+                                                          deaths_delay_mean_sd, lower=0.01)
             else:
                 print('Using a fixed value for the fatality delay mean')
                 self.DeathsDelayMean = deaths_delay_mean_mean
 
-            self.DeathsDelayDisp = pm.Normal('DeathsDelayDisp', deaths_delay_disp_mean, deaths_delay_disp_sd)
+            self.DeathsDelayDisp = pm.TruncatedNormal('DeathsDelayDisp', deaths_delay_disp_mean, deaths_delay_disp_sd,
+                                                      lower=0.01)
             deaths_delay_dist = pm.NegativeBinomial.dist(mu=self.DeathsDelayMean, alpha=self.DeathsDelayDisp)
             bins = np.arange(0, deaths_truncation)
             pmf = T.exp(deaths_delay_dist.logp(bins))
