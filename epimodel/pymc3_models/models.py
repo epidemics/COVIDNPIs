@@ -144,7 +144,8 @@ class DefaultModel(BaseCMModel):
                 mu=self.ExpectedCases.reshape((self.nRs * self.nDs,))[self.all_observed_active],
                 alpha=self.PsiCases,
                 shape=(len(self.all_observed_active),),
-                observed=self.d.NewCases.data.reshape((self.nRs * self.nDs,))[self.all_observed_active]
+                observed=self.d.NewCases.data.reshape((self.nRs * self.nDs,))[self.all_observed_active],
+                testval=100
             )
 
             # Deaths
@@ -155,13 +156,13 @@ class DefaultModel(BaseCMModel):
 
             if deaths_delay_mean_sd > 0:
                 self.DeathsDelayMean = pm.TruncatedNormal('DeathsDelayMean', deaths_delay_mean_mean,
-                                                          deaths_delay_mean_sd, lower=0.01)
+                                                          deaths_delay_mean_sd, lower=0.1)
             else:
                 print('Using a fixed value for the fatality delay mean')
                 self.DeathsDelayMean = deaths_delay_mean_mean
 
             self.DeathsDelayDisp = pm.TruncatedNormal('DeathsDelayDisp', deaths_delay_disp_mean, deaths_delay_disp_sd,
-                                                      lower=0.01)
+                                                      lower=0.1)
             deaths_delay_dist = pm.NegativeBinomial.dist(mu=self.DeathsDelayMean, alpha=self.DeathsDelayDisp)
             bins = np.arange(0, deaths_truncation)
             pmf = T.exp(deaths_delay_dist.logp(bins))
@@ -185,7 +186,8 @@ class DefaultModel(BaseCMModel):
                 mu=self.ExpectedDeaths.reshape((self.nRs * self.nDs,))[self.all_observed_deaths],
                 alpha=self.PsiDeaths,
                 shape=(len(self.all_observed_deaths),),
-                observed=self.d.NewDeaths.data.reshape((self.nRs * self.nDs,))[self.all_observed_deaths]
+                observed=self.d.NewDeaths.data.reshape((self.nRs * self.nDs,))[self.all_observed_deaths],
+                testval=100
             )
 
 

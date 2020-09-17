@@ -243,9 +243,9 @@ epiparam_prior_extra:
     gi_mean_mean: [3.06, 4.06, 5.06, 6.06, 7.06]
     gi_mean_sd: 0.3265
     deaths_mean_mean: [17.82, 19.82, 21.82, 23.82, 25.82]
-    deaths_mean_sd: 1.607
+    deaths_mean_sd: 1.01
     cases_mean_mean: [7.92, 9.42, 10.92, 12.42, 13.92]
-    cases_mean_sd: 0.5
+    cases_mean_sd: 0.94
 
 epiparam_fixed:
   experiment_file: epiparam.py
