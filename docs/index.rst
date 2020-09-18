@@ -45,7 +45,7 @@ The following steps are sufficient to run the default model with the dataset ``n
     from epimodel.pymc3_models.epi_params import EpidemiologicalParameters, bootstrapped_negbinom_values
     import pymc3 as pm
 
-    data = preprocess_data('../notebooks/double-entry-data/double_entry_final.csv')
+    data = preprocess_data('merged_data/double_entry_final.csv')
     data.mask_reopenings()
 
     ep = EpidemiologicalParameters() # object containing epi params
