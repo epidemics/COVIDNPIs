@@ -185,11 +185,12 @@
 </div>
 <div class="section" id="installation">
 <h1>Installation<a class="headerlink" href="#installation" title="Permalink to this headline">¶</a></h1>
+<p>This project uses <cite>Poetry &lt;https://python-poetry.org/&gt;</cite> to manage dependencies. You will need to first install Poetry.</p>
 <p>Install dependencies, then activate the virtual environment:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">poetry</span> <span class="n">install</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">poetry</span> <span class="n">install</span> <span class="c1"># install project dependencies</span>
 </pre></div>
 </div>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">poetry</span> <span class="n">shell</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">poetry</span> <span class="n">shell</span> <span class="c1"># activate the Python virtualenvironment that Poetry automatically creates.</span>
 </pre></div>
 </div>
 </div>
@@ -199,21 +200,25 @@
 <p class="admonition-title">See also</p>
 <p><a class="reference internal" href="examples/CM_Model_Examples.html"><span class="doc">Default Model Example</span></a></p>
 </div>
-<p>The following steps are sufficient to run the default model with the dataset <code class="docutils literal notranslate"><span class="pre">notebooks/double-entry-data/double_entry_final.csv</span></code> and save the NPI reduction trace to <code class="docutils literal notranslate"><span class="pre">CMReduction_trace.txt</span></code> which can be loaded with <code class="code docutils literal notranslate"><span class="pre">numpy.loadtext</span></code></p>
+<p>The following steps are sufficient to run the default model with the dataset <code class="docutils literal notranslate"><span class="pre">notebooks/double-entry-data/double_entry_final.csv</span></code> and save the NPI reduction trace to <code class="docutils literal notranslate"><span class="pre">CMReduction_trace.txt</span></code> which can be loaded with <code class="code docutils literal notranslate"><span class="pre">numpy.loadtxt</span></code></p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">epimodel.preprocessing.data_preprocessor</span> <span class="kn">import</span> <span class="n">preprocess_data</span>
 <span class="kn">from</span> <span class="nn">epimodel.pymc3_models.models</span> <span class="kn">import</span> <span class="n">DefaultModel</span>
 <span class="kn">from</span> <span class="nn">epimodel.pymc3_models.epi_params</span> <span class="kn">import</span> <span class="n">EpidemiologicalParameters</span><span class="p">,</span> <span class="n">bootstrapped_negbinom_values</span>
 <span class="kn">import</span> <span class="nn">pymc3</span> <span class="k">as</span> <span class="nn">pm</span>
 
 <span class="n">data</span> <span class="o">=</span> <span class="n">preprocess_data</span><span class="p">(</span><span class="s1">&#39;../notebooks/double-entry-data/double_entry_final.csv&#39;</span><span class="p">)</span>
+<span class="n">data</span><span class="o">.</span><span class="n">mask_reopenings</span><span class="p">()</span>
+
+<span class="n">ep</span> <span class="o">=</span> <span class="n">EpidemiologicalParameters</span><span class="p">()</span> <span class="c1"># object containing epi params</span>
 
 <span class="k">with</span> <span class="n">DefaultModel</span><span class="p">(</span><span class="n">data</span><span class="p">)</span> <span class="k">as</span> <span class="n">model</span><span class="p">:</span>
-    <span class="n">model</span><span class="o">.</span><span class="n">build_model</span><span class="p">()</span>
+    <span class="c1"># run using latest epidemiological parameters</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">build_model</span><span class="p">(</span><span class="o">**</span><span class="n">ep</span><span class="o">.</span><span class="n">get_model_build_dict</span><span class="p">())</span>
 
 <span class="k">with</span> <span class="n">model</span><span class="o">.</span><span class="n">model</span><span class="p">:</span>
-    <span class="n">model</span><span class="o">.</span><span class="n">trace</span> <span class="o">=</span> <span class="n">pm</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="mi">2000</span><span class="p">,</span> <span class="n">tune</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span> <span class="n">cores</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">chains</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">max_treedepth</span><span class="o">=</span><span class="mi">12</span><span class="p">)</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">trace</span> <span class="o">=</span> <span class="n">pm</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="mi">2000</span><span class="p">,</span> <span class="n">tune</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span> <span class="n">cores</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">chains</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">max_treedepth</span><span class="o">=</span><span class="mi">14</span><span class="p">,</span> <span class="n">target_accept</span><span class="o">=</span><span class="mf">0.94</span><span class="p">)</span>
 
-<span class="n">numpy</span><span class="o">.</span><span class="n">savetext</span><span class="p">(</span><span class="s1">&#39;CMReduction_trace.txt&#39;</span><span class="p">,</span><span class="n">model</span><span class="o">.</span><span class="n">trace</span><span class="p">[</span><span class="s1">&#39;CMReduction&#39;</span><span class="p">])</span>
+<span class="n">numpy</span><span class="o">.</span><span class="n">savetxt</span><span class="p">(</span><span class="s1">&#39;CMReduction_trace.txt&#39;</span><span class="p">,</span> <span class="n">model</span><span class="o">.</span><span class="n">trace</span><span class="p">[</span><span class="s1">&#39;CMReduction&#39;</span><span class="p">])</span>
 </pre></div>
 </div>
 </div>
