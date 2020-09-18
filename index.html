@@ -206,7 +206,7 @@
 <span class="kn">from</span> <span class="nn">epimodel.pymc3_models.epi_params</span> <span class="kn">import</span> <span class="n">EpidemiologicalParameters</span><span class="p">,</span> <span class="n">bootstrapped_negbinom_values</span>
 <span class="kn">import</span> <span class="nn">pymc3</span> <span class="k">as</span> <span class="nn">pm</span>
 
-<span class="n">data</span> <span class="o">=</span> <span class="n">preprocess_data</span><span class="p">(</span><span class="s1">&#39;../notebooks/double-entry-data/double_entry_final.csv&#39;</span><span class="p">)</span>
+<span class="n">data</span> <span class="o">=</span> <span class="n">preprocess_data</span><span class="p">(</span><span class="s1">&#39;merged_data/double_entry_final.csv&#39;</span><span class="p">)</span>
 <span class="n">data</span><span class="o">.</span><span class="n">mask_reopenings</span><span class="p">()</span>
 
 <span class="n">ep</span> <span class="o">=</span> <span class="n">EpidemiologicalParameters</span><span class="p">()</span> <span class="c1"># object containing epi params</span>
@@ -245,7 +245,12 @@
 <li class="toctree-l2"><a class="reference internal" href="experiments/individual_sensitivity_experiments.html">Individual Sensitivity Experiments</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="reproduction/reproduction.html">Reproducing Results from Paper</a></li>
+<li class="toctree-l1"><a class="reference internal" href="reproduction/reproduction.html">Reproducing Results from Paper</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="reproduction/reproduction.html#main-results">Main Results</a></li>
+<li class="toctree-l2"><a class="reference internal" href="reproduction/reproduction.html#sensitivity-analysis">Sensitivity Analysis</a></li>
+<li class="toctree-l2"><a class="reference internal" href="reproduction/reproduction.html#plotting-code">Plotting Code</a></li>
+</ul>
+</li>
 </ul>
 </div>
 </div>
