@@ -31,7 +31,7 @@ The main results can be produced as follows.
         model.trace = pm.sample(2000, tune=1000, cores=4, chains=4, max_treedepth=14, target_accept=0.94)
 
     numpy.savetxt('CMReduction_trace.txt', model.trace['CMReduction'])
-    pickle.dump(model.trace, open('full_results.pkl', 'rb'))
+    pickle.dump(model.trace, open('full_results.pkl', 'wb'))
 
 This will save the NPI reductions, expressed as multiplicative factors on R, as well as a Python pickle containing the full model trace.
 
