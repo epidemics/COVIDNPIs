@@ -54,6 +54,6 @@ if __name__ == '__main__':
 
     with model.model:
         model.trace = pm.sample(args.n_samples, tune=500, chains=args.n_chains, cores=args.n_chains, max_treedepth=14,
-                                target_accept=0.925)
+                                target_accept=0.925, init='adapt_diag')
 
     save_cm_trace('result.txt', model.trace.CMReduction, args.exp_tag, args.model_type)

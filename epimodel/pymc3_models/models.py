@@ -82,12 +82,12 @@ class DefaultModel(BaseCMModel):
 
             # convert R into growth rates
             if gi_mean_sd > 0:
-                self.GI_mean = pm.TruncatedNormal('GI_mean', gi_mean_mean, gi_mean_sd, lower=0.01)
+                self.GI_mean = pm.Normal('GI_mean', gi_mean_mean, gi_mean_sd)
             else:
                 print('Using a fixed value for the generation interval mean')
                 self.GI_mean = gi_mean_mean
 
-            self.GI_sd = pm.TruncatedNormal('GI_sd', gi_sd_mean, gi_sd_sd, lower=0.01)
+            self.GI_sd = pm.Normal('GI_sd', gi_sd_mean, gi_sd_sd)
 
             gi_beta = self.GI_mean / self.GI_sd ** 2
             gi_alpha = self.GI_mean ** 2 / self.GI_sd ** 2
