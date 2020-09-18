@@ -14,16 +14,17 @@ The :ref:`examples` walk through using the PreprocessedData object, initialising
 
 Installation
 ============
+This project uses `Poetry <https://python-poetry.org/>` to manage dependencies. You will need to first install Poetry.
 
 Install dependencies, then activate the virtual environment:
 
 .. code-block::
 
-    poetry install
+    poetry install # install project dependencies
 
 .. code-block::
 
-    poetry shell
+    poetry shell # activate the Python virtualenvironment that Poetry automatically creates.
 
 Minimal Example
 ===============
@@ -34,7 +35,7 @@ Minimal Example
 .. _Default Model Example: examples/CM_Model_Examples.ipynb
 
 
-The following steps are sufficient to run the default model with the dataset ``notebooks/double-entry-data/double_entry_final.csv`` and save the NPI reduction trace to ``CMReduction_trace.txt`` which can be loaded with :code:`numpy.loadtext`
+The following steps are sufficient to run the default model with the dataset ``notebooks/double-entry-data/double_entry_final.csv`` and save the NPI reduction trace to ``CMReduction_trace.txt`` which can be loaded with :code:`numpy.loadtxt`
 
 
 .. code-block::
@@ -45,14 +46,18 @@ The following steps are sufficient to run the default model with the dataset ``n
     import pymc3 as pm
 
     data = preprocess_data('../notebooks/double-entry-data/double_entry_final.csv')
+    data.mask_reopenings()
+
+    ep = EpidemiologicalParameters() # object containing epi params
 
     with DefaultModel(data) as model:
-        model.build_model()
+        # run using latest epidemiological parameters
+        model.build_model(**ep.get_model_build_dict())
 
     with model.model:
-        model.trace = pm.sample(2000, tune=1000, cores=4, chains=4, max_treedepth=12)
+        model.trace = pm.sample(2000, tune=1000, cores=4, chains=4, max_treedepth=14, target_accept=0.94)
 
-    numpy.savetext('CMReduction_trace.txt',model.trace['CMReduction'])
+    numpy.savetxt('CMReduction_trace.txt', model.trace['CMReduction'])
 
 
 

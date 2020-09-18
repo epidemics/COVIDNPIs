@@ -16,8 +16,6 @@ def get_model_class_from_str(model_type_str):
         return epm.AdditiveModel
     elif model_type_str == 'discrete_renewal_fixed_gi':
         return epm.DiscreteRenewalFixedGIModel
-    elif model_type_str == 'discrete_renewal':
-        return epm.DiscreteRenewalModel
     elif model_type_str == 'noisy_r':
         return epm.NoisyRModel
     elif model_type_str == 'different_effects':
@@ -33,7 +31,6 @@ def add_argparse_arguments(argparse):
     help="""model structure choice:
               | - additive: the reproduction rate is given by R_t=R0*(sum_i phi_{i,t} beta_i)
               | - discrete_renewal_fixed_gi: uses discrete renewal model to convert reproduction rate R into growth rate g with fixed generation interval
-              | - discrete_renewal: uses discrete renewal model to convert reproduction rate R into growth rate g with prior over generation intervals
               | - noisy_r: noise is added to R_t before conversion to growth rate g_t (default model adds noise to g_t after conversion)
               | - different_effects: each region c has a unique NPI reduction coefficient alpha_{i,c}
               | - cases_only: the number of infections is estimated from case data only
