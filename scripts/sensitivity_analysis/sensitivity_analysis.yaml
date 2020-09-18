@@ -146,9 +146,9 @@ growth_noise:
 
 ###
 # Run the model with an NPI effetiveness prior of [skewed 10, Normal(0,0.2), ICL]
-NPI_prior:
+npi_prior:
   experiment_file: alternative_build_param.py
-  experiment_tag: NPI_prior
+  experiment_tag: npi_prior
   model_type: default
   n_chains: 4
   n_samples: 2000
@@ -156,6 +156,7 @@ NPI_prior:
     R_prior_mean: 3.28
     NPI_prior:
       - normal 0.2
+      - half_normal 0.2
       - icl 0
     growth_noise: 0.2
 

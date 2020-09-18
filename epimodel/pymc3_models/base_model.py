@@ -230,7 +230,8 @@ class BaseCMModel(Model):
                 self.CM_Alpha = pm.HalfNormal("CM_Alpha", prior_scale, shape=(self.nCMs,))
 
             elif prior_type == 'icl':
-                self.CM_Alpha_t = pm.Gamma("CM_Alpha_t", 1 / self.nCMs, 1, shape=(self.nCMs,))
+                # need to make sure to use floats here!
+                self.CM_Alpha_t = pm.Gamma('CM_Alpha_t', 1.0 / float(self.nCMs), 1.0, shape=(self.nCMs,))
                 self.CM_Alpha = pm.Deterministic("CM_Alpha", self.CM_Alpha_t - np.log(1.05) / self.nCMs)
 
             elif prior_type == 'skewed':
