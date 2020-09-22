@@ -4,7 +4,7 @@ on:
   push:
     branches:
       - master
-      - latest-manuscript # remove this before merging into master
+      - manuscript # remove this before merging into master
 
 jobs:
   documenation:
