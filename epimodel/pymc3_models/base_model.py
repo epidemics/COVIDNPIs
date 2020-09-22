@@ -33,7 +33,7 @@ def produce_CIs(array):
     return m, li, ui, lq, uq
 
 
-def add_cms_to_plot(ax, ActiveCMs, country_indx, min_x, max_x, days, plot_style):
+def add_cms_to_plot(ax, ActiveCMs, country_indx, min_x, max_x, days, plot_style, plot_reopenings=True):
     """
     Plotter helper.
 
@@ -85,7 +85,7 @@ def add_cms_to_plot(ax, ActiveCMs, country_indx, min_x, max_x, days, plot_style)
             if CM_changes[cm, c] == 1:
                 plt.text(c_p, plot_height, plot_style[cm][0], fontproperties=fp2, color=plot_style[cm][1], size=8,
                          va='center', ha='center', clip_on=True, zorder=1)
-            else:
+            elif plot_reopenings:
                 plt.text(c_p, plot_height, plot_style[cm][0], fontproperties=fp2, color=plot_style[cm][1], size=8,
                          va='center', ha='center', clip_on=True, zorder=1)
                 plt.plot([c_p - 1.5, c + 1.5], [plot_height - 0.005, plot_height + 0.005], color="black", zorder=2)
