@@ -26,7 +26,6 @@ sklearn = "^0.0"
 pyyaml = "^5.3.1"
 sphinx = {version = "^3.2.1", extras = ["documentation"]}
 sphinx-argparse = {version = "^0.2.5", extras = ["documentation"]}
-sphinxcontrib-autoyaml = {version = "^0.5.0", extras = ["documentation"]}
 nbsphinx = {version = "^0.7.1", extras = ["documentation"]}
 sphinx_rtd_theme = {version = "^0.5.0", extras = ["documentation"]}
 pandoc = {version = "^1.0.2", extras = ["documentation"]}
