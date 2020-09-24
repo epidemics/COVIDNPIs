@@ -26,4 +26,7 @@ Sensitivity Analysis Dispatcher Run Types
 
 Full specifications can be found in :code:`scripts/sensitivity_analysis/sensitivity_analysis.yaml`, which can also be customised to your needs.
 
-.. autoyaml:: /scripts/sensitivity_analysis/sensitivity_analysis.yaml
+.. csv-table:: Sensitivity Dispatcher Run Types
+   :file: sensitivity_dispatcher_run_types.csv
+   :widths: 20, 30, 20
+   :header-rows: 1
