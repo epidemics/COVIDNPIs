@@ -9,3 +9,4 @@ __pycache__
 /out
 config-local.yaml
 /docs/_build
+/server

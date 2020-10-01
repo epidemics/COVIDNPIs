@@ -89,18 +89,6 @@ class EpidemiologicalParameters():
         if generation_interval is not None:
             self.generation_interval = generation_interval
         else:
-            # self.generation_interval = {
-            #     'mean_mean': 5.06,
-            #     'mean_sd': 0.3265,
-            #     'sd_mean': 1.72,
-            #     'sd_sd': 1.13,
-            #     'source': 'mean: https://www.medrxiv.org/content/medrxiv/early/2020/06/19/2020.06.17.20133587.full.pdf'
-            #               'CoV: https://www.eurosurveillance.org/content/10.2807/1560-7917.ES.2020.25.17.2000257',
-            #     'dist': 'gamma',
-            #     'notes': 'mean_sd chosen to "fill CIs" from the medrxiv meta-analysis. sd_sd chosen for the same average'
-            #              'CoV from Ganyani et al, using the sd for the mean.'
-            # }
-
             self.generation_interval = {
                 'mean_mean': 5.06,
                 'mean_sd': 0.3265,
