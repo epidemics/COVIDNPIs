@@ -382,7 +382,7 @@ class CasesOnlyModel(BaseCMModel):
             reporting_delay = pmf.reshape((1, cases_truncation))
 
             expected_confirmed = C.conv2d(
-                self.Infected,
+                self.InfectedCases,
                 reporting_delay,
                 border_mode='full'
             )[:, :self.nDs]
