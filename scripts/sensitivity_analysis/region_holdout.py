@@ -26,16 +26,28 @@ if __name__ == '__main__':
         def __init__(self, indx, trace):
             self.CMReduction = trace.CMReduction
             self.RegionR = trace.RegionR[:, indx]
-            self.InfectedCases = trace.InfectedCases[:, indx, :]
-            self.InfectedDeaths = trace.InfectedDeaths[:, indx, :]
-            self.ExpectedCases = trace.ExpectedCases[:, indx, :]
-            self.ExpectedDeaths = trace.ExpectedDeaths[:, indx, :]
-            self.PsiCases = trace.PsiCases
-            self.PsiDeaths = trace.PsiDeaths
-            self.InitialSizeCases_log = trace.InitialSizeCases_log[:, indx]
-            self.InitialSizeDeaths_log = trace.InitialSizeDeaths_log[:, indx]
-            self.GrowthCasesNoise = trace.GrowthCasesNoise[:, indx, :]
-            self.GrowthDeathsNoise = trace.GrowthDeathsNoise[:, indx, :]
+
+            try:
+                self.InfectedCases = trace.InfectedCases[:, indx, :]
+                self.ExpectedCases = trace.ExpectedCases[:, indx, :]
+                self.PsiCases = trace.PsiCases
+                self.InitialSizeCases_log = trace.InitialSizeCases_log[:, indx]
+            except:
+                pass
+
+            try:
+                self.InfectedDeaths = trace.InfectedDeaths[:, indx, :]
+                self.ExpectedDeaths = trace.ExpectedDeaths[:, indx, :]
+                self.PsiDeaths = trace.PsiDeaths
+                self.InitialSizeDeaths_log = trace.InitialSizeDeaths_log[:, indx]
+            except:
+                pass
+
+            try:
+                self.GrowthCasesNoise = trace.GrowthCasesNoise[:, indx, :]
+                self.GrowthDeathsNoise = trace.GrowthDeathsNoise[:, indx, :]
+            except:
+                pass
 
 
     data = preprocess_data('merged_data/double_entry_final.csv', last_day='2020-05-30')

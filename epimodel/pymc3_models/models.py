@@ -251,15 +251,16 @@ class DeathsOnlyModel(BaseCMModel):
             self.ExpectedGrowth = gi_beta * (np.exp(self.ExpectedLogR / gi_alpha) - T.ones_like(
                 self.ExpectedLogR))
 
-            self.GrowthNoise = pm.Normal('Growth', 0, growth_noise_scale, shape=(self.nRs, self.nDs - 40))
+            self.GrowthNoiseDeaths = pm.Normal('GrowthNoiseDeaths', 0, growth_noise_scale,
+                                               shape=(self.nRs, self.nDs - 40))
 
-            self.Growth = T.inc_subtensor(self.ExpectedGrowth[:, 30:-10], self.GrowthNoise)
+            self.Growth = T.inc_subtensor(self.ExpectedGrowth[:, 30:-10], self.GrowthNoiseDeaths)
 
-            self.InitialSize_log = pm.Normal('InitialSize_log', 0, 50, shape=(self.nRs,))
-            self.Infected_log = pm.Deterministic('Infected_log', T.reshape(self.InitialSize_log, (
+            self.InitialSizeDeaths_log = pm.Normal('InitialSizeDeaths_log', 0, 50, shape=(self.nRs,))
+            self.InfectedDeaths_log = pm.Deterministic('InfectedDeaths_log', T.reshape(self.InitialSizeDeaths_log, (
                 self.nRs, 1)) + self.Growth.cumsum(axis=1))
 
-            self.Infected = pm.Deterministic('Infected', pm.math.exp(self.Infected_log))
+            self.Infected = pm.Deterministic('Infected', pm.math.exp(self.InfectedDeaths_log))
 
             self.DeathsDelayMean = pm.Normal('DeathsDelayMean', deaths_delay_mean_mean, deaths_delay_mean_sd)
             self.DeathsDelayDisp = pm.Normal('DeathsDelayDisp', deaths_delay_disp_mean, deaths_delay_disp_sd)
@@ -278,14 +279,14 @@ class DeathsOnlyModel(BaseCMModel):
             self.ExpectedDeaths = pm.Deterministic('ExpectedDeaths', expected_deaths.reshape(
                 (self.nRs, self.nDs)))
 
-            self.Psi = pm.HalfNormal('Psi', 5)
+            self.PsiDeaths = pm.HalfNormal('Psi', 5)
 
             self.NewDeaths = pm.Data('NewDeaths',
                                      self.d.NewDeaths.data.reshape((self.nRs * self.nDs,))[self.all_observed_deaths])
 
             # effectively handle missing values ourselves
             self.ObservedDeaths = pm.NegativeBinomial(
-                'ObservedCases',
+                'ObservedDeaths',
                 mu=self.ExpectedDeaths.reshape((self.nRs * self.nDs,))[self.all_observed_deaths],
                 alpha=self.Psi,
                 shape=(len(self.all_observed_deaths),),
@@ -361,15 +362,16 @@ class CasesOnlyModel(BaseCMModel):
             self.ExpectedGrowth = gi_beta * (np.exp(self.ExpectedLogR / gi_alpha) - T.ones_like(
                 self.ExpectedLogR))
 
-            self.GrowthNoise = pm.Normal('Growth', 0, growth_noise_scale, shape=(self.nRs, self.nDs - 40))
+            self.GrowthNoiseCases = pm.Normal('GrowthNoiseCases', 0, growth_noise_scale,
+                                              shape=(self.nRs, self.nDs - 40))
 
-            self.Growth = T.inc_subtensor(self.ExpectedGrowth[:, 30:-10], self.GrowthNoise)
+            self.Growth = T.inc_subtensor(self.ExpectedGrowth[:, 30:-10], self.GrowthNoiseCases)
 
-            self.InitialSize_log = pm.Normal('InitialSize_log', 0, 50, shape=(self.nRs,))
-            self.Infected_log = pm.Deterministic('Infected_log', T.reshape(self.InitialSize_log, (
+            self.InitialSizeCases_log = pm.Normal('InitialSizeCases_log', 0, 50, shape=(self.nRs,))
+            self.InfectedCases_log = pm.Deterministic('InfectedCases_log', T.reshape(self.InitialSizeCases_log, (
                 self.nRs, 1)) + self.Growth.cumsum(axis=1))
 
-            self.Infected = pm.Deterministic('Infected', pm.math.exp(self.Infected_log))
+            self.InfectedCases = pm.Deterministic('InfectedCases', pm.math.exp(self.InfectedCases_log))
 
             self.CasesDelayMean = pm.Normal('CasesDelayMean', cases_delay_mean_mean, cases_delay_mean_sd)
             self.CasesDelayDisp = pm.Normal('CasesDelayDisp', cases_delay_disp_mean, cases_delay_disp_sd)
@@ -388,13 +390,13 @@ class CasesOnlyModel(BaseCMModel):
             self.ExpectedCases = pm.Deterministic('ExpectedCases', expected_confirmed.reshape(
                 (self.nRs, self.nDs)))
 
-            self.Psi = pm.HalfNormal('Phi', 5)
+            self.PsiCases = pm.HalfNormal('Phi', 5)
 
             # effectively handle missing values ourselves
             self.ObservedCases = pm.NegativeBinomial(
                 'ObservedCases',
                 mu=self.ExpectedCases.reshape((self.nRs * self.nDs,))[self.all_observed_active],
-                alpha=self.Psi,
+                alpha=self.PsiCases,
                 shape=(len(self.all_observed_active),),
                 observed=self.d.NewCases.data.reshape((self.nRs * self.nDs,))[self.all_observed_active]
             )
