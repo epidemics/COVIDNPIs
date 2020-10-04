@@ -9,7 +9,6 @@ import pymc3 as pm
 import theano.tensor as T
 import theano.tensor.signal.conv as C
 
-from epimodel import EpidemiologicalParameters
 from .base_model import BaseCMModel
 
 
@@ -81,13 +80,7 @@ class DefaultModel(BaseCMModel):
             self.ExpectedLogR = T.reshape(pm.math.log(self.RegionR), (self.nRs, 1)) - self.LogRReduction
 
             # convert R into growth rates
-            if gi_mean_sd > 0:
-                self.GI_mean = pm.Normal('GI_mean', gi_mean_mean, gi_mean_sd)
-            else:
-                print('Using a fixed value for the generation interval mean')
-                self.GI_mean = gi_mean_mean
-
-            self.GI_sd = pm.Normal('GI_sd', gi_sd_mean, gi_sd_sd)
+            self.build_gi_prior(gi_mean_mean, gi_mean_sd, gi_sd_mean, gi_sd_sd)
 
             gi_beta = self.GI_mean / self.GI_sd ** 2
             gi_alpha = self.GI_mean ** 2 / self.GI_sd ** 2
@@ -95,10 +88,14 @@ class DefaultModel(BaseCMModel):
             self.ExpectedGrowth = gi_beta * (pm.math.exp(self.ExpectedLogR / gi_alpha) - T.ones((self.nRs, self.nDs)))
 
             # exclude 40 days of noise, slight increase in runtime.
-            self.GrowthCasesNoise = pm.Normal("GrowthCasesNoise", 0, growth_noise_scale,
-                                              shape=(self.nRs, self.nDs - 40))
-            self.GrowthDeathsNoise = pm.Normal("GrowthDeathsNoise", 0, growth_noise_scale,
-                                               shape=(self.nRs, self.nDs - 40))
+            if growth_noise_scale > 0:
+                self.GrowthCasesNoise = pm.Normal("GrowthCasesNoise", 0, growth_noise_scale,
+                                                  shape=(self.nRs, self.nDs - 40))
+                self.GrowthDeathsNoise = pm.Normal("GrowthDeathsNoise", 0, growth_noise_scale,
+                                                   shape=(self.nRs, self.nDs - 40))
+            else:
+                self.GrowthCasesNoise = T.zeros((self.nRs, self.nDs - 40))
+                self.DeathsCasesNoise = T.zeros((self.nRs, self.nDs - 40))
 
             self.GrowthCases = T.inc_subtensor(self.ExpectedGrowth[:, 30:-10], self.GrowthCasesNoise)
             self.GrowthDeaths = T.inc_subtensor(self.ExpectedGrowth[:, 30:-10], self.GrowthDeathsNoise)
@@ -153,7 +150,7 @@ class DefaultModel(BaseCMModel):
 
             if deaths_delay_mean_sd > 0:
                 self.DeathsDelayMean = pm.Normal('DeathsDelayMean', deaths_delay_mean_mean,
-                                                          deaths_delay_mean_sd)
+                                                 deaths_delay_mean_sd)
             else:
                 print('Using a fixed value for the fatality delay mean')
                 self.DeathsDelayMean = deaths_delay_mean_mean
@@ -246,8 +243,7 @@ class DeathsOnlyModel(BaseCMModel):
             )
 
             # convert R into growth rates
-            self.GI_mean = pm.Normal('GI_mean', gi_mean_mean, gi_mean_sd)
-            self.GI_sd = pm.Normal('GI_sd', gi_sd_mean, gi_sd_sd)
+            self.build_gi_prior(gi_mean_mean, gi_mean_sd, gi_sd_mean, gi_sd_sd)
 
             gi_beta = self.GI_mean / self.GI_sd ** 2
             gi_alpha = self.GI_mean ** 2 / self.GI_sd ** 2
@@ -357,8 +353,7 @@ class CasesOnlyModel(BaseCMModel):
             )
 
             # convert R into growth rates
-            self.GI_mean = pm.Normal('GI_mean', gi_mean_mean, gi_mean_sd)
-            self.GI_sd = pm.Normal('GI_sd', gi_sd_mean, gi_sd_sd)
+            self.build_gi_prior(gi_mean_mean, gi_mean_sd, gi_sd_mean, gi_sd_sd)
 
             gi_beta = self.GI_mean / self.GI_sd ** 2
             gi_alpha = self.GI_mean ** 2 / self.GI_sd ** 2
@@ -403,6 +398,7 @@ class CasesOnlyModel(BaseCMModel):
                 shape=(len(self.all_observed_active),),
                 observed=self.d.NewCases.data.reshape((self.nRs * self.nDs,))[self.all_observed_active]
             )
+
 
 class NoisyRModel(BaseCMModel):
     """
@@ -479,8 +475,7 @@ class NoisyRModel(BaseCMModel):
             )
 
             # convert R into growth rates
-            self.GI_mean = pm.Normal('GI_mean', gi_mean_mean, gi_mean_sd)
-            self.GI_sd = pm.Normal('GI_sd', gi_sd_mean, gi_sd_sd)
+            self.build_gi_prior(gi_mean_mean, gi_mean_sd, gi_sd_mean, gi_sd_sd)
 
             gi_beta = self.GI_mean / self.GI_sd ** 2
             gi_alpha = self.GI_mean ** 2 / self.GI_sd ** 2
@@ -614,8 +609,7 @@ class AdditiveModel(BaseCMModel):
                 T.log(T.exp(T.reshape(pm.math.log(self.RegionR), (self.nRs, 1))) * growth_reduction)
             )
 
-            self.GI_mean = pm.Normal('GI_mean', gi_mean_mean, gi_mean_sd)
-            self.GI_sd = pm.Normal('GI_sd', gi_sd_mean, gi_sd_sd)
+            self.build_gi_prior(gi_mean_mean, gi_mean_sd, gi_sd_mean, gi_sd_sd)
 
             gi_beta = self.GI_mean / self.GI_sd ** 2
             gi_alpha = self.GI_mean ** 2 / self.GI_sd ** 2
@@ -754,8 +748,7 @@ class DifferentEffectsModel(BaseCMModel):
             )
 
             # convert R into growth rates
-            self.GI_mean = pm.Normal('GI_mean', gi_mean_mean, gi_mean_sd)
-            self.GI_sd = pm.Normal('GI_sd', gi_sd_mean, gi_sd_sd)
+            self.build_gi_prior(gi_mean_mean, gi_mean_sd, gi_sd_mean, gi_sd_sd)
 
             gi_beta = self.GI_mean / self.GI_sd ** 2
             gi_alpha = self.GI_mean ** 2 / self.GI_sd ** 2
@@ -837,7 +830,7 @@ class DifferentEffectsModel(BaseCMModel):
             )
 
 
-class DiscreteRenewalFixedGIModel(BaseCMModel):
+class DiscreteRenewalModel(BaseCMModel):
     """
     Discrete Renewal Model.
 
@@ -848,10 +841,15 @@ class DiscreteRenewalFixedGIModel(BaseCMModel):
     def build_model(self, R_prior_mean=3.28, cm_prior_scale=10, cm_prior='skewed', R_noise_scale=0.8,
                     deaths_delay_mean_mean=21, deaths_delay_mean_sd=1, deaths_delay_disp_mean=9, deaths_delay_disp_sd=1,
                     cases_delay_mean_mean=10, cases_delay_mean_sd=1, cases_delay_disp_mean=5, cases_delay_disp_sd=1,
-                    deaths_truncation=48, cases_truncation=32, gi_truncation=28, conv_padding=7, **kwargs):
+                    deaths_truncation=48, cases_truncation=32, gi_truncation=28, conv_padding=7,
+                    gi_mean_mean=5, gi_mean_sd=0.3, gi_sd_mean=2, gi_sd_sd=0.3, **kwargs):
         """
         Build NPI effectiveness model
 
+        :param gi_sd_sd: gi std prior std
+        :param gi_sd_mean: gi std prior mean
+        :param gi_mean_sd: gi mean prior std
+        :param gi_mean_mean: gi mean prior mean
         :param R_prior_mean: R_0 prior mean
         :param cm_prior_scale: NPI effectiveness prior scale
         :param cm_prior: NPI effectiveness prior type. Either 'normal', 'icl' or skewed (asymmetric laplace)
@@ -873,10 +871,10 @@ class DiscreteRenewalFixedGIModel(BaseCMModel):
         for key, _ in kwargs.items():
             print(f'Argument: {key} not being used')
 
-        ep = EpidemiologicalParameters()
-        gi_s = ep.generate_dist_samples(ep.generation_interval, nRVs=int(1e8), with_noise=False)
-        GI = ep.discretise_samples(gi_s, gi_truncation).flatten()
-        GI_rev = GI[::-1].reshape((1, 1, GI.size)).repeat(2, axis=0)
+        # ep = EpidemiologicalParameters()
+        # gi_s = ep.generate_dist_samples(ep.generation_interval, nRVs=int(1e8), with_noise=False)
+        # GI = ep.discretise_samples(gi_s, gi_truncation).flatten()
+        # GI_rev = GI[::-1].reshape((1, 1, GI.size)).repeat(2, axis=0)
 
         with self.model:
             # build NPI Effectiveness priors
@@ -897,12 +895,33 @@ class DiscreteRenewalFixedGIModel(BaseCMModel):
                     * self.ActiveCMs
             )
 
+            self.build_gi_prior(gi_mean_mean, gi_mean_sd, gi_sd_mean, gi_sd_sd)
+
+            gi_beta = self.GI_mean / self.GI_sd ** 2
+            gi_alpha = self.GI_mean ** 2 / self.GI_sd ** 2
+
+            GI_dist = pm.Gamma.dist(alpha=gi_alpha, beta=gi_beta)
+
+            bins = np.zeros(gi_truncation + 1)
+            bins[1:] = np.arange(gi_truncation)
+            bins[2:] += 0.5
+            bins[:2] += 1e-5
+
+            cdf_vals = T.exp(GI_dist.logcdf(bins))
+            pmf = cdf_vals[1:] - cdf_vals[:-1]
+            GI_rev = T.repeat(T.reshape(pmf[::-1] / T.sum(pmf), (1, 1, gi_truncation)), 2, axis=0)
+
             self.RReduction = T.sum(self.ActiveCMReduction, axis=1)
 
             self.ExpectedLogR = T.reshape(T.reshape(pm.math.log(self.RegionR), (self.nRs, 1)) - self.RReduction,
                                           (1, self.nRs, self.nDs)).repeat(2, axis=0)
 
-            self.LogR = pm.Normal('LogR', self.ExpectedLogR, R_noise_scale, shape=(2, self.nRs, self.nDs))
+            if R_noise_scale > 0:
+                self.LogRNoise = pm.Normal('LogRNoise', 0, R_noise_scale, shape=(2, self.nRs, self.nDs - 40))
+            else:
+                self.LogRNoise = T.zeros((2, self.nRs, self.nDs - 40))
+
+            self.LogR = pm.Deterministic('LogR', T.inc_subtensor(self.ExpectedLogR[:, :, 30:-10], self.LogRNoise))
 
             self.InitialSize_log = pm.Normal('InitialSizeCases_log', 0, 50, shape=(2, self.nRs))
 
@@ -982,6 +1001,145 @@ class DiscreteRenewalFixedGIModel(BaseCMModel):
                 shape=(len(self.all_observed_active),),
                 observed=self.NewCases
             )
+
+            self.ObservedDeaths = pm.NegativeBinomial(
+                'ObservedDeaths',
+                mu=self.ExpectedDeaths.reshape((self.nRs * self.nDs,))[self.all_observed_deaths],
+                alpha=self.PsiDeaths,
+                shape=(len(self.all_observed_deaths),),
+                observed=self.NewDeaths
+            )
+
+
+class DeathsOnlyDiscreteRenewalModel(BaseCMModel):
+    """
+    Deaths Only Discrete Renewal Model.
+
+    This model is the same as the default, but the infection model does not convert R into g using Wallinga, but rather
+    uses a discrete renewal model, adding noise on R.
+
+    It also models deaths also
+    """
+
+    def build_model(self, R_prior_mean=3.28, cm_prior_scale=10, cm_prior='skewed', R_noise_scale=0.8,
+                    deaths_delay_mean_mean=21, deaths_delay_mean_sd=1, deaths_delay_disp_mean=9, deaths_delay_disp_sd=1,
+                    deaths_truncation=48, gi_truncation=28, conv_padding=7,
+                    gi_mean_mean=5, gi_mean_sd=0.3, gi_sd_mean=2, gi_sd_sd=0.3, **kwargs):
+        """
+        Build NPI effectiveness model
+
+        :param gi_sd_sd: gi std prior std
+        :param gi_sd_mean: gi std prior mean
+        :param gi_mean_sd: gi mean prior std
+        :param gi_mean_mean: gi mean prior mean
+        :param R_prior_mean: R_0 prior mean
+        :param cm_prior_scale: NPI effectiveness prior scale
+        :param cm_prior: NPI effectiveness prior type. Either 'normal', 'icl' or skewed (asymmetric laplace)
+        :param R_noise_scale: multiplicative noise scale, now placed on R!
+        :param deaths_delay_mean_mean: mean of normal prior placed over death delay mean
+        :param deaths_delay_mean_sd: sd of normal prior placed over death delay mean
+        :param deaths_delay_disp_mean: mean of normal prior placed over death delay dispersion (alpha / psi)
+        :param deaths_delay_disp_sd: sd of normal prior placed over death delay dispersion (alpha / psi)
+        :param deaths_truncation: maximum death delay
+        :param cases_truncation: maximum reporting delay
+        :param gi_truncation: truncation used for generation interval discretisation
+        :param conv_padding: padding for renewal process
+        """
+
+        for key, _ in kwargs.items():
+            print(f'Argument: {key} not being used')
+
+        with self.model:
+            # build NPI Effectiveness priors
+            self.build_npi_prior(cm_prior, cm_prior_scale)
+            self.CMReduction = pm.Deterministic('CMReduction', T.exp((-1.0) * self.CM_Alpha))
+
+            self.HyperRVar = pm.HalfNormal(
+                'HyperRVar', sigma=0.5
+            )
+
+            self.RegionR_noise = pm.Normal('RegionLogR_noise', 0, 1, shape=(self.nRs), )
+            self.RegionR = pm.Deterministic('RegionR', R_prior_mean + self.RegionLogR_noise * self.HyperRVar)
+
+            self.ActiveCMs = pm.Data('ActiveCMs', self.d.ActiveCMs)
+
+            self.ActiveCMReduction = (
+                    T.reshape(self.CM_Alpha, (1, self.nCMs, 1))
+                    * self.ActiveCMs
+            )
+
+            self.build_gi_prior(gi_mean_mean, gi_mean_sd, gi_sd_mean, gi_sd_sd)
+
+            gi_beta = self.GI_mean / self.GI_sd ** 2
+            gi_alpha = self.GI_mean ** 2 / self.GI_sd ** 2
+
+            GI_dist = pm.Gamma.dist(alpha=gi_alpha, beta=gi_beta)
+
+            bins = np.zeros(gi_truncation + 1)
+            bins[1:] = np.arange(gi_truncation)
+            bins[2:] += 0.5
+            bins[:2] += 1e-5
+
+            cdf_vals = T.exp(GI_dist.logcdf(bins))
+            pmf = cdf_vals[1:] - cdf_vals[:-1]
+            GI_rev = T.reshape(pmf[::-1] / T.sum(pmf), (1, gi_truncation))
+
+            self.RReduction = T.sum(self.ActiveCMReduction, axis=1)
+
+            self.ExpectedLogR = T.reshape(T.reshape(pm.math.log(self.RegionR), (self.nRs, 1)) - self.RReduction,
+                                          (self.nRs, self.nDs))
+
+            if R_noise_scale > 0:
+                self.LogRNoise = pm.Normal('LogRNoise', 0, R_noise_scale, shape=(self.nRs, self.nDs - 40))
+            else:
+                self.LogRNoise = T.zeros((self.nRs, self.nDs - 40))
+
+            self.LogR = pm.Deterministic('LogR', T.inc_subtensor(self.ExpectedLogR[:, 30:-10], self.LogRNoise))
+
+            self.InitialSize_log = pm.Normal('InitialSizeDeaths_log', 0, 50, shape=(self.nRs,))
+
+            infected = T.zeros((self.nRs, self.nDs + gi_truncation))
+            infected = T.set_subtensor(infected[:, (gi_truncation - conv_padding):gi_truncation],
+                                       pm.math.exp(self.InitialSize_log.reshape((self.nRs, 1)).repeat(
+                                           conv_padding, axis=1)))
+
+            # R is a lognorm
+            R = pm.math.exp(self.LogR)
+            for d in range(self.nDs):
+                val = pm.math.sum(
+                    R[:, d].reshape((self.nRs, 1)) * infected[:, d:(d + gi_truncation)] * GI_rev,
+                    axis=-1).reshape((self.nRs,))
+                infected = T.set_subtensor(infected[:, d + gi_truncation], val)
+
+            res = infected
+
+            self.InfectedDeaths = pm.Deterministic(
+                'InfectedDeaths',
+                res[:, gi_truncation:].reshape((self.nRs, self.nDs))
+            )
+
+            self.DeathsDelayMean = pm.Normal('DeathsDelayMean', deaths_delay_mean_mean, deaths_delay_mean_sd)
+            self.DeathsDelayDisp = pm.Normal('DeathsDelayDisp', deaths_delay_disp_mean, deaths_delay_disp_sd)
+            deaths_delay_dist = pm.NegativeBinomial.dist(mu=self.DeathsDelayMean, alpha=self.DeathsDelayDisp)
+            bins = np.arange(0, deaths_truncation)
+            pmf = T.exp(deaths_delay_dist.logp(bins))
+            pmf = pmf / T.sum(pmf)
+            fatality_delay = pmf.reshape((1, deaths_truncation))
+
+            self.PsiDeaths = pm.HalfNormal('PsiDeaths', 5.)
+
+            expected_deaths = C.conv2d(
+                self.InfectedDeaths,
+                fatality_delay,
+                border_mode='full'
+            )[:, :self.nDs]
+
+            self.ExpectedDeaths = pm.Deterministic('ExpectedDeaths', expected_deaths.reshape(
+                (self.nRs, self.nDs)))
+
+            self.NewDeaths = pm.Data('NewDeaths',
+                                     self.d.NewDeaths.data.reshape((self.nRs * self.nDs,))[
+                                         self.all_observed_deaths])
 
             self.ObservedDeaths = pm.NegativeBinomial(
                 'ObservedDeaths',

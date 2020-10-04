@@ -3,7 +3,6 @@
 region_holdout:
   experiment_file: region_holdout.py
   experiment_tag: region_holdout
-  model_type: default
   n_chains: 4
   n_samples: 2000
   args:
@@ -55,7 +54,6 @@ region_holdout:
 npi_leaveout:
   experiment_file: npi_leaveout.py
   experiment_tag: npi_leaveout
-  model_type: default
   n_chains: 4
   n_samples: 2000
   args:
@@ -75,7 +73,6 @@ npi_leaveout:
 cases_threshold:
   experiment_file: preprocessing_tests.py
   experiment_tag: cases_threshold
-  model_type: default
   n_chains: 4
   n_samples: 2000
   args:
@@ -88,7 +85,6 @@ cases_threshold:
 deaths_threshold:
   experiment_file: preprocessing_tests.py
   experiment_tag: deaths_threshold
-  model_type: default
   n_chains: 4
   n_samples: 2000
   args:
@@ -103,7 +99,6 @@ deaths_threshold:
 oxcgrt:
   experiment_file: oxcgrt_leavein.py
   experiment_tag: oxcgrt
-  model_type: default
   n_chains: 4
   n_samples: 2000
   args:
@@ -119,7 +114,6 @@ oxcgrt:
 R_prior:
   experiment_file: alternative_build_param.py
   experiment_tag: R_prior
-  model_type: default
   n_chains: 4
   n_samples: 2000
   args:
@@ -127,29 +121,12 @@ R_prior:
     NPI_prior: skewed 10
     growth_noise: 0.2
 
-###
-# Add noise to growth rate
-growth_noise:
-  experiment_file: alternative_build_param.py
-  experiment_tag: growth_noise
-  model_type: default
-  n_chains: 4
-  n_samples: 2000
-  args:
-    R_prior_mean: 3.28
-    NPI_prior: skewed 10
-    growth_noise:
-      - 0.05
-      - 0.1
-      - 0.3
-      - 0.4
 
 ###
 # Run the model with an NPI effetiveness prior of [skewed 10, Normal(0,0.2), ICL]
 npi_prior:
   experiment_file: alternative_build_param.py
   experiment_tag: npi_prior
-  model_type: default
   n_chains: 4
   n_samples: 2000
   args:
@@ -160,45 +137,6 @@ npi_prior:
       - icl 0
     growth_noise: 0.2
 
-###
-# Mask the final 20 days of data and predict this period with the model
-agg_holdout:
-  experiment_file: agg_holdout.py
-  experiment_tag: agg_holdout
-  model_type: default
-  n_chains: 4
-  n_samples: 2000
-  args: {}
-
-###
-# Add an additional dummy NPI representing whether any major NPI is active
-any_npi_active:
-  experiment_file: any_npi_active.py
-  experiment_tag: any_npi_active
-  model_type: default
-  n_chains: 4
-  n_samples: 2000
-  args: {}
-
-###
-# Run the model with an additional 5 day delay to school and university closures
-delay_schools:
-  experiment_file: delay_schools.py
-  experiment_tag: delay_schools
-  model_type: default
-  n_chains: 4
-  n_samples: 2000
-  args: {}
-
-###
-# Run the model with NPI indices 0-8 representing 0,...,8 active NPIs, ignoring NPI type
-npi_timing:
-  experiment_file: npi_timing.py
-  experiment_tag: npi_timing
-  model_type: default
-  n_chains: 4
-  n_samples: 2000
-  args: {}
 
 ###
 # | Run the model with alternative structures: 
@@ -213,7 +151,7 @@ structural:
   args:
     model_structure:
       - additive
-      - discrete_renewal_fixed_gi
+      - discrete_renewal
       - noisy_r
       - different_effects
       - cases_only

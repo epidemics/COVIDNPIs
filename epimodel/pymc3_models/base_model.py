@@ -237,6 +237,27 @@ class BaseCMModel(Model):
             elif prior_type == 'skewed':
                 self.CM_Alpha = AsymmetricLaplace('CM_Alpha', scale=prior_scale, symmetry=0.5, shape=(self.nCMs,))
 
+    def build_gi_prior(self, gi_mean_mean, gi_mean_sd, gi_sd_mean, gi_sd_sd):
+        """
+        Build GI parameters
+
+        :param gi_mean_mean: gi mean prior mean
+        :param gi_mean_sd: gi mean prior sd
+        :param gi_sd_mean: gi sd prior mean
+        :param gi_sd_sd: gi sd prior sd
+        """
+        if gi_mean_sd > 0:
+            self.GI_mean = pm.Normal('GI_mean', gi_mean_mean, gi_mean_sd)
+        else:
+            print('Warning: Using a fixed GI Mean')
+            self.GI_mean = gi_mean_mean
+
+        if gi_sd_sd > 0:
+            self.GI_sd = pm.Normal('GI_sd', gi_sd_mean, gi_sd_sd)
+        else:
+            print('Warning: Using a fixed GI Std')
+            self.GI_sd = gi_sd_mean
+
     def plot_effect(self):
         """
         If model.trace has been set, plot the NPI effectiveness estimates.

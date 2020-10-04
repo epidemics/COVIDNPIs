@@ -12,10 +12,12 @@ argparser = argparse.ArgumentParser()
 argparser.add_argument('--max_processes', dest='max_processes', type=int, help='Number of processes to spawn')
 argparser.add_argument('--categories', nargs='+', dest='categories', type=str, help='Run types to execute')
 argparser.add_argument('--dry_run', default=False, action='store_true', help='Print run types selected and exit')
+argparser.add_argument('--model_type', default='default', dest='model_type', type=str,
+                       help='Model type to use for requested sensitivity analyses')
 
 
-
-def run_types_to_commands(run_types, exp_options):
+def run_types_to_commands(run_types, exp_options, extras):
+    extras_str = ' '.join(extras)
     commands = []
     for rt in run_types:
         exp_rt = exp_options[rt]
@@ -48,12 +50,15 @@ def run_types_to_commands(run_types, exp_options):
 
             cmds = new_cmds
         commands.extend(cmds)
+
+    # add extra commands
+    commands = [f'{c} {extras_str}' for c in commands]
     return commands
 
 
 if __name__ == '__main__':
 
-    args = argparser.parse_args()
+    args, extras = argparser.parse_known_args()
 
     with open('scripts/sensitivity_analysis/sensitivity_analysis.yaml', 'r') as stream:
         try:
@@ -61,7 +66,7 @@ if __name__ == '__main__':
         except yaml.YAMLError as exc:
             print(exc)
 
-    commands = run_types_to_commands(args.categories, exp_options)
+    commands = run_types_to_commands(args.categories, exp_options, extras)
 
     print('Running Univariate Sensitivity Analysis\n'
           '---------------------------------------\n\n'

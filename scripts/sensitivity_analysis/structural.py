@@ -4,8 +4,8 @@
 Alternative choices of model structure.
 """
 
-
 import os
+
 os.environ['OMP_NUM_THREADS'] = '1'
 os.environ['MKL_NUM_THREADS'] = '1'
 os.environ['OPENBLAS_NUM_THREADS'] = '1'
@@ -22,8 +22,8 @@ from scripts.sensitivity_analysis.utils import *
 argparser = argparse.ArgumentParser()
 add_argparse_arguments(argparser)
 # this is a hack to make this work easily.
-argparser.add_argument('--model_structure', dest='model_structure', type=str, 
-    help='| model structure choice:\
+argparser.add_argument('--model_structure', dest='model_structure', type=str,
+                       help='| model structure choice:\
           | - additive: the reproduction rate is given by R_t=R0*(sum_i phi_{i,t} beta_i)\
           | - discrete_renewal_fixed_gi: uses discrete renewal model to convert reproduction rate R into growth rate g with fixed generation interval\
           | - discrete_renewal: uses discrete renewal model to convert reproduction rate R into growth rate g with prior over generation intervals\
@@ -33,8 +33,7 @@ argparser.add_argument('--model_structure', dest='model_structure', type=str,
           | - deaths_only: the number of infections is estimated from death data only')
 
 if __name__ == '__main__':
-
-    args = argparser.parse_args()
+    args, extras = argparser.parse_known_args()
 
     data = preprocess_data('merged_data/double_entry_final.csv', last_day='2020-05-30')
     data.mask_reopenings()
@@ -42,12 +41,8 @@ if __name__ == '__main__':
     ep = EpidemiologicalParameters()
     model_class = get_model_class_from_str(args.model_structure)
 
-    bd = ep.get_model_build_dict()
-
-    if args.model_structure == 'discrete_renewal_fixed_gi':
-        # posterior means from a full model run
-        bd['gi_mean_mean'] = 5.12
-        bd['gi_sd_mean'] = 2.20
+    bd = {**ep.get_model_build_dict(), **parse_extra_model_args(extras)}
+    pprint_mb_dict(bd)
 
     with model_class(data) as model:
         model.build_model(**bd)
@@ -56,4 +51,5 @@ if __name__ == '__main__':
         model.trace = pm.sample(args.n_samples, tune=500, chains=args.n_chains, cores=args.n_chains, max_treedepth=14,
                                 target_accept=0.95, init='adapt_diag')
 
-    save_cm_trace(f'{args.model_structure}.txt', model.trace.CMReduction, args.exp_tag, args.model_type)
+    save_cm_trace(f'{args.model_structure}.txt', model.trace.CMReduction, args.exp_tag,
+                  generate_base_output_dir(args.model_type, parse_extra_model_args(extras)))

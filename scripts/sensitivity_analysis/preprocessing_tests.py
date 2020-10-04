@@ -23,7 +23,7 @@ add_argparse_arguments(argparser)
 
 if __name__ == '__main__':
 
-    args = argparser.parse_args()
+    args, extras = argparser.parse_known_args()
     
     data = preprocess_data('merged_data/double_entry_final.csv', last_day='2020-05-30',
                            smoothing=args.smoothing, min_confirmed=args.cases_threshold,
@@ -34,11 +34,15 @@ if __name__ == '__main__':
     ep = EpidemiologicalParameters()
     model_class = get_model_class_from_str(args.model_type)
 
+    bd = {**ep.get_model_build_dict(), **parse_extra_model_args(extras)}
+    pprint_mb_dict(bd)
+
     with model_class(data) as model:
-        model.build_model(**ep.get_model_build_dict())
+        model.build_model(**bd)
 
     with model.model:
         model.trace = pm.sample(args.n_samples, tune=500, chains=args.n_chains, cores=args.n_chains, max_treedepth=14,
                                 target_accept=0.95, init='adapt_diag')
 
-    save_cm_trace(output_fname, model.trace.CMReduction, args.exp_tag, args.model_type)
+    save_cm_trace(f'{output_fname}.txt', model.trace.CMReduction, args.exp_tag,
+                  generate_base_output_dir(args.model_type, parse_extra_model_args(extras)))
