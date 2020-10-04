@@ -15,6 +15,7 @@ argparser.add_argument('--dry_run', default=False, action='store_true', help='Pr
 argparser.add_argument('--model_type', default='default', dest='model_type', type=str,
                        help='Model type to use for requested sensitivity analyses')
 
+args, extras = argparser.parse_known_args()
 
 def run_types_to_commands(run_types, exp_options, extras):
     extras_str = ' '.join(extras)
@@ -25,7 +26,7 @@ def run_types_to_commands(run_types, exp_options, extras):
         n_chains = exp_rt['n_chains']
         n_samples = exp_rt['n_samples']
         exp_tag = exp_rt['experiment_tag']
-        model_type = exp_rt['model_type']
+        model_type = args.model_type
 
         cmds = [f'python scripts/sensitivity_analysis/{experiment_file} --model_type {model_type}'
                 f' --n_samples {n_samples} --n_chains {n_chains} --exp_tag {exp_tag}']
@@ -57,8 +58,6 @@ def run_types_to_commands(run_types, exp_options, extras):
 
 
 if __name__ == '__main__':
-
-    args, extras = argparser.parse_known_args()
 
     with open('scripts/sensitivity_analysis/sensitivity_analysis.yaml', 'r') as stream:
         try:
