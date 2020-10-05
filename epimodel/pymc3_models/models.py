@@ -109,13 +109,8 @@ class DefaultModel(BaseCMModel):
             self.InfectedCases = pm.Deterministic("InfectedCases", pm.math.exp(
                 self.InitialSizeCases_log + self.GrowthCases.cumsum(axis=1)))
 
-            if cases_delay_mean_sd > 0:
-                self.CasesDelayMean = pm.Normal('CasesDelayMean', cases_delay_mean_mean, cases_delay_mean_sd)
-            else:
-                print('Using a fixed value for the reporting delay mean')
-                self.CasesDelayMean = cases_delay_mean_mean
-
-            self.CasesDelayDisp = pm.Normal('CasesDelayDisp', cases_delay_disp_mean, cases_delay_disp_sd)
+            self.build_cases_delay_prior(cases_delay_mean_mean, cases_delay_mean_sd, cases_delay_disp_mean,
+                                         cases_delay_disp_sd)
             cases_delay_dist = pm.NegativeBinomial.dist(mu=self.CasesDelayMean, alpha=self.CasesDelayDisp)
             bins = np.arange(0, cases_truncation)
             pmf = T.exp(cases_delay_dist.logp(bins))
@@ -148,14 +143,8 @@ class DefaultModel(BaseCMModel):
             self.InfectedDeaths = pm.Deterministic("InfectedDeaths", pm.math.exp(
                 self.InitialSizeDeaths_log + self.GrowthDeaths.cumsum(axis=1)))
 
-            if deaths_delay_mean_sd > 0:
-                self.DeathsDelayMean = pm.Normal('DeathsDelayMean', deaths_delay_mean_mean,
-                                                 deaths_delay_mean_sd)
-            else:
-                print('Using a fixed value for the fatality delay mean')
-                self.DeathsDelayMean = deaths_delay_mean_mean
-
-            self.DeathsDelayDisp = pm.Normal('DeathsDelayDisp', deaths_delay_disp_mean, deaths_delay_disp_sd)
+            self.build_deaths_delay_prior(deaths_delay_mean_mean, deaths_delay_mean_sd, deaths_delay_disp_mean,
+                                         deaths_delay_disp_sd)
             deaths_delay_dist = pm.NegativeBinomial.dist(mu=self.DeathsDelayMean, alpha=self.DeathsDelayDisp)
             bins = np.arange(0, deaths_truncation)
             pmf = T.exp(deaths_delay_dist.logp(bins))
@@ -375,7 +364,7 @@ class CasesOnlyModel(BaseCMModel):
             self.InfectedCases = pm.Deterministic('InfectedCases', pm.math.exp(self.InfectedCases_log))
 
             self.build_cases_delay_prior(cases_delay_mean_mean, cases_delay_mean_sd, cases_delay_disp_mean,
-                                          cases_delay_disp_sd)
+                                         cases_delay_disp_sd)
             cases_delay_dist = pm.NegativeBinomial.dist(mu=self.CasesDelayMean, alpha=self.CasesDelayDisp)
             bins = np.arange(0, cases_truncation)
             pmf = T.exp(cases_delay_dist.logp(bins))
@@ -498,8 +487,8 @@ class NoisyRModel(BaseCMModel):
 
             self.InfectedCases = pm.Deterministic('InfectedCases', pm.math.exp(self.InfectedCases_log))
 
-            self.CasesDelayMean = pm.Normal('CasesDelayMean', cases_delay_mean_mean, cases_delay_mean_sd)
-            self.CasesDelayDisp = pm.Normal('CasesDelayDisp', cases_delay_disp_mean, cases_delay_disp_sd)
+            self.build_cases_delay_prior(cases_delay_mean_mean, cases_delay_mean_sd, cases_delay_disp_mean,
+                                          cases_delay_disp_sd)
             cases_delay_dist = pm.NegativeBinomial.dist(mu=self.CasesDelayMean, alpha=self.CasesDelayDisp)
             bins = np.arange(0, cases_truncation)
             pmf = T.exp(cases_delay_dist.logp(bins))
@@ -530,8 +519,8 @@ class NoisyRModel(BaseCMModel):
 
             self.InfectedDeaths = pm.Deterministic('InfectedDeaths', pm.math.exp(self.InfectedDeaths_log))
 
-            self.DeathsDelayMean = pm.Normal('DeathsDelayMean', deaths_delay_mean_mean, deaths_delay_mean_sd)
-            self.DeathsDelayDisp = pm.Normal('DeathsDelayDisp', deaths_delay_disp_mean, deaths_delay_disp_sd)
+            self.build_deaths_delay_prior(deaths_delay_mean_mean, deaths_delay_mean_sd, deaths_delay_disp_mean,
+                                          deaths_delay_disp_sd)
             deaths_delay_dist = pm.NegativeBinomial.dist(mu=self.DeathsDelayMean, alpha=self.DeathsDelayDisp)
             bins = np.arange(0, deaths_truncation)
             pmf = T.exp(deaths_delay_dist.logp(bins))
@@ -636,8 +625,8 @@ class AdditiveModel(BaseCMModel):
 
             self.InfectedCases = pm.Deterministic('InfectedCases', pm.math.exp(self.InfectedCases_log))
 
-            self.CasesDelayMean = pm.Normal('CasesDelayMean', cases_delay_mean_mean, cases_delay_mean_sd)
-            self.CasesDelayDisp = pm.Normal('CasesDelayDisp', cases_delay_disp_mean, cases_delay_disp_sd)
+            self.build_cases_delay_prior(cases_delay_mean_mean, cases_delay_mean_sd, cases_delay_disp_mean,
+                                          cases_delay_disp_sd)
             cases_delay_dist = pm.NegativeBinomial.dist(mu=self.CasesDelayMean, alpha=self.CasesDelayDisp)
             bins = np.arange(0, cases_truncation)
             pmf = T.exp(cases_delay_dist.logp(bins))
@@ -668,8 +657,8 @@ class AdditiveModel(BaseCMModel):
 
             self.InfectedDeaths = pm.Deterministic('InfectedDeaths', pm.math.exp(self.InfectedDeaths_log))
 
-            self.DeathsDelayMean = pm.Normal('DeathsDelayMean', deaths_delay_mean_mean, deaths_delay_mean_sd)
-            self.DeathsDelayDisp = pm.Normal('DeathsDelayDisp', deaths_delay_disp_mean, deaths_delay_disp_sd)
+            self.build_deaths_delay_prior(deaths_delay_mean_mean, deaths_delay_mean_sd, deaths_delay_disp_mean,
+                                          deaths_delay_disp_sd)
             deaths_delay_dist = pm.NegativeBinomial.dist(mu=self.DeathsDelayMean, alpha=self.DeathsDelayDisp)
             bins = np.arange(0, deaths_truncation)
             pmf = T.exp(deaths_delay_dist.logp(bins))
@@ -775,8 +764,8 @@ class DifferentEffectsModel(BaseCMModel):
                 self.nRs, 1)) + self.GrowthCases.cumsum(axis=1))
             self.InfectedCases = pm.Deterministic('InfectedCases', pm.math.exp(self.InfectedCases_log))
 
-            self.CasesDelayMean = pm.Normal('CasesDelayMean', cases_delay_mean_mean, cases_delay_mean_sd)
-            self.CasesDelayDisp = pm.Normal('CasesDelayDisp', cases_delay_disp_mean, cases_delay_disp_sd)
+            self.build_cases_delay_prior(cases_delay_mean_mean, cases_delay_mean_sd, cases_delay_disp_mean,
+                                          cases_delay_disp_sd)
             cases_delay_dist = pm.NegativeBinomial.dist(mu=self.CasesDelayMean, alpha=self.CasesDelayDisp)
             bins = np.arange(0, cases_truncation)
             pmf = T.exp(cases_delay_dist.logp(bins))
@@ -806,8 +795,8 @@ class DifferentEffectsModel(BaseCMModel):
                 self.nRs, 1)) + self.GrowthDeaths.cumsum(axis=1))
             self.InfectedDeaths = pm.Deterministic('InfectedDeaths', pm.math.exp(self.InfectedDeaths_log))
 
-            self.DeathsDelayMean = pm.Normal('DeathsDelayMean', deaths_delay_mean_mean, deaths_delay_mean_sd)
-            self.DeathsDelayDisp = pm.Normal('DeathsDelayDisp', deaths_delay_disp_mean, deaths_delay_disp_sd)
+            self.build_deaths_delay_prior(deaths_delay_mean_mean, deaths_delay_mean_sd, deaths_delay_disp_mean,
+                                          deaths_delay_disp_sd)
             deaths_delay_dist = pm.NegativeBinomial.dist(mu=self.DeathsDelayMean, alpha=self.DeathsDelayDisp)
             bins = np.arange(0, deaths_truncation)
             pmf = T.exp(deaths_delay_dist.logp(bins))
@@ -953,16 +942,16 @@ class DiscreteRenewalModel(BaseCMModel):
                 res[1, :, gi_truncation:].reshape((self.nRs, self.nDs))
             )
 
-            self.CasesDelayMean = pm.Normal('CasesDelayMean', cases_delay_mean_mean, cases_delay_mean_sd)
-            self.CasesDelayDisp = pm.Normal('CasesDelayDisp', cases_delay_disp_mean, cases_delay_disp_sd)
+            self.build_cases_delay_prior(cases_delay_mean_mean, cases_delay_mean_sd, cases_delay_disp_mean,
+                                          cases_delay_disp_sd)
             cases_delay_dist = pm.NegativeBinomial.dist(mu=self.CasesDelayMean, alpha=self.CasesDelayDisp)
             bins = np.arange(0, cases_truncation)
             pmf = T.exp(cases_delay_dist.logp(bins))
             pmf = pmf / T.sum(pmf)
             reporting_delay = pmf.reshape((1, cases_truncation))
 
-            self.DeathsDelayMean = pm.Normal('DeathsDelayMean', deaths_delay_mean_mean, deaths_delay_mean_sd)
-            self.DeathsDelayDisp = pm.Normal('DeathsDelayDisp', deaths_delay_disp_mean, deaths_delay_disp_sd)
+            self.build_deaths_delay_prior(deaths_delay_mean_mean, deaths_delay_mean_sd, deaths_delay_disp_mean,
+                                          deaths_delay_disp_sd)
             deaths_delay_dist = pm.NegativeBinomial.dist(mu=self.DeathsDelayMean, alpha=self.DeathsDelayDisp)
             bins = np.arange(0, deaths_truncation)
             pmf = T.exp(deaths_delay_dist.logp(bins))
@@ -1121,8 +1110,8 @@ class DeathsOnlyDiscreteRenewalModel(BaseCMModel):
                 res[:, gi_truncation:].reshape((self.nRs, self.nDs))
             )
 
-            self.DeathsDelayMean = pm.Normal('DeathsDelayMean', deaths_delay_mean_mean, deaths_delay_mean_sd)
-            self.DeathsDelayDisp = pm.Normal('DeathsDelayDisp', deaths_delay_disp_mean, deaths_delay_disp_sd)
+            self.build_deaths_delay_prior(deaths_delay_mean_mean, deaths_delay_mean_sd, deaths_delay_disp_mean,
+                                          deaths_delay_disp_sd)
             deaths_delay_dist = pm.NegativeBinomial.dist(mu=self.DeathsDelayMean, alpha=self.DeathsDelayDisp)
             bins = np.arange(0, deaths_truncation)
             pmf = T.exp(deaths_delay_dist.logp(bins))
