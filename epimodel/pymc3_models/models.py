@@ -262,8 +262,9 @@ class DeathsOnlyModel(BaseCMModel):
 
             self.Infected = pm.Deterministic('Infected', pm.math.exp(self.InfectedDeaths_log))
 
-            self.DeathsDelayMean = pm.Normal('DeathsDelayMean', deaths_delay_mean_mean, deaths_delay_mean_sd)
-            self.DeathsDelayDisp = pm.Normal('DeathsDelayDisp', deaths_delay_disp_mean, deaths_delay_disp_sd)
+            self.build_deaths_delay_prior(deaths_delay_mean_mean, deaths_delay_mean_sd, deaths_delay_disp_mean,
+                                          deaths_delay_disp_sd)
+
             deaths_delay_dist = pm.NegativeBinomial.dist(mu=self.DeathsDelayMean, alpha=self.DeathsDelayDisp)
             bins = np.arange(0, deaths_truncation)
             pmf = T.exp(deaths_delay_dist.logp(bins))
@@ -279,7 +280,7 @@ class DeathsOnlyModel(BaseCMModel):
             self.ExpectedDeaths = pm.Deterministic('ExpectedDeaths', expected_deaths.reshape(
                 (self.nRs, self.nDs)))
 
-            self.PsiDeaths = pm.HalfNormal('Psi', 5)
+            self.PsiDeaths = pm.HalfNormal('PsiDeaths', 5)
 
             self.NewDeaths = pm.Data('NewDeaths',
                                      self.d.NewDeaths.data.reshape((self.nRs * self.nDs,))[self.all_observed_deaths])
@@ -373,8 +374,8 @@ class CasesOnlyModel(BaseCMModel):
 
             self.InfectedCases = pm.Deterministic('InfectedCases', pm.math.exp(self.InfectedCases_log))
 
-            self.CasesDelayMean = pm.Normal('CasesDelayMean', cases_delay_mean_mean, cases_delay_mean_sd)
-            self.CasesDelayDisp = pm.Normal('CasesDelayDisp', cases_delay_disp_mean, cases_delay_disp_sd)
+            self.build_cases_delay_prior(cases_delay_mean_mean, cases_delay_mean_sd, cases_delay_disp_mean,
+                                          cases_delay_disp_sd)
             cases_delay_dist = pm.NegativeBinomial.dist(mu=self.CasesDelayMean, alpha=self.CasesDelayDisp)
             bins = np.arange(0, cases_truncation)
             pmf = T.exp(cases_delay_dist.logp(bins))
@@ -390,7 +391,7 @@ class CasesOnlyModel(BaseCMModel):
             self.ExpectedCases = pm.Deterministic('ExpectedCases', expected_confirmed.reshape(
                 (self.nRs, self.nDs)))
 
-            self.PsiCases = pm.HalfNormal('Phi', 5)
+            self.PsiCases = pm.HalfNormal('PsiCases', 5)
 
             # effectively handle missing values ourselves
             self.ObservedCases = pm.NegativeBinomial(

@@ -258,6 +258,48 @@ class BaseCMModel(Model):
             print('Warning: Using a fixed GI Std')
             self.GI_sd = gi_sd_mean
 
+    def build_cases_delay_prior(self, cases_delay_mean_mean, cases_delay_mean_sd, cases_delay_disp_mean,
+                                cases_delay_disp_sd):
+        """
+
+        :param cases_delay_mean_mean:
+        :param cases_delay_mean_sd:
+        :param cases_delay_disp_mean:
+        :param cases_delay_disp_sd:
+        :return:
+        """
+
+        if cases_delay_mean_sd > 0:
+            self.CasesDelayMean = pm.Normal('CasesDelayMean', cases_delay_mean_mean, cases_delay_mean_sd)
+        else:
+            self.CasesDelayMean = cases_delay_mean_mean
+
+        if cases_delay_disp_sd > 0:
+            self.CasesDelayDisp = pm.Normal('CasesDelayDisp', cases_delay_disp_mean, cases_delay_disp_sd)
+        else:
+            self.CasesDelayDisp = cases_delay_disp_mean
+
+    def build_deaths_delay_prior(self, deaths_delay_mean_mean, deaths_delay_mean_sd, deaths_delay_disp_mean,
+                                 deaths_delay_disp_sd):
+        """
+
+        :param deaths_delay_mean_mean:
+        :param deaths_delay_mean_sd:
+        :param deaths_delay_disp_mean:
+        :param deaths_delay_disp_sd:
+        :return:
+        """
+
+        if deaths_delay_mean_sd > 0:
+            self.DeathsDelayMean = pm.Normal('DeathsDelayMean', deaths_delay_mean_mean, deaths_delay_mean_sd)
+        else:
+            self.DeathsDelayMean = deaths_delay_mean_mean
+
+        if deaths_delay_disp_sd > 0:
+            self.DeathsDelayDisp = pm.Normal('DeathsDelayDisp', deaths_delay_disp_mean, deaths_delay_disp_sd)
+        else:
+            self.DeathsDelayDisp = deaths_delay_disp_mean
+
     def plot_effect(self):
         """
         If model.trace has been set, plot the NPI effectiveness estimates.
