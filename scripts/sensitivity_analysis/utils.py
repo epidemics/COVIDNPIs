@@ -61,7 +61,7 @@ def pprint_mb_dict(d):
           '----------------')
 
     for k, v in d.items():
-        print(f'    {d}: {v}')
+        print(f'    {k}: {v}')
 
 
 def generate_base_output_dir(model_type, extra_mb_args_dict):
