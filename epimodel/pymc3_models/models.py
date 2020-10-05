@@ -95,7 +95,7 @@ class DefaultModel(BaseCMModel):
                                                    shape=(self.nRs, self.nDs - 40))
             else:
                 self.GrowthCasesNoise = T.zeros((self.nRs, self.nDs - 40))
-                self.DeathsCasesNoise = T.zeros((self.nRs, self.nDs - 40))
+                self.GrowthDeathsNoise = T.zeros((self.nRs, self.nDs - 40))
 
             self.GrowthCases = T.inc_subtensor(self.ExpectedGrowth[:, 30:-10], self.GrowthCasesNoise)
             self.GrowthDeaths = T.inc_subtensor(self.ExpectedGrowth[:, 30:-10], self.GrowthDeathsNoise)
