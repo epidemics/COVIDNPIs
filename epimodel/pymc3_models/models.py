@@ -289,7 +289,7 @@ class DeathsOnlyModel(BaseCMModel):
             self.ObservedDeaths = pm.NegativeBinomial(
                 'ObservedDeaths',
                 mu=self.ExpectedDeaths.reshape((self.nRs * self.nDs,))[self.all_observed_deaths],
-                alpha=self.Psi,
+                alpha=self.PsiDeaths,
                 shape=(len(self.all_observed_deaths),),
                 observed=self.NewDeaths
             )
