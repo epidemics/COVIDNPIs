@@ -72,6 +72,8 @@ def generate_base_output_dir(model_type, extra_mb_args_dict):
     if not os.path.exists(out_path):
         os.makedirs(out_path)
 
+    return out_path
+
 
 def save_cm_trace(name, trace, tag, base_path):
     out_dir = os.path.join(base_path, tag)

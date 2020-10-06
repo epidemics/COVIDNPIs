@@ -66,7 +66,7 @@ if __name__ == '__main__':
 
     with model.model:
         model.trace = pm.sample(args.n_samples, tune=500, chains=args.n_chains, cores=args.n_chains, max_treedepth=14,
-                                target_accept=0.95, init='adapt_diag')
+                                target_accept=0.975, init='adapt_diag')
 
     results_obj = ResultsObject(region_index, model.trace)
 
