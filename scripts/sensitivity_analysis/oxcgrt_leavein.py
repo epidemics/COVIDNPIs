@@ -4,6 +4,10 @@
 Include extra NPIs from the OxCGRT dataset.
 """
 
+import os
+os.environ['OMP_NUM_THREADS'] = '1'
+os.environ['MKL_NUM_THREADS'] = '1'
+os.environ['OPENBLAS_NUM_THREADS'] = '1'
 
 import pymc3 as pm
 

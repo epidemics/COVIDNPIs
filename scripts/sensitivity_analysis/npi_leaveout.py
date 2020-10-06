@@ -13,6 +13,11 @@ import argparse
 
 from scripts.sensitivity_analysis.utils import *
 
+import os
+os.environ['OMP_NUM_THREADS'] = '1'
+os.environ['MKL_NUM_THREADS'] = '1'
+os.environ['OPENBLAS_NUM_THREADS'] = '1'
+
 argparser = argparse.ArgumentParser()
 argparser.add_argument('--npis', nargs='+', dest='npis', type=int)
 add_argparse_arguments(argparser)

@@ -14,6 +14,12 @@ import pickle
 
 from scripts.sensitivity_analysis.utils import *
 
+
+import os
+os.environ['OMP_NUM_THREADS'] = '1'
+os.environ['MKL_NUM_THREADS'] = '1'
+os.environ['OPENBLAS_NUM_THREADS'] = '1'
+
 argparser = argparse.ArgumentParser()
 argparser.add_argument('--rg', dest='rg', type=str, help='Region to leave out - alpha 2 code')
 add_argparse_arguments(argparser)
