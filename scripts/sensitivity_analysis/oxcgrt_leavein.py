@@ -50,6 +50,9 @@ if __name__ == '__main__':
                            drop_features=drop_features)
     data.mask_reopenings()
 
+    if 'deaths_only' in args.model_type:
+        data.remove_regions_min_deaths(5)
+
     ep = EpidemiologicalParameters()
     model_class = get_model_class_from_str(args.model_type)
 
@@ -59,9 +62,11 @@ if __name__ == '__main__':
     with model_class(data) as model:
         model.build_model(**bd)
 
+    ta = get_target_accept_from_model_str(args.model_type)
+
     with model.model:
         model.trace = pm.sample(args.n_samples, tune=500, chains=args.n_chains, cores=args.n_chains, max_treedepth=14,
-                                target_accept=0.925, init='adapt_diag')
+                                target_accept=ta, init='adapt_diag')
 
     save_cm_trace(f'{output_string}.txt', model.trace.CMReduction, args.exp_tag,
                   generate_base_output_dir(args.model_type, parse_extra_model_args(extras)))

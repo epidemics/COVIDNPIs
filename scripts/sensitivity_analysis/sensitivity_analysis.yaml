@@ -4,7 +4,7 @@ region_holdout:
   experiment_file: region_holdout.py
   experiment_tag: region_holdout
   n_chains: 4
-  n_samples: 2000
+  n_samples: 1250
   args:
     rg:
       - AL
@@ -55,7 +55,7 @@ npi_leaveout:
   experiment_file: npi_leaveout.py
   experiment_tag: npi_leaveout
   n_chains: 4
-  n_samples: 2000
+  n_samples: 1250
   args:
     npis:
       - [0]
@@ -74,7 +74,7 @@ cases_threshold:
   experiment_file: preprocessing_tests.py
   experiment_tag: cases_threshold
   n_chains: 4
-  n_samples: 2000
+  n_samples: 1250
   args:
     smoothing: 1
     deaths_threshold: 10
@@ -86,7 +86,7 @@ deaths_threshold:
   experiment_file: preprocessing_tests.py
   experiment_tag: deaths_threshold
   n_chains: 4
-  n_samples: 2000
+  n_samples: 1250
   args:
     smoothing: 1
     deaths_threshold: [1, 5, 30, 50]
@@ -100,7 +100,7 @@ oxcgrt:
   experiment_file: oxcgrt_leavein.py
   experiment_tag: oxcgrt
   n_chains: 4
-  n_samples: 2000
+  n_samples: 1250
   args:
     npis:
       - [0, 1]
@@ -115,11 +115,10 @@ R_prior:
   experiment_file: alternative_build_param.py
   experiment_tag: R_prior
   n_chains: 4
-  n_samples: 2000
+  n_samples: 1250
   args:
     R_prior_mean: [2.38, 2.78, 3.28, 3.78, 4.28]
     NPI_prior: skewed 10
-    growth_noise: 0.2
 
 
 ###
@@ -128,14 +127,14 @@ npi_prior:
   experiment_file: alternative_build_param.py
   experiment_tag: npi_prior
   n_chains: 4
-  n_samples: 2000
+  n_samples: 1250
   args:
     R_prior_mean: 3.28
     NPI_prior:
       - normal 0.2
       - half_normal 0.2
       - icl 0
-    growth_noise: 0.2
+      - normal 10.
 
 
 ###
@@ -145,9 +144,8 @@ npi_prior:
 structural:
   experiment_file: structural.py
   experiment_tag: structural
-  model_type: default # note this argument is neglected here
   n_chains: 4
-  n_samples: 2000
+  n_samples: 1250
   args:
     model_structure:
       - additive
@@ -161,9 +159,8 @@ structural:
 epiparam_prior:
   experiment_file: epiparam.py
   experiment_tag: epiparam_prior_extra
-  model_type: default
   n_chains: 4
-  n_samples: 2000
+  n_samples: 1250
   args:
     gi_mean_mean: [3.06, 4.06, 5.06, 6.06, 7.06]
     gi_mean_sd: 0.3265
@@ -172,5 +169,47 @@ epiparam_prior:
     cases_mean_mean: [7.92, 9.42, 10.92, 12.42, 13.92]
     cases_mean_sd: 0.94
 
+generation_interval:
+  experiment_file: epiparam.py
+  experiment_tag: generation_interval
+  n_chains: 4
+  n_samples: 1250
+  args:
+    gi_mean_mean: [3.06, 4.06, 5.06, 6.06, 7.06]
+    gi_mean_sd: 0
+    deaths_mean_mean: 21.82
+    deaths_mean_sd: 0
+    cases_mean_mean: 10.92
+    cases_mean_sd: 0
 
+cases_delay:
+  experiment_file: epiparam.py
+  experiment_tag: cases_delay
+  n_chains: 4
+  n_samples: 1250
+  args:
+    gi_mean_mean: 5.06
+    gi_mean_sd: 0
+    deaths_mean_mean: 21.82
+    deaths_mean_sd: 0
+    cases_mean_mean: [7.92, 9.42, 10.92, 12.42, 13.92]
+    cases_mean_sd: 0
 
+deaths_delay:
+  experiment_file: epiparam.py
+  experiment_tag: deaths_delay
+  n_chains: 4
+  n_samples: 1250
+  args:
+    gi_mean_mean: 5.06
+    gi_mean_sd: 0
+    deaths_mean_mean: [17.82, 19.82, 21.82, 23.82, 25.82]
+    deaths_mean_sd: 0
+    cases_mean_mean: 10.92
+    cases_mean_sd: 0
+
+default:
+  experiment_file: default.py
+  experiment_tag: default
+  n_chains: 4
+  n_samples: 2000

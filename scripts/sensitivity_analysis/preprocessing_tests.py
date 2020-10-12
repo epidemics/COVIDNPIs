@@ -29,6 +29,10 @@ if __name__ == '__main__':
                            smoothing=args.smoothing, min_confirmed=args.cases_threshold,
                            min_deaths=args.deaths_threshold)
     data.mask_reopenings()
+
+    if 'deaths_only' in args.model_type:
+        data.remove_regions_min_deaths(5)
+
     output_fname = f'smooth{args.smoothing}-cases_t{args.cases_threshold}-deaths_t{args.deaths_threshold}.txt'
 
     ep = EpidemiologicalParameters()
@@ -40,9 +44,11 @@ if __name__ == '__main__':
     with model_class(data) as model:
         model.build_model(**bd)
 
+    ta = get_target_accept_from_model_str(args.model_type)
+
     with model.model:
         model.trace = pm.sample(args.n_samples, tune=500, chains=args.n_chains, cores=args.n_chains, max_treedepth=14,
-                                target_accept=0.95, init='adapt_diag')
+                                target_accept=ta, init='adapt_diag')
 
     save_cm_trace(f'{output_fname}.txt', model.trace.CMReduction, args.exp_tag,
                   generate_base_output_dir(args.model_type, parse_extra_model_args(extras)))

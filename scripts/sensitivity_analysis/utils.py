@@ -27,6 +27,24 @@ def get_model_class_from_str(model_type_str):
     elif model_type_str == 'deaths_only_discrete_renewal':
         return epm.DeathsOnlyDiscreteRenewalModel
 
+def get_target_accept_from_model_str(model_type_str):
+    if model_type_str == 'default':
+        return 0.905
+    elif model_type_str == 'additive':
+        return 0.905
+    elif model_type_str == 'discrete_renewal':
+        return 0.964
+    elif model_type_str == 'noisy_r':
+        return 0.905
+    elif model_type_str == 'different_effects':
+        return 0.905
+    elif model_type_str == 'cases_only':
+        return 0.964
+    elif model_type_str == 'deaths_only':
+        return 0.964
+    elif model_type_str == 'deaths_only_discrete_renewal':
+        return 0.964
+
 
 def add_argparse_arguments(argparse):
     argparse.add_argument('--model_type', dest='model_type', type=str,
