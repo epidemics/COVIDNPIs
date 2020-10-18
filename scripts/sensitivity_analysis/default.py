@@ -37,8 +37,7 @@ if __name__ == '__main__':
     pprint_mb_dict(bd)
 
     with model_class(data) as model:
-        model.build_model(**bd, R_prior_mean=args.R_prior, cm_prior=prior_type,
-                          cm_prior_scale=prior_scale)
+        model.build_model(**bd)
 
     ta = get_target_accept_from_model_str(args.model_type)
 
