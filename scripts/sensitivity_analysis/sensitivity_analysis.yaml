@@ -213,3 +213,16 @@ default:
   n_chains: 4
   n_samples: 2000
   args: {}
+
+
+npi_prior_additive:
+  experiment_file: alternative_build_param.py
+  experiment_tag: npi_prior
+  n_chains: 4
+  n_samples: 1250
+  args:
+    R_prior_mean: 3.28
+    NPI_prior:
+      - normal 1
+      - normal 5
+      - normal 10
