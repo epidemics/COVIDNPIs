@@ -24,7 +24,7 @@ argparser.add_argument('--NPI_prior', nargs=2, dest='NPI_prior', type=str, help=
 add_argparse_arguments(argparser)
 
 if __name__ == '__main__':
-    args, extras = argparser.parse_args()
+    args, extras = argparser.parse_known_args()
 
     data = preprocess_data('merged_data/double_entry_final.csv', last_day='2020-05-30')
     data.mask_reopenings()

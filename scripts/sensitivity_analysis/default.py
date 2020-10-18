@@ -16,11 +16,12 @@ import argparse
 
 from scripts.sensitivity_analysis.utils import *
 
+
 argparser = argparse.ArgumentParser()
 add_argparse_arguments(argparser)
 
 if __name__ == '__main__':
-    args, extras = argparser.parse_args()
+    args, extras = argparser.parse_known_args()
 
     data = preprocess_data('merged_data/double_entry_final.csv', last_day='2020-05-30')
     data.mask_reopenings()
