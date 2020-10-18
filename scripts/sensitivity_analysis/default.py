@@ -17,10 +17,6 @@ import argparse
 from scripts.sensitivity_analysis.utils import *
 
 argparser = argparse.ArgumentParser()
-
-argparser.add_argument('--R_prior_mean', dest='R_prior', type=float, help='Prior mean basic reproductive number R0')
-argparser.add_argument('--NPI_prior', nargs=2, dest='NPI_prior', type=str, help='Prior for NPI effectiveness')
-
 add_argparse_arguments(argparser)
 
 if __name__ == '__main__':
@@ -32,10 +28,7 @@ if __name__ == '__main__':
     if 'deaths_only' in args.model_type:
         data.remove_regions_min_deaths(5)
 
-    prior_type = args.NPI_prior[0]
-    prior_scale = float(args.NPI_prior[1])
-
-    output_fname = f'R_prior-{args.R_prior}-npi_prior-{args.NPI_prior[0]}-npi_prior_scale-{args.NPI_prior[1]}.txt'
+    output_fname = f'default.txt'
     ep = EpidemiologicalParameters()
     model_class = get_model_class_from_str(args.model_type)
 
