@@ -48,5 +48,6 @@ if __name__ == '__main__':
     print('Default Run Complete')
     save_cm_trace(f'{output_fname}.txt', model.trace.CMReduction, args.exp_tag,
                   generate_base_output_dir(args.model_type, parse_extra_model_args(extras)))
-    save_cm_trace(f'{output_fname}.txt', model.trace.CMReduction, args.exp_tag,
+    save_cm_trace(f'{output_fname}-divergences.txt', np.sum(model.trace.get_sampler_stats('diverging')).reshape((1, 1)),
+                  args.exp_tag,
                   generate_base_output_dir(args.model_type, parse_extra_model_args(extras)))
