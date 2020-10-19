@@ -52,6 +52,7 @@ if __name__ == '__main__':
         model.trace = pm.sample(args.n_samples, tune=500, chains=args.n_chains, cores=args.n_chains, max_treedepth=14,
                                 target_accept=ta, init='adapt_diag')
 
+    print(f'Saving {output_fname}.txt - Complete')
     save_cm_trace(f'{output_fname}.txt', model.trace.CMReduction, args.exp_tag,
                   generate_base_output_dir(args.model_type, parse_extra_model_args(extras)))
     save_cm_trace(f'{output_fname}-divergences.txt', np.sum(trace.get_sampler_stats('diverging')).reshape((1, 1)), args.exp_tag,
