@@ -45,3 +45,4 @@ def save_cm_trace(name, trace, tag, model_type):
     if not os.path.exists(out_dir):
         os.makedirs(out_dir)
     np.savetxt(os.path.join(out_dir, name), trace)
+
