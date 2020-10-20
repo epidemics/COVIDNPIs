@@ -239,7 +239,7 @@ region_multivariate:
   experiment_tag: region_multivariate
   model_type: default
   n_chains: 4
-  n_samples: 2000
+  n_samples: 1250
   args:
     seed: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23]
     n_runs: 5
