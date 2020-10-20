@@ -12,6 +12,7 @@ from epimodel.preprocessing.data_preprocessor import preprocess_data
 
 import argparse
 import pickle
+import copy
 
 from scripts.sensitivity_analysis.utils import *
 
