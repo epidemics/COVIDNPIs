@@ -51,7 +51,7 @@ if __name__ == '__main__':
             new_data.NewCases[r_i, :] = copy.deepcopy(data.NewCases[r_oi, :])
             new_data.NewDeaths[r_i, :] = copy.deepcopy(data.NewDeaths[r_oi, :])
 
-        with model_class(data) as model:
+        with model_class(new_data) as model:
             model.build_model(**ep.get_model_build_dict())
 
         with model.model:
