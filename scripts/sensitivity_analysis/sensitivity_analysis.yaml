@@ -3,7 +3,7 @@
 region_holdout:
   experiment_file: region_holdout.py
   experiment_tag: region_holdout
-  model_type: default
+  model_type: complex
   n_chains: 4
   n_samples: 2000
   args:
@@ -55,7 +55,7 @@ region_holdout:
 npi_leaveout:
   experiment_file: npi_leaveout.py
   experiment_tag: npi_leaveout
-  model_type: default
+  model_type: complex
   n_chains: 4
   n_samples: 2000
   args:
@@ -75,7 +75,7 @@ npi_leaveout:
 cases_threshold:
   experiment_file: preprocessing_tests.py
   experiment_tag: cases_threshold
-  model_type: default
+  model_type: complex
   n_chains: 4
   n_samples: 2000
   args:
@@ -88,7 +88,7 @@ cases_threshold:
 deaths_threshold:
   experiment_file: preprocessing_tests.py
   experiment_tag: deaths_threshold
-  model_type: default
+  model_type: complex
   n_chains: 4
   n_samples: 2000
   args:
@@ -103,7 +103,7 @@ deaths_threshold:
 oxcgrt:
   experiment_file: oxcgrt_leavein.py
   experiment_tag: oxcgrt
-  model_type: default
+  model_type: complex
   n_chains: 4
   n_samples: 2000
   args:
@@ -119,7 +119,7 @@ oxcgrt:
 R_prior:
   experiment_file: alternative_build_param.py
   experiment_tag: R_prior
-  model_type: default
+  model_type: complex
   n_chains: 4
   n_samples: 2000
   args:
@@ -132,7 +132,7 @@ R_prior:
 growth_noise:
   experiment_file: alternative_build_param.py
   experiment_tag: growth_noise
-  model_type: default
+  model_type: complex
   n_chains: 4
   n_samples: 2000
   args:
@@ -149,7 +149,7 @@ growth_noise:
 npi_prior:
   experiment_file: alternative_build_param.py
   experiment_tag: npi_prior
-  model_type: default
+  model_type: complex
   n_chains: 4
   n_samples: 2000
   args:
@@ -165,7 +165,7 @@ npi_prior:
 agg_holdout:
   experiment_file: agg_holdout.py
   experiment_tag: agg_holdout
-  model_type: default
+  model_type: complex
   n_chains: 4
   n_samples: 2000
   args: {}
@@ -175,7 +175,7 @@ agg_holdout:
 any_npi_active:
   experiment_file: any_npi_active.py
   experiment_tag: any_npi_active
-  model_type: default
+  model_type: complex
   n_chains: 4
   n_samples: 2000
   args: {}
@@ -185,7 +185,7 @@ any_npi_active:
 delay_schools:
   experiment_file: delay_schools.py
   experiment_tag: delay_schools
-  model_type: default
+  model_type: complex
   n_chains: 4
   n_samples: 2000
   args: {}
@@ -195,7 +195,7 @@ delay_schools:
 npi_timing:
   experiment_file: npi_timing.py
   experiment_tag: npi_timing
-  model_type: default
+  model_type: complex
   n_chains: 4
   n_samples: 2000
   args: {}
@@ -207,7 +207,7 @@ npi_timing:
 structural:
   experiment_file: structural.py
   experiment_tag: structural
-  model_type: default # note this argument is neglected here
+  model_type: complex # note this argument is neglected here
   n_chains: 4
   n_samples: 2000
   args:
@@ -223,7 +223,7 @@ structural:
 epiparam_prior:
   experiment_file: epiparam.py
   experiment_tag: epiparam_prior_extra
-  model_type: default
+  model_type: complex
   n_chains: 4
   n_samples: 2000
   args:
@@ -237,7 +237,7 @@ epiparam_prior:
 region_multivariate:
   experiment_file: region_multivariate.py
   experiment_tag: region_multivariate
-  model_type: default
+  model_type: complex
   n_chains: 4
   n_samples: 1250
   args:
