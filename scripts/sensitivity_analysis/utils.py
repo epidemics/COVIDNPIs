@@ -24,6 +24,8 @@ def get_model_class_from_str(model_type_str):
         return epm.CasesOnlyModel
     elif model_type_str == 'deaths_only':
         return epm.DeathsOnlyModel
+    if model_type_str == 'complex':
+        return epm.ComplexDifferentEffectsModelV3
 
 
 def add_argparse_arguments(argparse):
