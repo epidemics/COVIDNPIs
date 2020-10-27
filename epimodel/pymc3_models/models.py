@@ -1286,7 +1286,7 @@ class ComplexDifferentEffectsModelV3(BaseCMModel):
 class ComplexDifferentEffectsModelV3T(BaseCMModel):
     def build_model(self, R_prior_mean=3.28, cm_prior_scale=10, cm_prior='skewed',
                     gi_mean_mean=5, gi_mean_sd=1, gi_sd_mean=2, gi_sd_sd=2, growth_noise_scale=0.2,
-                    alpha_noise_scale=0.1, deaths_delay_mean_mean=21, deaths_delay_mean_sd=1, deaths_delay_disp_mean=9,
+                    alpha_noise_scale_prior='half-normal', alpha_noise_scale=0.1, deaths_delay_mean_mean=21, deaths_delay_mean_sd=1, deaths_delay_disp_mean=9,
                     deaths_delay_disp_sd=1, cases_delay_mean_mean=10, cases_delay_mean_sd=1, cases_delay_disp_mean=5,
                     cases_delay_disp_sd=1, deaths_truncation=48, cases_truncation=32, **kwargs):
         """
@@ -1315,8 +1315,10 @@ class ComplexDifferentEffectsModelV3T(BaseCMModel):
 
             self.CMReduction = pm.Deterministic('CMReduction', T.exp((-1.0) * self.CM_Alpha))
 
-
-            self.CMAlphaScales = pm.HalfStudentT('CMAlphaScales', nu=3, sigma=alpha_noise_scale, shape=(self.nCMs))
+            if alpha_noise_scale_prior == 'half-normal':
+                self.CMAlphaScales = pm.HalfNormal('CMAlphaScales', sigma=alpha_noise_scale, shape=(self.nCMs))
+            elif alpha_noise_scale_prior == 'half-t':
+                self.CMAlphaScales = pm.HalfStudentT('CMAlphaScales', nu=3, sigma=alpha_noise_scale, shape=(self.nCMs))
 
             self.AllCMAlphaNoise = pm.StudentT('AllCMAlphaNoise', nu=3, shape=(self.nRs, self.nCMs))
 

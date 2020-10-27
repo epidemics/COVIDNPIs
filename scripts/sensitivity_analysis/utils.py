@@ -74,7 +74,10 @@ def parse_extra_model_args(extras):
 
     for k, a in kvs:
         if k.startswith('--model_build_arg_'):
-            extra_mb_args_dict[k[len('--model_build_arg_'):]] = float(a)
+            try:
+                extra_mb_args_dict[k[len('--model_build_arg_'):]] = float(a)
+            except:
+                extra_mb_args_dict[k[len('--model_build_arg_'):]] = str(a)
 
     print('Extra Model Build Args Dictionary')
     print(extra_mb_args_dict)
