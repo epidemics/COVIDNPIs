@@ -127,12 +127,23 @@ class PreprocessedData(object):
         if newfig:
             plt.figure(figsize=(2, 3), dpi=300)
 
+        total_cms = self.ActiveCMs
+        diff_cms = np.zeros_like(total_cms)
+        diff_cms[:, :, 1:] = total_cms[:, :, 1:] - total_cms[:, :, :-1]
+        rs, ds = np.nonzero(np.any(diff_cms < 0, axis=1))
+        nnz = rs.size
+
+        data_mask = False * np.ones((len(self.Rs), len(self.Ds)), dtype=np.bool)
+
+        for nz_i in range(nnz):
+            data_mask[rs[nz_i], ds[nz_i]:] = True
+
         nRs, nCMs, nDs = self.ActiveCMs.shape
         plt.title("Frequency $i$ Active Given $j$ Active", fontsize=8)
         ax = plt.gca()
         mat = np.zeros((nCMs, nCMs))
         for cm in range(nCMs):
-            mask = self.ActiveCMs[:, cm, :] * (self.NewDeaths.mask == False)
+            mask = self.ActiveCMs[:, cm, :] * (data_mask == False)
             for cm2 in range(nCMs):
                 mat[cm, cm2] = np.sum(mask * self.ActiveCMs[:, cm2, :]) / np.sum(mask)
         im = plt.imshow(mat * 100, vmin=25, vmax=100, cmap='inferno', aspect="auto")
@@ -144,7 +155,8 @@ class PreprocessedData(object):
                     plt.text(j, i, f'{int(100 * mat[i, j]):d}%', fontsize=3.5, ha='center', va='center', color='white',
                              rotation=45)
                 else:
-                    plt.text(j, i, f'{int(100 * mat[i, j]):d}%', fontsize=3.5, ha='center', va='center', color=[0.4627010031973002, 0.2693410356621817, 0.46634810758714684],
+                    plt.text(j, i, f'{int(100 * mat[i, j]):d}%', fontsize=3.5, ha='center', va='center',
+                             color=[0.4627010031973002, 0.2693410356621817, 0.46634810758714684],
                              rotation=45)
 
         plt.xticks(
