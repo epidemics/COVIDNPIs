@@ -5,10 +5,12 @@ This file contains the merge_data function, which takes data from different sour
 If you are a user of EpidemicForecasting.org, you will not need to use this function.
 """
 import os
+import copy
 
 import numpy as np
 import pandas as pd
 import theano
+
 
 
 def _merge_data(data_base_path, region_info, oxcgrt_feature_filter, selected_features_oxcgrt, selected_features_epi,
@@ -48,7 +50,7 @@ def _merge_data(data_base_path, region_info, oxcgrt_feature_filter, selected_fea
     epi_cmset = pd.read_csv(os.path.join(data_base_path, episet_fname), skiprows=1).set_index('Code')
     for c in epi_cmset.columns:
         if 'Code 3' in c or 'comment' in c or 'Oxford' in c or 'Unnamed' in c or 'Person' in c or 'sources' in c \
-                or 'oxford' in c:
+                or 'oxford' in c or 'Sources' in c:
             del epi_cmset[c]
 
     region_names = list([x for x, _, _ in region_info])
@@ -123,10 +125,15 @@ def _merge_data(data_base_path, region_info, oxcgrt_feature_filter, selected_fea
 
     data_oxcgrt.sort_index()
 
-    data_oxcgrt_filtered = data_oxcgrt.loc[regions_epi, selected_features_oxcgrt]
+    regions_epi_filtered = copy.deepcopy(regions_epi)
+    regions_epi_filtered.remove('LV')
+    regions_epi_filtered.remove('MT')
+    data_oxcgrt_filtered = data_oxcgrt.loc[regions_epi_filtered, selected_features_oxcgrt]
 
     values_to_stack = []
     Ds_l = list(Ds)
+
+    # return data_oxcgrt_filtered
 
     for c in regions_epi:
         if c in data_oxcgrt_filtered.index:
@@ -137,6 +144,7 @@ def _merge_data(data_base_path, region_info, oxcgrt_feature_filter, selected_fea
             else:
                 x_0 = 0
 
+            print(c)
             v[:, x_0:] = data_oxcgrt_filtered.loc[c].loc[Ds[x_0:]].T
             values_to_stack.append(v)
         else:
@@ -223,4 +231,4 @@ def _merge_data(data_base_path, region_info, oxcgrt_feature_filter, selected_fea
     # save to new csv file!
     df = df.set_index(['Country Code', 'Date'])
     df.to_csv(output_name)
-    print.info(f'Saved final CSV, {output_name}')
+    print(f'Saved final CSV, {output_name}')

@@ -27,9 +27,7 @@ def get_model_class_from_str(model_type_str):
     elif model_type_str == 'deaths_only_discrete_renewal':
         return epm.DeathsOnlyDiscreteRenewalModel
     elif model_type_str == 'complex':
-        return epm.ComplexDifferentEffectsModelV3
-    elif model_type_str == 'complex-T':
-        return epm.ComplexDifferentEffectsModelV3T
+        return epm.ComplexDifferentEffectsModel
 
 def get_target_accept_from_model_str(model_type_str):
     if model_type_str == 'default':

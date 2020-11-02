@@ -97,8 +97,8 @@ deaths_threshold:
     cases_threshold: 100
 
 ###
-# | Run the model with additional featurs from OxCGRT: 
-# | ['Travel Screen/Quarantine', 'Travel Bans', 'Public Transport Limited',
+# | Run the model with additional featurs from OxCGRT and our own data:
+# | ['Mask Wearing', 'Travel Screen/Quarantine', 'Travel Bans', 'Public Transport Limited',
 # | 'Internal Movement Limited', 'Public Information Campaigns', 'Symptomatic Testing']
 oxcgrt:
   experiment_file: oxcgrt_leavein.py
@@ -108,11 +108,12 @@ oxcgrt:
   n_samples: 2000
   args:
     npis:
-      - [0, 1]
-      - [2]
+      - [0]
+      - [1, 2]
       - [3]
       - [4]
       - [5]
+      - [6]
 
 ###
 # Run the model with a prior mean R0 of [2.28, 2.78, 3.78, 4.38]
@@ -125,24 +126,24 @@ R_prior:
   args:
     R_prior_mean: [2.38, 2.78, 3.28, 3.78, 4.28]
     NPI_prior: skewed 10
-    growth_noise: 0.2
+    alpha_noise: 0.04
 
 ###
 # Add noise to growth rate
-growth_noise:
+alpha_noise:
   experiment_file: alternative_build_param.py
-  experiment_tag: growth_noise
+  experiment_tag: alpha_noise_scale
   model_type: complex
   n_chains: 4
   n_samples: 2000
   args:
     R_prior_mean: 3.28
     NPI_prior: skewed 10
-    growth_noise:
+    alpha_noise:
+      - 0.02
+      - 0.03
+      - 0.04
       - 0.05
-      - 0.1
-      - 0.3
-      - 0.4
 
 ###
 # Run the model with an NPI effetiveness prior of [skewed 10, Normal(0,0.2), ICL]
@@ -158,47 +159,8 @@ npi_prior:
       - normal 0.2
       - half_normal 0.2
       - icl 0
-    growth_noise: 0.2
-
-###
-# Mask the final 20 days of data and predict this period with the model
-agg_holdout:
-  experiment_file: agg_holdout.py
-  experiment_tag: agg_holdout
-  model_type: complex
-  n_chains: 4
-  n_samples: 2000
-  args: {}
-
-###
-# Add an additional dummy NPI representing whether any major NPI is active
-any_npi_active:
-  experiment_file: any_npi_active.py
-  experiment_tag: any_npi_active
-  model_type: complex
-  n_chains: 4
-  n_samples: 2000
-  args: {}
-
-###
-# Run the model with an additional 5 day delay to school and university closures
-delay_schools:
-  experiment_file: delay_schools.py
-  experiment_tag: delay_schools
-  model_type: complex
-  n_chains: 4
-  n_samples: 2000
-  args: {}
-
-###
-# Run the model with NPI indices 0-8 representing 0,...,8 active NPIs, ignoring NPI type
-npi_timing:
-  experiment_file: npi_timing.py
-  experiment_tag: npi_timing
-  model_type: complex
-  n_chains: 4
-  n_samples: 2000
-  args: {}
+      - normal 10
+    alpha_noise: 0.04
 
 ###
 # | Run the model with alternative structures: 
@@ -215,14 +177,14 @@ structural:
       - additive
       - discrete_renewal_fixed_gi
       - noisy_r
-      - different_effects
+      - default
       - cases_only
       - deaths_only
 
 
 epiparam_prior:
   experiment_file: epiparam.py
-  experiment_tag: epiparam_prior_extra
+  experiment_tag: epiparam_prior
   model_type: complex
   n_chains: 4
   n_samples: 2000
@@ -234,14 +196,5 @@ epiparam_prior:
     cases_mean_mean: [7.92, 9.42, 10.92, 12.42, 13.92]
     cases_mean_sd: 0.94
 
-region_multivariate:
-  experiment_file: region_multivariate.py
-  experiment_tag: region_multivariate
-  model_type: complex
-  n_chains: 4
-  n_samples: 1250
-  args:
-    seed: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23]
-    n_runs: 5
 
 

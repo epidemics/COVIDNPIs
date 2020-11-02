@@ -31,7 +31,7 @@ if __name__ == '__main__':
     args = argparser.parse_args()
 
     # this is the default drop values
-    drop_features_full = ['Travel Screen/Quarantine', 'Travel Bans', 'Public Transport Limited',
+    drop_features_full = ['Mask Wearing', 'Travel Screen/Quarantine', 'Travel Bans', 'Public Transport Limited',
                           'Internal Movement Limited', 'Public Information Campaigns', 'Symptomatic Testing']
 
     drop_features = copy.deepcopy(drop_features_full)

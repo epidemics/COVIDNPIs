@@ -55,7 +55,7 @@ if __name__ == '__main__':
                 pass
 
 
-    data = preprocess_data('merged_data/double_entry_final.csv', last_day='2020-05-30')
+    data = preprocess_data('merged_data/data_final_nov.csv', last_day='2020-05-30')
     data.mask_reopenings()
 
     if 'deaths_only' in args.model_type:

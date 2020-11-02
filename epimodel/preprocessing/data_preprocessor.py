@@ -59,8 +59,8 @@ def preprocess_data(data_path, last_day=None, schools_unis='two_separate', drop_
     region_full_names = df.loc[region_names]["Region Name"]
 
     if drop_features is None:
-        # note: these features are taken from the OxCGRT Dataset.
-        drop_features = ['Travel Screen/Quarantine', 'Travel Bans', 'Public Transport Limited',
+        # note: these features are taken from the OxCGRT Dataset other than the mask wearing option
+        drop_features = ['Mask Wearing', 'Travel Screen/Quarantine', 'Travel Bans', 'Public Transport Limited',
                          'Internal Movement Limited', 'Public Information Campaigns', 'Symptomatic Testing']
 
     for f in drop_features:
