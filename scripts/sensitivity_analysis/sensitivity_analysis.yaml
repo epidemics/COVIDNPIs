@@ -3,7 +3,6 @@
 region_holdout:
   experiment_file: region_holdout.py
   experiment_tag: region_holdout
-  model_type: complex
   n_chains: 4
   n_samples: 2000
   args:
@@ -55,7 +54,6 @@ region_holdout:
 npi_leaveout:
   experiment_file: npi_leaveout.py
   experiment_tag: npi_leaveout
-  model_type: complex
   n_chains: 4
   n_samples: 2000
   args:
@@ -75,7 +73,6 @@ npi_leaveout:
 cases_threshold:
   experiment_file: preprocessing_tests.py
   experiment_tag: cases_threshold
-  model_type: complex
   n_chains: 4
   n_samples: 2000
   args:
@@ -88,7 +85,6 @@ cases_threshold:
 deaths_threshold:
   experiment_file: preprocessing_tests.py
   experiment_tag: deaths_threshold
-  model_type: complex
   n_chains: 4
   n_samples: 2000
   args:
@@ -103,7 +99,6 @@ deaths_threshold:
 oxcgrt:
   experiment_file: oxcgrt_leavein.py
   experiment_tag: oxcgrt
-  model_type: complex
   n_chains: 4
   n_samples: 2000
   args:
@@ -120,7 +115,6 @@ oxcgrt:
 R_prior:
   experiment_file: alternative_build_param.py
   experiment_tag: R_prior
-  model_type: complex
   n_chains: 4
   n_samples: 2000
   args:
@@ -133,7 +127,6 @@ R_prior:
 alpha_noise:
   experiment_file: alternative_build_param.py
   experiment_tag: alpha_noise_scale
-  model_type: complex
   n_chains: 4
   n_samples: 2000
   args:
@@ -150,7 +143,6 @@ alpha_noise:
 npi_prior:
   experiment_file: alternative_build_param.py
   experiment_tag: npi_prior
-  model_type: complex
   n_chains: 4
   n_samples: 2000
   args:
@@ -185,7 +177,6 @@ structural:
 epiparam_prior:
   experiment_file: epiparam.py
   experiment_tag: epiparam_prior
-  model_type: complex
   n_chains: 4
   n_samples: 2000
   args:
@@ -199,7 +190,6 @@ epiparam_prior:
 iceswe:
   experiment_file: iceswe.py
   experiment_tag: iceswe
-  model_type: complex
   n_chains: 4
   n_samples: 2000
   args: {}
