@@ -1063,8 +1063,8 @@ class ComplexDifferentEffectsModel(BaseCMModel):
 
             self.ExpectedGrowth = gi_beta * (pm.math.exp(self.ExpectedLogR / gi_alpha) - T.ones((self.nRs, self.nDs)))
 
-            # self.GrowthNoiseScale = pm.HalfStudentT('GrowthNoiseScale', nu=3, sigma=0.15)
-            self.GrowthNoiseScale = pm.HalfNormal('GrowthNoiseScale', sigma=0.15)
+            self.GrowthNoiseScale = pm.HalfStudentT('GrowthNoiseScale', nu=3, sigma=0.15)
+            # self.GrowthNoiseScale = pm.HalfNormal('GrowthNoiseScale', sigma=0.15)
 
             # exclude 40 days of noise, slight increase in runtime.
             self.GrowthCasesNoise = pm.Normal("GrowthCasesNoise", 0, 1,
