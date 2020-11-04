@@ -47,9 +47,9 @@ def get_target_accept_from_model_str(model_type_str):
     elif model_type_str == 'deaths_only_discrete_renewal':
         return 0.964
     elif model_type_str == 'complex':
-        return 0.925
+        return 0.96
     elif model_type_str == 'complex-T':
-        return 0.925
+        return 0.96
 
 
 def add_argparse_arguments(argparse):
