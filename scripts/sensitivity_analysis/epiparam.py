@@ -23,7 +23,7 @@ argparser.add_argument('--cases_mean_mean', dest='cases_mean_mean', type=float, 
 argparser.add_argument('--cases_mean_sd', dest='cases_mean_sd', type=float, help='Mean of the prior over infection-to-reporting delay means')
 
 add_argparse_arguments(argparser)
-args = argparser.parse_args()
+args, extras = argparser.parse_known_args()
 
 if __name__ == '__main__':
     data = preprocess_data(get_data_path(), last_day='2020-05-30')
@@ -35,18 +35,20 @@ if __name__ == '__main__':
 
     ep = EpidemiologicalParameters()
     model_class = get_model_class_from_str(args.model_type)
-    model_build_dict = ep.get_model_build_dict()
+    bd = {**ep.get_model_build_dict(), **parse_extra_model_args(extras)}
 
     # update params from args
-    model_build_dict['gi_mean_mean'] = args.gi_mean_mean
-    model_build_dict['gi_mean_sd'] = args.gi_mean_sd
-    model_build_dict['deaths_delay_mean_mean'] = args.deaths_mean_mean
-    model_build_dict['deaths_delay_mean_sd'] = args.deaths_mean_sd
-    model_build_dict['cases_delay_mean_mean'] = args.cases_mean_mean
-    model_build_dict['cases_delay_mean_sd'] = args.cases_mean_sd
+    bd['gi_mean_mean'] = args.gi_mean_mean
+    bd['gi_mean_sd'] = args.gi_mean_sd
+    bd['deaths_delay_mean_mean'] = args.deaths_mean_mean
+    bd['deaths_delay_mean_sd'] = args.deaths_mean_sd
+    bd['cases_delay_mean_mean'] = args.cases_mean_mean
+    bd['cases_delay_mean_sd'] = args.cases_mean_sd
+
+    pprint_mb_dict(bd)
 
     with model_class(data) as model:
-        model.build_model(**model_build_dict)
+        model.build_model(**bd)
 
     with model.model:
         # some traces don't run here without init='adapt_diag'
@@ -59,6 +61,6 @@ if __name__ == '__main__':
     if model.country_specific_effects:
         output_fname.replace('.txt', '-cs.txt')
         nS, nCMs = model.trace.CMReduction.shape
-        full_trace = np.exp(np.log(model.trace.CMReduction) + np.random.normal(size=(nS, nCMs)) * trace.CMAlphaScales)
+        full_trace = np.exp(np.log(model.trace.CMReduction) + np.random.normal(size=(nS, nCMs)) * model.trace.CMAlphaScales)
         save_cm_trace(output_fname, full_trace, args.exp_tag,
                       generate_base_output_dir(args.model_type, parse_extra_model_args(extras)))

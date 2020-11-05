@@ -34,7 +34,7 @@ argparser.add_argument('--model_structure', dest='model_structure', type=str,
 
 if __name__ == '__main__':
 
-    args = argparser.parse_args()
+    args, extras = argparser.parse_known_args()
 
     data = preprocess_data(get_data_path(), last_day='2020-05-30')
     data.mask_reopenings()
@@ -42,7 +42,8 @@ if __name__ == '__main__':
     ep = EpidemiologicalParameters()
     model_class = get_model_class_from_str(args.model_structure)
 
-    bd = ep.get_model_build_dict()
+    bd = {**ep.get_model_build_dict(), **parse_extra_model_args(extras)}
+
 
     if args.model_structure == 'discrete_renewal_fixed_gi':
         # posterior means from a full model run
@@ -62,6 +63,6 @@ if __name__ == '__main__':
     if model.country_specific_effects:
         output_fname.replace('.txt', '-cs.txt')
         nS, nCMs = model.trace.CMReduction.shape
-        full_trace = np.exp(np.log(model.trace.CMReduction) + np.random.normal(size=(nS, nCMs)) * trace.CMAlphaScales)
+        full_trace = np.exp(np.log(model.trace.CMReduction) + np.random.normal(size=(nS, nCMs)) * model.trace.CMAlphaScales)
         save_cm_trace(f'{args.model_structure}-cs.txt', full_trace, args.exp_tag,
                       generate_base_output_dir(args.model_type, parse_extra_model_args(extras)))
