@@ -21,9 +21,9 @@ def get_model_class_from_str(model_type_str):
     elif model_type_str == 'different_effects':
         return epm.DifferentEffectsModel
     elif model_type_str == 'cases_only':
-        return epm.CasesOnlyModel
+        return epm.DeathsOnlyComplexDifferentEffectsModel
     elif model_type_str == 'deaths_only':
-        return epm.DeathsOnlyModel
+        return epm.DeathsOnlyComplexDifferentEffectsModel
     elif model_type_str == 'deaths_only_discrete_renewal':
         return epm.DeathsOnlyDiscreteRenewalModel
     elif model_type_str == 'complex':
@@ -107,3 +107,6 @@ def save_cm_trace(name, trace, tag, base_path):
     if not os.path.exists(out_dir):
         os.makedirs(out_dir)
     np.savetxt(os.path.join(out_dir, name), trace)
+
+def get_data_path():
+    return 'merged_data/data_final_nov.csv'

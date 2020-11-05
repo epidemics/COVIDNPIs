@@ -28,7 +28,7 @@ add_argparse_arguments(argparser)
 if __name__ == '__main__':
     args, extras = argparser.parse_known_args()
 
-    data = preprocess_data('merged_data/data_final_nov.csv', last_day='2020-05-30')
+    data = preprocess_data(get_data_path(), last_day='2020-05-30')
     data.mask_reopenings(print_out=False)
 
     ep = EpidemiologicalParameters()
@@ -328,3 +328,9 @@ if __name__ == '__main__':
 
     save_cm_trace(f'{args.scaling_type}.txt', model.trace.CMReduction, args.exp_tag,
                   generate_base_output_dir(args.model_type, parse_extra_model_args(extras)))
+
+    if model.country_specific_effects:
+        nS, nCMs = model.trace.CMReduction.shape
+        full_trace = np.exp(np.log(model.trace.CMReduction) + np.random.normal(size=(nS, nCMs)) * trace.CMAlphaScales)
+        save_cm_trace(f'{args.scaling_type}-cs.txt', full_trace, args.exp_tag,
+                      generate_base_output_dir(args.model_type, parse_extra_model_args(extras)))

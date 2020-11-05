@@ -36,7 +36,7 @@ if __name__ == '__main__':
 
     args = argparser.parse_args()
 
-    data = preprocess_data('merged_data/data_final_nov.csv', last_day='2020-05-30')
+    data = preprocess_data(get_data_path(), last_day='2020-05-30')
     data.mask_reopenings()
 
     ep = EpidemiologicalParameters()
@@ -56,4 +56,12 @@ if __name__ == '__main__':
         model.trace = pm.sample(args.n_samples, tune=500, chains=args.n_chains, cores=args.n_chains, max_treedepth=14,
                                 target_accept=0.95, init='adapt_diag')
 
-    save_cm_trace(f'{args.model_structure}.txt', model.trace.CMReduction, args.exp_tag, args.model_type)
+    save_cm_trace(f'{args.model_structure}.txt', model.trace.CMReduction, args.exp_tag,
+                  generate_base_output_dir(args.model_type, parse_extra_model_args(extras)))
+
+    if model.country_specific_effects:
+        output_fname.replace('.txt', '-cs.txt')
+        nS, nCMs = model.trace.CMReduction.shape
+        full_trace = np.exp(np.log(model.trace.CMReduction) + np.random.normal(size=(nS, nCMs)) * trace.CMAlphaScales)
+        save_cm_trace(f'{args.model_structure}-cs.txt', full_trace, args.exp_tag,
+                      generate_base_output_dir(args.model_type, parse_extra_model_args(extras)))

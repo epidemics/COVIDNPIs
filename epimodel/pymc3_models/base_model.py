@@ -116,6 +116,8 @@ class BaseCMModel(Model):
         self.d = data
         self.trace = None
 
+        self.country_specific_effects = False
+
         if cm_plot_style is not None:
             self.cm_plot_style = cm_plot_style
         else:

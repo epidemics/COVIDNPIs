@@ -994,9 +994,15 @@ class DiscreteRenewalFixedGIModel(BaseCMModel):
 
 
 class ComplexDifferentEffectsModel(BaseCMModel):
+
+    def __init__(self, data, cm_plot_style=None, name="", model=None):
+        super().__init__(data, cm_plot_style, name, model)
+        self.country_specific_effects = True
+
     def build_model(self, R_prior_mean=3.28, cm_prior_scale=10, cm_prior='skewed',
                     gi_mean_mean=5, gi_mean_sd=1, gi_sd_mean=2, gi_sd_sd=2,
-                    alpha_noise_scale_prior='half-t', alpha_noise_scale=0.04, deaths_delay_mean_mean=21, deaths_delay_mean_sd=1, deaths_delay_disp_mean=9,
+                    alpha_noise_scale_prior='half-t', alpha_noise_scale=0.04, deaths_delay_mean_mean=21,
+                    deaths_delay_mean_sd=1, deaths_delay_disp_mean=9,
                     deaths_delay_disp_sd=1, cases_delay_mean_mean=10, cases_delay_mean_sd=1, cases_delay_disp_mean=5,
                     cases_delay_disp_sd=1, deaths_truncation=48, cases_truncation=32, **kwargs):
         """
@@ -1029,7 +1035,6 @@ class ComplexDifferentEffectsModel(BaseCMModel):
                 self.CMAlphaScales = pm.HalfNormal('CMAlphaScales', sigma=alpha_noise_scale, shape=(self.nCMs))
             elif alpha_noise_scale_prior == 'half-t':
                 self.CMAlphaScales = pm.HalfStudentT('CMAlphaScales', nu=3, sigma=alpha_noise_scale, shape=(self.nCMs))
-
 
             self.AllCMAlphaNoise = pm.Normal('AllCMAlphaNoise', 0, 1, shape=(self.nRs, self.nCMs))
             self.AllCMAlpha = pm.Deterministic('AllCMAlpha',
@@ -1143,10 +1148,15 @@ class ComplexDifferentEffectsModel(BaseCMModel):
             )
 
 
-class ComplexDifferentEffectsModelV3T(BaseCMModel):
+class CasesOnlyComplexDifferentEffectsModel(BaseCMModel):
+    def __init__(self, data, cm_plot_style=None, name="", model=None):
+        super().__init__(data, cm_plot_style, name, model)
+        self.country_specific_effects = True
+
     def build_model(self, R_prior_mean=3.28, cm_prior_scale=10, cm_prior='skewed',
-                    gi_mean_mean=5, gi_mean_sd=1, gi_sd_mean=2, gi_sd_sd=2, growth_noise_scale=0.2,
-                    alpha_noise_scale_prior='half-normal', alpha_noise_scale=0.1, deaths_delay_mean_mean=21, deaths_delay_mean_sd=1, deaths_delay_disp_mean=9,
+                    gi_mean_mean=5, gi_mean_sd=1, gi_sd_mean=2, gi_sd_sd=2,
+                    alpha_noise_scale_prior='half-t', alpha_noise_scale=0.04, deaths_delay_mean_mean=21,
+                    deaths_delay_mean_sd=1, deaths_delay_disp_mean=9,
                     deaths_delay_disp_sd=1, cases_delay_mean_mean=10, cases_delay_mean_sd=1, cases_delay_disp_mean=5,
                     cases_delay_disp_sd=1, deaths_truncation=48, cases_truncation=32, **kwargs):
         """
@@ -1180,8 +1190,7 @@ class ComplexDifferentEffectsModelV3T(BaseCMModel):
             elif alpha_noise_scale_prior == 'half-t':
                 self.CMAlphaScales = pm.HalfStudentT('CMAlphaScales', nu=3, sigma=alpha_noise_scale, shape=(self.nCMs))
 
-            self.AllCMAlphaNoise = pm.StudentT('AllCMAlphaNoise', nu=3, shape=(self.nRs, self.nCMs))
-
+            self.AllCMAlphaNoise = pm.Normal('AllCMAlphaNoise', 0, 1, shape=(self.nRs, self.nCMs))
             self.AllCMAlpha = pm.Deterministic('AllCMAlpha',
                                                T.reshape(self.CM_Alpha, (1, self.nCMs)).repeat(self.nRs,
                                                                                                axis=0) +
@@ -1213,21 +1222,17 @@ class ComplexDifferentEffectsModelV3T(BaseCMModel):
 
             self.ExpectedGrowth = gi_beta * (pm.math.exp(self.ExpectedLogR / gi_alpha) - T.ones((self.nRs, self.nDs)))
 
-            self.GrowthNoiseScale = pm.HalfStudentT('GrowthNoiseScale', nu=1, sigma=0.15)
+            self.GrowthNoiseScale = pm.HalfStudentT('GrowthNoiseScale', nu=3, sigma=0.15)
+            # self.GrowthNoiseScale = pm.HalfNormal('GrowthNoiseScale', sigma=0.15)
 
             # exclude 40 days of noise, slight increase in runtime.
             self.GrowthCasesNoise = pm.Normal("GrowthCasesNoise", 0, 1,
                                               shape=(self.nRs, self.nDs - 40))
-            self.GrowthDeathsNoise = pm.Normal("GrowthDeathsNoise", 0, 1,
-                                               shape=(self.nRs, self.nDs - 40))
 
             self.GrowthCases = T.inc_subtensor(self.ExpectedGrowth[:, 30:-10],
                                                self.GrowthNoiseScale * self.GrowthCasesNoise)
-            self.GrowthDeaths = T.inc_subtensor(self.ExpectedGrowth[:, 30:-10],
-                                                self.GrowthNoiseScale * self.GrowthDeathsNoise)
 
             self.PsiCases = pm.HalfNormal('PsiCases', 5.)
-            self.PsiDeaths = pm.HalfNormal('PsiDeaths', 5.)
 
             self.InitialSizeCases_log = pm.Normal('InitialSizeCases_log', 0, 50, shape=(self.nRs,))
             self.InfectedCases_log = pm.Deterministic('InfectedCases_log', T.reshape(self.InitialSizeCases_log, (
@@ -1260,6 +1265,92 @@ class ComplexDifferentEffectsModelV3T(BaseCMModel):
                 observed=self.d.NewCases.data.reshape((self.nRs * self.nDs,))[self.all_observed_active]
             )
 
+
+class DeathsOnlyComplexDifferentEffectsModel(BaseCMModel):
+    def __init__(self, data, cm_plot_style=None, name="", model=None):
+        super().__init__(data, cm_plot_style, name, model)
+        self.country_specific_effects = True
+
+    def build_model(self, R_prior_mean=3.28, cm_prior_scale=10, cm_prior='skewed',
+                    gi_mean_mean=5, gi_mean_sd=1, gi_sd_mean=2, gi_sd_sd=2,
+                    alpha_noise_scale_prior='half-t', alpha_noise_scale=0.04, deaths_delay_mean_mean=21,
+                    deaths_delay_mean_sd=1, deaths_delay_disp_mean=9,
+                    deaths_delay_disp_sd=1, cases_delay_mean_mean=10, cases_delay_mean_sd=1, cases_delay_disp_mean=5,
+                    cases_delay_disp_sd=1, deaths_truncation=48, cases_truncation=32, **kwargs):
+        """
+        Build NPI effectiveness model
+        :param R_prior_mean: R_0 prior mean
+        :param cm_prior_scale: NPI effectiveness prior scale. For this model, this is the concentration parameter
+                                dirichlet distribution, same for all NPIs.
+        :param gi_mean_mean: mean of normal prior placed over the generation interval mean
+        :param gi_mean_sd: sd of normal prior placed over the generation interval mean
+        :param gi_sd_mean: mean of normal prior placed over the generation interval sd
+        :param gi_sd_sd: sd of normal prior placed over the generation interval sd
+        :param growth_noise_scale: growth noise scale
+        :param deaths_delay_mean_mean: mean of normal prior placed over death delay mean
+        :param deaths_delay_mean_sd: sd of normal prior placed over death delay mean
+        :param deaths_delay_disp_mean: mean of normal prior placed over death delay dispersion (alpha / psi)
+        :param deaths_delay_disp_sd: sd of normal prior placed over death delay dispersion (alpha / psi)
+        :param cases_delay_mean_mean: mean of normal prior placed over cases delay mean
+        :param cases_delay_mean_sd: sd of normal prior placed over cases delay mean
+        :param cases_delay_disp_mean: mean of normal prior placed over cases delay dispersion
+        :param cases_delay_disp_sd: sd of normal prior placed over cases delay dispersion
+        :param deaths_truncation: maximum death delay
+        :param cases_truncation: maximum reporting delay
+        """
+        with self.model:
+            self.build_npi_prior(cm_prior, cm_prior_scale)
+
+            self.CMReduction = pm.Deterministic('CMReduction', T.exp((-1.0) * self.CM_Alpha))
+
+            if alpha_noise_scale_prior == 'half-normal':
+                self.CMAlphaScales = pm.HalfNormal('CMAlphaScales', sigma=alpha_noise_scale, shape=(self.nCMs))
+            elif alpha_noise_scale_prior == 'half-t':
+                self.CMAlphaScales = pm.HalfStudentT('CMAlphaScales', nu=3, sigma=alpha_noise_scale, shape=(self.nCMs))
+
+            self.AllCMAlphaNoise = pm.Normal('AllCMAlphaNoise', 0, 1, shape=(self.nRs, self.nCMs))
+            self.AllCMAlpha = pm.Deterministic('AllCMAlpha',
+                                               T.reshape(self.CM_Alpha, (1, self.nCMs)).repeat(self.nRs,
+                                                                                               axis=0) +
+                                               self.CMAlphaScales.reshape((1, self.nCMs)) * self.AllCMAlphaNoise)
+
+            self.HyperRVar = pm.HalfNormal(
+                'HyperRVar', sigma=0.5
+            )
+
+            self.RegionR_noise = pm.Normal('RegionR_noise', 0, 1, shape=(self.nRs), )
+            self.RegionR = pm.Deterministic('RegionR', R_prior_mean + self.RegionR_noise * self.HyperRVar)
+
+            self.ActiveCMs = pm.Data('ActiveCMs', self.d.ActiveCMs)
+
+            active_cm_reduction = T.reshape(self.AllCMAlpha, (self.nRs, self.nCMs, 1)) * self.ActiveCMs
+            growth_reduction = T.sum(active_cm_reduction, axis=1)
+
+            self.ExpectedLogR = pm.Deterministic(
+                'ExpectedLogR',
+                T.reshape(pm.math.log(self.RegionR), (self.nRs, 1)) - growth_reduction,
+            )
+
+            # convert R into growth rates
+            self.GI_mean = pm.Normal('GI_mean', gi_mean_mean, gi_mean_sd)
+            self.GI_sd = pm.Normal('GI_sd', gi_sd_mean, gi_sd_sd)
+
+            gi_beta = self.GI_mean / self.GI_sd ** 2
+            gi_alpha = self.GI_mean ** 2 / self.GI_sd ** 2
+
+            self.ExpectedGrowth = gi_beta * (pm.math.exp(self.ExpectedLogR / gi_alpha) - T.ones((self.nRs, self.nDs)))
+
+            self.GrowthNoiseScale = pm.HalfStudentT('GrowthNoiseScale', nu=3, sigma=0.15)
+            # self.GrowthNoiseScale = pm.HalfNormal('GrowthNoiseScale', sigma=0.15)
+
+            # exclude 40 days of noise, slight increase in runtime.
+            self.GrowthDeathsNoise = pm.Normal("GrowthDeathsNoise", 0, 1,
+                                               shape=(self.nRs, self.nDs - 40))
+
+            self.GrowthDeaths = T.inc_subtensor(self.ExpectedGrowth[:, 30:-10],
+                                                self.GrowthNoiseScale * self.GrowthDeathsNoise)
+            self.PsiDeaths = pm.HalfNormal('PsiDeaths', 5.)
+
             self.InitialSizeDeaths_log = pm.Normal('InitialSizeDeaths_log', 0, 50, shape=(self.nRs,))
             self.InfectedDeaths_log = pm.Deterministic('InfectedDeaths_log', T.reshape(self.InitialSizeDeaths_log, (
                 self.nRs, 1)) + self.GrowthDeaths.cumsum(axis=1))
@@ -1290,6 +1381,7 @@ class ComplexDifferentEffectsModelV3T(BaseCMModel):
                 shape=(len(self.all_observed_deaths),),
                 observed=self.d.NewDeaths.data.reshape((self.nRs * self.nDs,))[self.all_observed_deaths]
             )
+
 
 class DefaultModelWithInteractions(BaseCMModel):
     """

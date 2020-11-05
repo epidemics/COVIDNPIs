@@ -55,7 +55,7 @@ if __name__ == '__main__':
                 pass
 
 
-    data = preprocess_data('merged_data/data_final_nov.csv', last_day='2020-05-30')
+    data = preprocess_data(get_data_path(), last_day='2020-05-30')
     data.mask_reopenings()
 
     if 'deaths_only' in args.model_type:
@@ -84,5 +84,12 @@ if __name__ == '__main__':
     pickle.dump(results_obj, open(
         os.path.join(generate_base_output_dir(args.model_type, parse_extra_model_args(extras)), f'{args.rg}.pkl'),
         'wb'))
+
     save_cm_trace(f'{args.rg}.txt', model.trace.CMReduction, args.exp_tag,
                   generate_base_output_dir(args.model_type, parse_extra_model_args(extras)))
+
+    if model.country_specific_effects:
+        nS, nCMs = model.trace.CMReduction.shape
+        full_trace = np.exp(np.log(model.trace.CMReduction) + np.random.normal(size=(nS, nCMs)) * trace.CMAlphaScales)
+        save_cm_trace(f'{args.rg}-cs.txt', full_trace, args.exp_tag,
+                      generate_base_output_dir(args.model_type, parse_extra_model_args(extras)))

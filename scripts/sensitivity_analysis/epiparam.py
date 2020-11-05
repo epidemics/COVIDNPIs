@@ -26,12 +26,12 @@ add_argparse_arguments(argparser)
 args = argparser.parse_args()
 
 if __name__ == '__main__':
-    data = preprocess_data('merged_data/data_final_nov.csv', last_day='2020-05-30')
+    data = preprocess_data(get_data_path(), last_day='2020-05-30')
     data.mask_reopenings()
 
     output_fname = f'gi_mean_mean-{args.gi_mean_mean}-gi_mean_sd-{args.gi_mean_sd}' \
                    f'deaths_mean_mean-{args.deaths_mean_mean}-deaths_mean_sd-{args.deaths_mean_sd}' \
-                   f'cases_mean_mean-{args.cases_mean_mean}-cases_mean_sd-{args.cases_mean_sd}'
+                   f'cases_mean_mean-{args.cases_mean_mean}-cases_mean_sd-{args.cases_mean_sd}.txt'
 
     ep = EpidemiologicalParameters()
     model_class = get_model_class_from_str(args.model_type)
@@ -53,13 +53,12 @@ if __name__ == '__main__':
         model.trace = pm.sample(args.n_samples, tune=500, chains=args.n_chains, cores=args.n_chains, max_treedepth=14,
                                 target_accept=0.96, init='adapt_diag')
 
-    save_cm_trace(f'{output_fname}.txt', model.trace.CMReduction, args.exp_tag, args.model_type)
+    save_cm_trace({output_fname}, model.trace.CMReduction, args.exp_tag,
+                  generate_base_output_dir(args.model_type, parse_extra_model_args(extras)))
 
-    # save extra epiparam stuff, so we can check
-    varnames = ['GI_mean', 'GI_sd', 'CasesDelayMean', 'CasesDelayDisp', 'DeathsDelayMean', 'DeathsDelayDisp']
-    for v in varnames:
-        # save as a '.csv' file for convenience. All cmreds are .txts.
-        try:
-            save_cm_trace(f'{output_fname}_{v}.csv', model.trace[v], args.exp_tag, args.model_type)
-        except:
-            print(f'Skipped saving {v}')
+    if model.country_specific_effects:
+        output_fname.replace('.txt', '-cs.txt')
+        nS, nCMs = model.trace.CMReduction.shape
+        full_trace = np.exp(np.log(model.trace.CMReduction) + np.random.normal(size=(nS, nCMs)) * trace.CMAlphaScales)
+        save_cm_trace(output_fname, full_trace, args.exp_tag,
+                      generate_base_output_dir(args.model_type, parse_extra_model_args(extras)))

@@ -42,7 +42,7 @@ if __name__ == '__main__':
         output_string = f'{output_string}{npi_index}'
     output_string = f'{output_string}.txt'
 
-    data = preprocess_data('merged_data/double_entry_final.csv', last_day='2020-05-30',
+    data = preprocess_data(get_data_path(), last_day='2020-05-30',
                            drop_features=drop_features)
     data.mask_reopenings()
 
@@ -56,4 +56,12 @@ if __name__ == '__main__':
         model.trace = pm.sample(args.n_samples, tune=500, chains=args.n_chains, cores=args.n_chains, max_treedepth=14,
                                 target_accept=0.96, init='adapt_diag')
 
-    save_cm_trace(output_string, model.trace.CMReduction, args.exp_tag, args.model_type)
+    save_cm_trace(output_string, model.trace.CMReduction, args.exp_tag,
+                  generate_base_output_dir(args.model_type, parse_extra_model_args(extras)))
+
+    if model.country_specific_effects:
+        output_string.replace('.txt', '-cs.txt')
+        nS, nCMs = model.trace.CMReduction.shape
+        full_trace = np.exp(np.log(model.trace.CMReduction) + np.random.normal(size=(nS, nCMs)) * trace.CMAlphaScales)
+        save_cm_trace(output_string, full_trace, args.exp_tag,
+                      generate_base_output_dir(args.model_type, parse_extra_model_args(extras)))
