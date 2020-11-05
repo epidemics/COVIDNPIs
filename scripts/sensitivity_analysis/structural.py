@@ -43,8 +43,6 @@ if __name__ == '__main__':
     model_class = get_model_class_from_str(args.model_structure)
 
     bd = {**ep.get_model_build_dict(), **parse_extra_model_args(extras)}
-
-
     if args.model_structure == 'discrete_renewal_fixed_gi':
         # posterior means from a full model run
         bd['gi_mean_mean'] = 5.12

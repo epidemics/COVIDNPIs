@@ -317,6 +317,8 @@ if __name__ == '__main__':
 
         data.NewCases = data.NewCases / test_rates
 
+    bd = {**ep.get_model_build_dict(), **parse_extra_model_args(extras)}
+
     with model_class(data) as model:
         model.build_model(**bd)
 
