@@ -55,11 +55,11 @@ if __name__ == '__main__':
         model.trace = pm.sample(args.n_samples, tune=500, chains=args.n_chains, cores=args.n_chains, max_treedepth=14,
                                 target_accept=0.96, init='adapt_diag')
 
-    save_cm_trace({output_fname}, model.trace.CMReduction, args.exp_tag,
+    save_cm_trace(output_fname, model.trace.CMReduction, args.exp_tag,
                   generate_base_output_dir(args.model_type, parse_extra_model_args(extras)))
 
     if model.country_specific_effects:
-        output_fname.replace('.txt', '-cs.txt')
+        output_fname = output_fname.replace('.txt', '-cs.txt')
         nS, nCMs = model.trace.CMReduction.shape
         full_trace = np.exp(np.log(model.trace.CMReduction) + np.random.normal(size=(nS, nCMs)) * model.trace.CMAlphaScales)
         save_cm_trace(output_fname, full_trace, args.exp_tag,

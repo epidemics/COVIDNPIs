@@ -46,7 +46,7 @@ if __name__ == '__main__':
                   generate_base_output_dir(args.model_type, parse_extra_model_args(extras)))
 
     if model.country_specific_effects:
-        output_string.replace('.txt', '-cs.txt')
+        output_string = output_string.replace('.txt', '-cs.txt')
         nS, nCMs = model.trace.CMReduction.shape
         full_trace = np.exp(np.log(model.trace.CMReduction) + np.random.normal(size=(nS, nCMs)) * model.trace.CMAlphaScales)
         save_cm_trace(output_string, full_trace, args.exp_tag,
