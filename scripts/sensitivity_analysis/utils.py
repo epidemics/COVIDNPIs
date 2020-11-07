@@ -21,7 +21,7 @@ def get_model_class_from_str(model_type_str):
     elif model_type_str == 'different_effects':
         return epm.DifferentEffectsModel
     elif model_type_str == 'cases_only':
-        return epm.DeathsOnlyComplexDifferentEffectsModel
+        return epm.CasesOnlyComplexDifferentEffectsModel
     elif model_type_str == 'deaths_only':
         return epm.DeathsOnlyComplexDifferentEffectsModel
     elif model_type_str == 'deaths_only_discrete_renewal':

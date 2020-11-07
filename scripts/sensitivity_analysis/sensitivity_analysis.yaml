@@ -204,4 +204,13 @@ scaling:
         - simple
         - variable
 
-
+missing_structural:
+  experiment_file: structural.py
+  experiment_tag: structural
+  model_type: complex # note this argument is neglected here
+  n_chains: 4
+  n_samples: 2000
+  args:
+    model_structure:
+      - discrete_renewal_fixed_gi
+      - cases_only

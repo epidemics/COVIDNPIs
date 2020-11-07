@@ -12,6 +12,8 @@ from epimodel.preprocessing.data_preprocessor import preprocess_data
 import argparse
 import pickle
 
+import pandas as pd
+
 from scripts.sensitivity_analysis.utils import *
 
 from datetime import date
