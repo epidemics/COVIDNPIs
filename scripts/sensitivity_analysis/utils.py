@@ -41,9 +41,9 @@ def get_target_accept_from_model_str(model_type_str):
     elif model_type_str == 'different_effects':
         return 0.905
     elif model_type_str == 'cases_only':
-        return 0.964
+        return 0.99
     elif model_type_str == 'deaths_only':
-        return 0.964
+        return 0.99
     elif model_type_str == 'deaths_only_discrete_renewal':
         return 0.964
     elif model_type_str == 'complex':

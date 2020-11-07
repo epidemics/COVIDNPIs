@@ -214,3 +214,14 @@ missing_structural:
     model_structure:
       - discrete_renewal
       - cases_only
+
+cases_deaths:
+  experiment_file: structural.py
+  experiment_tag: cases_deaths
+  model_type: complex # note this argument is neglected here
+  n_chains: 4
+  n_samples: 2000
+  args:
+    model_structure:
+      - deaths_only
+      - cases_only
