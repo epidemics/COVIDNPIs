@@ -37,7 +37,7 @@ if __name__ == '__main__':
     model_class = get_model_class_from_str(args.model_type)
 
     if args.scaling_type == 'simple':
-        adjustment = np.array([np.random.choice([0.25, .5, 2, 3, 4]) for i in range(model_syn.nRs)])
+        adjustment = np.array([np.random.choice([0.25, .5, 2, 3, 4]) for i in range(len(data.Rs))])
         data.NewCases = data.NewCases * adjustment
     elif args.scaling_type == 'variable':
         country_codes = {
