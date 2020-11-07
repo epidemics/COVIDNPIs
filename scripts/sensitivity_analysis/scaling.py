@@ -38,7 +38,7 @@ if __name__ == '__main__':
 
     if args.scaling_type == 'simple':
         adjustment = np.array([np.random.choice([0.25, .5, 2, 3, 4]) for i in range(len(data.Rs))])
-        data.NewCases = data.NewCases * adjustment
+        data.NewCases = data.NewCases * adjustment.reshape((41, 1))
     elif args.scaling_type == 'variable':
         country_codes = {
             "AFG": "AF",
@@ -292,7 +292,7 @@ if __name__ == '__main__':
             "ZWE": "ZW"
         }
 
-        trdf = pd.read_csv("under_ascertainment_estimates.txt",
+        trdf = pd.read_csv("scripts/sensitivity_analysis/under_ascertainment_estimates.txt",
                            parse_dates=["date"],
                            infer_datetime_format=True)
 
