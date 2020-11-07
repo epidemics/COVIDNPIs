@@ -194,4 +194,14 @@ iceswe:
   n_samples: 2000
   args: {}
 
+scaling:
+  experiment_file: scaling.py
+  experiment_tag: scaling
+  n_chains: 4
+  n_samples: 2000
+  args:
+    scaling_type:
+        - simple
+        - variable
+
 
