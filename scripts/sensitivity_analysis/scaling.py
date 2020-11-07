@@ -312,7 +312,7 @@ if __name__ == '__main__':
                                                     .asfreq('D')
                                                     ))
 
-        test_rates = np.zeros((model_syn.nRs, model_syn.nDs))
+        test_rates = np.zeros((len(data.Rs), len(data.Ds)))
         for r_i, r in enumerate(data.Rs):
             for d_i, d in enumerate(data.Ds):
                 test_rates[r_i, d_i] = a[(r, pd.to_datetime(d))]
