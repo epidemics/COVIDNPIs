@@ -15,7 +15,7 @@ def get_model_class_from_str(model_type_str):
     elif model_type_str == 'additive':
         return epm.AdditiveModel
     elif model_type_str == 'discrete_renewal':
-        return epm.DiscreteRenewalModel
+        return epm.DiscreteRenewalFixedGIModel
     elif model_type_str == 'noisy_r':
         return epm.NoisyRModel
     elif model_type_str == 'different_effects':
