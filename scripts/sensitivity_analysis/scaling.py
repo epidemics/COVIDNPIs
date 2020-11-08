@@ -19,12 +19,15 @@ from scripts.sensitivity_analysis.utils import *
 from datetime import date
 
 import os
+
 os.environ['OMP_NUM_THREADS'] = '1'
 os.environ['MKL_NUM_THREADS'] = '1'
 os.environ['OPENBLAS_NUM_THREADS'] = '1'
 
 argparser = argparse.ArgumentParser()
-argparser.add_argument('--scaling_type', dest='scaling_type', type=str, help='Scaling type')
+argparser.add_argument('--scaling_type', dest='scaling_type', type=str, help='Scaling type.'
+                                                                             'Options are `simple` (time-constant), or'
+                                                                             '`variable` (time-varying)')
 add_argparse_arguments(argparser)
 
 if __name__ == '__main__':
@@ -335,6 +338,7 @@ if __name__ == '__main__':
 
     if model.country_specific_effects:
         nS, nCMs = model.trace.CMReduction.shape
-        full_trace = np.exp(np.log(model.trace.CMReduction) + np.random.normal(size=(nS, nCMs)) * model.trace.CMAlphaScales)
+        full_trace = np.exp(
+            np.log(model.trace.CMReduction) + np.random.normal(size=(nS, nCMs)) * model.trace.CMAlphaScales)
         save_cm_trace(f'{args.scaling_type}-cs.txt', full_trace, args.exp_tag,
                       generate_base_output_dir(args.model_type, parse_extra_model_args(extras)))

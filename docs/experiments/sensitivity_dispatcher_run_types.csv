@@ -8,8 +8,7 @@ R_prior,"Run the model with a prior mean R0 of [2.28, 2.78, 3.78, 4.38]",alterna
 growth_noise,Add noise to growth rate,alternative_build_param.py
 npi_prior,"Run the model with an NPI effetiveness prior of [skewed 10, Normal(0,0.2), ICL]",alternative_build_param.py
 agg_holdout,Mask the final 20 days of data and predict this period with the model,agg_holdout.py
-any_npi_active,Add an additional dummy NPI representing whether any major NPI is active,any_npi_active.py
-delay_schools,Run the model with an additional 5 day delay to school and university closures,delay_schools.py
-npi_timing,"Run the model with NPI indices 0-8 representing 0,...,8 active NPIs, ignoring NPI type",npi_timing.py
 structural,"Run the model with alternative structures: [additive, discrete_renewal_fixed_gi, noisy_r, different_effects, cases_only, deaths_only]",
-epiparam_prior,"Run the model with alternative priors over generation interval, infection to death timing and infection to case recording",epiparam.py
+epiparam,"Run the model with alternative priors over generation interval, infection to death timing and infection to case recording",epiparam.py
+iceswe,"Run the model holdout out both iceland and sweden",iceswe.py
+scaling,"Run the model scaling daily numbers of cases",scaling.py

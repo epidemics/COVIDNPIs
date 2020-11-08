@@ -59,6 +59,7 @@ if __name__ == '__main__':
     if model.country_specific_effects:
         output_fname = output_fname.replace('.txt', '-cs.txt')
         nS, nCMs = model.trace.CMReduction.shape
-        full_trace = np.exp(np.log(model.trace.CMReduction) + np.random.normal(size=(nS, nCMs)) * model.trace.CMAlphaScales)
+        full_trace = np.exp(
+            np.log(model.trace.CMReduction) + np.random.normal(size=(nS, nCMs)) * model.trace.CMAlphaScales)
         save_cm_trace(output_fname, full_trace, args.exp_tag,
                       generate_base_output_dir(args.model_type, parse_extra_model_args(extras)))

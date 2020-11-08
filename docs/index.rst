@@ -6,11 +6,15 @@
 Welcome to COVIDNPIs' documentation!
 =====================================
 
-This is the documentation for the `COVIDNPIs project <https://github.com/epidemics/COVIDNPIs/tree/manuscript>`_, Bayesian modelling the impact of non-pharmaceutical interventions (NPIs) on the rate of transmission of COVID-19 in 41 countries around the world. See the paper `The effectiveness of eight nonpharmaceutical interventions against COVID-19 in 41 countries <https://www.medrxiv.org/content/10.1101/2020.05.28.20116129v3>`_ by Brauner et. al. for model details, data collection methodology and more.
+This is the documentation for the `COVIDNPIs project <https://github.com/epidemics/COVIDNPIs/tree/manuscript>`_, Bayesian modelling the impact of non-pharmaceutical interventions (NPIs) on the rate of transmission of COVID-19 in 41 countries around the world. See the paper `Infering the effectiveness of government interventions against COVID-19 <https://www.medrxiv.org/content/10.1101/2020.05.28.20116129v3>`_ by Brauner et. al. for model details, data collection methodology and more.
 
 COVIDNPIs provides a :ref:`data_preprocessor` for converting time-series case and death data along with NPI activation indicators to :ref:`PreprocessedData<preprocessed_data>` objects, ready to use for inference in any of several :ref:`NPI models<cm_model_zoo>`. In addition, the :ref:`model_parameters` module provides utilities for computing delay distributions, which can then be provided as initialisation parameters to the NPI models.
 
 The :ref:`examples` walk through using the PreprocessedData object, initialising and running a model with custom delay parameters. Many pre-defined :ref:`experiments` are can also be run as scripts.
+
+Default Model
+=============
+Warning! The `DefaultModel` is currently not the default model. `ComplexDifferentEffectsModel` is the latest default model used in our research.
 
 Installation
 ============
@@ -41,7 +45,7 @@ The following steps are sufficient to run the default model with the dataset ``n
 .. code-block::
 
     from epimodel.preprocessing.data_preprocessor import preprocess_data
-    from epimodel.pymc3_models.models import DefaultModel
+    from epimodel.pymc3_models.models import DefaultModel, ComplexDifferentEffectsModel
     from epimodel.pymc3_models.epi_params import EpidemiologicalParameters, bootstrapped_negbinom_values
     import pymc3 as pm
 
@@ -50,12 +54,12 @@ The following steps are sufficient to run the default model with the dataset ``n
 
     ep = EpidemiologicalParameters() # object containing epi params
 
-    with DefaultModel(data) as model:
+    with ComplexDifferentEffectsModel(data) as model:
         # run using latest epidemiological parameters
         model.build_model(**ep.get_model_build_dict())
 
     with model.model:
-        model.trace = pm.sample(2000, tune=1000, cores=4, chains=4, max_treedepth=14, target_accept=0.94)
+        model.trace = pm.sample(2000, tune=1000, cores=4, chains=4, max_treedepth=14, target_accept=0.96)
 
     numpy.savetxt('CMReduction_trace.txt', model.trace['CMReduction'])
 

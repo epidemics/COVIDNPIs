@@ -17,6 +17,7 @@ argparser.add_argument('--model_type', default='default', dest='model_type', typ
 
 args, extras = argparser.parse_known_args()
 
+
 def run_types_to_commands(run_types, exp_options, extras):
     extras_str = ' '.join(extras)
     commands = []

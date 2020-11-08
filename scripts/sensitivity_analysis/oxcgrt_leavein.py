@@ -16,7 +16,8 @@ import copy
 from scripts.sensitivity_analysis.utils import *
 
 argparser = argparse.ArgumentParser()
-argparser.add_argument('--npis', nargs='+', dest='npis', type=int, help = '''OxCGRT NPIs to include. One or more of:
+argparser.add_argument('--npis', nargs='+', dest='npis', type=int, help = '''Extra NPIs to include. One or more of:
+                                                                        | Mask Wearing
                                                                         | Travel Screen/Quarantine
                                                                         | Travel Bans
                                                                         | Public Transport Limited

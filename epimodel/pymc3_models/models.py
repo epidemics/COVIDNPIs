@@ -15,7 +15,9 @@ from .base_model import BaseCMModel
 
 class DefaultModel(BaseCMModel):
     """
-    Default Model
+    Default Model.
+
+    Warning - this is no longer the default model used for the paper!
 
     Default EpidemicForecasting.org NPI effectiveness model.
     Please see also https://www.medrxiv.org/content/10.1101/2020.05.28.20116129v3
@@ -994,6 +996,14 @@ class DiscreteRenewalFixedGIModel(BaseCMModel):
 
 
 class ComplexDifferentEffectsModel(BaseCMModel):
+    """
+    Complex Different Effects Model
+
+    Note: this is the default model used by the paper!
+
+    Default EpidemicForecasting.org NPI effectiveness model.
+    Please see also https://www.medrxiv.org/content/10.1101/2020.05.28.20116129v3
+    """
 
     def __init__(self, data, cm_plot_style=None, name="", model=None):
         super().__init__(data, cm_plot_style, name, model)
@@ -1008,13 +1018,14 @@ class ComplexDifferentEffectsModel(BaseCMModel):
         """
         Build NPI effectiveness model
         :param R_prior_mean: R_0 prior mean
-        :param cm_prior_scale: NPI effectiveness prior scale. For this model, this is the concentration parameter
-                                dirichlet distribution, same for all NPIs.
+        :param cm_prior_scale: NPI effectiveness prior scale.
+        :param cm_prior: mean NPI effectiveness across countries prior type
         :param gi_mean_mean: mean of normal prior placed over the generation interval mean
         :param gi_mean_sd: sd of normal prior placed over the generation interval mean
         :param gi_sd_mean: mean of normal prior placed over the generation interval sd
         :param gi_sd_sd: sd of normal prior placed over the generation interval sd
-        :param growth_noise_scale: growth noise scale
+        :param alpha_noise_scale_prior: prior type placed over sigma_i. either 'half-normal' or 'half-t'
+        :param alpha_noise_scale: scale of sigma_i prior.
         :param deaths_delay_mean_mean: mean of normal prior placed over death delay mean
         :param deaths_delay_mean_sd: sd of normal prior placed over death delay mean
         :param deaths_delay_disp_mean: mean of normal prior placed over death delay dispersion (alpha / psi)
@@ -1149,6 +1160,10 @@ class ComplexDifferentEffectsModel(BaseCMModel):
 
 
 class CasesOnlyComplexDifferentEffectsModel(BaseCMModel):
+    """
+    As ComplexDifferentEffectsModel, but observes only daily cases
+    """
+
     def __init__(self, data, cm_plot_style=None, name="", model=None):
         super().__init__(data, cm_plot_style, name, model)
         self.country_specific_effects = True
@@ -1162,22 +1177,18 @@ class CasesOnlyComplexDifferentEffectsModel(BaseCMModel):
         """
         Build NPI effectiveness model
         :param R_prior_mean: R_0 prior mean
-        :param cm_prior_scale: NPI effectiveness prior scale. For this model, this is the concentration parameter
-                                dirichlet distribution, same for all NPIs.
+        :param cm_prior_scale: NPI effectiveness prior scale.
+        :param cm_prior: mean NPI effectiveness across countries prior type
         :param gi_mean_mean: mean of normal prior placed over the generation interval mean
         :param gi_mean_sd: sd of normal prior placed over the generation interval mean
         :param gi_sd_mean: mean of normal prior placed over the generation interval sd
         :param gi_sd_sd: sd of normal prior placed over the generation interval sd
-        :param growth_noise_scale: growth noise scale
-        :param deaths_delay_mean_mean: mean of normal prior placed over death delay mean
-        :param deaths_delay_mean_sd: sd of normal prior placed over death delay mean
-        :param deaths_delay_disp_mean: mean of normal prior placed over death delay dispersion (alpha / psi)
-        :param deaths_delay_disp_sd: sd of normal prior placed over death delay dispersion (alpha / psi)
+        :param alpha_noise_scale_prior: prior type placed over sigma_i. either 'half-normal' or 'half-t'
+        :param alpha_noise_scale: scale of sigma_i prior.
         :param cases_delay_mean_mean: mean of normal prior placed over cases delay mean
         :param cases_delay_mean_sd: sd of normal prior placed over cases delay mean
         :param cases_delay_disp_mean: mean of normal prior placed over cases delay dispersion
         :param cases_delay_disp_sd: sd of normal prior placed over cases delay dispersion
-        :param deaths_truncation: maximum death delay
         :param cases_truncation: maximum reporting delay
         """
         with self.model:
@@ -1267,6 +1278,10 @@ class CasesOnlyComplexDifferentEffectsModel(BaseCMModel):
 
 
 class DeathsOnlyComplexDifferentEffectsModel(BaseCMModel):
+    """
+    As ComplexDifferentEffectsModel, but observed only deaths.
+    """
+
     def __init__(self, data, cm_plot_style=None, name="", model=None):
         super().__init__(data, cm_plot_style, name, model)
         self.country_specific_effects = True
@@ -1280,23 +1295,19 @@ class DeathsOnlyComplexDifferentEffectsModel(BaseCMModel):
         """
         Build NPI effectiveness model
         :param R_prior_mean: R_0 prior mean
-        :param cm_prior_scale: NPI effectiveness prior scale. For this model, this is the concentration parameter
-                                dirichlet distribution, same for all NPIs.
+        :param cm_prior_scale: NPI effectiveness prior scale.
+        :param cm_prior: mean NPI effectiveness across countries prior type
         :param gi_mean_mean: mean of normal prior placed over the generation interval mean
         :param gi_mean_sd: sd of normal prior placed over the generation interval mean
         :param gi_sd_mean: mean of normal prior placed over the generation interval sd
         :param gi_sd_sd: sd of normal prior placed over the generation interval sd
-        :param growth_noise_scale: growth noise scale
+        :param alpha_noise_scale_prior: prior type placed over sigma_i. either 'half-normal' or 'half-t'
+        :param alpha_noise_scale: scale of sigma_i prior.
         :param deaths_delay_mean_mean: mean of normal prior placed over death delay mean
         :param deaths_delay_mean_sd: sd of normal prior placed over death delay mean
         :param deaths_delay_disp_mean: mean of normal prior placed over death delay dispersion (alpha / psi)
         :param deaths_delay_disp_sd: sd of normal prior placed over death delay dispersion (alpha / psi)
-        :param cases_delay_mean_mean: mean of normal prior placed over cases delay mean
-        :param cases_delay_mean_sd: sd of normal prior placed over cases delay mean
-        :param cases_delay_disp_mean: mean of normal prior placed over cases delay dispersion
-        :param cases_delay_disp_sd: sd of normal prior placed over cases delay dispersion
         :param deaths_truncation: maximum death delay
-        :param cases_truncation: maximum reporting delay
         """
         with self.model:
             self.build_npi_prior(cm_prior, cm_prior_scale)
@@ -1376,179 +1387,6 @@ class DeathsOnlyComplexDifferentEffectsModel(BaseCMModel):
             # effectively handle missing values ourselves
             self.ObservedDeaths = pm.NegativeBinomial(
                 'ObservedDeaths',
-                mu=self.ExpectedDeaths.reshape((self.nRs * self.nDs,))[self.all_observed_deaths],
-                alpha=self.PsiDeaths,
-                shape=(len(self.all_observed_deaths),),
-                observed=self.d.NewDeaths.data.reshape((self.nRs * self.nDs,))[self.all_observed_deaths]
-            )
-
-
-class DefaultModelWithInteractions(BaseCMModel):
-    """
-    Default Model
-
-    Default EpidemicForecasting.org NPI effectiveness model.
-    Please see also https://www.medrxiv.org/content/10.1101/2020.05.28.20116129v3
-    """
-
-    def __init__(self, data, cm_plot_style=None, name="", model=None):
-        """
-        Initialiser.
-        """
-        super().__init__(data, cm_plot_style, name, model)
-
-    def build_model(self, R_prior_mean=3.28, cm_prior_scale=10, cm_prior='skewed',
-                    gi_mean_mean=5, gi_mean_sd=1, gi_sd_mean=2, gi_sd_sd=2, growth_noise_scale=0.2,
-                    deaths_delay_mean_mean=21, deaths_delay_mean_sd=1, deaths_delay_disp_mean=9, deaths_delay_disp_sd=1,
-                    cases_delay_mean_mean=10, cases_delay_mean_sd=1, cases_delay_disp_mean=5, cases_delay_disp_sd=1,
-                    deaths_truncation=48, cases_truncation=32):
-        """
-        Build NPI effectiveness model
-
-        :param R_prior_mean: R_0 prior mean
-        :param cm_prior_scale: NPI effectiveness prior scale
-        :param cm_prior: NPI effectiveness prior type. Either 'normal', 'icl' or skewed (asymmetric laplace)
-        :param gi_mean_mean: mean of normal prior placed over the generation interval mean
-        :param gi_mean_sd: sd of normal prior placed over the generation interval mean
-        :param gi_sd_mean: mean of normal prior placed over the generation interval sd
-        :param gi_sd_sd: sd of normal prior placed over the generation interval sd
-        :param growth_noise_scale: growth noise scale
-        :param deaths_delay_mean_mean: mean of normal prior placed over death delay mean
-        :param deaths_delay_mean_sd: sd of normal prior placed over death delay mean
-        :param deaths_delay_disp_mean: mean of normal prior placed over death delay dispersion (alpha / psi)
-        :param deaths_delay_disp_sd: sd of normal prior placed over death delay dispersion (alpha / psi)
-        :param cases_delay_mean_mean: mean of normal prior placed over cases delay mean
-        :param cases_delay_mean_sd: sd of normal prior placed over cases delay mean
-        :param cases_delay_disp_mean: mean of normal prior placed over cases delay dispersion
-        :param cases_delay_disp_sd: sd of normal prior placed over cases delay dispersion
-        :param deaths_truncation: maximum death delay
-        :param cases_truncation: maximum reporting delay
-        """
-        with self.model:
-            # build NPI Effectiveness priors
-            self.build_npi_prior(cm_prior, cm_prior_scale)
-
-            self.CMReduction = pm.Deterministic("CMReduction", T.exp((-1.0) * self.CM_Alpha))
-
-            # build R_0 prior
-            self.HyperRVar = pm.HalfNormal(
-                "HyperRVar", sigma=0.5
-            )
-
-            self.RegionR_noise = pm.Normal("RegionLogR_noise", 0, 1, shape=(self.nRs))
-            self.RegionR = pm.Deterministic("RegionR", R_prior_mean + self.RegionLogR_noise * self.HyperRVar)
-
-            # load CMs active, compute log-R reduction and region log-R based on NPIs active
-            self.ActiveCMs = pm.Data("ActiveCMs", self.d.ActiveCMs)
-
-            self.ActiveCMReduction = (
-                    T.reshape(self.CM_Alpha, (1, self.nCMs, 1))
-                    * self.ActiveCMs
-            )
-
-            self.LogRReduction = T.sum(self.ActiveCMReduction, axis=1)
-
-            self.ExpectedLogR = T.reshape(pm.math.log(self.RegionR), (self.nRs, 1)) - self.LogRReduction
-
-            # convert R into growth rates
-            if gi_mean_sd > 0:
-                self.GI_mean = pm.Normal('GI_mean', gi_mean_mean, gi_mean_sd)
-            else:
-                print('Using a fixed value for the generation interval mean')
-                self.GI_mean = gi_mean_mean
-
-            self.GI_sd = pm.Normal('GI_sd', gi_sd_mean, gi_sd_sd)
-
-            gi_beta = self.GI_mean / self.GI_sd ** 2
-            gi_alpha = self.GI_mean ** 2 / self.GI_sd ** 2
-
-            self.ExpectedGrowth = gi_beta * (pm.math.exp(self.ExpectedLogR / gi_alpha) - T.ones((self.nRs, self.nDs)))
-
-            # exclude 40 days of noise, slight increase in runtime.
-            self.GrowthCasesNoise = pm.Normal("GrowthCasesNoise", 0, growth_noise_scale,
-                                              shape=(self.nRs, self.nDs - 40))
-            self.GrowthDeathsNoise = pm.Normal("GrowthDeathsNoise", 0, growth_noise_scale,
-                                               shape=(self.nRs, self.nDs - 40))
-
-            self.GrowthCases = T.inc_subtensor(self.ExpectedGrowth[:, 30:-10], self.GrowthCasesNoise)
-            self.GrowthDeaths = T.inc_subtensor(self.ExpectedGrowth[:, 30:-10], self.GrowthDeathsNoise)
-
-            self.PsiCases = pm.HalfNormal('PsiCases', 5.)
-            self.PsiDeaths = pm.HalfNormal('PsiDeaths', 5.)
-
-            # Confirmed Cases
-            # seed and produce daily infections which become confirmed cases
-            self.InitialSizeCases_log = pm.Normal("InitialSizeCases_log", 0, 50, shape=(self.nRs, 1))
-            self.InfectedCases = pm.Deterministic("InfectedCases", pm.math.exp(
-                self.InitialSizeCases_log + self.GrowthCases.cumsum(axis=1)))
-
-            if cases_delay_mean_sd > 0:
-                self.CasesDelayMean = pm.Normal('CasesDelayMean', cases_delay_mean_mean, cases_delay_mean_sd)
-            else:
-                print('Using a fixed value for the reporting delay mean')
-                self.CasesDelayMean = cases_delay_mean_mean
-
-            self.CasesDelayDisp = pm.Normal('CasesDelayDisp', cases_delay_disp_mean, cases_delay_disp_sd)
-            cases_delay_dist = pm.NegativeBinomial.dist(mu=self.CasesDelayMean, alpha=self.CasesDelayDisp)
-            bins = np.arange(0, cases_truncation)
-            pmf = T.exp(cases_delay_dist.logp(bins))
-            pmf = pmf / T.sum(pmf)
-            reporting_delay = pmf.reshape((1, cases_truncation))
-
-            # convolve with delay to produce expectations
-            expected_cases = C.conv2d(
-                self.InfectedCases,
-                reporting_delay,
-                border_mode="full"
-            )[:, :self.nDs]
-
-            self.ExpectedCases = pm.Deterministic("ExpectedCases", expected_cases.reshape(
-                (self.nRs, self.nDs)))
-
-            # effectively handle missing values ourselves
-            # output distribution
-            self.ObservedCases = pm.NegativeBinomial(
-                "ObservedCases",
-                mu=self.ExpectedCases.reshape((self.nRs * self.nDs,))[self.all_observed_active],
-                alpha=self.PsiCases,
-                shape=(len(self.all_observed_active),),
-                observed=self.d.NewCases.data.reshape((self.nRs * self.nDs,))[self.all_observed_active]
-            )
-
-            # Deaths
-            # seed and produce daily infections which become confirmed cases
-            self.InitialSizeDeaths_log = pm.Normal("InitialSizeDeaths_log", 0, 50, shape=(self.nRs, 1))
-            self.InfectedDeaths = pm.Deterministic("InfectedDeaths", pm.math.exp(
-                self.InitialSizeDeaths_log + self.GrowthDeaths.cumsum(axis=1)))
-
-            if deaths_delay_mean_sd > 0:
-                self.DeathsDelayMean = pm.Normal('DeathsDelayMean', deaths_delay_mean_mean,
-                                                 deaths_delay_mean_sd)
-            else:
-                print('Using a fixed value for the fatality delay mean')
-                self.DeathsDelayMean = deaths_delay_mean_mean
-
-            self.DeathsDelayDisp = pm.Normal('DeathsDelayDisp', deaths_delay_disp_mean, deaths_delay_disp_sd)
-            deaths_delay_dist = pm.NegativeBinomial.dist(mu=self.DeathsDelayMean, alpha=self.DeathsDelayDisp)
-            bins = np.arange(0, deaths_truncation)
-            pmf = T.exp(deaths_delay_dist.logp(bins))
-            pmf = pmf / T.sum(pmf)
-            fatality_delay = pmf.reshape((1, deaths_truncation))
-
-            # convolve with delay to production reports
-            expected_deaths = C.conv2d(
-                self.InfectedDeaths,
-                fatality_delay,
-                border_mode="full"
-            )[:, :self.nDs]
-
-            self.ExpectedDeaths = pm.Deterministic("ExpectedDeaths", expected_deaths.reshape(
-                (self.nRs, self.nDs)))
-
-            # effectively handle missing values ourselves
-            # death output distribution
-            self.ObservedDeaths = pm.NegativeBinomial(
-                "ObservedDeaths",
                 mu=self.ExpectedDeaths.reshape((self.nRs * self.nDs,))[self.all_observed_deaths],
                 alpha=self.PsiDeaths,
                 shape=(len(self.all_observed_deaths),),

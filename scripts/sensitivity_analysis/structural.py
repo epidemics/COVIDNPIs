@@ -4,8 +4,8 @@
 Alternative choices of model structure.
 """
 
-
 import os
+
 os.environ['OMP_NUM_THREADS'] = '1'
 os.environ['MKL_NUM_THREADS'] = '1'
 os.environ['OPENBLAS_NUM_THREADS'] = '1'
@@ -22,15 +22,16 @@ from scripts.sensitivity_analysis.utils import *
 argparser = argparse.ArgumentParser()
 add_argparse_arguments(argparser)
 # this is a hack to make this work easily.
-argparser.add_argument('--model_structure', dest='model_structure', type=str, 
-    help='| model structure choice:\
+argparser.add_argument('--model_structure', dest='model_structure', type=str,
+                       help='| model structure choice:\
           | - additive: the reproduction rate is given by R_t=R0*(sum_i phi_{i,t} beta_i)\
           | - discrete_renewal_fixed_gi: uses discrete renewal model to convert reproduction rate R into growth rate g with fixed generation interval\
-          | - discrete_renewal: uses discrete renewal model to convert reproduction rate R into growth rate g with prior over generation intervals\
           | - noisy_r: noise is added to R_t before conversion to growth rate g_t (default model adds noise to g_t after conversion)\
           | - different_effects: each region c has a unique NPI reduction coefficient alpha_{i,c}\
           | - cases_only: the number of infections is estimated from case data only\
-          | - deaths_only: the number of infections is estimated from death data only')
+          | - deaths_only: the number of infections is estimated from death data only\
+          | - deaths_only_discrete renewal: death only discrete renewal model\
+          | - complex: different effects model with per intervention country variability')
 
 if __name__ == '__main__':
 
@@ -60,6 +61,7 @@ if __name__ == '__main__':
 
     if model.country_specific_effects:
         nS, nCMs = model.trace.CMReduction.shape
-        full_trace = np.exp(np.log(model.trace.CMReduction) + np.random.normal(size=(nS, nCMs)) * model.trace.CMAlphaScales)
+        full_trace = np.exp(
+            np.log(model.trace.CMReduction) + np.random.normal(size=(nS, nCMs)) * model.trace.CMAlphaScales)
         save_cm_trace(f'{args.model_structure}-cs.txt', full_trace, args.exp_tag,
                       generate_base_output_dir(args.model_type, parse_extra_model_args(extras)))

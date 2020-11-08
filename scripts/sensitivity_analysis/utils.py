@@ -29,6 +29,7 @@ def get_model_class_from_str(model_type_str):
     elif model_type_str == 'complex':
         return epm.ComplexDifferentEffectsModel
 
+
 def get_target_accept_from_model_str(model_type_str):
     if model_type_str == 'default':
         return 0.905
@@ -48,8 +49,6 @@ def get_target_accept_from_model_str(model_type_str):
         return 0.964
     elif model_type_str == 'complex':
         return 0.96
-    elif model_type_str == 'complex-T':
-        return 0.96
 
 
 def add_argparse_arguments(argparse):
@@ -60,7 +59,9 @@ def add_argparse_arguments(argparse):
               | - noisy_r: noise is added to R_t before conversion to growth rate g_t (default model adds noise to g_t after conversion)
               | - different_effects: each region c has a unique NPI reduction coefficient alpha_{i,c}
               | - cases_only: the number of infections is estimated from case data only
-              | - deaths_only: the number of infections is estimated from death data only""")
+              | - deaths_only: the number of infections is estimated from death data only
+              | - deaths_only_discrete_renewal: death only discrete renewal model
+              | - complex: different effects model with per intervention variability. This model is the current default""")
     argparse.add_argument('--exp_tag', dest='exp_tag', type=str, help='experiment identification tag')
     argparse.add_argument('--n_chains', dest='n_chains', type=int, help='the number of chains to run in parallel')
     argparse.add_argument('--n_samples', dest='n_samples', type=int, help='the number of samples to draw')
@@ -107,6 +108,7 @@ def save_cm_trace(name, trace, tag, base_path):
     if not os.path.exists(out_dir):
         os.makedirs(out_dir)
     np.savetxt(os.path.join(out_dir, name), trace)
+
 
 def get_data_path():
     return 'merged_data/data_final_nov.csv'
