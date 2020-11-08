@@ -284,25 +284,21 @@
 <td><p>Mask the final 20 days of data and predict this period with the model</p></td>
 <td><p>agg_holdout.py</p></td>
 </tr>
-<tr class="row-odd"><td><p>any_npi_active</p></td>
-<td><p>Add an additional dummy NPI representing whether any major NPI is active</p></td>
-<td><p>any_npi_active.py</p></td>
-</tr>
-<tr class="row-even"><td><p>delay_schools</p></td>
-<td><p>Run the model with an additional 5 day delay to school and university closures</p></td>
-<td><p>delay_schools.py</p></td>
-</tr>
-<tr class="row-odd"><td><p>npi_timing</p></td>
-<td><p>Run the model with NPI indices 0-8 representing 0,…,8 active NPIs, ignoring NPI type</p></td>
-<td><p>npi_timing.py</p></td>
-</tr>
-<tr class="row-even"><td><p>structural</p></td>
+<tr class="row-odd"><td><p>structural</p></td>
 <td><p>Run the model with alternative structures: [additive, discrete_renewal_fixed_gi, noisy_r, different_effects, cases_only, deaths_only]</p></td>
 <td></td>
 </tr>
-<tr class="row-odd"><td><p>epiparam_prior</p></td>
+<tr class="row-even"><td><p>epiparam</p></td>
 <td><p>Run the model with alternative priors over generation interval, infection to death timing and infection to case recording</p></td>
 <td><p>epiparam.py</p></td>
+</tr>
+<tr class="row-odd"><td><p>iceswe</p></td>
+<td><p>Run the model holdout out both iceland and sweden</p></td>
+<td><p>iceswe.py</p></td>
+</tr>
+<tr class="row-even"><td><p>scaling</p></td>
+<td><p>Run the model scaling daily numbers of cases</p></td>
+<td><p>scaling.py</p></td>
 </tr>
 </tbody>
 </table>

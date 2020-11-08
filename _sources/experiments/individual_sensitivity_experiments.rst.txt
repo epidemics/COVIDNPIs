@@ -5,17 +5,6 @@ Individual Sensitivity Experiments
 **********************************
 
 
-Agg Holdout
-=====================
-
-Holdout the final 20 days of data.
-
-.. argparse:: 
-   :module: scripts.sensitivity_analysis.agg_holdout
-   :func: argparser
-   :prog: python agg_holdout.py
-
-
 Alternative Priors
 ==================
 
@@ -26,26 +15,6 @@ Alternative priors for basic reproductive number ``R0`` and NPI effectiveness.
    :func: argparser
    :prog: python scripts/alternative_build_param.py
 
-Any NPI Active
-==============
-
-Add an additional dummy NPI representing whether any major NPI is active
-
-.. argparse::
-   :module: scripts.sensitivity_analysis.any_npi_active
-   :func: argparser
-   :prog: python scripts/any_npi_active.py
-
-
-Delay Schools
-==================
-
-Add artificial 5 day delay to school closure NPI.
-
-.. argparse::
-   :module: scripts.sensitivity_analysis.delay_schools
-   :func: argparser
-   :prog: python scripts/delay_schools.py
 
 NPI Leaveout
 ============
@@ -57,20 +26,11 @@ Remove NPIs from the dataset, fitting data to the remaining NPIs.
    :func: argparser
    :prog: python scripts/npi_leaveout.py
 
-NPI Timing
-============
 
-Replace NPIs with indices 0-8 representing 0,...,8 active NPIs, ignoring NPI type
-
-.. argparse::
-   :module: scripts.sensitivity_analysis.npi_timing
-   :func: argparser
-   :prog: python scripts/npi_timing.py
-
-OxCGRT Leavin
+NPI Add-in
 =============
 
-Include additional NPIs from OxCGRT
+Include additional NPIs, primarily from OxCGRT
 
 .. argparse::
    :module: scripts.sensitivity_analysis.oxcgrt_leavein
@@ -101,6 +61,32 @@ Alternative model structures.
    :prog: python scripts/structural.py
 
 
+Multivariate Epidemiological Parameter Prior Sensitivity
+========================================================
 
+Jointly change priors over epidemiological parameters.
 
+.. argparse::
+   :module: scripts.sensitivity_analysis.epiparam
+   :func: argparser
+   :prog: python scripts/epiparam.py
 
+Iceland Sweden Holdout
+======================
+
+Holdout Iceland and Sweden Together
+
+.. argparse::
+   :module: scripts.sensitivity_analysis.iceswe
+   :func: argparser
+   :prog: python scripts/iceswe.py
+
+Scalings
+======================
+
+Scale cases.
+
+.. argparse::
+   :module: scripts.sensitivity_analysis.scaling
+   :func: argparser
+   :prog: python scripts/scaling.py

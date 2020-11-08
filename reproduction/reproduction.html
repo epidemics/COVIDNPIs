@@ -190,17 +190,17 @@
 <h2>Main Results<a class="headerlink" href="#main-results" title="Permalink to this headline">¶</a></h2>
 <p>The main results can be produced as follows.</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">epimodel.preprocessing.data_preprocessor</span> <span class="kn">import</span> <span class="n">preprocess_data</span>
-<span class="kn">from</span> <span class="nn">epimodel.pymc3_models.models</span> <span class="kn">import</span> <span class="n">DefaultModel</span>
+<span class="kn">from</span> <span class="nn">epimodel.pymc3_models.models</span> <span class="kn">import</span> <span class="n">ComplexDifferentEffectsModel</span>
 <span class="kn">from</span> <span class="nn">epimodel.pymc3_models.epi_params</span> <span class="kn">import</span> <span class="n">EpidemiologicalParameters</span><span class="p">,</span> <span class="n">bootstrapped_negbinom_values</span>
 <span class="kn">import</span> <span class="nn">pymc3</span> <span class="k">as</span> <span class="nn">pm</span>
 <span class="kn">import</span> <span class="nn">pickle</span>
 
-<span class="n">data</span> <span class="o">=</span> <span class="n">preprocess_data</span><span class="p">(</span><span class="s1">&#39;merged_data/double_entry_final.csv&#39;</span><span class="p">)</span>
+<span class="n">data</span> <span class="o">=</span> <span class="n">preprocess_data</span><span class="p">(</span><span class="s1">&#39;merged_data/data_final_nov.csv&#39;</span><span class="p">)</span>
 <span class="n">data</span><span class="o">.</span><span class="n">mask_reopenings</span><span class="p">()</span>
 
 <span class="n">ep</span> <span class="o">=</span> <span class="n">EpidemiologicalParameters</span><span class="p">()</span> <span class="c1"># object containing epi params</span>
 
-<span class="k">with</span> <span class="n">DefaultModel</span><span class="p">(</span><span class="n">data</span><span class="p">)</span> <span class="k">as</span> <span class="n">model</span><span class="p">:</span>
+<span class="k">with</span> <span class="n">ComplexDifferentEffectsModel</span><span class="p">(</span><span class="n">data</span><span class="p">)</span> <span class="k">as</span> <span class="n">model</span><span class="p">:</span>
     <span class="c1"># run using latest epidemiological parameters</span>
     <span class="n">model</span><span class="o">.</span><span class="n">build_model</span><span class="p">(</span><span class="o">**</span><span class="n">ep</span><span class="o">.</span><span class="n">get_model_build_dict</span><span class="p">())</span>
 
@@ -220,17 +220,17 @@
 <span class="n">poetry</span> <span class="n">shell</span>
 
 <span class="c1"># run sensitivity analysis</span>
-<span class="n">python</span> <span class="n">scripts</span><span class="o">/</span><span class="n">sensitivity_dispatcher</span><span class="o">.</span><span class="n">py</span> <span class="o">--</span><span class="n">max_processes</span> <span class="mi">24</span> <span class="o">--</span><span class="n">categories</span> <span class="n">epiparam_prior</span> <span class="n">npi_leaveout</span> <span class="n">region_holdout</span> <span class="n">cases_threshold</span> <span class="n">deaths_threshold</span> <span class="n">oxcgrt</span> <span class="n">R_prior</span> <span class="n">NPI_prior</span> <span class="n">any_npi_active</span> <span class="n">delay_schools</span> <span class="n">npi_timing</span> <span class="n">structural</span>
+<span class="n">python</span> <span class="n">scripts</span><span class="o">/</span><span class="n">sensitivity_dispatcher</span><span class="o">.</span><span class="n">py</span> <span class="o">--</span><span class="n">max_processes</span> <span class="mi">24</span> <span class="o">--</span><span class="n">categories</span> <span class="n">epiparam_prior</span> <span class="n">npi_leaveout</span> <span class="n">region_holdout</span> <span class="n">cases_threshold</span> <span class="n">deaths_threshold</span> <span class="n">oxcgrt</span> <span class="n">R_prior</span> <span class="n">NPI_prior</span> <span class="n">any_npi_active</span> <span class="n">delay_schools</span> <span class="n">npi_timing</span> <span class="n">structural</span> <span class="o">--</span><span class="n">model_type</span> <span class="nb">complex</span>
 </pre></div>
 </div>
 <p><code class="docutils literal notranslate"><span class="pre">sensitivity_dispatcher.py</span></code> takes a list of categories, describing the tests that want to be run. The categories are read from <code class="docutils literal notranslate"><span class="pre">sensitivity_analysis/sensitivity_analysis.yaml</span></code>, a human-readible file which can be easily modified to alter the exact tests which are run.</p>
-<p>By default, the results of the sensitivity analysis will be saved in <code class="docutils literal notranslate"><span class="pre">sensitivity_default/[CATEGORY]/[TEST].txt</span></code>.</p>
+<p>By default, the results of the sensitivity analysis will be saved in <code class="docutils literal notranslate"><span class="pre">sensitivity_complex/[CATEGORY]/[TEST].txt</span></code>.</p>
 <p>The sensitivity_dispatcher will dispatch <code class="docutils literal notranslate"><span class="pre">`max_processes</span></code> runs in parallel, and wait for these runs to be completed before dispatching new experiments. Each run, by default, uses 4 cores. We ran these experiments on a 96 core server. Therefore, setting <code class="docutils literal notranslate"><span class="pre">max_processes</span></code> to 24 means that all of the cores of the server were utilised.</p>
 </div>
 <div class="section" id="plotting-code">
 <h2>Plotting Code<a class="headerlink" href="#plotting-code" title="Permalink to this headline">¶</a></h2>
 <p>While the core codebase contains some utility functions for plotting, we relegate the majority of the plotting code used to produce our final graphs to the <code class="docutils literal notranslate"><span class="pre">notebooks</span></code> directory. There are a number of files, such as <code class="docutils literal notranslate"><span class="pre">main_results_plotter.ipynb</span></code>, <code class="docutils literal notranslate"><span class="pre">holdouts_plotter.ipynb</span></code> and more which generate the plots precisely as in the paper.</p>
-<p>These files will require minimal adaption for running them locally. You will need to make the following changes: change the <code class="docutils literal notranslate"><span class="pre">results_base_dir</span></code> path to point towards the <code class="docutils literal notranslate"><span class="pre">sensitivity_default</span></code> folder, generated by doing a full model run. You will also need to ensure that the main results pickle file is correctly loaded. This should be self-explanatory.</p>
+<p>These files will require minimal adaption for running them locally. You will need to make the following changes: change the <code class="docutils literal notranslate"><span class="pre">results_base_dir</span></code> path to point towards the <code class="docutils literal notranslate"><span class="pre">sensitivity_complex</span></code> folder, generated by doing a full model run. You will also need to ensure that the main results pickle file is correctly loaded. This should be self-explanatory.</p>
 </div>
 </div>
 

@@ -91,19 +91,15 @@
 <li class="toctree-l1 current"><a class="reference internal" href="experiments.html">Experiments</a><ul class="current">
 <li class="toctree-l2"><a class="reference internal" href="sensitivity_dispatcher.html">Sensitivity Dispatcher</a></li>
 <li class="toctree-l2 current"><a class="current reference internal" href="#">Individual Sensitivity Experiments</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#agg-holdout">Agg Holdout</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#alternative-priors">Alternative Priors</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="#Named Arguments">Named Arguments</a></li>
 </ul>
 </li>
-<li class="toctree-l3"><a class="reference internal" href="#any-npi-active">Any NPI Active</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#delay-schools">Delay Schools</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#npi-leaveout">NPI Leaveout</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="#Named Arguments">Named Arguments</a></li>
 </ul>
 </li>
-<li class="toctree-l3"><a class="reference internal" href="#npi-timing">NPI Timing</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#oxcgrt-leavin">OxCGRT Leavin</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#npi-add-in">NPI Add-in</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="#Named Arguments">Named Arguments</a></li>
 </ul>
 </li>
@@ -112,6 +108,18 @@
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="#structural">Structural</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#Named Arguments">Named Arguments</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#multivariate-epidemiological-parameter-prior-sensitivity">Multivariate Epidemiological Parameter Prior Sensitivity</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#Named Arguments">Named Arguments</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#iceland-sweden-holdout">Iceland Sweden Holdout</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#Named Arguments">Named Arguments</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#scalings">Scalings</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="#Named Arguments">Named Arguments</a></li>
 </ul>
 </li>
@@ -213,10 +221,6 @@
 </style>
 <div class="section" id="individual-sensitivity-experiments">
 <span id="id1"></span><h1>Individual Sensitivity Experiments<a class="headerlink" href="#individual-sensitivity-experiments" title="Permalink to this headline">¶</a></h1>
-<div class="section" id="agg-holdout">
-<h2>Agg Holdout<a class="headerlink" href="#agg-holdout" title="Permalink to this headline">¶</a></h2>
-<p>Holdout the final 20 days of data.</p>
-</div>
 <div class="section" id="alternative-priors">
 <h2>Alternative Priors<a class="headerlink" href="#alternative-priors" title="Permalink to this headline">¶</a></h2>
 <p>Alternative priors for basic reproductive number <code class="docutils literal notranslate"><span class="pre">R0</span></code> and NPI effectiveness.</p>
@@ -250,6 +254,8 @@
 <div class="line">- different_effects: each region c has a unique NPI reduction coefficient alpha_{i,c}</div>
 <div class="line">- cases_only: the number of infections is estimated from case data only</div>
 <div class="line">- deaths_only: the number of infections is estimated from death data only</div>
+<div class="line">- deaths_only_discrete_renewal: death only discrete renewal model</div>
+<div class="line">- complex: different effects model with per intervention variability. This model is the current default</div>
 </div>
 </dd>
 </dl>
@@ -265,14 +271,6 @@
 </dd>
 </dl>
 </div>
-</div>
-<div class="section" id="any-npi-active">
-<h2>Any NPI Active<a class="headerlink" href="#any-npi-active" title="Permalink to this headline">¶</a></h2>
-<p>Add an additional dummy NPI representing whether any major NPI is active</p>
-</div>
-<div class="section" id="delay-schools">
-<h2>Delay Schools<a class="headerlink" href="#delay-schools" title="Permalink to this headline">¶</a></h2>
-<p>Add artificial 5 day delay to school closure NPI.</p>
 </div>
 <div class="section" id="npi-leaveout">
 <h2>NPI Leaveout<a class="headerlink" href="#npi-leaveout" title="Permalink to this headline">¶</a></h2>
@@ -298,6 +296,8 @@
 <div class="line">- different_effects: each region c has a unique NPI reduction coefficient alpha_{i,c}</div>
 <div class="line">- cases_only: the number of infections is estimated from case data only</div>
 <div class="line">- deaths_only: the number of infections is estimated from death data only</div>
+<div class="line">- deaths_only_discrete_renewal: death only discrete renewal model</div>
+<div class="line">- complex: different effects model with per intervention variability. This model is the current default</div>
 </div>
 </dd>
 </dl>
@@ -314,13 +314,9 @@
 </dl>
 </div>
 </div>
-<div class="section" id="npi-timing">
-<h2>NPI Timing<a class="headerlink" href="#npi-timing" title="Permalink to this headline">¶</a></h2>
-<p>Replace NPIs with indices 0-8 representing 0,…,8 active NPIs, ignoring NPI type</p>
-</div>
-<div class="section" id="oxcgrt-leavin">
-<h2>OxCGRT Leavin<a class="headerlink" href="#oxcgrt-leavin" title="Permalink to this headline">¶</a></h2>
-<p>Include additional NPIs from OxCGRT</p>
+<div class="section" id="npi-add-in">
+<h2>NPI Add-in<a class="headerlink" href="#npi-add-in" title="Permalink to this headline">¶</a></h2>
+<p>Include additional NPIs, primarily from OxCGRT</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">usage</span><span class="p">:</span> <span class="n">python</span> <span class="n">scripts</span><span class="o">/</span><span class="n">oxcgrt_leavein</span><span class="o">.</span><span class="n">py</span> <span class="p">[</span><span class="o">-</span><span class="n">h</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">npis</span> <span class="n">NPIS</span> <span class="p">[</span><span class="n">NPIS</span> <span class="o">...</span><span class="p">]]</span>
                                         <span class="p">[</span><span class="o">--</span><span class="n">model_type</span> <span class="n">MODEL_TYPE</span><span class="p">]</span>
                                         <span class="p">[</span><span class="o">--</span><span class="n">exp_tag</span> <span class="n">EXP_TAG</span><span class="p">]</span>
@@ -333,7 +329,8 @@
 <dl class="option-list">
 <dt><kbd>--npis</kbd></dt>
 <dd><dl>
-<dt>OxCGRT NPIs to include. One or more of:</dt><dd><div class="line-block">
+<dt>Extra NPIs to include. One or more of:</dt><dd><div class="line-block">
+<div class="line">Mask Wearing</div>
 <div class="line">Travel Screen/Quarantine</div>
 <div class="line">Travel Bans</div>
 <div class="line">Public Transport Limited</div>
@@ -353,6 +350,8 @@
 <div class="line">- different_effects: each region c has a unique NPI reduction coefficient alpha_{i,c}</div>
 <div class="line">- cases_only: the number of infections is estimated from case data only</div>
 <div class="line">- deaths_only: the number of infections is estimated from death data only</div>
+<div class="line">- deaths_only_discrete_renewal: death only discrete renewal model</div>
+<div class="line">- complex: different effects model with per intervention variability. This model is the current default</div>
 </div>
 </dd>
 </dl>
@@ -402,6 +401,8 @@
 <div class="line">- different_effects: each region c has a unique NPI reduction coefficient alpha_{i,c}</div>
 <div class="line">- cases_only: the number of infections is estimated from case data only</div>
 <div class="line">- deaths_only: the number of infections is estimated from death data only</div>
+<div class="line">- deaths_only_discrete_renewal: death only discrete renewal model</div>
+<div class="line">- complex: different effects model with per intervention variability. This model is the current default</div>
 </div>
 </dd>
 </dl>
@@ -439,6 +440,8 @@
 <div class="line">- different_effects: each region c has a unique NPI reduction coefficient alpha_{i,c}</div>
 <div class="line">- cases_only: the number of infections is estimated from case data only</div>
 <div class="line">- deaths_only: the number of infections is estimated from death data only</div>
+<div class="line">- deaths_only_discrete_renewal: death only discrete renewal model</div>
+<div class="line">- complex: different effects model with per intervention variability. This model is the current default</div>
 </div>
 </dd>
 </dl>
@@ -454,8 +457,149 @@
 </dd>
 <dt><kbd>--model_structure</kbd></dt>
 <dd><div class="line-block">
-<div class="line">model structure choice:          | - additive: the reproduction rate is given by R_t=R0*(sum_i phi_{i,t} beta_i)          | - discrete_renewal_fixed_gi: uses discrete renewal model to convert reproduction rate R into growth rate g with fixed generation interval          | - discrete_renewal: uses discrete renewal model to convert reproduction rate R into growth rate g with prior over generation intervals          | - noisy_r: noise is added to R_t before conversion to growth rate g_t (default model adds noise to g_t after conversion)          | - different_effects: each region c has a unique NPI reduction coefficient alpha_{i,c}          | - cases_only: the number of infections is estimated from case data only          | - deaths_only: the number of infections is estimated from death data only</div>
+<div class="line">model structure choice:          | - additive: the reproduction rate is given by R_t=R0*(sum_i phi_{i,t} beta_i)          | - discrete_renewal_fixed_gi: uses discrete renewal model to convert reproduction rate R into growth rate g with fixed generation interval          | - noisy_r: noise is added to R_t before conversion to growth rate g_t (default model adds noise to g_t after conversion)          | - different_effects: each region c has a unique NPI reduction coefficient alpha_{i,c}          | - cases_only: the number of infections is estimated from case data only          | - deaths_only: the number of infections is estimated from death data only          | - deaths_only_discrete renewal: death only discrete renewal model          | - complex: different effects model with per intervention country variability</div>
 </div>
+</dd>
+</dl>
+</div>
+</div>
+<div class="section" id="multivariate-epidemiological-parameter-prior-sensitivity">
+<h2>Multivariate Epidemiological Parameter Prior Sensitivity<a class="headerlink" href="#multivariate-epidemiological-parameter-prior-sensitivity" title="Permalink to this headline">¶</a></h2>
+<p>Jointly change priors over epidemiological parameters.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">usage</span><span class="p">:</span> <span class="n">python</span> <span class="n">scripts</span><span class="o">/</span><span class="n">epiparam</span><span class="o">.</span><span class="n">py</span> <span class="p">[</span><span class="o">-</span><span class="n">h</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">gi_mean_mean</span> <span class="n">GI_MEAN_MEAN</span><span class="p">]</span>
+                                  <span class="p">[</span><span class="o">--</span><span class="n">gi_mean_sd</span> <span class="n">GI_MEAN_SD</span><span class="p">]</span>
+                                  <span class="p">[</span><span class="o">--</span><span class="n">deaths_mean_mean</span> <span class="n">DEATHS_MEAN_MEAN</span><span class="p">]</span>
+                                  <span class="p">[</span><span class="o">--</span><span class="n">deaths_mean_sd</span> <span class="n">DEATHS_MEAN_SD</span><span class="p">]</span>
+                                  <span class="p">[</span><span class="o">--</span><span class="n">cases_mean_mean</span> <span class="n">CASES_MEAN_MEAN</span><span class="p">]</span>
+                                  <span class="p">[</span><span class="o">--</span><span class="n">cases_mean_sd</span> <span class="n">CASES_MEAN_SD</span><span class="p">]</span>
+                                  <span class="p">[</span><span class="o">--</span><span class="n">model_type</span> <span class="n">MODEL_TYPE</span><span class="p">]</span>
+                                  <span class="p">[</span><span class="o">--</span><span class="n">exp_tag</span> <span class="n">EXP_TAG</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">n_chains</span> <span class="n">N_CHAINS</span><span class="p">]</span>
+                                  <span class="p">[</span><span class="o">--</span><span class="n">n_samples</span> <span class="n">N_SAMPLES</span><span class="p">]</span>
+</pre></div>
+</div>
+<div class="section" id="Named Arguments">
+<h3>Named Arguments<a class="headerlink" href="#Named Arguments" title="Permalink to this headline">¶</a></h3>
+<dl class="option-list">
+<dt><kbd>--gi_mean_mean</kbd></dt>
+<dd><p>Mean of the prior over generation interval means</p>
+</dd>
+<dt><kbd>--gi_mean_sd</kbd></dt>
+<dd><p>Standard deviation of the prior over generation interval means</p>
+</dd>
+<dt><kbd>--deaths_mean_mean</kbd></dt>
+<dd><p>Mean of the prior over infection-to-death delay means</p>
+</dd>
+<dt><kbd>--deaths_mean_sd</kbd></dt>
+<dd><p>Standard deviation of the prior over infection-to-death delay means</p>
+</dd>
+<dt><kbd>--cases_mean_mean</kbd></dt>
+<dd><p>Mean of the prior over infection-to-reporting delay means</p>
+</dd>
+<dt><kbd>--cases_mean_sd</kbd></dt>
+<dd><p>Mean of the prior over infection-to-reporting delay means</p>
+</dd>
+<dt><kbd>--model_type</kbd></dt>
+<dd><dl>
+<dt>model structure choice:</dt><dd><div class="line-block">
+<div class="line">- additive: the reproduction rate is given by R_t=R0*(sum_i phi_{i,t} beta_i)</div>
+<div class="line">- discrete_renewal_fixed_gi: uses discrete renewal model to convert reproduction rate R into growth rate g with fixed generation interval</div>
+<div class="line">- noisy_r: noise is added to R_t before conversion to growth rate g_t (default model adds noise to g_t after conversion)</div>
+<div class="line">- different_effects: each region c has a unique NPI reduction coefficient alpha_{i,c}</div>
+<div class="line">- cases_only: the number of infections is estimated from case data only</div>
+<div class="line">- deaths_only: the number of infections is estimated from death data only</div>
+<div class="line">- deaths_only_discrete_renewal: death only discrete renewal model</div>
+<div class="line">- complex: different effects model with per intervention variability. This model is the current default</div>
+</div>
+</dd>
+</dl>
+</dd>
+<dt><kbd>--exp_tag</kbd></dt>
+<dd><p>experiment identification tag</p>
+</dd>
+<dt><kbd>--n_chains</kbd></dt>
+<dd><p>the number of chains to run in parallel</p>
+</dd>
+<dt><kbd>--n_samples</kbd></dt>
+<dd><p>the number of samples to draw</p>
+</dd>
+</dl>
+</div>
+</div>
+<div class="section" id="iceland-sweden-holdout">
+<h2>Iceland Sweden Holdout<a class="headerlink" href="#iceland-sweden-holdout" title="Permalink to this headline">¶</a></h2>
+<p>Holdout Iceland and Sweden Together</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">usage</span><span class="p">:</span> <span class="n">python</span> <span class="n">scripts</span><span class="o">/</span><span class="n">iceswe</span><span class="o">.</span><span class="n">py</span> <span class="p">[</span><span class="o">-</span><span class="n">h</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">model_type</span> <span class="n">MODEL_TYPE</span><span class="p">]</span>
+                                <span class="p">[</span><span class="o">--</span><span class="n">exp_tag</span> <span class="n">EXP_TAG</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">n_chains</span> <span class="n">N_CHAINS</span><span class="p">]</span>
+                                <span class="p">[</span><span class="o">--</span><span class="n">n_samples</span> <span class="n">N_SAMPLES</span><span class="p">]</span>
+</pre></div>
+</div>
+<div class="section" id="Named Arguments">
+<h3>Named Arguments<a class="headerlink" href="#Named Arguments" title="Permalink to this headline">¶</a></h3>
+<dl class="option-list">
+<dt><kbd>--model_type</kbd></dt>
+<dd><dl>
+<dt>model structure choice:</dt><dd><div class="line-block">
+<div class="line">- additive: the reproduction rate is given by R_t=R0*(sum_i phi_{i,t} beta_i)</div>
+<div class="line">- discrete_renewal_fixed_gi: uses discrete renewal model to convert reproduction rate R into growth rate g with fixed generation interval</div>
+<div class="line">- noisy_r: noise is added to R_t before conversion to growth rate g_t (default model adds noise to g_t after conversion)</div>
+<div class="line">- different_effects: each region c has a unique NPI reduction coefficient alpha_{i,c}</div>
+<div class="line">- cases_only: the number of infections is estimated from case data only</div>
+<div class="line">- deaths_only: the number of infections is estimated from death data only</div>
+<div class="line">- deaths_only_discrete_renewal: death only discrete renewal model</div>
+<div class="line">- complex: different effects model with per intervention variability. This model is the current default</div>
+</div>
+</dd>
+</dl>
+</dd>
+<dt><kbd>--exp_tag</kbd></dt>
+<dd><p>experiment identification tag</p>
+</dd>
+<dt><kbd>--n_chains</kbd></dt>
+<dd><p>the number of chains to run in parallel</p>
+</dd>
+<dt><kbd>--n_samples</kbd></dt>
+<dd><p>the number of samples to draw</p>
+</dd>
+</dl>
+</div>
+</div>
+<div class="section" id="scalings">
+<h2>Scalings<a class="headerlink" href="#scalings" title="Permalink to this headline">¶</a></h2>
+<p>Scale cases.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">usage</span><span class="p">:</span> <span class="n">python</span> <span class="n">scripts</span><span class="o">/</span><span class="n">scaling</span><span class="o">.</span><span class="n">py</span> <span class="p">[</span><span class="o">-</span><span class="n">h</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">scaling_type</span> <span class="n">SCALING_TYPE</span><span class="p">]</span>
+                                 <span class="p">[</span><span class="o">--</span><span class="n">model_type</span> <span class="n">MODEL_TYPE</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">exp_tag</span> <span class="n">EXP_TAG</span><span class="p">]</span>
+                                 <span class="p">[</span><span class="o">--</span><span class="n">n_chains</span> <span class="n">N_CHAINS</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">n_samples</span> <span class="n">N_SAMPLES</span><span class="p">]</span>
+</pre></div>
+</div>
+<div class="section" id="Named Arguments">
+<h3>Named Arguments<a class="headerlink" href="#Named Arguments" title="Permalink to this headline">¶</a></h3>
+<dl class="option-list">
+<dt><kbd>--scaling_type</kbd></dt>
+<dd><p>Scaling type.Options are <cite>simple</cite> (time-constant), or`variable` (time-varying)</p>
+</dd>
+<dt><kbd>--model_type</kbd></dt>
+<dd><dl>
+<dt>model structure choice:</dt><dd><div class="line-block">
+<div class="line">- additive: the reproduction rate is given by R_t=R0*(sum_i phi_{i,t} beta_i)</div>
+<div class="line">- discrete_renewal_fixed_gi: uses discrete renewal model to convert reproduction rate R into growth rate g with fixed generation interval</div>
+<div class="line">- noisy_r: noise is added to R_t before conversion to growth rate g_t (default model adds noise to g_t after conversion)</div>
+<div class="line">- different_effects: each region c has a unique NPI reduction coefficient alpha_{i,c}</div>
+<div class="line">- cases_only: the number of infections is estimated from case data only</div>
+<div class="line">- deaths_only: the number of infections is estimated from death data only</div>
+<div class="line">- deaths_only_discrete_renewal: death only discrete renewal model</div>
+<div class="line">- complex: different effects model with per intervention variability. This model is the current default</div>
+</div>
+</dd>
+</dl>
+</dd>
+<dt><kbd>--exp_tag</kbd></dt>
+<dd><p>experiment identification tag</p>
+</dd>
+<dt><kbd>--n_chains</kbd></dt>
+<dd><p>the number of chains to run in parallel</p>
+</dd>
+<dt><kbd>--n_samples</kbd></dt>
+<dd><p>the number of samples to draw</p>
 </dd>
 </dl>
 </div>

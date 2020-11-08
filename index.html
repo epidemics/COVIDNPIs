@@ -180,9 +180,13 @@
 </style>
 <div class="section" id="welcome-to-covidnpis-documentation">
 <h1>Welcome to COVIDNPIs’ documentation!<a class="headerlink" href="#welcome-to-covidnpis-documentation" title="Permalink to this headline">¶</a></h1>
-<p>This is the documentation for the <a class="reference external" href="https://github.com/epidemics/COVIDNPIs/tree/manuscript">COVIDNPIs project</a>, Bayesian modelling the impact of non-pharmaceutical interventions (NPIs) on the rate of transmission of COVID-19 in 41 countries around the world. See the paper <a class="reference external" href="https://www.medrxiv.org/content/10.1101/2020.05.28.20116129v3">The effectiveness of eight nonpharmaceutical interventions against COVID-19 in 41 countries</a> by Brauner et. al. for model details, data collection methodology and more.</p>
+<p>This is the documentation for the <a class="reference external" href="https://github.com/epidemics/COVIDNPIs/tree/manuscript">COVIDNPIs project</a>, Bayesian modelling the impact of non-pharmaceutical interventions (NPIs) on the rate of transmission of COVID-19 in 41 countries around the world. See the paper <a class="reference external" href="https://www.medrxiv.org/content/10.1101/2020.05.28.20116129v3">Infering the effectiveness of government interventions against COVID-19</a> by Brauner et. al. for model details, data collection methodology and more.</p>
 <p>COVIDNPIs provides a <a class="reference internal" href="module_documentation/preprocessing.html#data-preprocessor"><span class="std std-ref">Data Preprocessor</span></a> for converting time-series case and death data along with NPI activation indicators to <a class="reference internal" href="module_documentation/preprocessing.html#preprocessed-data"><span class="std std-ref">PreprocessedData</span></a> objects, ready to use for inference in any of several <a class="reference internal" href="module_documentation/models.html#cm-model-zoo"><span class="std std-ref">NPI models</span></a>. In addition, the <a class="reference internal" href="module_documentation/parameters.html#model-parameters"><span class="std std-ref">Epidemiological Parameters</span></a> module provides utilities for computing delay distributions, which can then be provided as initialisation parameters to the NPI models.</p>
 <p>The <a class="reference internal" href="examples/examples.html#examples"><span class="std std-ref">Examples</span></a> walk through using the PreprocessedData object, initialising and running a model with custom delay parameters. Many pre-defined <a class="reference internal" href="experiments/experiments.html#experiments"><span class="std std-ref">Experiments</span></a> are can also be run as scripts.</p>
+</div>
+<div class="section" id="default-model">
+<h1>Default Model<a class="headerlink" href="#default-model" title="Permalink to this headline">¶</a></h1>
+<p>Warning! The <cite>DefaultModel</cite> is currently not the default model. <cite>ComplexDifferentEffectsModel</cite> is the latest default model used in our research.</p>
 </div>
 <div class="section" id="installation">
 <h1>Installation<a class="headerlink" href="#installation" title="Permalink to this headline">¶</a></h1>
@@ -203,7 +207,7 @@
 </div>
 <p>The following steps are sufficient to run the default model with the dataset <code class="docutils literal notranslate"><span class="pre">notebooks/double-entry-data/double_entry_final.csv</span></code> and save the NPI reduction trace to <code class="docutils literal notranslate"><span class="pre">CMReduction_trace.txt</span></code> which can be loaded with <code class="code docutils literal notranslate"><span class="pre">numpy.loadtxt</span></code></p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">epimodel.preprocessing.data_preprocessor</span> <span class="kn">import</span> <span class="n">preprocess_data</span>
-<span class="kn">from</span> <span class="nn">epimodel.pymc3_models.models</span> <span class="kn">import</span> <span class="n">DefaultModel</span>
+<span class="kn">from</span> <span class="nn">epimodel.pymc3_models.models</span> <span class="kn">import</span> <span class="n">DefaultModel</span><span class="p">,</span> <span class="n">ComplexDifferentEffectsModel</span>
 <span class="kn">from</span> <span class="nn">epimodel.pymc3_models.epi_params</span> <span class="kn">import</span> <span class="n">EpidemiologicalParameters</span><span class="p">,</span> <span class="n">bootstrapped_negbinom_values</span>
 <span class="kn">import</span> <span class="nn">pymc3</span> <span class="k">as</span> <span class="nn">pm</span>
 
@@ -212,12 +216,12 @@
 
 <span class="n">ep</span> <span class="o">=</span> <span class="n">EpidemiologicalParameters</span><span class="p">()</span> <span class="c1"># object containing epi params</span>
 
-<span class="k">with</span> <span class="n">DefaultModel</span><span class="p">(</span><span class="n">data</span><span class="p">)</span> <span class="k">as</span> <span class="n">model</span><span class="p">:</span>
+<span class="k">with</span> <span class="n">ComplexDifferentEffectsModel</span><span class="p">(</span><span class="n">data</span><span class="p">)</span> <span class="k">as</span> <span class="n">model</span><span class="p">:</span>
     <span class="c1"># run using latest epidemiological parameters</span>
     <span class="n">model</span><span class="o">.</span><span class="n">build_model</span><span class="p">(</span><span class="o">**</span><span class="n">ep</span><span class="o">.</span><span class="n">get_model_build_dict</span><span class="p">())</span>
 
 <span class="k">with</span> <span class="n">model</span><span class="o">.</span><span class="n">model</span><span class="p">:</span>
-    <span class="n">model</span><span class="o">.</span><span class="n">trace</span> <span class="o">=</span> <span class="n">pm</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="mi">2000</span><span class="p">,</span> <span class="n">tune</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span> <span class="n">cores</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">chains</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">max_treedepth</span><span class="o">=</span><span class="mi">14</span><span class="p">,</span> <span class="n">target_accept</span><span class="o">=</span><span class="mf">0.94</span><span class="p">)</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">trace</span> <span class="o">=</span> <span class="n">pm</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="mi">2000</span><span class="p">,</span> <span class="n">tune</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span> <span class="n">cores</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">chains</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">max_treedepth</span><span class="o">=</span><span class="mi">14</span><span class="p">,</span> <span class="n">target_accept</span><span class="o">=</span><span class="mf">0.96</span><span class="p">)</span>
 
 <span class="n">numpy</span><span class="o">.</span><span class="n">savetxt</span><span class="p">(</span><span class="s1">&#39;CMReduction_trace.txt&#39;</span><span class="p">,</span> <span class="n">model</span><span class="o">.</span><span class="n">trace</span><span class="p">[</span><span class="s1">&#39;CMReduction&#39;</span><span class="p">])</span>
 </pre></div>
