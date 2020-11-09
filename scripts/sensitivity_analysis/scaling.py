@@ -320,6 +320,16 @@ if __name__ == '__main__':
             for d_i, d in enumerate(data.Ds):
                 test_rates[r_i, d_i] = a[(r, pd.to_datetime(d))]
 
+        for r_i, r in enumerate(data.Rs):
+            nz_inds = np.nonzero(np.logical_not(np.isnan(test_rates[r_i, :])))[0]
+
+            if len(nz_inds) > 0:
+                first_ind = nz_inds[0]
+                first_val = test_rates[r_i, first_ind]
+                test_rates[r_i, :first_ind] = first_val
+            else:
+                test_rates[r_i, :] = 1
+
         data.NewCases = data.NewCases / test_rates
 
     bd = {**ep.get_model_build_dict(), **parse_extra_model_args(extras)}
