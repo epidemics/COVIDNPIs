@@ -1,3 +1,5 @@
+[![DOI](https://zenodo.org/badge/252021588.svg)](https://zenodo.org/badge/latestdoi/252021588)
+
 # COVID-19 Nonpharmaceutical Interventions Effectiveness
 
 This repo contains the data and code used for [Brauner et al. *The effectiveness of eight nonpharmaceutical interventions against COVID-19 in 41 countries* (2020)](https://www.medrxiv.org/content/10.1101/2020.05.28.20116129v2.article-info)
