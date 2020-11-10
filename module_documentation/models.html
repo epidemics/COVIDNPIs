@@ -443,6 +443,41 @@ Please see also <a class="reference external" href="https://www.medrxiv.org/cont
 </dd></dl>
 
 <dl class="py class">
+<dt id="epimodel.pymc3_models.models.ComplexDifferentEffectsModelFixedR">
+<em class="property">class </em><code class="sig-prename descclassname">epimodel.pymc3_models.models.</code><code class="sig-name descname">ComplexDifferentEffectsModelFixedR</code><span class="sig-paren">(</span><em class="sig-param"><span class="o">*</span><span class="n">args</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#epimodel.pymc3_models.models.ComplexDifferentEffectsModelFixedR" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#epimodel.pymc3_models.base_model.BaseCMModel" title="epimodel.pymc3_models.base_model.BaseCMModel"><code class="xref py py-class docutils literal notranslate"><span class="pre">epimodel.pymc3_models.base_model.BaseCMModel</span></code></a></p>
+<p>Complex Different Effects Model</p>
+<p>Note: this is the default model used by the paper!</p>
+<p>Default EpidemicForecasting.org NPI effectiveness model.
+Please see also <a class="reference external" href="https://www.medrxiv.org/content/10.1101/2020.05.28.20116129v3">https://www.medrxiv.org/content/10.1101/2020.05.28.20116129v3</a></p>
+<dl class="py method">
+<dt id="epimodel.pymc3_models.models.ComplexDifferentEffectsModelFixedR.build_model">
+<code class="sig-name descname">build_model</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">R_prior_mean</span><span class="o">=</span><span class="default_value">3.28</span></em>, <em class="sig-param"><span class="n">cm_prior_scale</span><span class="o">=</span><span class="default_value">10</span></em>, <em class="sig-param"><span class="n">cm_prior</span><span class="o">=</span><span class="default_value">'skewed'</span></em>, <em class="sig-param"><span class="n">gi_mean_mean</span><span class="o">=</span><span class="default_value">5</span></em>, <em class="sig-param"><span class="n">gi_mean_sd</span><span class="o">=</span><span class="default_value">1</span></em>, <em class="sig-param"><span class="n">gi_sd_mean</span><span class="o">=</span><span class="default_value">2</span></em>, <em class="sig-param"><span class="n">gi_sd_sd</span><span class="o">=</span><span class="default_value">2</span></em>, <em class="sig-param"><span class="n">alpha_noise_scale_prior</span><span class="o">=</span><span class="default_value">'half-t'</span></em>, <em class="sig-param"><span class="n">alpha_noise_scale</span><span class="o">=</span><span class="default_value">0.04</span></em>, <em class="sig-param"><span class="n">deaths_delay_mean_mean</span><span class="o">=</span><span class="default_value">21</span></em>, <em class="sig-param"><span class="n">deaths_delay_mean_sd</span><span class="o">=</span><span class="default_value">1</span></em>, <em class="sig-param"><span class="n">deaths_delay_disp_mean</span><span class="o">=</span><span class="default_value">9</span></em>, <em class="sig-param"><span class="n">deaths_delay_disp_sd</span><span class="o">=</span><span class="default_value">1</span></em>, <em class="sig-param"><span class="n">cases_delay_mean_mean</span><span class="o">=</span><span class="default_value">10</span></em>, <em class="sig-param"><span class="n">cases_delay_mean_sd</span><span class="o">=</span><span class="default_value">1</span></em>, <em class="sig-param"><span class="n">cases_delay_disp_mean</span><span class="o">=</span><span class="default_value">5</span></em>, <em class="sig-param"><span class="n">cases_delay_disp_sd</span><span class="o">=</span><span class="default_value">1</span></em>, <em class="sig-param"><span class="n">deaths_truncation</span><span class="o">=</span><span class="default_value">48</span></em>, <em class="sig-param"><span class="n">cases_truncation</span><span class="o">=</span><span class="default_value">32</span></em>, <em class="sig-param"><span class="n">growth_noise_scale</span><span class="o">=</span><span class="default_value">'prior'</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#epimodel.pymc3_models.models.ComplexDifferentEffectsModelFixedR.build_model" title="Permalink to this definition">¶</a></dt>
+<dd><p>Build NPI effectiveness model
+:param R_prior_mean: R_0 prior mean
+:param cm_prior_scale: NPI effectiveness prior scale.
+:param cm_prior: mean NPI effectiveness across countries prior type
+:param gi_mean_mean: mean of normal prior placed over the generation interval mean
+:param gi_mean_sd: sd of normal prior placed over the generation interval mean
+:param gi_sd_mean: mean of normal prior placed over the generation interval sd
+:param gi_sd_sd: sd of normal prior placed over the generation interval sd
+:param alpha_noise_scale_prior: prior type placed over sigma_i. either ‘half-normal’ or ‘half-t’
+:param alpha_noise_scale: scale of sigma_i prior.
+:param deaths_delay_mean_mean: mean of normal prior placed over death delay mean
+:param deaths_delay_mean_sd: sd of normal prior placed over death delay mean
+:param deaths_delay_disp_mean: mean of normal prior placed over death delay dispersion (alpha / psi)
+:param deaths_delay_disp_sd: sd of normal prior placed over death delay dispersion (alpha / psi)
+:param cases_delay_mean_mean: mean of normal prior placed over cases delay mean
+:param cases_delay_mean_sd: sd of normal prior placed over cases delay mean
+:param cases_delay_disp_mean: mean of normal prior placed over cases delay dispersion
+:param cases_delay_disp_sd: sd of normal prior placed over cases delay dispersion
+:param deaths_truncation: maximum death delay
+:param cases_truncation: maximum reporting delay</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
 <dt id="epimodel.pymc3_models.models.DeathsOnlyComplexDifferentEffectsModel">
 <em class="property">class </em><code class="sig-prename descclassname">epimodel.pymc3_models.models.</code><code class="sig-name descname">DeathsOnlyComplexDifferentEffectsModel</code><span class="sig-paren">(</span><em class="sig-param"><span class="o">*</span><span class="n">args</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#epimodel.pymc3_models.models.DeathsOnlyComplexDifferentEffectsModel" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#epimodel.pymc3_models.base_model.BaseCMModel" title="epimodel.pymc3_models.base_model.BaseCMModel"><code class="xref py py-class docutils literal notranslate"><span class="pre">epimodel.pymc3_models.base_model.BaseCMModel</span></code></a></p>
