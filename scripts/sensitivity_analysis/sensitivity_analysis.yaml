@@ -225,3 +225,54 @@ cases_deaths:
     model_structure:
       - deaths_only
       - cases_only
+
+scaling_leaveout:
+  experiment_file: scaling_leaveout.py
+  experiment_tag: scaling_leaveout
+  n_chains: 2
+  n_samples: 750
+  args:
+    scaling_type:
+        - variable
+    rg:
+      - AL
+      - AD
+      - AT
+      - BE
+      - BA
+      - BG
+      - HR
+      - CZ
+      - DK
+      - EE
+      - FI
+      - FR
+      - GE
+      - DE
+      - GR
+      - HU
+      - IS
+      - IE
+      - IL
+      - IT
+      - LV
+      - LT
+      - MY
+      - MT
+      - MX
+      - MA
+      - NL
+      - NZ
+      - 'NO' # otherwise this evaluates to false!
+      - PL
+      - PT
+      - RO
+      - RS
+      - SG
+      - SK
+      - SI
+      - ZA
+      - ES
+      - SE
+      - CH
+      - GB

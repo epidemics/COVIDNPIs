@@ -1014,7 +1014,7 @@ class ComplexDifferentEffectsModel(BaseCMModel):
                     alpha_noise_scale_prior='half-t', alpha_noise_scale=0.04, deaths_delay_mean_mean=21,
                     deaths_delay_mean_sd=1, deaths_delay_disp_mean=9,
                     deaths_delay_disp_sd=1, cases_delay_mean_mean=10, cases_delay_mean_sd=1, cases_delay_disp_mean=5,
-                    cases_delay_disp_sd=1, deaths_truncation=48, cases_truncation=32, **kwargs):
+                    cases_delay_disp_sd=1, deaths_truncation=48, cases_truncation=32, growth_noise_scale='prior', **kwargs):
         """
         Build NPI effectiveness model
         :param R_prior_mean: R_0 prior mean
@@ -1079,8 +1079,15 @@ class ComplexDifferentEffectsModel(BaseCMModel):
 
             self.ExpectedGrowth = gi_beta * (pm.math.exp(self.ExpectedLogR / gi_alpha) - T.ones((self.nRs, self.nDs)))
 
-            self.GrowthNoiseScale = pm.HalfStudentT('GrowthNoiseScale', nu=3, sigma=0.15)
-            # self.GrowthNoiseScale = pm.HalfNormal('GrowthNoiseScale', sigma=0.15)
+            if growth_noise_scale == 'prior':
+                self.GrowthNoiseScale = pm.HalfStudentT('GrowthNoiseScale', nu=3, sigma=0.15)
+            elif growth_noise_scale == 'fixed':
+                self.GrowthNoiseScale = 0.205
+                self.GrowthNoiseScale
+            elif growth_noise_scale == 'indep':
+                self.GrowthNoiseScaleCases = pm.HalfStudentT('GrowthNoiseCases', nu=3, sigma=0.15)
+                self.GrowthNoiseScaleDeaths = pm.HalfStudentT('GrowthNoiseDeaths', nu=3, sigma=0.15)
+
 
             # exclude 40 days of noise, slight increase in runtime.
             self.GrowthCasesNoise = pm.Normal("GrowthCasesNoise", 0, 1,

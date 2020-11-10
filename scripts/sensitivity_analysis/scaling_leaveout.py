@@ -28,6 +28,7 @@ argparser = argparse.ArgumentParser()
 argparser.add_argument('--scaling_type', dest='scaling_type', type=str, help='Scaling type.'
                                                                              'Options are `simple` (time-constant), or'
                                                                              '`variable` (time-varying)')
+argparser.add_argument('--rg', dest='rg', type=str, help='Region to leave out - alpha 2 code')
 add_argparse_arguments(argparser)
 
 if __name__ == '__main__':
@@ -331,7 +332,12 @@ if __name__ == '__main__':
                 test_rates[r_i, :] = 1
 
         data.NewCases = data.NewCases / test_rates
-        data.NewCases = data.NewCases.astype(int)
+        data.NewCases = np.ma.masked_array(np.around(data.NewCases).astype(int))
+        data.Confirmed = np.cumsum(data_new.NewCases, axis=-1)
+        data.NewCases.mask[data.NewCases < 0] = True
+        data.NewCases.mask = data_new.Confirmed < 100
+        data.mask_reopenings(print_out=False)
+        data.mask_region(args.rg)
 
     bd = {**ep.get_model_build_dict(), **parse_extra_model_args(extras)}
 
@@ -341,18 +347,8 @@ if __name__ == '__main__':
     ta = get_target_accept_from_model_str(args.model_type)
 
     with model.model:
-        model.trace = pm.sample(args.n_samples, tune=500, chains=args.n_chains, cores=args.n_chains, max_treedepth=14,
-                                target_accept=ta, init='adapt_diag')
-
-    save_cm_trace(f'{args.scaling_type}.txt', model.trace.CMReduction, args.exp_tag,
-                  generate_base_output_dir(args.model_type, parse_extra_model_args(extras)))
+        model.trace = pm.sample(750, tune=500, chains=2, cores=2, max_treedepth=16,
+                                target_accept=0.925, init='adapt_diag')
 
     import pickle
-    pickle.dump(model.trace, open('variable_scaling.pkl', 'wb'))
-
-    if model.country_specific_effects:
-        nS, nCMs = model.trace.CMReduction.shape
-        full_trace = np.exp(
-            np.log(model.trace.CMReduction) + np.random.normal(size=(nS, nCMs)) * model.trace.CMAlphaScales)
-        save_cm_trace(f'{args.scaling_type}-cs.txt', full_trace, args.exp_tag,
-                      generate_base_output_dir(args.model_type, parse_extra_model_args(extras)))
+    pickle.dump(model.trace, open(f'{rg}.pkl', 'wb'))
