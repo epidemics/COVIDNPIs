@@ -351,4 +351,4 @@ if __name__ == '__main__':
                                 target_accept=0.925, init='adapt_diag')
 
     import pickle
-    pickle.dump(model.trace, open(f'{rg}.pkl', 'wb'))
+    pickle.dump(model.trace, open(f'{args.rg}.pkl', 'wb'))
