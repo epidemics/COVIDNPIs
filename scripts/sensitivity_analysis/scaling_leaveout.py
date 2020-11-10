@@ -333,9 +333,9 @@ if __name__ == '__main__':
 
         data.NewCases = data.NewCases / test_rates
         data.NewCases = np.ma.masked_array(np.around(data.NewCases).astype(int))
-        data.Confirmed = np.cumsum(data_new.NewCases, axis=-1)
+        data.Confirmed = np.cumsum(data.NewCases, axis=-1)
         data.NewCases.mask[data.NewCases < 0] = True
-        data.NewCases.mask = data_new.Confirmed < 100
+        data.NewCases.mask = data.Confirmed < 100
         data.mask_reopenings(print_out=False)
         data.mask_region(args.rg)
 
