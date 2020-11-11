@@ -7,15 +7,19 @@
   "publication_date": "2020-11-11",
   "creators": [
     {
+      "affiliation": "University of Oxford",
       "name": "Jan M. Brauner"
     },
     {
+      "affiliation": "University of Oxford",
       "name": "Sören Mindermann"
     },
     {
+      "affiliation": "University of Oxford",
       "name": "Mrinank Sharma"
     },
     {
+      "affiliation": "Australian National University",
       "name": "David Johnston"
     },
     {
@@ -25,56 +29,56 @@
       "name": "Tomáš Gavenčiak"
     },
     {
+      "affiliation": "University of Harvard",
       "name": "Anna B. Stephenson"
     },
     {
+      "affiliation": "University of Bristol",
       "name": "Gavin Leech"
     },
     {
+      "affiliation": "University of Manchester",
       "name": "George Altman"
     },
     {
       "name": "Vladimir Mikulik"
     },
     {
+      "affiliation": "University of Oxford",
       "name": "Alexander John Norman"
     },
     {
+      "affiliation": "University of Oxford",
       "name": "Joshua Teperowski Monrad"
     },
     {
+      "affiliation": "University of Cambridge",
       "name": "Tamay Besiroglu"
     },
     {
+      "affiliation": "University of Cambridge",
       "name": "Hong Ge"
     },
     {
+      "affiliation": "Tufts University",
       "name": "Meghan A. Hartwick"
     },
     {
+      "affiliation": "University of Oxford",
       "name": "Yee Whye Teh"
     },
     {
+      "affiliation": "Imperial College London",
       "name": "Leonid Chindelevitch"
     },
     {
+      "affiliation": "University of Oxford",
       "name": "Yarin Gal"
     },
     {
+      "affiliation": "University of Oxford",
       "name": "Jan Kulveit"
     }
   ],
   "access_right": "open",
-  "related_identifiers": [
-    {
-      "scheme": "url",
-      "identifier": "https://github.com/epidemics/COVIDNPIs/tree/v1.3.3",
-      "relation": "isSupplementTo"
-    },
-    {
-      "scheme": "doi",
-      "identifier": "10.5281/zenodo.4264492",
-      "relation": "isVersionOf"
-    }
-  ]
 }
