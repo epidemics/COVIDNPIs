@@ -1,0 +1,80 @@
+{
+  "description": "<p>Pre-release</p>",
+  "license": "other-open",
+  "title": "epidemics/COVIDNPIs: Inferring the effectiveness of government interventions against COVID-19",
+  "version": "v1.3.3",
+  "upload_type": "software",
+  "publication_date": "2020-11-11",
+  "creators": [
+    {
+      "name": "Jan M. Brauner"
+    },
+    {
+      "name": "Sören Mindermann"
+    },
+    {
+      "name": "Mrinank Sharma"
+    },
+    {
+      "name": "David Johnston"
+    },
+    {
+      "name": "John Salvatier"
+    },
+    {
+      "name": "Tomáš Gavenčiak"
+    },
+    {
+      "name": "Anna B. Stephenson"
+    },
+    {
+      "name": "Gavin Leech"
+    },
+    {
+      "name": "George Altman"
+    },
+    {
+      "name": "Vladimir Mikulik"
+    },
+    {
+      "name": "Alexander John Norman"
+    },
+    {
+      "name": "Joshua Teperowski Monrad"
+    },
+    {
+      "name": "Tamay Besiroglu"
+    },
+    {
+      "name": "Hong Ge"
+    },
+    {
+      "name": "Meghan A. Hartwick"
+    },
+    {
+      "name": "Yee Whye Teh"
+    },
+    {
+      "name": "Leonid Chindelevitch"
+    },
+    {
+      "name": "Yarin Gal"
+    },
+    {
+      "name": "Jan Kulveit"
+    }
+  ],
+  "access_right": "open",
+  "related_identifiers": [
+    {
+      "scheme": "url",
+      "identifier": "https://github.com/epidemics/COVIDNPIs/tree/v1.3.3",
+      "relation": "isSupplementTo"
+    },
+    {
+      "scheme": "doi",
+      "identifier": "10.5281/zenodo.4264492",
+      "relation": "isVersionOf"
+    }
+  ]
+}
