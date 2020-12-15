@@ -4,7 +4,7 @@
 Reproducing Results from Paper
 ==============================
 
-This page contains detailed instructions to reproduce the results from `Brauner et. al., The effectiveness of eight nonpharmaceutical interventions against COVID-19 in 41 countries. (2020) <https://www.medrxiv.org/content/10.1101/2020.05.28.20116129v3>`_. We will assume that you have successfully been able to clone the repo and install the dependencies.
+This page contains detailed instructions to reproduce the results from `Brauner et. al., Inferring the effectiveness of government interventions against COVID-19. (2020) <https://science.sciencemag.org/lookup/doi/10.1126/science.abd9338>`_. We will assume that you have successfully been able to clone the repo and install the dependencies.
 
 Main Results
 -------------
