@@ -89,7 +89,11 @@ class DefaultModel(BaseCMModel):
                 print('Using a fixed value for the generation interval mean')
                 self.GI_mean = gi_mean_mean
 
-            self.GI_sd = pm.Normal('GI_sd', gi_sd_mean, gi_sd_sd)
+            if gi_sd_sd > 0:
+                self.GI_sd = pm.Normal('GI_sd', gi_sd_mean, gi_sd_sd)
+            else:
+                print('Using a fixed value for the generation interval sd')
+                self.GI_sd = gi_sd_mean
 
             gi_beta = self.GI_mean / self.GI_sd ** 2
             gi_alpha = self.GI_mean ** 2 / self.GI_sd ** 2
@@ -120,7 +124,12 @@ class DefaultModel(BaseCMModel):
                 print('Using a fixed value for the reporting delay mean')
                 self.CasesDelayMean = cases_delay_mean_mean
 
-            self.CasesDelayDisp = pm.Normal('CasesDelayDisp', cases_delay_disp_mean, cases_delay_disp_sd)
+            if cases_delay_disp_sd > 0:
+                self.CasesDelayDisp = pm.Normal('CasesDelayDisp', cases_delay_disp_mean, cases_delay_disp_sd)
+            else:
+                print('Using a fixed value for the reporting delay mean')
+                self.CasesDelayDisp = cases_delay_disp_mean
+
             cases_delay_dist = pm.NegativeBinomial.dist(mu=self.CasesDelayMean, alpha=self.CasesDelayDisp)
             bins = np.arange(0, cases_truncation)
             pmf = T.exp(cases_delay_dist.logp(bins))
@@ -160,7 +169,12 @@ class DefaultModel(BaseCMModel):
                 print('Using a fixed value for the fatality delay mean')
                 self.DeathsDelayMean = deaths_delay_mean_mean
 
-            self.DeathsDelayDisp = pm.Normal('DeathsDelayDisp', deaths_delay_disp_mean, deaths_delay_disp_sd)
+            if deaths_delay_disp_sd > 0:
+                self.DeathsDelayDisp = pm.Normal('DeathsDelayDisp', deaths_delay_disp_mean, deaths_delay_disp_sd)
+            else:
+                print('Using a fixed value for the reporting delay mean')
+                self.DeathsDelayDisp = deaths_delay_disp_mean
+
             deaths_delay_dist = pm.NegativeBinomial.dist(mu=self.DeathsDelayMean, alpha=self.DeathsDelayDisp)
             bins = np.arange(0, deaths_truncation)
             pmf = T.exp(deaths_delay_dist.logp(bins))

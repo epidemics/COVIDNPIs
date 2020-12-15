@@ -76,6 +76,7 @@ Table of Contents
    module_documentation/module_documentation
    experiments/experiments
    reproduction/reproduction
+   troubleshooting/troubleshooting
 
 
 
