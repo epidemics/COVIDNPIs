@@ -13,20 +13,12 @@ import numpyro.distributions as dist
 import seaborn as sns
 from matplotlib.font_manager import FontProperties
 from numpyro import deterministic, sample, plate
+from .distributions import sample_asymmetric_laplace
 
 from ..pymc3_models.base_model import add_cms_to_plot, produce_CIs
 
 fp2 = FontProperties(fname=r"../../fonts/Font Awesome 5 Free-Solid-900.otf")
 sns.set_style("ticks")
-
-
-def asymmetric_laplace(scale, kappa):
-    """
-    Asymmetric laplace distribution as in https://en.wikipedia.org/wiki/Asymmetric_Laplace_distribution with m = 0.0
-    """
-    return sample("ExpA", dist.Exponential(0.0, scale / -kappa)) - sample(
-        "ExpB", dist.Exponential(0.0, scale * kappa)
-    )
 
 
 class BaseCMModel:
@@ -232,7 +224,7 @@ class BaseCMModel:
         """
         return len(self.d.CMs)
 
-    def build_npi_prior(self, prior_type, prior_scale=None):
+    def sample_npi_prior(self, prior_type, prior_scale=None):
         """
         Build NPI Effectiveness Prior.
 
@@ -260,10 +252,8 @@ class BaseCMModel:
                 return deterministic("CM_Alpha", CM_Alpha_t - np.log(1.05) / self.nCMs)
 
             elif prior_type == "skewed":
-                with numpyro.handlers.scope("CM_Alpha"):
-                    al = asymmetric_laplace(scale=prior_scale, kappa=0.5)
-                return deterministic("CM_Alpha", al)
-
+                sample_asymmetric_laplace("CM_Alpha", scale=prior_scale, kappa=0.5)
+                
     def plot_effect(self):
         """
         If model.trace has been set, plot the NPI effectiveness estimates.
