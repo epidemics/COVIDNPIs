@@ -1,6 +1,8 @@
 import jax.numpy as jnp
 import numpyro
+import numpyro.contrib.tfp.distributions as tfpdist
 import numpyro.distributions as dist
+from numpyro.contrib.tfp.distributions import HalfStudentT, NegativeBinomial
 
 # def HalfStudentT(nu, sigma):
 #    return dist.continuous.TruncatedDistribution(
@@ -22,3 +24,5 @@ def sample_asymmetric_laplace(name, scale, kappa):
         numpyro.sample(f"{name}/a", dist.Exponential(0.0, scale / -kappa))
         - numpyro.sample(f"{name}/b", dist.Exponential(0.0, scale * kappa)),
     )
+
+
