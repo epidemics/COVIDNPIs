@@ -252,7 +252,7 @@ class BaseCMModel:
                 return deterministic("CM_Alpha", CM_Alpha_t - np.log(1.05) / self.nCMs)
 
             elif prior_type == "skewed":
-                sample_asymmetric_laplace("CM_Alpha", scale=prior_scale, kappa=0.5)
+                return sample_asymmetric_laplace("CM_Alpha", scale=prior_scale, kappa=0.5)
                 
     def plot_effect(self):
         """

@@ -21,8 +21,8 @@ def sample_asymmetric_laplace(name, scale, kappa):
     """
     return numpyro.deterministic(
         name,
-        numpyro.sample(f"{name}/a", dist.Exponential(0.0, scale / -kappa))
-        - numpyro.sample(f"{name}/b", dist.Exponential(0.0, scale * kappa)),
+        numpyro.sample(f"{name}/a", dist.Exponential(rate=(scale / -kappa)))
+        - numpyro.sample(f"{name}/b", dist.Exponential(rate=(scale * kappa))),
     )
 
 

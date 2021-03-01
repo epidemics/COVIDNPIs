@@ -3,6 +3,7 @@
 
 Contains a variety of models of NPI effectiveness, all subclassed from BaseCMModel. 
 """
+import jax
 import jax.numpy as jnp
 import numpy as np
 import numpyro
@@ -12,7 +13,7 @@ from numpyro.distributions.continuous import HalfNormal
 
 from ..pymc3_models.epi_params import EpidemiologicalParameters
 from .base_model import BaseCMModel
-from .distributions import sample_half_student_t, NegativeBinomial
+from .distributions import NegativeBinomial, sample_half_student_t
 
 
 class ComplexDifferentEffectsModel(BaseCMModel):
@@ -75,188 +76,201 @@ class ComplexDifferentEffectsModel(BaseCMModel):
         :param deaths_truncation: maximum death delay
         :param cases_truncation: maximum reporting delay
         """
-        CM_Alpha = self.sample_npi_prior(cm_prior, cm_prior_scale)
 
-        CMReduction = deterministic("CMReduction", jnp.exp((-1.0) * CM_Alpha))
+        def run_model(data_ActiveCMs, NewCases_data, all_observed_active):
+            nRs, nCMs, nDs = data_ActiveCMs.shape
+            CM_Alpha = self.sample_npi_prior(cm_prior, cm_prior_scale)
 
-        with plate("self.nCMs", self.nCMs):
-            if alpha_noise_scale_prior == "half-normal":
-                CMAlphaScales = sample(
-                    "CMAlphaScales", dist.HalfNormal(scale=alpha_noise_scale)
+            CMReduction = deterministic("CMReduction", jnp.exp((-1.0) * CM_Alpha))
+
+            with plate("nCMs", nCMs):
+                if alpha_noise_scale_prior == "half-normal":
+                    CMAlphaScales = sample(
+                        "CMAlphaScales", dist.HalfNormal(scale=alpha_noise_scale)
+                    )
+                elif alpha_noise_scale_prior == "half-t":
+                    CMAlphaScales = sample_half_student_t(
+                        "CMAlphaScales", nu=3, sigma=alpha_noise_scale
+                    )
+
+            AllCMAlphaNoise = sample(
+                "AllCMAlphaNoise", dist.Normal(jnp.zeros((nRs, nCMs)), 1)
+            )
+
+            AllCMAlpha = deterministic(
+                "AllCMAlpha",
+                jnp.reshape(CM_Alpha, (1, nCMs)).repeat(nRs, axis=0)
+                + CMAlphaScales.reshape((1, nCMs)) * AllCMAlphaNoise,
+            )
+
+            HyperRVar = sample("HyperRVar", dist.HalfNormal(scale=0.5))
+            RegionR_noise = sample("RegionR_noise", dist.Normal(jnp.zeros(nRs), 1))
+            RegionR = deterministic("RegionR", R_prior_mean + RegionR_noise * HyperRVar)
+
+            ActiveCMs = deterministic("ActiveCMs", data_ActiveCMs)
+
+            active_cm_reduction = (
+                jnp.reshape(AllCMAlpha, (nRs, nCMs, 1)) * ActiveCMs
+            )
+            growth_reduction = jnp.sum(active_cm_reduction, axis=1)
+
+            ExpectedLogR = deterministic(
+                "ExpectedLogR",
+                jnp.reshape(jnp.log(RegionR), (nRs, 1)) - growth_reduction,
+            )
+
+            # convert R into growth rates
+            GI_mean = sample("GI_mean", dist.Normal(gi_mean_mean, gi_mean_sd))
+            GI_sd = sample("GI_sd", dist.Normal(gi_sd_mean, gi_sd_sd))
+
+            gi_beta = GI_mean / GI_sd ** 2
+            gi_alpha = GI_mean ** 2 / GI_sd ** 2
+
+            ExpectedGrowth = gi_beta * (
+                jnp.exp(ExpectedLogR / gi_alpha) - jnp.ones((nRs, nDs))
+            )
+
+            if growth_noise_scale == "prior":
+                GrowthNoiseScale = sample_half_student_t(
+                    "GrowthNoiseScale", nu=3, sigma=0.15
                 )
-            elif alpha_noise_scale_prior == "half-t":
-                CMAlphaScales = sample_half_student_t(
-                    "CMAlphaScales", nu=3, sigma=alpha_noise_scale
+            elif growth_noise_scale == "fixed":
+                GrowthNoiseScale = deterministic("GrowthNoiseScale", 0.205)
+            elif growth_noise_scale == "indep":  ## NB: Now broken
+                GrowthNoiseScaleCases = sample_half_student_t(
+                    "GrowthNoiseCases", nu=3, sigma=0.15
+                )
+                GrowthNoiseScaleDeaths = sample_half_student_t(
+                    "GrowthNoiseDeaths", nu=3, sigma=0.15
                 )
 
-        AllCMAlphaNoise = sample(
-            "AllCMAlphaNoise", dist.Normal(jnp.zeros((self.nRs, self.nCMs)), 1)
-        )
-
-        AllCMAlpha = deterministic(
-            "AllCMAlpha",
-            jnp.reshape(CM_Alpha, (1, self.nCMs)).repeat(self.nRs, axis=0)
-            + CMAlphaScales.reshape((1, self.nCMs)) * AllCMAlphaNoise,
-        )
-
-        HyperRVar = sample("HyperRVar", dist.HalfNormal(scale=0.5))
-        RegionR_noise = sample("RegionR_noise", dist.Normal(jnp.zeros(self.nRs), 1))
-        RegionR = deterministic("RegionR", R_prior_mean + RegionR_noise * HyperRVar)
-
-        self.ActiveCMs = deterministic("ActiveCMs", self.d.ActiveCMs)
-
-        active_cm_reduction = (
-            jnp.reshape(AllCMAlpha, (self.nRs, self.nCMs, 1)) * self.ActiveCMs
-        )
-        growth_reduction = jnp.sum(active_cm_reduction, axis=1)
-
-        ExpectedLogR = deterministic(
-            "ExpectedLogR",
-            jnp.reshape(jnp.log(RegionR), (self.nRs, 1)) - growth_reduction,
-        )
-
-        # convert R into growth rates
-        GI_mean = sample("GI_mean", dist.Normal(gi_mean_mean, gi_mean_sd))
-        GI_sd = sample("GI_sd", dist.Normal(gi_sd_mean, gi_sd_sd))
-
-        gi_beta = GI_mean / GI_sd ** 2
-        gi_alpha = GI_mean ** 2 / GI_sd ** 2
-
-        ExpectedGrowth = gi_beta * (
-            jnp.exp(ExpectedLogR / gi_alpha) - jnp.ones((self.nRs, self.nDs))
-        )
-
-        if growth_noise_scale == "prior":
-            GrowthNoiseScale = sample(
-                "GrowthNoiseScale", HalfStudentT(nu=3, sigma=0.15)
+            # exclude 40 days of noise, slight increase in runtime.
+            GrowthCasesNoise = sample(
+                "GrowthCasesNoise", dist.Normal(jnp.zeros((nRs, nDs - 40)), 1)
             )
-        elif growth_noise_scale == "fixed":
-            GrowthNoiseScale = deterministic("GrowthNoiseScale", 0.205)
-        elif growth_noise_scale == "indep":  ## NB: Now broken
-            GrowthNoiseScaleCases = sample_half_student_t(
-                "GrowthNoiseCases", nu=3, sigma=0.15
-            )
-            GrowthNoiseScaleDeaths = sample_half_student_t(
-                "GrowthNoiseDeaths", nu=3, sigma=0.15
+            GrowthDeathsNoise = sample(
+                "GrowthDeathsNoise",
+                dist.Normal(jnp.zeros((nRs, nDs - 40)), 1),
             )
 
-        # exclude 40 days of noise, slight increase in runtime.
-        GrowthCasesNoise = sample(
-            "GrowthCasesNoise", dist.Normal(jnp.zeros((self.nRs, self.nDs - 40)), 1)
-        )
-        GrowthDeathsNoise = sample(
-            "GrowthDeathsNoise", dist.Normal(jnp.zeros((self.nRs, self.nDs - 40)), 1)
-        )
-
-        GrowthCases = jnp.concatenate(
-            (ExpectedGrowth[:, :30]),
-            ExpectedGrowth[:, 30:-10] + GrowthNoiseScale * GrowthCasesNoise,
-            ExpectedGrowth[:, -10:],
-            axis=1,
-        )
-
-        GrowthDeaths = jnp.concatenate(
-            (ExpectedGrowth[:, :30]),
-            ExpectedGrowth[:, 30:-10] + GrowthNoiseScale * GrowthDeathsNoise,
-            ExpectedGrowth[:, -10:],
-            axis=1,
-        )
-
-        PsiCases = sample("PsiCases", dist.HalfNormal(5.0))
-        PsiDeaths = sample("PsiDeaths", dist.HalfNormal(5.0))
-
-        InitialSizeCases_log = sample(
-            "InitialSizeCases_log", dist.Normal(jnp.zeros((self.nRs,)), 50)
-        )
-        InfectedCases_log = deterministic(
-            "InfectedCases_log",
-            jnp.reshape(InitialSizeCases_log, (self.nRs, 1))
-            + GrowthCases.cumsum(axis=1),
-        )
-        InfectedCases = deterministic("InfectedCases", jnp.exp(InfectedCases_log))
-
-        CasesDelayMean = sample(
-            "CasesDelayMean", dist.Normal(cases_delay_mean_mean, cases_delay_mean_sd)
-        )
-        CasesDelayDisp = sample(
-            "CasesDelayDisp", dist.Normal(cases_delay_disp_mean, cases_delay_disp_sd)
-        )
-
-        cases_delay_dist = NegativeBinomial(
-            mu=self.CasesDelayMean, alpha=self.CasesDelayDisp
-        )
-        bins = jnp.arange(0, cases_truncation)
-        pmf = jnp.exp(cases_delay_dist.log_prob(bins))
-        pmf = pmf / jnp.sum(pmf)
-        reporting_delay = pmf.reshape((1, cases_truncation))
-
-        expected_cases = jax.scipy.signal.convolve(
-            InfectedCases, reporting_delay, mode="full"
-        )[:, : self.nDs]
-
-        ExpectedCases = deterministic(
-            "ExpectedCases", expected_cases.reshape((self.nRs, self.nDs))
-        )
-
-        # effectively handle missing values ourselves
-        obs_probs = PsiCases / (
-            PsiCases
-            + ExpectedCases.reshape((self.nRs * self.nDs,))[self.all_observed_active]
-        )
-        ObservedCases = sample(
-            "ObservedCases",
-            NegativeBinomial(PsiCases, probs=obs_probs),
-            observed=self.d.NewCases.data.reshape((self.nRs * self.nDs,))[
-                self.all_observed_active
-            ],
-        )
-
-        if False:
-
-            self.InitialSizeDeaths_log = pm.Normal(
-                "InitialSizeDeaths_log", 0, 50, shape=(self.nRs,)
-            )
-            self.InfectedDeaths_log = pm.Deterministic(
-                "InfectedDeaths_log",
-                T.reshape(self.InitialSizeDeaths_log, (self.nRs, 1))
-                + self.GrowthDeaths.cumsum(axis=1),
-            )
-            self.InfectedDeaths = pm.Deterministic(
-                "InfectedDeaths", pm.math.exp(self.InfectedDeaths_log)
+            GrowthCases = jnp.concatenate(
+                (
+                    (ExpectedGrowth[:, :30]),
+                    ExpectedGrowth[:, 30:-10] + GrowthNoiseScale * GrowthCasesNoise,
+                    ExpectedGrowth[:, -10:],
+                ),
+                axis=1,
             )
 
-            self.DeathsDelayMean = pm.Normal(
-                "DeathsDelayMean", deaths_delay_mean_mean, deaths_delay_mean_sd
+            GrowthDeaths = jnp.concatenate(
+                (
+                    (ExpectedGrowth[:, :30]),
+                    ExpectedGrowth[:, 30:-10] + GrowthNoiseScale * GrowthDeathsNoise,
+                    ExpectedGrowth[:, -10:],
+                ),
+                axis=1,
             )
-            self.DeathsDelayDisp = pm.Normal(
-                "DeathsDelayDisp", deaths_delay_disp_mean, deaths_delay_disp_sd
-            )
-            deaths_delay_dist = pm.NegativeBinomial.dist(
-                mu=self.DeathsDelayMean, alpha=self.DeathsDelayDisp
-            )
-            bins = np.arange(0, deaths_truncation)
-            pmf = T.exp(deaths_delay_dist.logp(bins))
-            pmf = pmf / T.sum(pmf)
-            fatality_delay = pmf.reshape((1, deaths_truncation))
 
-            expected_deaths = C.conv2d(
-                self.InfectedDeaths, fatality_delay, border_mode="full"
-            )[:, : self.nDs]
+            PsiCases = sample("PsiCases", dist.HalfNormal(5.0))
+            PsiDeaths = sample("PsiDeaths", dist.HalfNormal(5.0))
 
-            self.ExpectedDeaths = pm.Deterministic(
-                "ExpectedDeaths", expected_deaths.reshape((self.nRs, self.nDs))
+            InitialSizeCases_log = sample(
+                "InitialSizeCases_log", dist.Normal(jnp.zeros((nRs,)), 50)
+            )
+            InfectedCases_log = deterministic(
+                "InfectedCases_log",
+                jnp.reshape(InitialSizeCases_log, (nRs, 1))
+                + GrowthCases.cumsum(axis=1),
+            )
+            InfectedCases = deterministic("InfectedCases", jnp.exp(InfectedCases_log))
+
+            CasesDelayMean = sample(
+                "CasesDelayMean",
+                dist.Normal(cases_delay_mean_mean, cases_delay_mean_sd),
+            )
+            CasesDelayDisp = sample(
+                "CasesDelayDisp",
+                dist.Normal(cases_delay_disp_mean, cases_delay_disp_sd),
+            )
+
+            delay_prob = CasesDelayDisp / (CasesDelayMean + CasesDelayDisp)
+            cases_delay_dist = NegativeBinomial(CasesDelayDisp, probs=delay_prob)
+            bins = jnp.arange(0, cases_truncation)
+            pmf = jnp.exp(cases_delay_dist.log_prob(bins))
+            pmf = pmf / jnp.sum(pmf)
+            reporting_delay = pmf.reshape((1, cases_truncation))
+
+            expected_cases = jax.scipy.signal.convolve(
+                InfectedCases, reporting_delay, mode="full"
+            )[:, : nDs]
+
+            ExpectedCases = deterministic(
+                "ExpectedCases", expected_cases.reshape((nRs, nDs))
             )
 
             # effectively handle missing values ourselves
-            self.ObservedDeaths = pm.NegativeBinomial(
-                "ObservedDeaths",
-                mu=self.ExpectedDeaths.reshape((self.nRs * self.nDs,))[
-                    self.all_observed_deaths
-                ],
-                alpha=self.PsiDeaths,
-                shape=(len(self.all_observed_deaths),),
-                observed=self.d.NewDeaths.data.reshape((self.nRs * self.nDs,))[
-                    self.all_observed_deaths
+            obs_probs = PsiCases / (
+                PsiCases
+                + ExpectedCases.reshape((nRs * nDs,))[
+                    all_observed_active
+                ]
+            )
+            ObservedCases = sample(
+                "ObservedCases",
+                NegativeBinomial(PsiCases, probs=obs_probs),
+                obs=NewCases_data.reshape((nRs * nDs,))[
+                    all_observed_active
                 ],
             )
+
+            if False:
+
+                self.InitialSizeDeaths_log = pm.Normal(
+                    "InitialSizeDeaths_log", 0, 50, shape=(self.nRs,)
+                )
+                self.InfectedDeaths_log = pm.Deterministic(
+                    "InfectedDeaths_log",
+                    T.reshape(self.InitialSizeDeaths_log, (self.nRs, 1))
+                    + self.GrowthDeaths.cumsum(axis=1),
+                )
+                self.InfectedDeaths = pm.Deterministic(
+                    "InfectedDeaths", pm.math.exp(self.InfectedDeaths_log)
+                )
+
+                self.DeathsDelayMean = pm.Normal(
+                    "DeathsDelayMean", deaths_delay_mean_mean, deaths_delay_mean_sd
+                )
+                self.DeathsDelayDisp = pm.Normal(
+                    "DeathsDelayDisp", deaths_delay_disp_mean, deaths_delay_disp_sd
+                )
+                deaths_delay_dist = pm.NegativeBinomial.dist(
+                    mu=self.DeathsDelayMean, alpha=self.DeathsDelayDisp
+                )
+                bins = np.arange(0, deaths_truncation)
+                pmf = T.exp(deaths_delay_dist.logp(bins))
+                pmf = pmf / T.sum(pmf)
+                fatality_delay = pmf.reshape((1, deaths_truncation))
+
+                expected_deaths = C.conv2d(
+                    self.InfectedDeaths, fatality_delay, border_mode="full"
+                )[:, : self.nDs]
+
+                self.ExpectedDeaths = pm.Deterministic(
+                    "ExpectedDeaths", expected_deaths.reshape((self.nRs, self.nDs))
+                )
+
+                # effectively handle missing values ourselves
+                self.ObservedDeaths = pm.NegativeBinomial(
+                    "ObservedDeaths",
+                    mu=self.ExpectedDeaths.reshape((self.nRs * self.nDs,))[
+                        self.all_observed_deaths
+                    ],
+                    alpha=self.PsiDeaths,
+                    shape=(len(self.all_observed_deaths),),
+                    observed=self.d.NewDeaths.data.reshape((self.nRs * self.nDs,))[
+                        self.all_observed_deaths
+                    ],
+                )
+
+        return run_model
 
