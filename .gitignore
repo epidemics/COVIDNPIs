@@ -11,3 +11,4 @@ config-local.yaml
 /docs/_build
 /server
 /server*
+/.venv/

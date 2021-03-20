@@ -16,6 +16,7 @@ requests = "^2.23"
 # Optional inference toolkits
 jupyter = "^1.0.0"
 pymc3 = "^3.9"
+arviz = "<0.11"
 seaborn = "^0.10.0"
 tqdm = "^4.45.0"
 graphviz = "^0.13.2"
