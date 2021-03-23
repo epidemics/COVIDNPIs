@@ -1223,7 +1223,7 @@ class ComplexDifferentEffectsWithSeasonalityModel(BaseCMModel):
         with self.model:
             self.build_npi_prior(cm_prior, cm_prior_scale)
 
-            self.Seasonality = pm.Normal("Seasonality", mu=1.0, sd=0.5)
+            self.Seasonality = pm.Normal("Seasonality", mu=0.0, sd=1.0)
             self.SeasonalitySinus = pm.Deterministic("SeasonalitySinus", T.constant(np.cos((np.arange(self.nDs) - seasonality_peak_index) / 365.0 * 2.0 * 3.14159)))
             self.SeasonalityMultEffect = pm.Deterministic("SeasonalityMultEffect",
                 T.maximum(T.reshape(1.0 + self.Seasonality * self.SeasonalitySinus, (1, self.nDs)), 0.01))
